@@ -39,5 +39,5 @@ pandoc docs/自助建站网站说明书.md -o docs/自助建站网站说明书.p
 
 ## 参考站点
 
-- 演示首页：https://zgpptg.com/jianzhan/
-- 中推网帮助中心：https://zgpptg.com/
+- 中推网官网：https://zgpptg.com/
+- 自助建站频道：https://zgpptg.com/jianzhan/
