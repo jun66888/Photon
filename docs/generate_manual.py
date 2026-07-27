@@ -1783,7 +1783,7 @@ pages_14_60 = [
 
 **安全域名白名单（演示站点）**
 ```
-zhongtuiwang.cn, zhongtuiwang.cn, beian.miit.gov.cn,
+zhongtuiwang.cn, help.zhongtuiwang.cn, beian.miit.gov.cn,
 qq.com, baidu.com, amap.com, google.com,
 weibo.com, apple.com, vivo.com.cn, huawei.com,
 mi.com, oppomobile.com
