@@ -1,6 +1,6 @@
 # 自助建站网站说明书
 
-参照 [火鸟门户自助建站频道演示站](https://ihuoniao.cn/sz/jianzhan/) 编写的 **60 页**网站产品说明书。
+参照 [中推网自助建站频道演示站](https://www.zhongtuiwang.cn/sz/jianzhan/) 编写的 **60 页**网站产品说明书。
 
 ## 文档清单
 
@@ -39,5 +39,5 @@ pandoc docs/自助建站网站说明书.md -o docs/自助建站网站说明书.p
 
 ## 参考站点
 
-- 演示首页：https://ihuoniao.cn/sz/jianzhan/
-- 火鸟帮助中心：https://help.kumanyun.com/
+- 演示首页：https://www.zhongtuiwang.cn/sz/jianzhan/
+- 中推网帮助中心：https://help.zhongtuiwang.cn/
