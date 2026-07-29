@@ -674,6 +674,170 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   background: rgba(61,255,154,.08);
 }
 .vote-success-box .big { font-family: var(--font-brush); font-size: 1.8rem; color: var(--ok); }
+.vote-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .8rem; }
+.vote-card {
+  text-align: center; padding: .95rem; border-radius: 10px;
+  border: 2px solid rgba(240,193,75,.35);
+  background: linear-gradient(160deg, #1a2238, #101624);
+}
+.vote-card .votes { font-family: var(--font-num); font-size: 2.2rem; color: var(--gold); font-weight: 800; }
+
+/* 小组作品投票 · 实时追赶榜 */
+.vote-race-shell {
+  display: grid;
+  grid-template-columns: 1fr minmax(140px, 180px);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .vote-race-shell { grid-template-columns: 1fr; }
+}
+.vote-race-meta {
+  display: flex; flex-wrap: wrap; gap: .55rem 1rem; align-items: baseline;
+  margin-bottom: .85rem; padding: .55rem .75rem;
+  border: 2px solid rgba(240,193,75,.28);
+  background: linear-gradient(90deg, rgba(26,18,8,.55), rgba(12,18,32,.65));
+  border-radius: 8px;
+}
+.vote-race-meta .vr-status {
+  font-family: var(--font-brush); font-size: 1.35rem; color: var(--gold); letter-spacing: .08em;
+}
+.vote-race-meta .vr-status.on { color: var(--ok); }
+.vote-race-meta .vr-status.off { color: #ffb0bd; }
+.vote-race-board {
+  display: flex; flex-direction: column; gap: .55rem;
+  min-height: 40vh;
+}
+.vote-race-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.4rem 2.6rem minmax(0, 1fr) 5.6rem;
+  gap: .55rem;
+  align-items: center;
+  padding: .7rem .85rem;
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,.12);
+  background: linear-gradient(105deg, rgba(18,22,36,.95), rgba(10,14,24,.92));
+  box-shadow: 0 8px 18px rgba(0,0,0,.28);
+  will-change: transform;
+  overflow: hidden;
+}
+.vote-race-row::before {
+  content: "";
+  position: absolute; inset: 0 auto 0 0; width: 4px;
+  background: var(--theme, var(--gold));
+  opacity: .85;
+}
+.vote-race-row.rank1 {
+  border-color: rgba(240,193,75,.55);
+  background: linear-gradient(105deg, rgba(64,42,8,.55), rgba(18,22,36,.95));
+}
+.vote-race-row.rank2 { border-color: rgba(180,200,220,.4); }
+.vote-race-row.rank3 { border-color: rgba(205,140,80,.4); }
+.vote-race-row .vr-rank {
+  font-family: var(--font-num); font-weight: 900; font-size: 1.55rem;
+  color: var(--gold); text-align: center;
+}
+.vote-race-row .vr-icon { font-size: 1.7rem; text-align: center; line-height: 1; }
+.vote-race-row .vr-body { min-width: 0; }
+.vote-race-row .vr-name {
+  font-family: var(--font-brush); font-size: 1.35rem; color: #f3e6c8;
+  letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vote-race-row .vr-sub {
+  color: var(--ink-soft); font-size: .78rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vote-race-row .vr-track {
+  margin-top: .35rem; height: 10px;
+  background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 99px; overflow: hidden;
+}
+.vote-race-row .vr-track > i {
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme, #f0c14b) 55%, #fff), var(--theme, #f0c14b));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--theme, #f0c14b) 50%, transparent);
+  transition: width .55s cubic-bezier(.2,.8,.2,1);
+}
+.vote-race-row .vr-votes {
+  text-align: right;
+}
+.vote-race-row .vr-votes b {
+  display: block; font-family: var(--font-num); font-size: 1.85rem;
+  color: var(--gold); font-weight: 900; line-height: 1;
+}
+.vote-race-row .vr-votes span { font-size: .72rem; color: var(--ink-soft); }
+.vote-race-row .vr-tag {
+  position: absolute; right: .7rem; top: .35rem;
+  font-size: .7rem; font-weight: 800; letter-spacing: .08em;
+  padding: .12rem .4rem; border-radius: 4px; opacity: 0;
+  pointer-events: none;
+}
+.vote-race-row.surge {
+  animation: voteSurge .75s ease;
+  border-color: rgba(61,255,154,.65);
+  z-index: 2;
+}
+.vote-race-row.surge .vr-tag {
+  opacity: 1; color: #072015; background: var(--ok);
+  animation: voteTagPop .75s ease;
+}
+.vote-race-row.drop {
+  animation: voteDrop .75s ease;
+  border-color: rgba(255,107,132,.55);
+}
+.vote-race-row.drop .vr-tag {
+  opacity: 1; color: #fff; background: #b01030;
+  animation: voteTagPop .75s ease;
+}
+.vote-race-row.tick .vr-votes b { animation: voteTick .45s ease; }
+.vote-race-row.flip-animating { transition: none !important; }
+@keyframes voteSurge {
+  0% { transform: translateY(8px) scale(.98); filter: brightness(1); }
+  35% { transform: translateY(-10px) scale(1.03); filter: brightness(1.25); }
+  100% { transform: translateY(0) scale(1); filter: brightness(1); }
+}
+@keyframes voteDrop {
+  0% { transform: translateY(-6px); filter: brightness(1.05); }
+  40% { transform: translateY(12px) scale(.98); filter: brightness(.88); }
+  100% { transform: translateY(0) scale(1); filter: brightness(1); }
+}
+@keyframes voteTick {
+  0% { transform: scale(1); color: var(--gold); }
+  40% { transform: scale(1.35); color: #fff6c8; }
+  100% { transform: scale(1); color: var(--gold); }
+}
+@keyframes voteTagPop {
+  0% { transform: translateY(6px) scale(.7); opacity: 0; }
+  40% { transform: translateY(0) scale(1.08); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.vote-toast {
+  position: fixed; left: 50%; top: 18%; transform: translateX(-50%);
+  z-index: 40; pointer-events: none;
+  padding: .55rem 1.1rem; border-radius: 8px;
+  font-family: var(--font-brush); font-size: 1.45rem; letter-spacing: .1em;
+  border: 2px solid rgba(240,193,75,.55);
+  background: rgba(10,14,24,.92); color: var(--gold);
+  animation: voteToastIn .9s ease forwards;
+}
+.vote-toast.fall { color: #ffb0bd; border-color: rgba(255,107,132,.5); }
+@keyframes voteToastIn {
+  0% { opacity: 0; transform: translate(-50%, 16px) scale(.9); }
+  25% { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
+  75% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -10px) scale(.98); }
+}
+.vote-qr-dock {
+  text-align: center; padding: .6rem;
+  border: 2px solid rgba(240,193,75,.3); border-radius: 10px;
+  background: rgba(7,9,15,.72);
+  position: sticky; top: 1rem;
+}
+.big-vote-btn {
+  width: 100%; margin-top: .6rem; padding: .9rem; font-size: 1.1rem; font-weight: 900;
+  background: linear-gradient(180deg, #ffd76a, #c49216); color: #1a1205; border-color: #ffe39a;
+}
 .demo-qr-warn {
   margin-top: .45rem; padding: .45rem .55rem; border-radius: 6px;
   background: rgba(240,193,75,.12); border: 1px solid rgba(240,193,75,.4);
@@ -1296,13 +1460,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 }
 .name-chip.ok { border-color: var(--ok); color: var(--ok); }
 .name-chip.miss { border-color: var(--danger); color: #ffb0bd; }
-.vote-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .8rem; }
-.vote-card {
-  text-align: center; padding: .95rem; border-radius: 10px;
-  border: 2px solid rgba(240,193,75,.35);
-  background: linear-gradient(160deg, #1a2238, #101624);
-}
-.vote-card .votes { font-family: var(--font-num); font-size: 2.2rem; color: var(--gold); font-weight: 800; }
 .mobile-shell { max-width: 480px; margin: 0 auto; }
 .identity-card, .mobile-shell .paper { padding: 1rem; }
 #checkin-screen .ci-big {
@@ -1334,10 +1491,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   border-radius: 8px;
   background: rgba(255, 248, 231, .65);
   color: #1a1205;
-}
-.big-vote-btn {
-  width: 100%; margin-top: .6rem; padding: .9rem; font-size: 1.1rem; font-weight: 900;
-  background: linear-gradient(180deg, #ffd76a, #c49216); color: #1a1205; border-color: #ffe39a;
 }
 .success-burst { font-size: 3.5rem; text-align: center; animation: scoreBoom .5s ease; }
 .badge-fly {
@@ -1537,20 +1690,24 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     </div>
 
     <div id="teacher-vote" class="subview hidden">
-      <div class="row" style="justify-content:space-between;margin-bottom:1rem">
-        <div class="app-title" style="font-size:2rem">投票擂台 · <span id="vote-title">第1周最佳作品</span></div>
+      <div class="row" style="justify-content:space-between;margin-bottom:.7rem">
+        <div class="app-title" style="font-size:2rem">作品投票 · <span id="vote-title">第1周最佳作品</span></div>
         <button type="button" data-action="back-main" class="ghost">返回</button>
       </div>
-      <div class="row" style="margin-bottom:1rem">
+      <div class="row" style="margin-bottom:.7rem">
         <button type="button" class="primary" data-action="open-vote">开启投票</button>
         <button type="button" data-action="close-vote">关闭投票</button>
         <button type="button" data-action="reset-votes">重置票数</button>
         <button type="button" class="seal" data-action="award">颁奖</button>
+        <button type="button" data-action="demo-vote" title="投屏演示用：随机给一小组加一票">模拟一票</button>
       </div>
-      <div class="vote-grid" id="teacher-vote-grid"></div>
-      <div style="position:fixed;right:1rem;bottom:4.5rem;text-align:center;z-index:15">
-        <div class="muted">扫码投票</div>
-        <div class="qr-box" id="student-vote-qr"></div>
+      <div class="vote-race-meta" id="vote-race-meta"></div>
+      <div class="vote-race-shell">
+        <div class="vote-race-board" id="vote-race-board" aria-live="polite"></div>
+        <div class="vote-qr-dock">
+          <div class="muted" style="margin-bottom:.35rem">扫码给小组作品投票</div>
+          <div class="qr-box" id="student-vote-qr"></div>
+        </div>
       </div>
     </div>
 
@@ -1608,7 +1765,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   <!-- STUDENT -->
   <div id="student-screen" class="screen hidden">
     <div class="mobile-shell stack">
-      <div class="app-title" style="font-size:2rem;text-align:center">选手端</div>
+      <div class="app-title" style="font-size:2rem;text-align:center">作品投票</div>
       <div class="paper identity-card" id="student-identity"></div>
       <div class="paper panel" id="student-vote-area"></div>
       <button type="button" id="student-toggle-rank">查看排行榜</button>
@@ -1940,6 +2097,9 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   let recentRotateTimer = null, recentLogIndex = 0, checkinRefreshTimer = null;
   let logFilter = "today", teacherView = "main", sortMode = "score";
   let dragPeakId = null, sectModalTab = "bonus";
+  /** 作品投票榜快照：用于追赶排序动效 */
+  let votePrevMap = {};
+  let voteBoardPrimed = false;
   const expandedPeaks = new Set();
   /** 用户手动覆盖组员展开；未覆盖时：≤5 组默认展开，>5 组默认折叠 */
   const memberOpenOverride = new Map();
@@ -2359,6 +2519,55 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     pal3QinPluck(now + 0.55, 523);
     tone(1318, now + 0.62, 0.7, "sine", 0.1, 1760, 0.05);
     noiseBurst(now + 0.5, 0.35, 0.1, { type: "bandpass", freq: 2000, freqTo: 600, q: 1.2, decay: 1 });
+  }
+
+  /** 投票入票轻响 */
+  function playVoteTickSfx() {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    const now = ctx.currentTime;
+    tone(880, now, 0.08, "triangle", 0.07, 1320, 0.01);
+    tone(1320, now + 0.05, 0.12, "sine", 0.055, 1760, 0.01);
+    noiseBurst(now, 0.06, 0.045, { type: "highpass", freq: 2400, freqTo: 4200, q: 0.7, decay: 2 });
+  }
+  /** 票数反超冲上 */
+  function playVoteSurgeSfx() {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    if (pal3Samples.mid && playBuffer(pal3Samples.mid, 0.75)) {
+      setTimeout(() => { if (pal3Samples.heavy) playBuffer(pal3Samples.heavy, 0.55); }, 120);
+      return;
+    }
+    const now = ctx.currentTime;
+    [523, 659, 784, 988, 1175].forEach((f, i) => {
+      tone(f, now + i * 0.055, 0.22, "sawtooth", 0.045, f * 1.04, 0.015);
+      tone(f * 2, now + i * 0.055, 0.16, "triangle", 0.03, f * 2.02, 0.02);
+    });
+    noiseBurst(now + 0.18, 0.28, 0.09, { type: "bandpass", freq: 1600, freqTo: 900, q: 1.1, decay: 1.2 });
+    tone(1568, now + 0.28, 0.45, "sine", 0.08, 2093, 0.04);
+  }
+  /** 被反超滑落 */
+  function playVoteDropSfx() {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    const now = ctx.currentTime;
+    tone(392, now, 0.28, "triangle", 0.07, 196, 0.03);
+    tone(294, now + 0.08, 0.35, "sine", 0.06, 147, 0.04);
+    noiseBurst(now + 0.05, 0.32, 0.08, { type: "lowpass", freq: 900, freqTo: 180, q: 0.8, decay: 1.1 });
+  }
+
+  function showVoteToast(text, kind) {
+    document.querySelectorAll(".vote-toast").forEach((n) => n.remove());
+    const el = document.createElement("div");
+    el.className = "vote-toast" + (kind === "fall" ? " fall" : "");
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 950);
+  }
+
+  function resetVoteBoardSnapshot() {
+    votePrevMap = {};
+    voteBoardPrimed = false;
   }
 
   function updateSfxToggleLabel() {
@@ -3482,25 +3691,197 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     }
   }
 
-  function renderTeacherVote() {
-    document.getElementById("vote-title").textContent = state.config?.title || "投票";
-    const open = !!(state.config && state.config.voting_open);
-    const totalVotes = getPeaksArray().reduce((s, p) => s + (p.votes || 0), 0);
-    document.getElementById("teacher-vote-grid").innerHTML = `
-      <div class="vote-card" style="grid-column:1/-1">
-        <div style="font-family:var(--font-brush);font-size:1.3rem;color:var(--gold)">${open ? "投票进行中" : "投票已关闭"}</div>
-        <div class="muted">累计票数 ${totalVotes} · 学生扫码进入投票页</div>
-      </div>
-    ` + getPeaksArray().slice().sort((a, b) => (b.votes || 0) - (a.votes || 0)).map((p, i) => `
-      <div class="vote-card">
-        <div style="font-size:1.8rem">${p.icon}</div>
-        <div style="font-weight:700;font-family:var(--font-brush);font-size:1.4rem">#${i + 1} ${p.name}</div>
-        <div class="muted">${p.slogan || ""}</div>
-        <div class="votes">${p.votes || 0}</div>
-        <div class="muted">${totalVotes ? ((p.votes || 0) / totalVotes * 100).toFixed(0) : 0}%</div>
-      </div>`).join("");
-    renderQr(document.getElementById("student-vote-qr"), publicPageUrl("?mode=student"), 160);
+  function getVoteSortedPeaks() {
+    return getPeaksArray().slice().sort((a, b) =>
+      (b.votes || 0) - (a.votes || 0) ||
+      String(a.name || "").localeCompare(String(b.name || ""), "zh-CN") ||
+      (a.id || 0) - (b.id || 0)
+    );
   }
+
+  function ensureVoteRaceRow(board, peak) {
+    let row = board.querySelector(`[data-vote-peak="${peak.id}"]`);
+    if (row) return row;
+    row = document.createElement("div");
+    row.className = "vote-race-row";
+    row.dataset.votePeak = String(peak.id);
+    row.innerHTML = `
+      <div class="vr-rank">#-</div>
+      <div class="vr-icon"></div>
+      <div class="vr-body">
+        <div class="vr-name"></div>
+        <div class="vr-sub"></div>
+        <div class="vr-track"><i></i></div>
+      </div>
+      <div class="vr-votes"><b>0</b><span>票 · 0%</span></div>
+      <div class="vr-tag"></div>`;
+    board.appendChild(row);
+    return row;
+  }
+
+  function renderTeacherVote() {
+    document.getElementById("vote-title").textContent = state.config?.title || "小组作品投票";
+    const open = !!(state.config && state.config.voting_open);
+    const sorted = getVoteSortedPeaks();
+    const totalVotes = sorted.reduce((s, p) => s + (p.votes || 0), 0);
+    const maxVotes = Math.max(1, ...sorted.map((p) => p.votes || 0));
+
+    const meta = document.getElementById("vote-race-meta");
+    if (meta) {
+      meta.innerHTML = `
+        <span class="vr-status ${open ? "on" : "off"}">${open ? "投票进行中 · 票数实时追赶" : "投票已关闭"}</span>
+        <span class="muted">累计 <b style="color:var(--gold);font-family:var(--font-num)">${totalVotes}</b> 票</span>
+        <span class="muted">按小组作品票数排序 · 反超即上升</span>`;
+    }
+
+    const board = document.getElementById("vote-race-board");
+    if (!board) return;
+
+    const firstIds = new Set(sorted.map((p) => String(p.id)));
+    board.querySelectorAll("[data-vote-peak]").forEach((row) => {
+      if (!firstIds.has(row.dataset.votePeak)) row.remove();
+    });
+
+    // FLIP：记录旧位置
+    const firstRects = {};
+    board.querySelectorAll("[data-vote-peak]").forEach((row) => {
+      firstRects[row.dataset.votePeak] = row.getBoundingClientRect();
+    });
+
+    const events = []; // { type: surge|drop|tick, peak, from, to }
+
+    sorted.forEach((p, i) => {
+      const rank = i + 1;
+      const votes = p.votes || 0;
+      const prev = votePrevMap[p.id];
+      const row = ensureVoteRaceRow(board, p);
+      row.style.setProperty("--theme", p.color || (p.camp === "blue" ? "#2ee6ff" : "#ff3b5c"));
+      row.classList.toggle("rank1", rank === 1);
+      row.classList.toggle("rank2", rank === 2);
+      row.classList.toggle("rank3", rank === 3);
+      row.querySelector(".vr-rank").textContent = "#" + rank;
+      row.querySelector(".vr-icon").textContent = p.icon || "⛰️";
+      row.querySelector(".vr-name").textContent = (p.name || "小组") + " · 作品";
+      row.querySelector(".vr-sub").textContent = p.slogan || p.intro || "小组作品参赛中";
+      const bar = row.querySelector(".vr-track > i");
+      const pctBar = Math.max(4, (votes / maxVotes) * 100);
+      requestAnimationFrame(() => { bar.style.width = pctBar + "%"; });
+      const pctShare = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
+      row.querySelector(".vr-votes b").textContent = String(votes);
+      row.querySelector(".vr-votes span").textContent = `票 · ${pctShare}%`;
+      board.appendChild(row); // 按新名次重排 DOM
+
+      if (voteBoardPrimed && prev) {
+        if (rank < prev.rank) events.push({ type: "surge", peak: p, from: prev.rank, to: rank, votes });
+        else if (rank > prev.rank) events.push({ type: "drop", peak: p, from: prev.rank, to: rank, votes });
+        else if (votes > (prev.votes || 0)) events.push({ type: "tick", peak: p, from: prev.rank, to: rank, votes });
+      }
+      votePrevMap[p.id] = { rank, votes };
+    });
+
+    // FLIP 播放位移动画
+    board.querySelectorAll("[data-vote-peak]").forEach((row) => {
+      const id = row.dataset.votePeak;
+      const first = firstRects[id];
+      if (!first) return;
+      const last = row.getBoundingClientRect();
+      const dy = first.top - last.top;
+      if (Math.abs(dy) < 1) return;
+      row.classList.add("flip-animating");
+      row.style.transform = `translateY(${dy}px)`;
+      requestAnimationFrame(() => {
+        row.classList.remove("flip-animating");
+        row.style.transition = "transform .55s cubic-bezier(.2,.85,.25,1)";
+        row.style.transform = "translateY(0)";
+        const clear = () => {
+          row.style.transition = "";
+          row.style.transform = "";
+          row.removeEventListener("transitionend", clear);
+        };
+        row.addEventListener("transitionend", clear);
+      });
+    });
+
+    // 动效 + 音效（反超优先）
+    if (voteBoardPrimed && events.length) {
+      const surges = events.filter((e) => e.type === "surge").sort((a, b) => a.to - b.to);
+      const drops = events.filter((e) => e.type === "drop");
+      const ticks = events.filter((e) => e.type === "tick");
+
+      surges.forEach((e, idx) => {
+        const row = board.querySelector(`[data-vote-peak="${e.peak.id}"]`);
+        if (!row) return;
+        row.classList.remove("surge", "drop", "tick");
+        void row.offsetWidth;
+        row.classList.add("surge");
+        const tag = row.querySelector(".vr-tag");
+        tag.textContent = e.to === 1 ? "登顶！" : `↑ 反超 #${e.to}`;
+        setTimeout(() => row.classList.remove("surge"), 800);
+        if (idx === 0) {
+          playVoteSurgeSfx();
+          showVoteToast(`${e.peak.icon || ""} ${e.peak.name} 反超升至第${e.to}！`);
+          const r = row.getBoundingClientRect();
+          spawnParticles(r.left + r.width * 0.35, r.top + r.height / 2, e.peak.color || "#f0c14b", 18, 7, { dist: 70, starRatio: 0.35 });
+        }
+      });
+
+      drops.forEach((e, idx) => {
+        const row = board.querySelector(`[data-vote-peak="${e.peak.id}"]`);
+        if (!row) return;
+        if (row.classList.contains("surge")) return;
+        row.classList.remove("drop", "tick");
+        void row.offsetWidth;
+        row.classList.add("drop");
+        const tag = row.querySelector(".vr-tag");
+        tag.textContent = `↓ 落至 #${e.to}`;
+        setTimeout(() => row.classList.remove("drop"), 800);
+        if (idx === 0 && !surges.length) {
+          playVoteDropSfx();
+          showVoteToast(`${e.peak.icon || ""} ${e.peak.name} 被反超`, "fall");
+        } else if (idx === 0 && surges.length) {
+          setTimeout(() => playVoteDropSfx(), 160);
+        }
+      });
+
+      if (!surges.length && ticks.length) {
+        ticks.forEach((e) => {
+          const row = board.querySelector(`[data-vote-peak="${e.peak.id}"]`);
+          if (!row) return;
+          row.classList.remove("tick");
+          void row.offsetWidth;
+          row.classList.add("tick");
+          setTimeout(() => row.classList.remove("tick"), 500);
+        });
+        playVoteTickSfx();
+      }
+    }
+
+    voteBoardPrimed = true;
+    Object.keys(votePrevMap).forEach((id) => {
+      if (!sorted.some((p) => String(p.id) === String(id))) delete votePrevMap[id];
+    });
+
+    renderQr(document.getElementById("student-vote-qr"), publicPageUrl("?mode=student"), 150);
+  }
+
+  async function demoCastVote() {
+    const peaks = getPeaksArray();
+    if (!peaks.length) return;
+    // 偏向追赶：优先给非第一名加票，制造反超感
+    const sorted = getVoteSortedPeaks();
+    let target = sorted[sorted.length - 1] || peaks[0];
+    if (sorted.length >= 2) {
+      const leader = sorted[0];
+      const chase = sorted.slice(1).sort((a, b) => (b.votes || 0) - (a.votes || 0))[0];
+      // 70% 给追赶者，30% 给榜首，偶尔给更后名次
+      const roll = Math.random();
+      if (roll < 0.55) target = chase || leader;
+      else if (roll < 0.75) target = sorted[Math.min(sorted.length - 1, 2)] || chase;
+      else target = leader;
+    }
+    await updatePaths({ [`peaks/${peakKey(target.id)}/votes`]: (target.votes || 0) + 1 });
+  }
+
   function openAwardModal() {
     const peaks = getPeaksArray().slice().sort((a, b) => (b.votes || 0) - (a.votes || 0));
     openModal(`
@@ -3711,13 +4092,31 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const localVote = localStorage.getItem(LS_VOTE_KEY);
     const already = (me && me.voted) || !!localVote;
     const votedName = (me && me.voted_for) || localVote || "";
+    const sorted = getVoteSortedPeaks();
+    const totalVotes = sorted.reduce((s, p) => s + (p.votes || 0), 0);
+    const liveBoard = sorted.map((p, i) => {
+      const pct = totalVotes ? Math.round(((p.votes || 0) / totalVotes) * 100) : 0;
+      return `<div class="list-item" style="border-color:${i===0?"rgba(240,193,75,.45)":"rgba(255,255,255,.1)"}">
+        <span>#${i + 1} ${p.icon || ""} ${esc(p.name)}</span>
+        <span style="font-family:var(--font-num);color:var(--gold)">${p.votes || 0} · ${pct}%</span>
+      </div>`;
+    }).join("");
+
     if (!open) {
-      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票已关闭</div><div class="muted" style="margin-top:.4rem">${votedName ? `你投给了 ${esc(votedName)}` : "等待老师开启下一轮"}</div></div>`;
+      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票已关闭</div><div class="muted" style="margin-top:.4rem">${votedName ? `你投给了 ${esc(votedName)}` : "等待老师开启下一轮作品投票"}</div></div>
+        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">当前作品票数</div>${liveBoard || '<div class="muted">暂无</div>'}</div>`;
     } else if (already) {
-      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票成功</div><div style="margin-top:.45rem;font-size:1.15rem">你已投票给 <strong style="color:var(--gold)">${esc(votedName)}</strong></div><div class="muted" style="margin-top:.35rem">本轮每人仅一票 · 可点右上角查看排行</div></div>`;
+      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票成功</div><div style="margin-top:.45rem;font-size:1.15rem">你已投票给 <strong style="color:var(--gold)">${esc(votedName)}</strong></div><div class="muted" style="margin-top:.35rem">本轮每人一票 · 大屏实时追赶排序</div></div>
+        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">实时榜</div>${liveBoard}</div>`;
     } else {
-      voteArea.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.4rem;margin-bottom:.6rem;text-align:center;color:var(--gold)">投票进行中 · 点选山峰</div>
-        <div class="stack">${getPeaksArray().map((p)=>`<div class="vote-card"><div style="font-size:1.5rem">${p.icon} ${esc(p.name)}</div><div class="muted">${esc(p.slogan||"")}</div><div class="votes" style="font-size:1.4rem">${p.votes||0}</div><button type="button" class="big-vote-btn" data-vote-peak="${p.id}">投给这组</button></div>`).join("")}</div>`;
+      voteArea.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.45rem;margin-bottom:.35rem;text-align:center;color:var(--gold)">小组作品投票</div>
+        <p class="muted" style="text-align:center;margin-bottom:.6rem">${esc(state.config?.title || "为本周最佳作品投一票")} · 每人一票</p>
+        <div class="stack">${sorted.map((p)=>`<div class="vote-card" style="--theme:${esc(p.color||"#f0c14b")};border-color:color-mix(in srgb, ${esc(p.color||"#f0c14b")} 45%, transparent)">
+          <div style="font-size:1.5rem">${p.icon || ""} ${esc(p.name)}</div>
+          <div class="muted">${esc(p.slogan||"小组作品")}</div>
+          <div class="votes" style="font-size:1.4rem">${p.votes||0}</div>
+          <button type="button" class="big-vote-btn" data-vote-peak="${p.id}">投给这组作品</button>
+        </div>`).join("")}</div>`;
       voteArea.querySelectorAll("[data-vote-peak]").forEach((btn) => btn.onclick = () => confirmStudentVote(Number(btn.dataset.votePeak)));
     }
   }
@@ -3750,7 +4149,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     if (me.voted || localStorage.getItem(LS_VOTE_KEY)) { alert("本轮已投过票"); renderStudent(); return; }
     const peak = findPeak(peakId);
     if (!peak) return;
-    if (!confirm(`确认投票给 ${peak.icon} ${peak.name}？`)) return;
+    if (!confirm(`确认把一票投给「${peak.icon || ""} ${peak.name}」的作品？`)) return;
     await updatePaths({
       [`peaks/${peakKey(peakId)}/votes`]: (peak.votes || 0) + 1,
       [`disciples/${me.id}/voted`]: true,
@@ -3759,10 +4158,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     localStorage.setItem(LS_VOTE_KEY, peak.name);
     const burst = document.createElement("div");
     burst.className = "toast-levelup";
-    burst.innerHTML = `<div class="msg">✅ 投票成功<br/><span style="font-size:.7em">${peak.icon} ${esc(peak.name)}</span></div>`;
+    burst.innerHTML = `<div class="msg">✅ 投票成功<br/><span style="font-size:.7em">${peak.icon || ""} ${esc(peak.name)} · 作品</span></div>`;
     document.getElementById("fx-host").appendChild(burst);
     setTimeout(() => burst.remove(), 1600);
-    playHitSfx(5, "任务");
+    playVoteTickSfx();
     renderStudent();
   }
   function renderStudentRank() {
@@ -4310,9 +4709,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     }
     if (act === "open-vote") {
       localStorage.removeItem(LS_VOTE_KEY);
+      resetVoteBoardSnapshot();
       await updatePaths({ "config/voting_open": true });
       setTeacherView("vote");
-      alert("投票已开启，请学生扫右侧二维码");
+      alert("作品投票已开启：学生扫码给各小组作品投票，大屏实时追赶排序");
       return;
     }
     if (act === "close-vote") {
@@ -4322,10 +4722,22 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       return;
     }
     if (act === "reset-votes") {
+      if (!confirm("确认清空所有小组作品票数？")) return;
       const updates = {};
       getPeaksArray().forEach((p) => updates[`peaks/${peakKey(p.id)}/votes`] = 0);
       getDisciplesArray().forEach((d) => { updates[`disciples/${d.id}/voted`] = false; updates[`disciples/${d.id}/voted_for`] = ""; });
-      await updatePaths(updates); localStorage.removeItem(LS_VOTE_KEY);
+      resetVoteBoardSnapshot();
+      await updatePaths(updates);
+      localStorage.removeItem(LS_VOTE_KEY);
+      const board = document.getElementById("vote-race-board");
+      if (board) board.innerHTML = "";
+    }
+    if (act === "demo-vote") {
+      if (!(state.config && state.config.voting_open)) {
+        await updatePaths({ "config/voting_open": true });
+      }
+      await demoCastVote();
+      return;
     }
     if (act === "award") openAwardModal();
     if (act === "add-peak" || act === "add-peak-red") await addPeak("red");
