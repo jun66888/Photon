@@ -147,7 +147,7 @@ input:focus, select:focus, textarea:focus {
 
 .header-bar { justify-content: space-between; margin-bottom: .25rem; flex: 0 0 auto; }
 .screen.compact-arena { padding: 3.05rem .55rem 1rem; }
-body.has-ticker .screen.compact-arena { padding-top: 6.5rem; }
+body.has-ticker .screen.compact-arena { padding-top: 5.35rem; }
 .app-title.compact { font-size: clamp(1rem, 2vw, 1.25rem); letter-spacing: .08em; margin: 0; }
 #teacher-main.subview {
   display: flex; flex-direction: column;
@@ -155,7 +155,7 @@ body.has-ticker .screen.compact-arena { padding-top: 6.5rem; }
   gap: .28rem;
 }
 body.has-ticker #teacher-main.subview {
-  min-height: calc(100vh - 6.5rem - 1rem);
+  min-height: calc(100vh - 5.35rem - 1rem);
 }
 
 /* 中上部徽标 + 导航：横排，少占高度 */
@@ -206,9 +206,9 @@ body.has-ticker #teacher-main.subview {
   font-size: .85rem !important; letter-spacing: .04em; padding: .35rem .75rem !important;
 }
 body.has-brand-nav #sfx-bar { top: 3.35rem; }
-body.has-ticker.has-brand-nav #sfx-bar { top: 6.7rem; }
+body.has-ticker.has-brand-nav #sfx-bar { top: 5.55rem; }
 body.has-brand-nav .demo-tip { top: 3.35rem !important; }
-body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
+body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 
 /* 工具条：标题 + 天数/排序下拉 + 操作按钮一排 */
 .arena-toolbar {
@@ -605,22 +605,23 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 .member-toggle:hover { border-color: var(--gold) !important; filter: brightness(1.12); }
 .group-ticker {
   grid-area: feed;
-  height: 1.55rem;
+  height: 1.25rem;
   display: flex; align-items: center;
-  border-radius: 4px;
-  border: 1px solid rgba(240,193,75,.28);
-  background: linear-gradient(90deg, rgba(240,193,75,.12), rgba(0,0,0,.35) 18%, rgba(0,0,0,.35) 82%, rgba(240,193,75,.1));
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.28);
   overflow: hidden;
   min-width: 0;
+  opacity: .72;
 }
 .group-ticker-badge {
   flex: 0 0 auto;
-  padding: 0 .45rem;
-  font-size: .68rem; font-weight: 800; color: #1a1205;
-  background: linear-gradient(180deg, #ffe39a, var(--gold));
-  letter-spacing: .06em; height: 100%;
+  padding: 0 .38rem;
+  font-size: .62rem; font-weight: 700; color: #9aa6bc;
+  background: rgba(255,255,255,.06);
+  letter-spacing: .04em; height: 100%;
   display: grid; place-items: center;
-  border-right: 1px solid rgba(255,243,196,.5);
+  border-right: 1px solid rgba(255,255,255,.08);
 }
 .group-ticker-track {
   flex: 1 1 auto; min-width: 0; overflow: hidden; height: 100%;
@@ -630,9 +631,9 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   display: inline-block;
   padding-left: 100%;
   white-space: nowrap;
-  animation: ticker 22s linear infinite;
-  font-size: .78rem; font-weight: 700; color: #ffe39a;
-  letter-spacing: .04em;
+  animation: ticker 70s linear infinite;
+  font-size: .7rem; font-weight: 600; color: #8b97b0;
+  letter-spacing: .03em;
 }
 .member-bars {
   grid-area: mem;
@@ -707,62 +708,59 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 
 .func-bar { margin-bottom: .8rem; }
 .func-bar button { min-width: 6.4rem; }
-/* 顶部战报广告牌（宽跑马灯） */
+/* 顶部战报条：低调慢滚 */
 .ticker {
   position: fixed; left: 0; right: 0; top: 3.05rem; z-index: 48;
-  height: 3.25rem;
+  height: 2.15rem;
   display: flex; align-items: stretch;
-  background:
-    linear-gradient(180deg, rgba(255,227,154,.2), transparent 42%),
-    linear-gradient(90deg, #4a2c0a 0%, #1a1006 16%, #100a04 84%, #4a2c0a 100%);
-  color: #ffe39a;
-  border-top: 2px solid #ffe39a;
-  border-bottom: 4px solid var(--gold);
-  box-shadow:
-    0 12px 32px rgba(0,0,0,.55),
-    inset 0 1px 0 rgba(255,255,255,.2),
-    inset 0 -10px 20px rgba(240,193,75,.1);
+  background: rgba(10, 14, 22, .88);
+  color: #aeb9cc;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(240,193,75,.28);
+  box-shadow: 0 4px 14px rgba(0,0,0,.28);
   overflow: hidden; white-space: nowrap;
   padding: 0;
 }
 .ticker-badge {
   position: relative; z-index: 2;
   flex: 0 0 auto;
-  min-width: 5.2rem;
+  min-width: 3.4rem;
   display: grid; place-items: center;
-  padding: 0 1rem;
-  font-family: var(--font-brush);
-  font-size: 1.4rem;
-  letter-spacing: .14em;
-  color: #1a1205;
-  background: linear-gradient(180deg, #ffe39a, var(--gold) 55%, #a67c14);
-  border-right: 2px solid #fff3c4;
-  box-shadow: 8px 0 20px rgba(0,0,0,.4);
-  text-shadow: 0 1px 0 rgba(255,255,255,.35);
+  padding: 0 .65rem;
+  font-family: var(--font-ui);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #c9b56a;
+  background: rgba(240,193,75,.1);
+  border-right: 1px solid rgba(240,193,75,.22);
+  box-shadow: none;
+  text-shadow: none;
 }
 .ticker-track {
   flex: 1 1 auto; min-width: 0;
   overflow: hidden;
   display: flex; align-items: center;
-  mask-image: linear-gradient(90deg, transparent, #000 1.5%, #000 97%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 2%, #000 98%, transparent);
 }
 .ticker-inner {
   display: inline-block;
   padding-left: 100%;
-  animation: ticker 32s linear infinite;
+  animation: ticker 80s linear infinite;
   font-family: var(--font-ui);
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: .12em;
+  font-size: .92rem;
+  font-weight: 600;
+  letter-spacing: .06em;
   line-height: 1;
-  text-shadow: 0 0 14px rgba(240,193,75,.5), 0 2px 0 #1a1205;
+  color: #9aa6bc;
+  text-shadow: none;
 }
 @keyframes ticker { to { transform: translateX(-100%); } }
 @media (max-width: 720px) {
-  .ticker { height: 2.7rem; top: 3.35rem; }
-  .ticker-badge { font-size: 1.1rem; min-width: 4rem; padding: 0 .55rem; }
-  .ticker-inner { font-size: 1.08rem; }
-  body.has-ticker .screen.compact-arena { padding-top: 6.2rem; }
+  .ticker { height: 1.95rem; top: 3.35rem; }
+  .ticker-badge { font-size: .72rem; min-width: 3rem; padding: 0 .45rem; }
+  .ticker-inner { font-size: .82rem; }
+  body.has-ticker .screen.compact-arena { padding-top: 5.4rem; }
 }
 
 .modal-mask {
