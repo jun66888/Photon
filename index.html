@@ -434,10 +434,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   width: 100%;
   margin: 0;
   padding: .42rem .7rem .42rem 1.55rem;
-  border: 1px solid rgba(255,255,255,.14);
+  border: 1px solid color-mix(in srgb, var(--theme, rgba(255,255,255,.4)) 55%, rgba(255,255,255,.12));
   border-radius: 8px;
   background:
-    linear-gradient(105deg, rgba(40,20,28,.35), transparent 42%),
+    linear-gradient(105deg, color-mix(in srgb, var(--theme, transparent) 22%, transparent), transparent 48%),
     linear-gradient(180deg, rgba(22,30,42,.98), rgba(10,14,22,.99));
   box-shadow: 0 3px 12px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
   display: grid;
@@ -480,15 +480,15 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 .sect-logo {
   grid-area: logo;
   width: 52px; height: 52px;
-  border: 2px solid var(--gold);
+  border: 2px solid var(--theme, var(--gold));
   border-radius: 50% 50% 42% 42%;
   background: radial-gradient(circle at 30% 25%, #2a3350, #0c101c);
   display: grid; place-items: center;
   font-size: 1.35rem; overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 0 10px rgba(240,193,75,.22);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 0 10px color-mix(in srgb, var(--theme, var(--gold)) 35%, transparent);
 }
-.sect-card.red .sect-logo { border-color: #ff6b84; }
-.sect-card.blue .sect-logo { border-color: #2ee6ff; }
+.sect-card.red .sect-logo { border-color: var(--theme, #ff6b84); }
+.sect-card.blue .sect-logo { border-color: var(--theme, #2ee6ff); }
 .sect-logo img { width: 100%; height: 100%; object-fit: cover; }
 .sect-info {
   grid-area: info; min-width: 0;
@@ -522,7 +522,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 .sect-score {
   grid-area: score;
   font-family: var(--font-num); font-size: 1.7rem; font-weight: 800; line-height: 1;
-  color: var(--gold); text-shadow: 0 0 12px rgba(240,193,75,.45);
+  color: var(--theme, var(--gold)); text-shadow: 0 0 12px color-mix(in srgb, var(--theme, var(--gold)) 45%, transparent);
   min-width: 3.2rem; text-align: right; padding: 0 .15rem;
 }
 .sect-actions {
@@ -795,6 +795,74 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 .bonus-grid button { font-weight: 800; min-height: 2.7rem; }
 .attr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
 @media (max-width: 640px) { .attr-grid { grid-template-columns: 1fr; } }
+.choice-field { display: flex; flex-direction: column; gap: .35rem; }
+.choice-field.span-2 { grid-column: 1 / -1; }
+.choice-field .field-name { color: #ffe39a; font-size: .88rem; font-weight: 700; }
+.choice-grid {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+}
+.choice-grid.icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.55rem, 1fr));
+  gap: .3rem;
+}
+.choice-grid.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr));
+  gap: .35rem;
+}
+.choice-chip {
+  border: 2px solid rgba(240,193,75,.35) !important;
+  background: rgba(0,0,0,.35) !important;
+  color: #e8eef8 !important;
+  box-shadow: none !important;
+  padding: .35rem .55rem !important;
+  min-height: 2rem;
+  font-size: .82rem !important;
+  font-weight: 700 !important;
+}
+.choice-chip.selected, .choice-chip:hover {
+  border-color: var(--gold) !important;
+  background: linear-gradient(180deg, rgba(240,193,75,.28), rgba(0,0,0,.35)) !important;
+  color: #ffe39a !important;
+}
+.choice-chip.icon-chip {
+  font-size: 1.35rem !important;
+  padding: .25rem !important;
+  min-height: 2.55rem;
+  display: grid; place-items: center;
+}
+.choice-swatch {
+  border: 2px solid rgba(255,255,255,.15) !important;
+  background: rgba(0,0,0,.35) !important;
+  box-shadow: none !important;
+  padding: .3rem .35rem !important;
+  min-height: 2.7rem;
+  display: flex; flex-direction: column; align-items: center; gap: .2rem;
+}
+.choice-swatch > i {
+  display: block; width: 100%; height: 1.15rem; border-radius: 4px;
+  background: var(--sw);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), 0 0 10px color-mix(in srgb, var(--sw) 45%, transparent);
+}
+.choice-swatch > span { font-size: .68rem; color: #c5d0e2; font-weight: 700; }
+.choice-swatch.selected, .choice-swatch:hover {
+  border-color: #ffe39a !important;
+  background: rgba(240,193,75,.12) !important;
+}
+.choice-swatch.selected > span { color: #ffe39a; }
+.camp-pick {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .4rem;
+}
+.camp-pick .choice-chip { min-height: 2.4rem; font-family: var(--font-brush); font-size: 1.05rem !important; }
+.camp-pick .choice-chip[data-choice-value="red"].selected {
+  border-color: #ff6b84 !important; color: #ffb0bd !important;
+  background: rgba(255,59,92,.2) !important;
+}
+.camp-pick .choice-chip[data-choice-value="blue"].selected {
+  border-color: #2ee6ff !important; color: #7ef0ff !important;
+  background: rgba(46,230,255,.16) !important;
+}
 .disciple-row {
   display: flex; justify-content: space-between; gap: .5rem; align-items: center;
   padding: .45rem .2rem; border-bottom: 1px solid rgba(255,255,255,.08); font-size: .92rem;
@@ -1660,6 +1728,124 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     { id: "task1", title: "进阶任务", points: 10, category: "任务", desc: "完成进阶作品挑战" },
     { id: "task2", title: "挑战任务", points: 15, category: "任务", desc: "完成高难度挑战项目" }
   ];
+
+  const PEAK_ICON_PRESETS = [
+    "🦁","🦅","🐉","🎵","🌊","⚔️","🔥","🌙","⚡","⛰️",
+    "🌸","🦊","🐺","🐯","🦇","🦉","🗡️","🏹","🛡️","💎",
+    "🎬","📷","🎤","🎧","🌟","❄️","🍃","🌀","🪐","🏯",
+    "🦄","🐍","🦋","🔮","📜","🥁","🎻","🪞","☀️","🌈"
+  ];
+  const THEME_COLOR_PRESETS = [
+    { label: "赤焰", color: "#ff3b5c" },
+    { label: "金晖", color: "#f0c14b" },
+    { label: "碧波", color: "#2ee6ff" },
+    { label: "青玉", color: "#3dff9a" },
+    { label: "紫霆", color: "#b388ff" },
+    { label: "橙阳", color: "#ff9f43" },
+    { label: "桃霞", color: "#ff6b9d" },
+    { label: "晴空", color: "#4fc3f7" },
+    { label: "墨青", color: "#7e8ba3" },
+    { label: "柳芽", color: "#aeea00" },
+    { label: "玄黑", color: "#90a4ae" },
+    { label: "朱砂", color: "#ff7043" }
+  ];
+  const PEAK_NAME_PRESETS = [
+    "光影峰","创意峰","追光峰","声浪峰","音浪峰",
+    "星河峰","云端峰","破晓峰","沧澜峰","玄机峰",
+    "燃梦峰","听潮峰","映月峰","流光峰","惊鸿峰",
+    "岚锋峰","霜刃峰","灵犀峰","凌云峰","无双峰"
+  ];
+  const SLOGAN_PRESETS = [
+    "用画面讲故事","创意无限","追光逐影","用声音传情绪","声动九州",
+    "一念成招","影随心动","弦动山河","破晓先行","星河入梦"
+  ];
+  const ART_PRESETS = [
+    "光影刀法","奇思掌","追光剑","音波琴","潮音诀",
+    "星落斩","云篆印","破晓枪","沧浪曲","玄机阵"
+  ];
+  const BASE_PRESETS = [
+    "映月谷","灵感崖","霞光岭","听潮阁","沧浪湾",
+    "星河台","云端阁","破晓关","玄机府","霜刃营"
+  ];
+  const BADGE_PRESETS = [
+    "影武者","奇思客","追光使","音波师","潮音将",
+    "新锐","先锋","盟主候选","擂台杀手","创作达人"
+  ];
+  const WIN_PRESETS = [
+    "此局，我方胜！","光落之处，影亦臣服！","一念之间，乾坤倒转！",
+    "追光千里，剑气长虹！","弦动山河，声破长空！","潮音起，九州惊！"
+  ];
+  const INTRO_PRESETS = [
+    "以镜头为刃，以故事为魂",
+    "天马行空，一念成招",
+    "逐光而行，影随心动",
+    "一声入耳，百感丛生",
+    "潮起潮落，声动九州",
+    "初入擂台的新势力"
+  ];
+  const ELEMENT_PRESETS = ["光","火","风","水","雷","冰","土"];
+  const STYLE_PRESETS = ["刀","剑","掌","琴","鼓","枪","弓","笔"];
+  const REASON_PRESETS = ["课堂表现","作品分享","完成任务","擂台加分","互助协作","创意亮点","准时签到"];
+
+  function ensureInList(list, value) {
+    const arr = list.slice();
+    if (value && !arr.includes(value)) arr.unshift(value);
+    return arr;
+  }
+  function renderChoiceField(name, title, options, current, kind) {
+    const opts = options.map((o) => {
+      if (typeof o === "string") return { value: o, label: o, html: o };
+      return { value: o.value ?? o.color ?? o.label, label: o.label, html: o.html, color: o.color };
+    });
+    const cur = current || (opts[0] && opts[0].value) || "";
+    let gridClass = "choice-grid";
+    if (kind === "icons") gridClass += " icons";
+    if (kind === "swatches") gridClass += " swatches";
+    if (kind === "camp") gridClass += " camp-pick";
+    const chips = opts.map((o) => {
+      const selected = String(o.value) === String(cur);
+      if (kind === "swatches") {
+        return `<button type="button" class="choice-swatch ${selected ? "selected" : ""}" data-choice-name="${name}" data-choice-value="${esc(o.value)}" style="--sw:${esc(o.color || o.value)}" title="${esc(o.label)}"><i></i><span>${esc(o.label)}</span></button>`;
+      }
+      const extra = kind === "icons" ? "icon-chip" : "";
+      return `<button type="button" class="choice-chip ${extra} ${selected ? "selected" : ""}" data-choice-name="${name}" data-choice-value="${esc(o.value)}">${o.html || esc(o.label)}</button>`;
+    }).join("");
+    return `<div class="choice-field ${kind === "icons" || kind === "swatches" || kind === "wide" ? "span-2" : ""}">
+      <div class="field-name">${title}</div>
+      <div class="${gridClass}">${chips}</div>
+      <input type="hidden" id="a-${name}" value="${esc(cur)}" />
+    </div>`;
+  }
+  function bindChoiceFields(root) {
+    (root || document).querySelectorAll("[data-choice-value]").forEach((btn) => {
+      btn.onclick = () => {
+        const name = btn.dataset.choiceName;
+        const val = btn.dataset.choiceValue;
+        const hidden = document.getElementById("a-" + name);
+        if (hidden) hidden.value = val;
+        const grid = btn.parentElement;
+        if (grid) {
+          grid.querySelectorAll("[data-choice-value]").forEach((c) => {
+            c.classList.toggle("selected", c === btn);
+          });
+        }
+        if (name === "icon") {
+          const preview = document.getElementById("sect-icon-preview");
+          if (preview) preview.textContent = val;
+        }
+        if (name === "color") {
+          const preview = document.getElementById("sect-icon-preview");
+          if (preview) preview.style.color = val;
+          const ring = document.getElementById("sect-logo-preview");
+          if (ring) ring.style.borderColor = val;
+        }
+        if (name === "name") {
+          const title = document.getElementById("sect-title-preview");
+          if (title) title.textContent = val;
+        }
+      };
+    });
+  }
 
   function makePeak(meta) {
     const level = calcPeakLevel(meta.score || 0);
@@ -2590,7 +2776,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const day = state.config?.day || 1;
     const feed = peakFeedText(p.id, p.name, day);
     return `
-      <article class="sect-card ${p.camp}" data-peak-id="${p.id}">
+      <article class="sect-card ${p.camp}" data-peak-id="${p.id}" style="--theme:${esc(p.color || (p.camp === "blue" ? "#2ee6ff" : "#ff3b5c"))}">
         <div class="mount-body">
           <span class="drag-handle" draggable="true" title="拖拽换边/排序" data-drag-peak="${p.id}">⠿</span>
           <div class="seal-rank">${medals[rankIdx] || (rankIdx + 1)}</div>
@@ -2819,34 +3005,53 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     sectModalTab = tab || "bonus";
     const members = sortDisciples(disciplesOfPeak(peakId));
     const presets = getPresetsArray();
-    const logo = peak.logo_url ? `<img src="${peak.logo_url}" style="width:64px;height:64px;object-fit:cover;border:2px solid var(--frame)" />` : `<span style="font-size:2.4rem">${peak.icon}</span>`;
+    const theme = peak.color || (peak.camp === "blue" ? "#2ee6ff" : "#ff3b5c");
+    const logo = `<span id="sect-logo-preview" style="display:inline-grid;place-items:center;width:64px;height:64px;border:2px solid ${esc(theme)};border-radius:50%;background:rgba(0,0,0,.35)"><span id="sect-icon-preview" style="font-size:2.2rem;color:${esc(theme)}">${esc(peak.icon || "⚔️")}</span></span>`;
 
     const bonusPane = `
       <div class="bonus-grid">
         ${presets.map((p) => `<button type="button" data-quick="${p.id}">${p.label}</button>`).join("")}
       </div>
-      <div class="row" style="margin-top:.8rem">
-        <input id="sect-custom-pts" type="number" value="5" style="max-width:100px" />
-        <input id="sect-custom-reason" type="text" value="门派加分" style="flex:1" />
+      <div class="choice-field" style="margin-top:.8rem">
+        <div class="field-name">自定义加分 · 分数</div>
+        <div class="choice-grid" id="custom-pts-grid">
+          ${[1,2,3,5,8,10,15,20,30].map((n) => `<button type="button" class="choice-chip ${n===5?"selected":""}" data-custom-pts="${n}">+${n}</button>`).join("")}
+        </div>
+        <input type="hidden" id="sect-custom-pts" value="5" />
+      </div>
+      <div class="choice-field" style="margin-top:.55rem">
+        <div class="field-name">自定义加分 · 理由</div>
+        <div class="choice-grid">
+          ${REASON_PRESETS.map((r, i) => `<button type="button" class="choice-chip ${i===0?"selected":""}" data-custom-reason="${esc(r)}">${esc(r)}</button>`).join("")}
+        </div>
+        <input type="hidden" id="sect-custom-reason" value="${esc(REASON_PRESETS[0])}" />
+      </div>
+      <div class="row" style="margin-top:.7rem;justify-content:flex-end">
         <button type="button" class="primary" id="sect-custom-go">确认加分</button>
       </div>`;
 
+    const captainOpts = ensureInList(
+      ["虚位以待"].concat(members.map((d) => d.name)),
+      peak.captain_name || "虚位以待"
+    );
     const attrPane = `
       <div class="attr-grid">
-        <label><span class="field-name">组名</span><input id="a-name" value="${esc(peak.name)}" /></label>
-        <label><span class="field-name">图标/Emoji</span><input id="a-icon" value="${esc(peak.icon)}" /></label>
-        <label><span class="field-name">队长名</span><input id="a-captain" value="${esc(peak.captain_name || "")}" /></label>
-        <label><span class="field-name">阵营</span><select id="a-camp"><option value="red" ${peak.camp==="red"?"selected":""}>光影大派</option><option value="blue" ${peak.camp==="blue"?"selected":""}>声浪大派</option></select></label>
-        <label><span class="field-name">口号</span><input id="a-slogan" value="${esc(peak.slogan || "")}" /></label>
-        <label><span class="field-name">绝学</span><input id="a-art" value="${esc(peak.art || "")}" /></label>
-        <label><span class="field-name">驻地</span><input id="a-base" value="${esc(peak.base || "")}" /></label>
-        <label><span class="field-name">徽章</span><input id="a-badge" value="${esc(peak.badge || "")}" /></label>
-        <label><span class="field-name">属性</span><select id="a-element"><option>光</option><option>火</option><option>风</option><option>水</option><option>雷</option></select></label>
-        <label><span class="field-name">兵器</span><select id="a-style"><option>刀</option><option>剑</option><option>掌</option><option>琴</option><option>鼓</option></select></label>
-        <label><span class="field-name">主题色</span><input id="a-color" value="${esc(peak.color || "")}" /></label>
-        <label><span class="field-name">胜利台词</span><input id="a-win" value="${esc(peak.win_quote || "")}" /></label>
-        <label style="grid-column:1/-1"><span class="field-name">简介</span><textarea id="a-intro" rows="2">${esc(peak.intro || "")}</textarea></label>
-        <label style="grid-column:1/-1"><span class="field-name">Logo 图片 URL</span><input id="a-logo" value="${esc(peak.logo_url || "")}" placeholder="https://..." /></label>
+        ${renderChoiceField("icon", "小组图标", ensureInList(PEAK_ICON_PRESETS, peak.icon || "⚔️"), peak.icon || "⚔️", "icons")}
+        ${renderChoiceField("color", "主题色", THEME_COLOR_PRESETS.map((c) => ({ ...c, value: c.color })), theme, "swatches")}
+        ${renderChoiceField("name", "组名", ensureInList(PEAK_NAME_PRESETS, peak.name), peak.name, "wide")}
+        ${renderChoiceField("camp", "阵营", [
+          { value: "red", label: "光影大派", html: "光影大派" },
+          { value: "blue", label: "声浪大派", html: "声浪大派" }
+        ], peak.camp === "blue" ? "blue" : "red", "camp")}
+        ${renderChoiceField("captain", "队长", captainOpts, peak.captain_name || "虚位以待")}
+        ${renderChoiceField("element", "属性", ELEMENT_PRESETS, peak.element || "光")}
+        ${renderChoiceField("style", "兵器", STYLE_PRESETS, peak.style || "剑")}
+        ${renderChoiceField("slogan", "口号", ensureInList(SLOGAN_PRESETS, peak.slogan || ""), peak.slogan || SLOGAN_PRESETS[0], "wide")}
+        ${renderChoiceField("art", "绝学", ensureInList(ART_PRESETS, peak.art || ""), peak.art || ART_PRESETS[0])}
+        ${renderChoiceField("base", "驻地", ensureInList(BASE_PRESETS, peak.base || ""), peak.base || BASE_PRESETS[0])}
+        ${renderChoiceField("badge", "徽章", ensureInList(BADGE_PRESETS, peak.badge || ""), peak.badge || BADGE_PRESETS[0])}
+        ${renderChoiceField("win", "胜利台词", ensureInList(WIN_PRESETS, peak.win_quote || ""), peak.win_quote || WIN_PRESETS[0], "wide")}
+        ${renderChoiceField("intro", "简介", ensureInList(INTRO_PRESETS, peak.intro || ""), peak.intro || INTRO_PRESETS[0], "wide")}
       </div>
       <div class="row" style="margin-top:.8rem;justify-content:space-between">
         <button type="button" class="danger" id="a-delete">删除角色</button>
@@ -2877,8 +3082,8 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       <div class="row" style="justify-content:center;gap:1rem;align-items:center;margin-bottom:.3rem">
         ${logo}
         <div>
-          <h3 style="margin:0">${peak.name}</h3>
-          <div class="muted" style="text-align:center">${peak.intro || ""}</div>
+          <h3 style="margin:0" id="sect-title-preview">${esc(peak.name)}</h3>
+          <div class="muted" style="text-align:center">${esc(peak.intro || "")}</div>
         </div>
       </div>
       <div class="modal-tabs">
@@ -2908,6 +3113,18 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
           await scoreFromModal(peakId, preset.points, preset.reason, preset.category, bonus);
         };
       });
+      document.querySelectorAll("[data-custom-pts]").forEach((btn) => {
+        btn.onclick = () => {
+          document.getElementById("sect-custom-pts").value = btn.dataset.customPts;
+          btn.parentElement.querySelectorAll("[data-custom-pts]").forEach((c) => c.classList.toggle("selected", c === btn));
+        };
+      });
+      document.querySelectorAll("[data-custom-reason]").forEach((btn) => {
+        btn.onclick = () => {
+          document.getElementById("sect-custom-reason").value = btn.dataset.customReason;
+          btn.parentElement.querySelectorAll("[data-custom-reason]").forEach((c) => c.classList.toggle("selected", c === btn));
+        };
+      });
       document.getElementById("sect-custom-go").onclick = async () => {
         const pts = Number(document.getElementById("sect-custom-pts").value);
         const reason = document.getElementById("sect-custom-reason").value.trim() || "出招加分";
@@ -2915,30 +3132,30 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       };
     }
     if (sectModalTab === "attr") {
-      document.getElementById("a-element").value = peak.element || "光";
-      document.getElementById("a-style").value = peak.style || "剑";
+      bindChoiceFields(document.getElementById("sect-pane"));
       document.getElementById("a-save").onclick = async () => {
         const camp = document.getElementById("a-camp").value;
-        const captain_name = document.getElementById("a-captain").value.trim();
+        let captain_name = document.getElementById("a-captain").value;
+        if (captain_name === "虚位以待") captain_name = "";
         const updates = {
-          [`peaks/${peakKey(peakId)}/name`]: document.getElementById("a-name").value.trim(),
-          [`peaks/${peakKey(peakId)}/icon`]: document.getElementById("a-icon").value.trim(),
+          [`peaks/${peakKey(peakId)}/name`]: document.getElementById("a-name").value,
+          [`peaks/${peakKey(peakId)}/icon`]: document.getElementById("a-icon").value,
           [`peaks/${peakKey(peakId)}/captain_name`]: captain_name,
           [`peaks/${peakKey(peakId)}/camp`]: camp,
-          [`peaks/${peakKey(peakId)}/slogan`]: document.getElementById("a-slogan").value.trim(),
-          [`peaks/${peakKey(peakId)}/art`]: document.getElementById("a-art").value.trim(),
-          [`peaks/${peakKey(peakId)}/base`]: document.getElementById("a-base").value.trim(),
-          [`peaks/${peakKey(peakId)}/badge`]: document.getElementById("a-badge").value.trim(),
+          [`peaks/${peakKey(peakId)}/slogan`]: document.getElementById("a-slogan").value,
+          [`peaks/${peakKey(peakId)}/art`]: document.getElementById("a-art").value,
+          [`peaks/${peakKey(peakId)}/base`]: document.getElementById("a-base").value,
+          [`peaks/${peakKey(peakId)}/badge`]: document.getElementById("a-badge").value,
           [`peaks/${peakKey(peakId)}/element`]: document.getElementById("a-element").value,
           [`peaks/${peakKey(peakId)}/style`]: document.getElementById("a-style").value,
-          [`peaks/${peakKey(peakId)}/win_quote`]: document.getElementById("a-win").value.trim(),
-          [`peaks/${peakKey(peakId)}/color`]: document.getElementById("a-color").value.trim(),
-          [`peaks/${peakKey(peakId)}/intro`]: document.getElementById("a-intro").value.trim(),
-          [`peaks/${peakKey(peakId)}/logo_url`]: document.getElementById("a-logo").value.trim()
+          [`peaks/${peakKey(peakId)}/win_quote`]: document.getElementById("a-win").value,
+          [`peaks/${peakKey(peakId)}/color`]: document.getElementById("a-color").value,
+          [`peaks/${peakKey(peakId)}/intro`]: document.getElementById("a-intro").value,
+          [`peaks/${peakKey(peakId)}/logo_url`]: ""
         };
         disciplesOfPeak(peakId).forEach((d) => {
           updates[`disciples/${d.id}/camp`] = camp;
-          updates[`disciples/${d.id}/role`] = d.name === captain_name ? "队长" : (d.role === "队长" && d.name !== captain_name ? "弟子" : d.role);
+          updates[`disciples/${d.id}/role`] = captain_name && d.name === captain_name ? "队长" : (d.role === "队长" && d.name !== captain_name ? "弟子" : d.role);
         });
         await updatePaths(updates);
         closeModal();
@@ -2950,7 +3167,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
           updates[`disciples/${d.id}/peak`] = -1;
           updates[`disciples/${d.id}/role`] = "弟子";
         });
-        // firebase null delete via update
         if (demoMode) {
           delete state.peaks[peakKey(peakId)];
           Object.keys(updates).forEach((k) => { if (k !== `peaks/${peakKey(peakId)}`) applyLocalPath(k, updates[k]); });
@@ -3007,15 +3223,54 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   }
 
   async function addPeak(camp) {
-    const ids = getPeaksArray().map((p) => p.id);
-    const id = ids.length ? Math.max(...ids) + 1 : 0;
-    const name = prompt("新门派名称", camp === "blue" ? "新声门" : "新影门");
-    if (!name) return;
-    const order = getPeaksArray().filter((p) => p.camp === camp).length;
-    await setPath("peaks/" + peakKey(id), makePeak({
-      id, name, icon: camp === "blue" ? "🌊" : "🐉", camp, slogan: "新门出山",
-      captain_name: "", art: "待授绝学", base: "新驻地", intro: "初入江湖的门派", sort_order: order
-    }));
+    const defaultName = camp === "blue" ? "音浪峰" : "光影峰";
+    const defaultIcon = camp === "blue" ? "🌊" : "🐉";
+    const defaultColor = camp === "blue" ? "#2ee6ff" : "#ff3b5c";
+    openModal(`
+      <h3>新建山峰</h3>
+      <div class="attr-grid" id="new-peak-form">
+        ${renderChoiceField("icon", "小组图标", PEAK_ICON_PRESETS, defaultIcon, "icons")}
+        ${renderChoiceField("color", "主题色", THEME_COLOR_PRESETS.map((c) => ({ ...c, value: c.color })), defaultColor, "swatches")}
+        ${renderChoiceField("name", "组名", PEAK_NAME_PRESETS, defaultName, "wide")}
+        ${renderChoiceField("camp", "阵营", [
+          { value: "red", label: "光影大派", html: "光影大派" },
+          { value: "blue", label: "声浪大派", html: "声浪大派" }
+        ], camp === "blue" ? "blue" : "red", "camp")}
+        ${renderChoiceField("slogan", "口号", SLOGAN_PRESETS, SLOGAN_PRESETS[0], "wide")}
+        ${renderChoiceField("art", "绝学", ART_PRESETS, ART_PRESETS[0])}
+        ${renderChoiceField("base", "驻地", BASE_PRESETS, BASE_PRESETS[0])}
+        ${renderChoiceField("element", "属性", ELEMENT_PRESETS, camp === "blue" ? "水" : "光")}
+        ${renderChoiceField("style", "兵器", STYLE_PRESETS, camp === "blue" ? "琴" : "剑")}
+        ${renderChoiceField("intro", "简介", INTRO_PRESETS, INTRO_PRESETS[INTRO_PRESETS.length - 1], "wide")}
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:1rem">
+        <button type="button" class="ghost" id="modal-cancel">取消</button>
+        <button type="button" class="primary" id="new-peak-go">创建山峰</button>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    bindChoiceFields(document.getElementById("new-peak-form"));
+    document.getElementById("new-peak-go").onclick = async () => {
+      const ids = getPeaksArray().map((p) => p.id);
+      const id = ids.length ? Math.max(...ids) + 1 : 0;
+      const nextCamp = document.getElementById("a-camp").value;
+      const order = getPeaksArray().filter((p) => p.camp === nextCamp).length;
+      await setPath("peaks/" + peakKey(id), makePeak({
+        id,
+        name: document.getElementById("a-name").value,
+        icon: document.getElementById("a-icon").value,
+        color: document.getElementById("a-color").value,
+        camp: nextCamp,
+        slogan: document.getElementById("a-slogan").value,
+        art: document.getElementById("a-art").value,
+        base: document.getElementById("a-base").value,
+        element: document.getElementById("a-element").value,
+        style: document.getElementById("a-style").value,
+        intro: document.getElementById("a-intro").value,
+        captain_name: "",
+        sort_order: order
+      }));
+      closeModal();
+    };
   }
 
   function setTeacherView(view) {
