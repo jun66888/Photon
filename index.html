@@ -1305,6 +1305,36 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 .vote-card .votes { font-family: var(--font-num); font-size: 2.2rem; color: var(--gold); font-weight: 800; }
 .mobile-shell { max-width: 480px; margin: 0 auto; }
 .identity-card, .mobile-shell .paper { padding: 1rem; }
+#checkin-screen .ci-big {
+  width: 100%;
+  padding: 1.05rem 1rem;
+  font-size: 1.28rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  min-height: 3.2rem;
+}
+#checkin-screen .ci-name-card {
+  width: 100%;
+  padding: 1.15rem 1rem;
+  text-align: left;
+  border-width: 2px;
+  border-style: solid;
+  background: #fff8e7;
+  color: #1a1205;
+}
+#checkin-screen .ci-name-card.selected {
+  border-color: var(--seal);
+  background: rgba(163, 32, 32, .1);
+  box-shadow: inset 0 0 0 1px rgba(163, 32, 32, .25);
+}
+#checkin-screen .ci-sid {
+  text-align: center;
+  padding: .75rem;
+  border: 1px dashed rgba(139, 90, 43, .45);
+  border-radius: 8px;
+  background: rgba(255, 248, 231, .65);
+  color: #1a1205;
+}
 .big-vote-btn {
   width: 100%; margin-top: .6rem; padding: .9rem; font-size: 1.1rem; font-weight: 900;
   background: linear-gradient(180deg, #ffd76a, #c49216); color: #1a1205; border-color: #ffe39a;
@@ -1642,6 +1672,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   const OPERATOR = "李红星";
   const LS_STUDENT_KEY = "gy_arena_student";
   const LS_VOTE_KEY = "gy_arena_vote";
+  const LS_SCAN_KEY = "gy_arena_checkin_scans";
   const DEMO_DB_KEY = "gy_arena_demo_db_v3";
 
   const PEAK_THRESHOLDS = [
@@ -1987,14 +2018,14 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const leaf = parts[parts.length - 1];
     if (value === null) delete cur[leaf]; else cur[leaf] = value;
   }
-  async function setPath(path, value) {
+  async function setPath(path, value, opts) {
     applyLocalPath(path, value);
-    if (demoMode) { saveDemo(); renderAll(); return; }
+    if (demoMode) { saveDemo(); if (!opts?.silent) renderAll(); return; }
     await arenaRef.child(path).set(value);
   }
-  async function updatePaths(updates) {
+  async function updatePaths(updates, opts) {
     Object.entries(updates).forEach(([p, v]) => applyLocalPath(p, v));
-    if (demoMode) { saveDemo(); renderAll(); return; }
+    if (demoMode) { saveDemo(); if (!opts?.silent) renderAll(); return; }
     await arenaRef.update(updates);
   }
   async function pushLog(entry) {
@@ -2672,10 +2703,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       updates[`disciples/${d.id}/title`] = lv.title;
       updates[`disciples/${d.id}/contributed`] = (d.contributed || 0) + pts;
     });
-    await updatePaths(updates);
+    await updatePaths(updates, { silent: !!opts.silent });
     await pushLog({ timestamp: Date.now(), peak_id: peak.id, peak_name: peak.name, reason: reason || "加分", points: pts, category: category || "日常", operator: OPERATOR, day });
     const leveledUp = levelInfo.peak_level > oldLevel;
-    if (!opts.silentFx) {
+    if (!opts.silentFx && !opts.silent) {
       const fresh = findPeak(peakId) || { ...peak, score: newScore, peak_level_name: levelInfo.peak_level_name };
       showComboAnnounce(fresh, pts, reason || "加分", category || "日常", newScore);
       if (leveledUp) playLevelUpAnimation(fresh, oldLevel, levelInfo);
@@ -3744,23 +3775,68 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       ${top.map((d,i)=>`<div class="list-item"><span>${i+1}. ${d.name}</span><span>${d.exp||0}</span></div>`).join("")}`;
   }
 
-  async function nextStudentId() {
+  function peekNextStudentId() {
     const ids = getDisciplesArray().map((d) => parseInt(d.student_id, 10)).filter((n) => !isNaN(n));
     return String((ids.length ? Math.max(...ids) : 0) + 1).padStart(3, "0");
   }
+  async function nextStudentId() { return peekNextStudentId(); }
   function checkinFlag() {
     return (state.config?.checkin_session || "am") === "pm" ? "checked_in_pm" : "checked_in_am";
   }
   function checkinTimeFlag() {
     return (state.config?.checkin_session || "am") === "pm" ? "checked_in_pm_at" : "checked_in_am_at";
   }
+  function checkinSessionLabel() {
+    return (state.config?.checkin_session || "am") === "pm" ? "下午" : "上午";
+  }
+  function getScanMap() {
+    try { return JSON.parse(localStorage.getItem(LS_SCAN_KEY) || "{}"); } catch (e) { return {}; }
+  }
+  function getScanRecord(code) {
+    if (!code) return null;
+    const rec = getScanMap()[code];
+    if (!rec || typeof rec !== "object") return null;
+    const session = state.config?.checkin_session || "am";
+    if (rec.session && rec.session !== session) return null;
+    return rec;
+  }
+  function markScanDone(code, payload) {
+    if (!code) return;
+    const map = getScanMap();
+    map[code] = {
+      student_id: payload.student_id || "",
+      name: payload.name || "",
+      at: payload.at || Date.now(),
+      session: state.config?.checkin_session || "am"
+    };
+    localStorage.setItem(LS_SCAN_KEY, JSON.stringify(map));
+  }
+  /** DEMO 下手机与投屏 localStorage 不通：扫码页用 URL 中的 code 激活本机会话 */
+  function adoptCheckinCodeFromUrl() {
+    const { mode, code } = getMode();
+    if (mode !== "checkin" || !code) return;
+    if (!state.config) state.config = {};
+    const cfg = state.config;
+    if (cfg.checkin_active && cfg.checkin_code === code) return;
+    if (demoMode) {
+      cfg.checkin_active = true;
+      cfg.checkin_code = code;
+      if (!cfg.checkin_session) cfg.checkin_session = "am";
+      if (!cfg.checkin_expires_at) cfg.checkin_expires_at = Date.now() + CHECKIN_TTL_MS;
+      saveDemo();
+    }
+  }
   function isCodeValid(code) {
+    if (!code) return false;
     const cfg = state.config || {};
+    const url = getMode();
+    // DEMO：扫码链接里的 code 即本次有效签到码（多设备无共享库时仍能出签到按钮）
+    if (demoMode && url.mode === "checkin" && url.code === code) return true;
     // 结束签到前码始终有效（过期时间仅作提示，不拦截）
-    return !!(cfg.checkin_active && cfg.checkin_code && code && cfg.checkin_code === code);
+    return !!(cfg.checkin_active && cfg.checkin_code && cfg.checkin_code === code);
   }
   function codeOk(code) { return isCodeValid(code); }
-  async function applyCheckin(discipleId) {
+  async function applyCheckin(discipleId, opts) {
     const d = state.disciples[discipleId];
     if (!d) return { ok: false, msg: "未找到学员" };
     const flag = checkinFlag();
@@ -3772,22 +3848,27 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     await updatePaths({
       [`disciples/${discipleId}/${flag}`]: true,
       [`disciples/${discipleId}/${timeFlag}`]: now
-    });
-    if (d.peak >= 0) await addScoreToPeak(d.peak, 2, "签到", "日常");
+    }, { silent: !!opts?.silent });
+    if (d.peak >= 0) {
+      await addScoreToPeak(d.peak, 2, "签到", "日常", { silent: !!opts?.silent, silentFx: true });
+    }
     return { ok: true, at: now };
   }
 
   let checkinNameSelected = false;
+  let checkinSubmitting = false;
 
   function renderCheckinSuccess(name, student_id, at, already) {
     const body = document.getElementById("checkin-body");
+    const hint = document.getElementById("checkin-session-hint");
+    if (hint) hint.textContent = already ? "本时段已签到 · 本次扫码勿重复" : "签到完成 · 本次扫码仅一次";
     body.innerHTML = `
       <div style="text-align:center" class="stack">
         <div class="success-burst">${already ? "✓" : "✅"}</div>
         <div style="font-family:var(--font-brush);font-size:1.8rem;color:var(--seal)">${esc(name)}</div>
         <div class="badge-fly">学号 ${esc(student_id)}</div>
         <p style="margin-top:.5rem;font-size:1.1rem">${already ? "本时段已签到" : "签到成功 · 门派 +2 分"}</p>
-        <p class="muted">${at ? fmtTime(at) : ""} · 每时段仅可签到一次</p>
+        <p class="muted">${at ? fmtTime(at) : ""} · 每次扫码只能签到一次</p>
       </div>`;
   }
 
@@ -3795,11 +3876,17 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const body = document.getElementById("checkin-body");
     const flag = checkinFlag();
     const timeFlag = checkinTimeFlag();
-    const sessionLabel = (state.config?.checkin_session || "am") === "pm" ? "下午" : "上午";
+    const sessionLabel = checkinSessionLabel();
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = `${sessionLabel}签到 · 点自己的名字确认，再点签到`;
+    if (hint) hint.textContent = `${sessionLabel}签到 · 点上次姓名 → 签到 → 确认`;
 
+    const scanRec = getScanRecord(code);
+    if (scanRec && scanRec.student_id && String(scanRec.student_id) === String(local.student_id)) {
+      renderCheckinSuccess(local.name, local.student_id, scanRec.at, true);
+      return;
+    }
     if (me && me[flag]) {
+      markScanDone(code, { name: local.name, student_id: local.student_id, at: me[timeFlag] || Date.now() });
       renderCheckinSuccess(local.name, local.student_id, me[timeFlag], true);
       return;
     }
@@ -3807,12 +3894,12 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const selected = checkinNameSelected;
     body.innerHTML = `
       <div class="stack">
-        <p class="muted" style="text-align:center">微信已记住你，请确认身份</p>
-        <button type="button" id="ci-name-card" style="width:100%;padding:1.1rem;text-align:left;border:2px solid ${selected ? "var(--seal)" : "var(--frame)"};background:${selected ? "rgba(163,32,32,.08)" : "#fff8e7"}">
+        <p class="muted" style="text-align:center">本机微信已绑定，请点姓名确认后签到</p>
+        <button type="button" class="ci-name-card ${selected ? "selected" : ""}" id="ci-name-card">
           <div style="font-family:var(--font-brush);font-size:1.9rem;color:var(--seal)">${esc(local.name)}</div>
-          <div class="muted">学号 ${esc(local.student_id)} · 点击选择我</div>
+          <div class="muted">学号 ${esc(local.student_id)} · ${selected ? "已选择，请点签到" : "点击选择我"}</div>
         </button>
-        <button type="button" class="primary" id="ci-do" style="padding:1rem;font-size:1.25rem;width:100%" ${selected ? "" : "disabled"}>签到</button>
+        <button type="button" class="primary ci-big" id="ci-do" ${selected ? "" : "disabled"}>签到</button>
         <button type="button" class="ghost" id="ci-who" style="width:100%">不是我？换一个名字</button>
       </div>`;
 
@@ -3821,13 +3908,26 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       renderCheckinIdentityStep(code, local, me);
     };
     document.getElementById("ci-do").onclick = async () => {
+      if (checkinSubmitting) return;
       if (!checkinNameSelected) { alert("请先点击上面的名字确认是本人"); return; }
       if (!codeOk(code)) { alert("签到已结束或二维码已失效，请重新扫老师投屏码"); renderCheckin(); return; }
+      if (getScanRecord(code)) {
+        const rec = getScanRecord(code);
+        renderCheckinSuccess(rec.name || local.name, rec.student_id || local.student_id, rec.at, true);
+        return;
+      }
+      if (!confirm(`确认以「${local.name}」完成${sessionLabel}签到？\n（本次扫码只能签到一次）`)) return;
       const disciple = findDiscipleByLocal();
       if (!disciple) { localStorage.removeItem(LS_STUDENT_KEY); checkinNameSelected = false; renderCheckin(); return; }
-      const res = await applyCheckin(disciple.id);
-      renderCheckinSuccess(local.name, local.student_id, res.at || Date.now(), !!res.already);
-      checkinNameSelected = false;
+      checkinSubmitting = true;
+      try {
+        const res = await applyCheckin(disciple.id, { silent: true });
+        markScanDone(code, { name: local.name, student_id: local.student_id, at: res.at || Date.now() });
+        renderCheckinSuccess(local.name, local.student_id, res.at || Date.now(), !!res.already);
+        checkinNameSelected = false;
+      } finally {
+        checkinSubmitting = false;
+      }
     };
     document.getElementById("ci-who").onclick = () => {
       checkinNameSelected = false;
@@ -3835,12 +3935,49 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     };
   }
 
+  function renderCheckinFirstForm(code) {
+    const body = document.getElementById("checkin-body");
+    const sid = peekNextStudentId();
+    const sessionLabel = checkinSessionLabel();
+    const hint = document.getElementById("checkin-session-hint");
+    if (hint) hint.textContent = `${sessionLabel}签到 · 输入姓名学号自动生成 · 点签到确认`;
+
+    body.innerHTML = `
+      <div class="stack">
+        <h3 style="font-family:var(--font-brush);color:var(--seal);font-size:1.7rem;text-align:center;margin:0">第一次签到</h3>
+        <p class="muted" style="text-align:center">输入姓名后自动生成学号，点「签到确认」完成本次签到；下次扫码将绑定本机微信</p>
+        <input id="ci-name" type="text" maxlength="4" placeholder="请输入真实姓名（2-4个字）" autocomplete="name" style="font-size:1.15rem;padding:.8rem;text-align:center" />
+        <div class="ci-sid" id="ci-sid-preview">学号将自动生成：<b>${esc(sid)}</b></div>
+        <button type="button" class="primary ci-big seal" id="ci-confirm">签到确认</button>
+        <div style="height:1px;background:rgba(139,90,43,.3);margin:.2rem 0"></div>
+        <p class="muted" style="text-align:center">换过手机？从名单找回自己</p>
+        <button type="button" id="ci-who">点我的名字</button>
+      </div>`;
+    const nameInput = document.getElementById("ci-name");
+    nameInput.focus();
+    const doConfirm = () => confirmFirstCheckin(code);
+    document.getElementById("ci-confirm").onclick = doConfirm;
+    nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") doConfirm(); });
+    document.getElementById("ci-who").onclick = () => showWhoList(code);
+  }
+
   function renderCheckin() {
+    adoptCheckinCodeFromUrl();
     const { code } = getMode();
     const body = document.getElementById("checkin-body");
-    const sessionLabel = (state.config?.checkin_session || "am") === "pm" ? "下午" : "上午";
+    const sessionLabel = checkinSessionLabel();
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = `${sessionLabel}签到 · 微信扫码 · 每时段仅一次`;
+    if (hint) hint.textContent = `${sessionLabel}签到 · 微信扫码 · 每次扫码仅一次`;
+
+    if (!code) {
+      body.innerHTML = `
+        <div style="text-align:center;padding:1rem" class="stack">
+          <div style="font-size:2.4rem">📷</div>
+          <p>请扫描老师投屏上的签到二维码</p>
+          <p class="muted">链接需带签到码参数</p>
+        </div>`;
+      return;
+    }
 
     if (!codeOk(code)) {
       body.innerHTML = `
@@ -3852,34 +3989,37 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       return;
     }
 
+    const scanRec = getScanRecord(code);
+    if (scanRec && scanRec.student_id) {
+      renderCheckinSuccess(scanRec.name || "已签到", scanRec.student_id, scanRec.at, true);
+      return;
+    }
+
     const local = getLocalStudent();
-    const me = findDiscipleByLocal();
-    if (local && me && local.student_id) {
+    let me = findDiscipleByLocal();
+    if (local && local.student_id && !me) {
+      // 本机绑定在当前库找不到（换设备 DEMO 种子等）：清空后重新登记
+      localStorage.removeItem(LS_STUDENT_KEY);
+    } else if (local && local.student_id && me) {
       renderCheckinIdentityStep(code, { name: me.name || local.name, student_id: me.student_id || local.student_id }, me);
       return;
     }
 
-    body.innerHTML = `
-      <div class="stack">
-        <h3 style="font-family:var(--font-brush);color:var(--seal);font-size:1.7rem;text-align:center">第一次来？留下姓名</h3>
-        <p class="muted" style="text-align:center">系统会自动生成学号，下次微信扫码会记住你</p>
-        <input id="ci-name" type="text" maxlength="4" placeholder="请输入真实姓名（2-4个字）" autocomplete="name" style="font-size:1.15rem;padding:.8rem;text-align:center" />
-        <button type="button" class="primary" id="ci-register" style="padding:.9rem;font-size:1.1rem">生成学号并继续</button>
-        <div style="height:1px;background:rgba(139,90,43,.3);margin:.3rem 0"></div>
-        <p class="muted" style="text-align:center">换过手机？从名单找回自己</p>
-        <button type="button" id="ci-who">点我的名字</button>
-      </div>`;
-    const nameInput = document.getElementById("ci-name");
-    nameInput.focus();
-    document.getElementById("ci-register").onclick = () => registerAndCheckin(code);
-    nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") registerAndCheckin(code); });
-    document.getElementById("ci-who").onclick = () => showWhoList(code);
+    renderCheckinFirstForm(code);
   }
 
-  async function registerAndCheckin(code) {
-    const name = (document.getElementById("ci-name").value || "").trim();
+  async function confirmFirstCheckin(code) {
+    if (checkinSubmitting) return;
+    const nameInput = document.getElementById("ci-name");
+    const name = (nameInput && nameInput.value || "").trim();
     if (!/^[\u4e00-\u9fa5]{2,4}$/.test(name)) { alert("请输入2-4个中文名"); return; }
     if (!codeOk(code)) { alert("签到码无效，请重新扫码"); return; }
+    if (getScanRecord(code)) {
+      const rec = getScanRecord(code);
+      renderCheckinSuccess(rec.name || name, rec.student_id, rec.at, true);
+      return;
+    }
+    if (!confirm(`确认以「${name}」完成${checkinSessionLabel()}签到？\n学号将自动生成，本次扫码只能签到一次。`)) return;
 
     const sameNameRegistered = getDisciplesArray().find((d) => d.name === name && d.student_id);
     if (sameNameRegistered) {
@@ -3888,54 +4028,66 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       return;
     }
 
-    let existing = getDisciplesArray().find((d) => d.name === name && !d.student_id);
-    let discipleId, student_id;
-    if (existing) {
-      discipleId = existing.id;
-      student_id = await nextStudentId();
-      await updatePaths({
-        [`disciples/${discipleId}/student_id`]: student_id,
-        [`disciples/${discipleId}/first_seen`]: new Date().toISOString(),
-        [`disciples/${discipleId}/name`]: name
-      });
-    } else {
-      const peaks = getPeaksArray();
-      const counts = {};
-      peaks.forEach((p) => { counts[p.id] = 0; });
-      getDisciplesArray().forEach((d) => { counts[d.peak] = (counts[d.peak] || 0) + 1; });
-      const target = peaks.slice().sort((a, b) => (counts[a.id] || 0) - (counts[b.id] || 0))[0] || { id: 0, camp: "red" };
-      student_id = await nextStudentId();
-      discipleId = "disciple_" + Date.now();
-      const lv = calcPersonalLevel(0);
-      await setPath("disciples/" + discipleId, {
-        name, student_id, peak: target.id, camp: target.camp,
-        exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子",
-        voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false,
-        checked_in_am_at: 0, checked_in_pm_at: 0,
-        first_seen: new Date().toISOString(), voted_for: "", weapon: "笔"
-      });
-    }
+    checkinSubmitting = true;
+    const btn = document.getElementById("ci-confirm");
+    if (btn) { btn.disabled = true; btn.textContent = "签到中…"; }
+    try {
+      let existing = getDisciplesArray().find((d) => d.name === name && !d.student_id);
+      let discipleId, student_id;
+      if (existing) {
+        discipleId = existing.id;
+        student_id = await nextStudentId();
+        await updatePaths({
+          [`disciples/${discipleId}/student_id`]: student_id,
+          [`disciples/${discipleId}/first_seen`]: new Date().toISOString(),
+          [`disciples/${discipleId}/name`]: name
+        }, { silent: true });
+      } else {
+        const peaks = getPeaksArray();
+        const counts = {};
+        peaks.forEach((p) => { counts[p.id] = 0; });
+        getDisciplesArray().forEach((d) => { counts[d.peak] = (counts[d.peak] || 0) + 1; });
+        const target = peaks.slice().sort((a, b) => (counts[a.id] || 0) - (counts[b.id] || 0))[0] || { id: 0, camp: "red" };
+        student_id = await nextStudentId();
+        discipleId = "disciple_" + Date.now();
+        const lv = calcPersonalLevel(0);
+        await setPath("disciples/" + discipleId, {
+          name, student_id, peak: target.id, camp: target.camp,
+          exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子",
+          voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false,
+          checked_in_am_at: 0, checked_in_pm_at: 0,
+          first_seen: new Date().toISOString(), voted_for: "", weapon: "笔"
+        }, { silent: true });
+      }
 
-    setLocalStudent({ student_id, name, disciple_id: discipleId });
-    checkinNameSelected = true;
-    const me = { id: discipleId, ...(state.disciples[discipleId] || {}), name, student_id };
-    renderCheckinIdentityStep(code, { name, student_id }, me);
+      setLocalStudent({ student_id, name, disciple_id: discipleId });
+      const res = await applyCheckin(discipleId, { silent: true });
+      markScanDone(code, { name, student_id, at: res.at || Date.now() });
+      checkinNameSelected = false;
+      renderCheckinSuccess(name, student_id, res.at || Date.now(), !!res.already);
+    } catch (err) {
+      console.error(err);
+      alert("签到失败，请重试");
+      renderCheckinFirstForm(code);
+    } finally {
+      checkinSubmitting = false;
+    }
   }
 
   function showWhoList(code, highlightName) {
     const list = sortDisciples(getDisciplesArray().filter((d) => d.student_id), "name");
     const body = document.getElementById("checkin-body");
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = "点自己的名字 → 再点签到";
+    if (hint) hint.textContent = "点自己的名字 → 签到 → 确认";
 
     body.innerHTML = `
       <h3 style="font-family:var(--font-brush);color:var(--seal);text-align:center">点我的名字</h3>
-      <p class="muted" style="text-align:center;margin-bottom:.5rem">找到后进入签到，每时段只能签一次</p>
+      <p class="muted" style="text-align:center;margin-bottom:.5rem">绑定后进入签到；每次扫码只能签一次</p>
       <div class="stack" style="max-height:55vh;overflow:auto">
         ${list.map((d) => {
           const hi = highlightName && d.name === highlightName;
-          return `<button type="button" data-who="${d.id}" style="text-align:left;padding:.85rem;${hi ? "border-color:var(--seal);background:rgba(163,32,32,.08)" : ""}">
-            <div style="font-size:1.2rem;font-weight:700">${esc(d.name)}</div>
+          return `<button type="button" data-who="${d.id}" class="ci-name-card ${hi ? "selected" : ""}" style="padding:.85rem">
+            <div style="font-size:1.2rem;font-weight:700;color:var(--seal)">${esc(d.name)}</div>
             <div class="muted">学号 ${esc(d.student_id)}</div>
           </button>`;
         }).join("") || '<div class="muted">还没有人登记，请先输入姓名</div>'}
