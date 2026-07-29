@@ -37,7 +37,8 @@ html, body {
   min-height: 100%;
   color: var(--ink);
   font-family: var(--font-ui);
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M8 32 L18 10 L22 10 L32 32 L26 32 L22 18 L18 18 L14 32 Z' fill='%23f0c14b' stroke='%23fff3c4' stroke-width='1'/%3E%3Cpath d='M19 6 L21 6 L21 11 L19 11 Z' fill='%23ffe39a'/%3E%3Ccircle cx='20' cy='14' r='2' fill='%232ee6ff'/%3E%3C/svg%3E") 8 8, crosshair;
+  /* 中国古剑光标：剑尖为热点 */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23f7fbff'/%3E%3Cstop offset='45%25' stop-color='%23c9d2e0'/%3E%3Cstop offset='100%25' stop-color='%238a93a8'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23ffe39a'/%3E%3Cstop offset='100%25' stop-color='%23a67c14'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 1.5 L7.2 1.2 L39 33.5 L34.8 37.8 Z' fill='url(%23b)' stroke='%23fff8e8' stroke-width='.8'/%3E%3Cpath d='M4.2 2.4 L6.2 2.2 L36.6 33.2 L34.8 35.2 Z' fill='%23ffffff' fill-opacity='.35'/%3E%3Cpath d='M31.2 35.6 L37.2 29.6 L40.4 32.8 L34.4 38.8 Z' fill='url(%23h)' stroke='%23fff3c4' stroke-width='.7'/%3E%3Cpath d='M34.6 38.6 L41.8 45.2' stroke='%236a4a12' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M34.6 38.6 L41.8 45.2' stroke='%23f0c14b' stroke-width='1.3' stroke-linecap='round'/%3E%3Ccircle cx='42.4' cy='45.6' r='1.7' fill='%23ffe39a' stroke='%23a67c14' stroke-width='.6'/%3E%3C/svg%3E") 2 2, crosshair;
   background:
     radial-gradient(1000px 420px at 0% 0%, rgba(255,59,92,.18), transparent 50%),
     radial-gradient(1000px 420px at 100% 0%, rgba(46,230,255,.14), transparent 50%),
@@ -66,8 +67,9 @@ body::after {
 }
 .screen, .modal-mask, .drawer, #fx-host { position: relative; z-index: 1; }
 button, input, select, textarea { font: inherit; color: inherit; }
+button, a, [role="button"], label, select, summary { cursor: inherit; }
+input, textarea { cursor: text; }
 button {
-  cursor: pointer;
   border: 2px solid rgba(240,193,75,.45);
   background: linear-gradient(180deg, #2a3350, #151b2e);
   color: var(--ink);
@@ -237,8 +239,8 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 
 /* 两派对擂 HUD：单行瘦身，贡献改为可展开条 */
 .fight-hud {
-  display: grid; grid-template-columns: 1fr auto 1fr; gap: .2rem .4rem; align-items: center;
-  margin-bottom: 0; padding: .28rem .5rem;
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: .35rem .5rem; align-items: center;
+  margin-bottom: 0; padding: .4rem .55rem;
   flex: 0 0 auto;
   background:
     linear-gradient(90deg, rgba(138,16,40,.28), transparent 42%, transparent 58%, rgba(10,106,122,.24)),
@@ -250,56 +252,83 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 }
 .fight-hud::before { content: none; }
 .pk-side {
-  display: flex; align-items: center; gap: .4rem;
+  display: flex; align-items: center; gap: .45rem;
   position: relative; z-index: 1; min-width: 0;
 }
 .pk-side.red { flex-direction: row; }
 .pk-side.blue { flex-direction: row; }
 .pk-inline {
-  display: flex; align-items: baseline; gap: .3rem; flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: .1rem; flex: 0 0 auto;
+  min-width: 3.2rem;
 }
 .pk-side .camp-label {
-  font-family: var(--font-brush); font-size: .95rem; letter-spacing: .04em; line-height: 1;
+  font-family: var(--font-brush); font-size: 1rem; letter-spacing: .04em; line-height: 1;
 }
 .pk-side.red .camp-label { color: #ff8aa0; }
 .pk-side.blue .camp-label { color: #7ef0ff; }
 .pk-side .score {
-  font-family: var(--font-num); font-size: clamp(1.15rem, 2.4vw, 1.55rem); line-height: 1;
+  font-family: var(--font-num); font-size: clamp(1.2rem, 2.4vw, 1.65rem); line-height: 1;
   font-weight: 800;
 }
 .pk-side.red .score { color: var(--red); text-shadow: 0 0 16px rgba(255,59,92,.45); }
 .pk-side.blue .score { color: var(--cyan); text-shadow: 0 0 16px rgba(46,230,255,.4); }
-.hp-wrap { margin-top: 0; flex: 1 1 auto; min-width: 0; }
-.hp-label {
-  display: flex; justify-content: space-between; font-size: .62rem; color: var(--ink-soft);
-  margin-bottom: .1rem; font-family: var(--font-num); letter-spacing: .06em;
-}
 .pk-track {
-  height: 10px; border-radius: 3px; background: #07090f;
-  overflow: hidden; display: flex; border: 1px solid rgba(255,255,255,.12);
-  box-shadow: inset 0 0 8px rgba(0,0,0,.6);
+  height: 50px; border-radius: 6px; background: #07090f;
+  overflow: hidden; display: flex; flex-direction: row; align-items: stretch;
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 0 12px rgba(0,0,0,.65);
   flex: 1 1 auto; min-width: 0;
 }
-.pk-track.long { height: 11px; }
-.pk-track .fill-red {
-  background: linear-gradient(180deg, #ff7a92, var(--red) 45%, #8a1028);
-  height: 100%; position: relative;
+.pk-track.long { height: 50px; }
+.pk-seg {
+  --i: .5;
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  flex: 1 1 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .05rem; padding: 0 .2rem;
+  overflow: hidden;
+  border-right: 1px solid rgba(0,0,0,.35);
+  transition: filter .2s ease, flex-grow .45s ease;
+  filter: saturate(calc(0.45 + var(--i) * 0.9)) brightness(calc(0.72 + var(--i) * 0.5));
+  box-shadow: inset 0 0 calc(10px + 18px * var(--i)) rgba(255,255,255, calc(0.04 + var(--i) * 0.12));
 }
-.pk-track .fill-blue {
-  background: linear-gradient(180deg, #7ef0ff, var(--cyan) 45%, #0a6a7a);
-  height: 100%; margin-left: auto; position: relative;
+.pk-seg:last-child { border-right: 0; }
+.pk-seg.red {
+  background:
+    linear-gradient(180deg, rgba(255,180,190, calc(0.25 + var(--i) * 0.45)), transparent 42%),
+    linear-gradient(180deg, #ff7a92, var(--red) 48%, #6a0c1e);
 }
-.pk-track .fill-red::after, .pk-track .fill-blue::after {
-  content: ""; position: absolute; inset: 0 0 auto 0; height: 40%;
-  background: linear-gradient(180deg, rgba(255,255,255,.35), transparent);
+.pk-seg.blue {
+  background:
+    linear-gradient(180deg, rgba(180,245,255, calc(0.25 + var(--i) * 0.45)), transparent 42%),
+    linear-gradient(180deg, #7ef0ff, var(--cyan) 48%, #07505c);
+}
+.pk-seg.empty {
+  flex: 1; color: var(--ink-soft); font-size: .78rem;
+  background: repeating-linear-gradient(135deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 6px, transparent 6px, transparent 12px);
+}
+.pk-seg > span {
+  font-family: var(--font-brush); font-size: .92rem; line-height: 1;
+  color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.65);
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pk-seg > b {
+  font-family: var(--font-num); font-size: .72rem; font-weight: 800; line-height: 1;
+  color: #ffe39a; text-shadow: 0 0 8px rgba(0,0,0,.5);
+}
+.pk-seg.top {
+  outline: 1px solid rgba(255,227,154,.55);
+  z-index: 1;
 }
 .pk-vs {
-  width: 34px; height: 34px; border-radius: 50%; margin: 0;
+  width: 42px; height: 42px; border-radius: 50%; margin: 0;
   display: grid; place-items: center;
-  font-family: var(--font-num); font-weight: 800; font-size: .78rem;
+  font-family: var(--font-num); font-weight: 800; font-size: .85rem;
   color: #1a1205; background: radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 45%, #8a6d18);
   border: 2px solid #fff3c4;
-  box-shadow: 0 0 12px rgba(240,193,75,.4);
+  box-shadow: 0 0 14px rgba(240,193,75,.45);
   animation: vsPulse 1.6s ease-in-out infinite;
   z-index: 2; flex: 0 0 auto;
 }
@@ -307,47 +336,9 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   0%,100% { transform: scale(1); }
   50% { transform: scale(1.05); box-shadow: 0 0 18px rgba(240,193,75,.6); }
 }
-.contrib-strip {
-  display: grid; grid-template-columns: 1fr 1fr; gap: .35rem;
-  flex: 0 0 auto;
-  padding: .3rem .4rem;
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 8px;
-  background: rgba(8,12,20,.75);
-}
-.contrib-panel {
-  margin-top: 0; text-align: left;
-  display: flex; flex-direction: column; gap: .1rem;
-  max-height: 5.5rem; overflow: auto;
-}
-.contrib-title {
-  font-size: .62rem; color: var(--ink-soft); letter-spacing: .08em;
-  font-family: var(--font-num); margin-bottom: 0;
-}
-.contrib-row {
-  display: grid; grid-template-columns: 3.2rem 1fr auto; gap: .25rem; align-items: center;
-  font-size: .68rem;
-}
-.contrib-row .cname {
-  font-family: var(--font-brush); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.contrib-bar {
-  height: 5px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
-  border-radius: 2px; overflow: hidden;
-}
-.contrib-bar > i {
-  display: block; height: 100%; width: 0;
-  transition: width .45s ease;
-}
-.pk-side.red ~ * .contrib-bar > i,
-#red-contrib .contrib-bar > i { background: linear-gradient(90deg, rgba(255,120,140,.35), var(--red)); }
-#blue-contrib .contrib-bar > i { background: linear-gradient(90deg, rgba(100,220,240,.35), var(--cyan)); }
-.contrib-meta {
-  font-family: var(--font-num); font-size: .62rem; color: var(--ink-soft); min-width: 4.2rem; text-align: right;
-}
 @media (max-width: 720px) {
-  .contrib-strip { grid-template-columns: 1fr; }
-  .pk-side .camp-label { display: none; }
+  .pk-side .camp-label { font-size: .85rem; }
+  .pk-seg > span { font-size: .78rem; }
 }
 
 .camps-board {
@@ -453,9 +444,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   grid-template-areas:
     "logo info score actions"
+    "feed feed feed feed"
     "mem mem mem mem";
   column-gap: .65rem;
-  row-gap: .35rem;
+  row-gap: .3rem;
   align-items: center;
   overflow: hidden;
 }
@@ -611,6 +603,37 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   letter-spacing: .04em; white-space: nowrap;
 }
 .member-toggle:hover { border-color: var(--gold) !important; filter: brightness(1.12); }
+.group-ticker {
+  grid-area: feed;
+  height: 1.55rem;
+  display: flex; align-items: center;
+  border-radius: 4px;
+  border: 1px solid rgba(240,193,75,.28);
+  background: linear-gradient(90deg, rgba(240,193,75,.12), rgba(0,0,0,.35) 18%, rgba(0,0,0,.35) 82%, rgba(240,193,75,.1));
+  overflow: hidden;
+  min-width: 0;
+}
+.group-ticker-badge {
+  flex: 0 0 auto;
+  padding: 0 .45rem;
+  font-size: .68rem; font-weight: 800; color: #1a1205;
+  background: linear-gradient(180deg, #ffe39a, var(--gold));
+  letter-spacing: .06em; height: 100%;
+  display: grid; place-items: center;
+  border-right: 1px solid rgba(255,243,196,.5);
+}
+.group-ticker-track {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; height: 100%;
+  display: flex; align-items: center;
+}
+.group-ticker-inner {
+  display: inline-block;
+  padding-left: 100%;
+  white-space: nowrap;
+  animation: ticker 22s linear infinite;
+  font-size: .78rem; font-weight: 700; color: #ffe39a;
+  letter-spacing: .04em;
+}
 .member-bars {
   grid-area: mem;
   margin-top: 0; padding-top: .3rem;
@@ -628,6 +651,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     grid-template-areas:
       "logo info actions"
       "score score actions"
+      "feed feed feed"
       "mem mem mem";
   }
   .sect-score { text-align: left; font-size: 1.45rem; }
@@ -1340,7 +1364,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
         <label class="tool-inline"><span>天数</span>
           <input id="day-input" class="day-input" type="number" min="1" value="1" />
         </label>
-        <button type="button" id="btn-toggle-contrib" class="ghost" data-action="toggle-contrib" title="各组贡献占比">贡献 ▾</button>
         <span class="toolbar-grow"></span>
         <button type="button" data-action="add-peak-red">＋光影山峰</button>
         <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
@@ -1352,20 +1375,16 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
             <span class="camp-label">光影</span>
             <span class="score" id="red-total">0</span>
           </div>
-          <div class="pk-track long"><div class="fill-red" id="red-fill" style="width:50%"></div></div>
+          <div class="pk-track long" id="red-segments" title="各组经验占比"></div>
         </div>
         <div class="pk-vs">VS</div>
         <div class="pk-side blue">
-          <div class="pk-track long"><div class="fill-blue" id="blue-fill" style="width:50%"></div></div>
+          <div class="pk-track long" id="blue-segments" title="各组经验占比"></div>
           <div class="pk-inline">
             <span class="score" id="blue-total">0</span>
             <span class="camp-label">声浪</span>
           </div>
         </div>
-      </div>
-      <div class="contrib-strip hidden" id="contrib-strip">
-        <div class="contrib-panel" id="red-contrib"></div>
-        <div class="contrib-panel" id="blue-contrib"></div>
       </div>
 
       <div class="camps-board">
@@ -1707,6 +1726,8 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   let logFilter = "today", teacherView = "main", sortMode = "score";
   let dragPeakId = null, sectModalTab = "bonus";
   const expandedPeaks = new Set();
+  /** 用户手动覆盖组员展开；未覆盖时：≤5 组默认展开，>5 组默认折叠 */
+  const memberOpenOverride = new Map();
   const expandedMembers = new Set();
 
   function pad(n) { return String(n).padStart(2, "0"); }
@@ -2514,24 +2535,38 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     return { ...lv, pct };
   }
 
-  function renderContribPanel(camp, peaks, total) {
-    const sorted = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  function renderCampSegments(camp, peaks, total) {
+    const sorted = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0) || peakExpTotal(b.id) - peakExpTotal(a.id));
+    if (!sorted.length) return `<div class="pk-seg empty">暂无山峰</div>`;
+    const sum = Math.max(total || 0, sorted.reduce((s, p) => s + (p.score || 0), 0), 1);
     const max = Math.max(...sorted.map((p) => p.score || 0), 1);
-    const title = camp === "blue" ? "声浪 · 各组占比" : "光影 · 各组占比";
-    if (!sorted.length) return `<div class="contrib-title">${title}</div><div class="muted" style="font-size:.75rem">暂无山峰</div>`;
-    return `<div class="contrib-title">${title}</div>` + sorted.map((p) => {
+    return sorted.map((p, idx) => {
       const score = p.score || 0;
-      const share = total > 0 ? (score / total * 100) : 0;
-      const depth = 0.32 + 0.68 * (score / max);
-      return `<div class="contrib-row" style="opacity:${depth}">
-        <div class="cname">${esc(p.icon || "")} ${esc(p.name)}</div>
-        <div class="contrib-bar"><i style="width:${share}%;opacity:${0.55 + 0.45 * (score / max)}"></i></div>
-        <div class="contrib-meta">${score} · ${share.toFixed(0)}%</div>
+      const share = (score / sum) * 100;
+      const intensity = max > 0 ? (0.28 + 0.72 * (score / max)) : 0.28;
+      const anyScore = max > 0;
+      const grow = anyScore ? Math.max(score, 0.35) : 1;
+      return `<div class="pk-seg ${camp} ${idx === 0 ? "top" : ""}" style="flex:${grow} 1 0;--i:${intensity.toFixed(3)}" title="${esc(p.name)} ${score} 分 · ${share.toFixed(0)}%">
+        <span>${esc(p.icon || "")}${esc(p.name)}</span><b>${score}</b>
       </div>`;
     }).join("");
   }
 
-  function renderSectCard(p, rankIdx) {
+  function isMembersOpen(peakId, campCount) {
+    const id = String(peakId);
+    if (memberOpenOverride.has(id)) return memberOpenOverride.get(id);
+    return campCount <= 5;
+  }
+
+  function peakFeedText(peakId, peakName, day) {
+    const logs = getLogsArray()
+      .filter((l) => Number(l.peak_id) === Number(peakId) && (day == null || l.day === day))
+      .slice(0, 12);
+    if (!logs.length) return `${peakName}战报：静候出招……`;
+    return `${peakName}战报：` + logs.map((l) => `+${l.points}（${l.reason}）`).join(" ｜ ");
+  }
+
+  function renderSectCard(p, rankIdx, campCount) {
     const members = sortDisciples(disciplesOfPeak(p.id), "exp");
     const remain = Math.max(0, (p.next_level_score || 0) - (p.score || 0));
     const urgent = p.peak_level < 5 && remain <= 100;
@@ -2552,8 +2587,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
       </div>`;
     }).join("") || '<div class="muted" style="font-size:.65rem">暂无组员</div>';
 
-    const isOpen = expandedPeaks.has(String(p.id));
+    const isOpen = isMembersOpen(p.id, campCount);
     const toggleLabel = isOpen ? `组员 ${members.length} ▴` : `组员 ${members.length} ▾`;
+    const day = state.config?.day || 1;
+    const feed = peakFeedText(p.id, p.name, day);
     return `
       <article class="sect-card ${p.camp}" data-peak-id="${p.id}">
         <div class="mount-body">
@@ -2579,6 +2616,12 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
           <div class="sect-actions">
             <button type="button" class="fight-btn" data-open-sect="${p.id}">出招</button>
             <button type="button" class="member-toggle" data-toggle-members="${p.id}">${toggleLabel}</button>
+          </div>
+          <div class="group-ticker" title="${esc(feed)}">
+            <div class="group-ticker-badge">战报</div>
+            <div class="group-ticker-track">
+              <div class="group-ticker-inner">${esc(feed)}　　◆　　${esc(feed)}　　◆　　</div>
+            </div>
           </div>
           <div class="member-bars ${isOpen ? "open" : ""}" data-members-of="${p.id}">${memberBars}</div>
         </div>
@@ -2620,6 +2663,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
           e.stopPropagation();
           const open = !box.classList.contains("open");
           box.classList.toggle("open", open);
+          memberOpenOverride.set(peakId, open);
           if (open) expandedPeaks.add(peakId); else expandedPeaks.delete(peakId);
           const n = box.querySelectorAll("[data-member-row]").length;
           tog.textContent = open ? `组员 ${n} ▴` : `组员 ${n} ▾`;
@@ -2721,9 +2765,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     const { red, blue } = campTotals();
     document.getElementById("red-total").textContent = red;
     document.getElementById("blue-total").textContent = blue;
-    const sum = red + blue || 1;
-    document.getElementById("red-fill").style.width = (red / sum * 100) + "%";
-    document.getElementById("blue-fill").style.width = (blue / sum * 100) + "%";
 
     const memBtn = document.getElementById("btn-memories");
     memBtn.disabled = day < 20;
@@ -2737,11 +2778,13 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     redByScore.forEach((p, i) => { rankMap[p.id] = i; });
     blueByScore.forEach((p, i) => { rankMap[p.id] = i; });
 
-    document.getElementById("red-contrib").innerHTML = renderContribPanel("red", redList, red);
-    document.getElementById("blue-contrib").innerHTML = renderContribPanel("blue", blueList, blue);
+    const redSeg = document.getElementById("red-segments");
+    const blueSeg = document.getElementById("blue-segments");
+    if (redSeg) redSeg.innerHTML = renderCampSegments("red", redList, red);
+    if (blueSeg) blueSeg.innerHTML = renderCampSegments("blue", blueList, blue);
 
-    document.getElementById("list-red").innerHTML = redList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
-    document.getElementById("list-blue").innerHTML = blueList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
+    document.getElementById("list-red").innerHTML = redList.map((p) => renderSectCard(p, rankMap[p.id], redList.length)).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
+    document.getElementById("list-blue").innerHTML = blueList.map((p) => renderSectCard(p, rankMap[p.id], blueList.length)).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
 
     bindPeakListDnD(document.getElementById("list-red"));
     bindPeakListDnD(document.getElementById("list-blue"));
@@ -3834,18 +3877,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 
   async function handleTeacherAction(act, btn) {
     if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
-    if (act === "toggle-contrib") {
-      const strip = document.getElementById("contrib-strip");
-      const tbtn = document.getElementById("btn-toggle-contrib");
-      if (strip) {
-        const open = strip.classList.toggle("hidden") === false;
-        if (tbtn) tbtn.textContent = open ? "贡献 ▴" : "贡献 ▾";
-        const redN = document.querySelectorAll("#list-red .sect-card").length;
-        const blueN = document.querySelectorAll("#list-blue .sect-card").length;
-        applyArenaDensity(redN, blueN);
-      }
-      return;
-    }
     if (act === "custom-score") { openCustomScoreModal(); return; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
     if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); return; }
