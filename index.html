@@ -247,7 +247,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 /* 门派任务发布栏（主页任务发布区） */
 .mission-board {
   display: grid;
-  grid-template-columns: minmax(110px, 168px) 1fr minmax(110px, 168px);
+  grid-template-columns: 1fr 1fr;
   gap: .4rem .55rem;
   align-items: stretch;
   margin-bottom: 0;
@@ -309,33 +309,39 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 .arena-duel-toolbar {
   display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .45rem;
-  padding: .35rem .45rem;
-  border: 1px solid rgba(240,193,75,.22);
+  padding: .3rem .4rem;
+  border: 1px solid rgba(255,255,255,.1);
   border-radius: 8px;
-  background: linear-gradient(105deg, rgba(64,42,8,.28), rgba(12,18,32,.82));
+  background: rgba(12,18,32,.55);
 }
 .arena-duel-toolbar .toolbar-grow { flex: 1 1 auto; min-width: .25rem; }
-.arena-duel-toolbar .duel-label {
-  font-family: var(--font-brush); font-size: 1.05rem; color: var(--gold);
-  letter-spacing: .08em; margin-right: .15rem;
+.mission-publish-top {
+  min-height: 5.4rem;
+  padding: .65rem .9rem;
+  border-style: solid;
+  border-width: 2px;
+  border-color: rgba(240,193,75,.55);
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(240,193,75,.2), transparent 55%),
+    linear-gradient(160deg, rgba(28,34,52,.98), rgba(10,14,24,.96));
+  box-shadow: 0 10px 24px rgba(0,0,0,.28), inset 0 0 0 1px rgba(240,193,75,.12);
+}
+.mission-publish-top .mb-kicker {
+  font-size: .72rem; letter-spacing: .2em;
+}
+.mission-publish-top .mb-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
 }
 .mission-board.as-hero {
-  min-height: 5.2rem;
-  padding: .45rem;
-  border-width: 2px;
+  min-height: 0;
+  padding: .4rem;
+  border-width: 1px;
   background:
-    linear-gradient(90deg, rgba(138,16,40,.28), transparent 36%, transparent 64%, rgba(10,106,122,.26)),
-    linear-gradient(160deg, rgba(22,28,46,.96), rgba(10,14,24,.94));
+    linear-gradient(90deg, rgba(138,16,40,.22), transparent 40%, transparent 60%, rgba(10,106,122,.2)),
+    linear-gradient(160deg, rgba(22,28,46,.92), rgba(10,14,24,.9));
 }
-.mission-board.as-hero .mission-camp-chip { min-height: 5rem; padding: .5rem .4rem; }
-.mission-board.as-hero .mission-publish {
-  min-height: 5rem;
-  border-style: solid;
-  border-color: rgba(240,193,75,.5);
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(240,193,75,.16), transparent 55%),
-    rgba(10,14,24,.78);
-}
+.mission-board.as-hero .mission-camp-chip { min-height: 4.6rem; padding: .45rem .4rem; }
 .mission-publish {
   display: flex; flex-direction: column; justify-content: center; gap: .2rem;
   text-align: left; padding: .5rem .75rem; min-height: 4.4rem;
@@ -417,7 +423,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 @media (max-width: 860px) {
   .mission-board { grid-template-columns: 1fr 1fr; }
-  .mission-publish { grid-column: 1 / -1; order: -1; }
   .mission-edit-layout { grid-template-columns: 1fr; }
 }
 
@@ -2337,9 +2342,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div id="edit-box-layer" aria-label="编辑框层"></div>
     <div id="teacher-main" class="subview course-page">
       <div class="arena-duel-hero" id="arena-duel-hero">
-        <div class="arena-duel-toolbar">
-          <button type="button" class="primary" id="hero-fullscreen" data-action="toggle-fullscreen" title="全屏投屏 · Ctrl/⌘+Shift+F">全屏</button>
-          <span class="duel-label">任务发布</span>
+        <button type="button" class="mission-publish mission-publish-top" id="mission-publish-bar" data-action="edit-camp-mission" title="点击编辑门派任务">
+          <div class="mb-kicker">门派任务发布</div>
+          <div class="mb-title" id="mission-board-title">今日门派任务</div>
+          <div class="mb-desc" id="mission-board-desc">点击编辑今日门派任务</div>
+          <div class="mb-meta" id="mission-board-meta"></div>
+        </button>
+        <div class="arena-duel-toolbar" aria-label="对擂工具">
           <span class="round-chip">DAY <span id="day-label">1</span></span>
           <label class="tool-inline"><span>天数</span>
             <input id="day-input" class="day-input" type="number" min="1" value="1" />
@@ -2349,7 +2358,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
         </div>
         <div class="hall-banner" id="hall-home-banner" hidden></div>
-        <div class="mission-board as-hero" id="mission-board" aria-label="门派任务与两派对阵">
+        <div class="mission-board as-hero" id="mission-board" aria-label="两派对阵属性">
           <button type="button" class="mission-camp-chip red" data-action="camp-attrs" data-camp="red" title="点击设定光影派系属性">
             <span class="camp-label" id="red-alliance-label">光影</span>
             <span class="score" id="red-total">0</span>
@@ -2358,12 +2367,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
               <span>侧重 <b>—</b></span>
             </div>
             <span class="chip-hint">点设派系属性</span>
-          </button>
-          <button type="button" class="mission-publish" id="mission-publish-bar" data-action="edit-camp-mission" title="点击编辑门派任务">
-            <div class="mb-kicker">COURSE · 任务发布</div>
-            <div class="mb-title" id="mission-board-title">今日门派任务</div>
-            <div class="mb-desc" id="mission-board-desc">点击编辑任务 · 两侧为两派对阵属性</div>
-            <div class="mb-meta" id="mission-board-meta"></div>
           </button>
           <button type="button" class="mission-camp-chip blue" data-action="camp-attrs" data-camp="blue" title="点击设定声浪派系属性">
             <span class="camp-label" id="blue-alliance-label">声浪</span>
@@ -4350,7 +4353,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const desc = document.getElementById("mission-board-desc");
     const meta = document.getElementById("mission-board-meta");
     if (title) title.textContent = m.title || "门派任务";
-    if (desc) desc.textContent = m.desc || "点击编辑门派任务 · 左右点击设定派系属性";
+    if (desc) desc.textContent = m.desc || "点击编辑今日门派任务";
     if (meta) {
       const tags = [
         m.status === "published" ? "已发布" : "草稿",
