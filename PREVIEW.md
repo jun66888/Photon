@@ -1,25 +1,32 @@
 # 预览说明
 
-## 当前云端预览（已装好并已启动）
+## 云端预览（已启动）
 
-环境内已安装 Node.js、`serve`、`cloudflared`，静态服务跑在 `4173`，并开了公网隧道。
+依赖与服务已装好。公网隧道：
 
-**请直接点开：**
+**https://freight-rocks-ourselves-transcription.trycloudflare.com/?mode=teacher**
 
-- 老师端：https://freight-rocks-ourselves-transcription.trycloudflare.com/?mode=teacher  
-- 学生端：https://freight-rocks-ourselves-transcription.trycloudflare.com/?mode=student  
-- 毕业回忆：https://freight-rocks-ourselves-transcription.trycloudflare.com/?mode=memories  
-
-> 隧道地址在 Agent 重启后会变化；若打不开，在本仓库再执行 `npm run preview`，并用 `cloudflared tunnel --url http://127.0.0.1:4173` 重新取链接。
-
-## 你自己电脑上跑
+若链接失效，在仓库目录执行：
 
 ```bash
-git clone https://github.com/jun66888/Photon.git
-cd Photon
-git checkout cursor/guangyingmeng-arena-f9c7
-npm install
-npm start
+npm run preview
+# 另开终端
+cloudflared tunnel --url http://127.0.0.1:4173 --no-autoupdate
 ```
 
-浏览器打开：http://localhost:3000/?mode=teacher
+## 本机
+
+```bash
+npm install
+npm start
+# http://localhost:3000/?mode=teacher
+```
+
+## 本次武侠改版要点
+
+- 活页纸 / 金庸群侠传风 UI（宣纸纹、印章、毛笔标题）
+- 两大联盟分栏，门派牌可 **拖拽换阵营 / 调序**，可增减门派与弟子
+- 点击门派 → 弹层：**加分招式 / 属性编辑 / 弟子名册**
+- 属性含：Logo、队长、口号、绝学、驻地、简介等
+- 排序：首字母 / 经验 / 积分
+- 加分特效加强（墨爆、震屏、金光粒子）
