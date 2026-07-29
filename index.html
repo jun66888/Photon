@@ -253,7 +253,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 /* 门派任务发布栏（取代原山峰对决 VS 框） */
 .mission-board {
   display: grid;
-  grid-template-columns: minmax(88px, 140px) 1fr minmax(88px, 140px);
+  grid-template-columns: minmax(110px, 168px) 1fr minmax(110px, 168px);
   gap: .4rem .55rem;
   align-items: stretch;
   margin-bottom: 0;
@@ -303,6 +303,45 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 .mission-camp-chip .chip-hint {
   font-size: .62rem; letter-spacing: .12em; color: var(--ink-soft); opacity: .85;
 }
+.mission-camp-chip .chip-attrs {
+  display: flex; flex-direction: column; gap: .08rem; width: 100%;
+  margin-top: .15rem; font-size: .68rem; color: var(--ink-soft); line-height: 1.2;
+  text-align: center;
+}
+.mission-camp-chip .chip-attrs b { color: #ffe39a; font-weight: 700; }
+.arena-duel-hero {
+  display: flex; flex-direction: column; gap: .4rem;
+  margin-bottom: 0; flex: 0 0 auto;
+}
+.arena-duel-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .45rem;
+  padding: .35rem .45rem;
+  border: 1px solid rgba(240,193,75,.22);
+  border-radius: 8px;
+  background: linear-gradient(105deg, rgba(64,42,8,.28), rgba(12,18,32,.82));
+}
+.arena-duel-toolbar .toolbar-grow { flex: 1 1 auto; min-width: .25rem; }
+.arena-duel-toolbar .duel-label {
+  font-family: var(--font-brush); font-size: 1.05rem; color: var(--gold);
+  letter-spacing: .08em; margin-right: .15rem;
+}
+.mission-board.as-hero {
+  min-height: 5.2rem;
+  padding: .45rem;
+  border-width: 2px;
+  background:
+    linear-gradient(90deg, rgba(138,16,40,.28), transparent 36%, transparent 64%, rgba(10,106,122,.26)),
+    linear-gradient(160deg, rgba(22,28,46,.96), rgba(10,14,24,.94));
+}
+.mission-board.as-hero .mission-camp-chip { min-height: 5rem; padding: .5rem .4rem; }
+.mission-board.as-hero .mission-publish {
+  min-height: 5rem;
+  border-style: solid;
+  border-color: rgba(240,193,75,.5);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(240,193,75,.16), transparent 55%),
+    rgba(10,14,24,.78);
+}
 .mission-publish {
   display: flex; flex-direction: column; justify-content: center; gap: .2rem;
   text-align: left; padding: .5rem .75rem; min-height: 4.4rem;
@@ -323,8 +362,8 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   font-size: .68rem; letter-spacing: .18em; color: var(--gold); font-weight: 700;
 }
 .mission-publish .mb-title {
-  font-family: var(--font-brush); font-size: clamp(1.15rem, 2vw, 1.45rem);
-  color: #fff5e8; line-height: 1.15; letter-spacing: .04em;
+  font-family: var(--font-brush); font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+  color: #fff5e8; line-height: 1.15; letter-spacing: .06em;
 }
 .mission-publish .mb-desc {
   font-size: .78rem; color: var(--ink-soft); line-height: 1.35;
@@ -2256,42 +2295,45 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   <div id="teacher-screen" class="screen compact-arena" style="position:relative">
     <div id="edit-box-layer" aria-label="编辑框层"></div>
     <div id="teacher-main" class="subview course-page">
-      <div class="course-hero" style="margin-bottom:.45rem;padding:.55rem .8rem">
-        <div class="ch-seal" style="width:40px;height:40px;font-size:1.15rem">盟</div>
-        <div class="ch-text">
-          <div class="ch-kicker">COURSE · ARENA</div>
-          <div class="ch-title" style="font-size:clamp(1.25rem,2.2vw,1.7rem)">山峰对擂</div>
-          <div class="ch-sub">左右导航常驻 · 切换课程页不丢方向</div>
-        </div>
-        <div class="ch-actions">
+      <div class="arena-duel-hero" id="arena-duel-hero">
+        <div class="arena-duel-toolbar">
+          <span class="duel-label">山峰对擂</span>
           <span class="round-chip">DAY <span id="day-label">1</span></span>
           <label class="tool-inline"><span>天数</span>
             <input id="day-input" class="day-input" type="number" min="1" value="1" />
           </label>
+          <span class="toolbar-grow"></span>
           <button type="button" data-action="add-peak-red">＋光影山峰</button>
           <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
           <button type="button" class="primary" id="hero-fullscreen" data-action="toggle-fullscreen" title="全屏投屏 · Ctrl/⌘+Shift+F">全屏</button>
         </div>
-      </div>
-
-      <div class="hall-banner" id="hall-home-banner" hidden></div>
-      <div class="mission-board" id="mission-board" aria-label="门派任务发布栏">
-        <button type="button" class="mission-camp-chip red" data-action="edit-camp-mission" data-focus-camp="red" title="查看并编辑光影派系属性">
-          <span class="camp-label">光影</span>
-          <span class="score" id="red-total">0</span>
-          <span class="chip-hint">点看属性</span>
-        </button>
-        <button type="button" class="mission-publish" id="mission-publish-bar" data-action="edit-camp-mission" title="点击编辑门派任务">
-          <div class="mb-kicker">门派任务发布栏 · 点击编辑</div>
-          <div class="mb-title" id="mission-board-title">今日门派任务</div>
-          <div class="mb-desc" id="mission-board-desc">点击此处发布与编辑任务内容</div>
-          <div class="mb-meta" id="mission-board-meta"></div>
-        </button>
-        <button type="button" class="mission-camp-chip blue" data-action="edit-camp-mission" data-focus-camp="blue" title="查看并编辑声浪派系属性">
-          <span class="camp-label">声浪</span>
-          <span class="score" id="blue-total">0</span>
-          <span class="chip-hint">点看属性</span>
-        </button>
+        <div class="hall-banner" id="hall-home-banner" hidden></div>
+        <div class="mission-board as-hero" id="mission-board" aria-label="门派任务与两派对阵">
+          <button type="button" class="mission-camp-chip red" data-action="camp-attrs" data-camp="red" title="点击设定光影派系属性">
+            <span class="camp-label" id="red-alliance-label">光影</span>
+            <span class="score" id="red-total">0</span>
+            <div class="chip-attrs" id="red-chip-attrs">
+              <span>属性 <b>—</b></span>
+              <span>侧重 <b>—</b></span>
+            </div>
+            <span class="chip-hint">点设派系属性</span>
+          </button>
+          <button type="button" class="mission-publish" id="mission-publish-bar" data-action="edit-camp-mission" title="点击编辑门派任务">
+            <div class="mb-kicker">COURSE · ARENA · 门派任务</div>
+            <div class="mb-title" id="mission-board-title">今日门派任务</div>
+            <div class="mb-desc" id="mission-board-desc">点击编辑任务 · 两侧为两派对阵属性</div>
+            <div class="mb-meta" id="mission-board-meta"></div>
+          </button>
+          <button type="button" class="mission-camp-chip blue" data-action="camp-attrs" data-camp="blue" title="点击设定声浪派系属性">
+            <span class="camp-label" id="blue-alliance-label">声浪</span>
+            <span class="score" id="blue-total">0</span>
+            <div class="chip-attrs" id="blue-chip-attrs">
+              <span>属性 <b>—</b></span>
+              <span>侧重 <b>—</b></span>
+            </div>
+            <span class="chip-hint">点设派系属性</span>
+          </button>
+        </div>
       </div>
 
       <div class="camps-board">
@@ -4146,16 +4188,35 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function renderMissionBoard() {
     const m = getCampMission();
-    const { red, blue } = campTotals();
+    const redLive = getCampLiveStats("red");
+    const blueLive = getCampLiveStats("blue");
     const redEl = document.getElementById("red-total");
     const blueEl = document.getElementById("blue-total");
-    if (redEl) redEl.textContent = red;
-    if (blueEl) blueEl.textContent = blue;
+    if (redEl) redEl.textContent = redLive.score;
+    if (blueEl) blueEl.textContent = blueLive.score;
+    const redName = document.getElementById("red-alliance-label");
+    const blueName = document.getElementById("blue-alliance-label");
+    if (redName) redName.textContent = (state.config?.alliance_red_name || "光影联盟").replace(/联盟$/, "") || "光影";
+    if (blueName) blueName.textContent = (state.config?.alliance_blue_name || "声浪联盟").replace(/联盟$/, "") || "声浪";
+    const redAttrs = document.getElementById("red-chip-attrs");
+    if (redAttrs) {
+      redAttrs.innerHTML = `
+        <span>属性 <b>${esc(m.red_element || redLive.dominantElement || "—")}</b></span>
+        <span>侧重 <b>${esc(m.red_focus || "—")}</b></span>
+        <span>山峰 <b>${redLive.peakCount}</b> · 弟子 <b>${redLive.memberCount}</b></span>`;
+    }
+    const blueAttrs = document.getElementById("blue-chip-attrs");
+    if (blueAttrs) {
+      blueAttrs.innerHTML = `
+        <span>属性 <b>${esc(m.blue_element || blueLive.dominantElement || "—")}</b></span>
+        <span>侧重 <b>${esc(m.blue_focus || "—")}</b></span>
+        <span>山峰 <b>${blueLive.peakCount}</b> · 弟子 <b>${blueLive.memberCount}</b></span>`;
+    }
     const title = document.getElementById("mission-board-title");
     const desc = document.getElementById("mission-board-desc");
     const meta = document.getElementById("mission-board-meta");
     if (title) title.textContent = m.title || "门派任务";
-    if (desc) desc.textContent = m.desc || "点击编辑任务内容与两派属性";
+    if (desc) desc.textContent = m.desc || "点击编辑门派任务 · 左右点击设定派系属性";
     if (meta) {
       const tags = [
         m.status === "published" ? "已发布" : "草稿",
@@ -4164,8 +4225,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         m.category || "任务"
       ];
       if (m.deadline) tags.push("截止 " + m.deadline);
-      tags.push(`光影·${m.red_element || "光"}`);
-      tags.push(`声浪·${m.blue_element || "水"}`);
       meta.innerHTML = tags.map((t) => `<span class="mb-tag">${esc(t)}</span>`).join("");
     }
   }
@@ -4532,10 +4591,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         hallBanner.textContent = "";
       }
     }
-
-    const { red, blue } = campTotals();
-    document.getElementById("red-total").textContent = red;
-    document.getElementById("blue-total").textContent = blue;
 
     const memBtn = document.getElementById("btn-memories");
     if (memBtn) {
@@ -5763,9 +5818,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     openModal(`
       <h3>擂台颁奖</h3>
       <div class="stack">
-        <label>金牌 (+30)<select id="award-gold">${peaks.map((p,i)=>`<option value="${p.id}" ${i===0?"selected":""}>${p.icon} ${p.name}</option>`).join("")}</select></label>
-        <label>银牌 (+20)<select id="award-silver">${peaks.map((p,i)=>`<option value="${p.id}" ${i===1?"selected":""}>${p.icon} ${p.name}</option>`).join("")}</select></label>
-        <label>铜牌 (+10)<select id="award-bronze">${peaks.map((p,i)=>`<option value="${p.id}" ${i===2?"selected":""}>${p.icon} ${p.name}</option>`).join("")}</select></label>
+        <label>金牌 (+30)<select id="award-gold">${peaks.map((p,i)=>`<option value="${p.id}" ${i===0?"selected":""}>${p.icon} ${esc(peakWorkTitle(p))}（${p.name}）</option>`).join("")}</select></label>
+        <label>银牌 (+20)<select id="award-silver">${peaks.map((p,i)=>`<option value="${p.id}" ${i===1?"selected":""}>${p.icon} ${esc(peakWorkTitle(p))}（${p.name}）</option>`).join("")}</select></label>
+        <label>铜牌 (+10)<select id="award-bronze">${peaks.map((p,i)=>`<option value="${p.id}" ${i===2?"selected":""}>${p.icon} ${esc(peakWorkTitle(p))}（${p.name}）</option>`).join("")}</select></label>
         <div class="row" style="justify-content:flex-end">
           <button type="button" class="ghost" id="modal-cancel">取消</button>
           <button type="button" class="seal" id="award-confirm">确认颁奖</button>
