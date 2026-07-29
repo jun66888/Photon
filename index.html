@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet" />
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
 :root {
   --bg0: #07090f;
@@ -18,6 +18,7 @@
   --ink-soft: #8b97b0;
   --gold: #f0c14b;
   --gold-dim: #b8922a;
+  --seal: #e0a93a;
   --red: #ff3b5c;
   --red-deep: #8a1028;
   --cyan: #2ee6ff;
@@ -502,11 +503,14 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   font-size: .72rem !important; padding: .28rem .5rem !important;
 }
 .member-toggle {
-  margin-top: .3rem; width: 100%;
-  font-size: .68rem !important; padding: .22rem .4rem !important;
-  background: rgba(0,0,0,.28) !important; box-shadow: none !important;
-  border-color: rgba(255,255,255,.14) !important; color: #d7e0f0 !important;
+  margin-top: .35rem; width: 100%;
+  font-size: .78rem !important; padding: .4rem .55rem !important;
+  background: linear-gradient(180deg, rgba(240,193,75,.18), rgba(0,0,0,.35)) !important;
+  box-shadow: none !important;
+  border: 1px dashed rgba(240,193,75,.55) !important; color: #ffe39a !important;
+  letter-spacing: .06em;
 }
+.member-toggle:hover { border-style: solid !important; filter: brightness(1.12); }
 .member-bars {
   margin-top: .28rem; padding-top: .28rem;
   border-top: 1px dashed rgba(255,255,255,.1);
@@ -514,6 +518,26 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   max-height: 7.5rem; overflow: auto;
 }
 .member-bars.open { display: flex; }
+.drag-handle {
+  position: absolute; left: .3rem; top: .3rem; z-index: 3;
+  width: 1.4rem; height: 1.4rem; border-radius: 4px;
+  display: grid; place-items: center; cursor: grab;
+  font-size: .85rem; color: var(--ink-soft);
+  background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.12);
+  user-select: none;
+}
+.drag-handle:active { cursor: grabbing; }
+.vote-success-box {
+  text-align: center; padding: 1.2rem .8rem;
+  border: 2px solid var(--ok); border-radius: 10px;
+  background: rgba(61,255,154,.08);
+}
+.vote-success-box .big { font-family: var(--font-brush); font-size: 1.8rem; color: var(--ok); }
+.demo-qr-warn {
+  margin-top: .45rem; padding: .45rem .55rem; border-radius: 6px;
+  background: rgba(240,193,75,.12); border: 1px solid rgba(240,193,75,.4);
+  color: #ffe39a; font-size: .75rem; text-align: left;
+}
 .member-bar-row {
   display: grid; grid-template-columns: 3.2rem 1fr auto; gap: .25rem; align-items: center;
   font-size: .64rem;
@@ -1514,6 +1538,8 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   let recentRotateTimer = null, recentLogIndex = 0, checkinRefreshTimer = null;
   let logFilter = "today", teacherView = "main", sortMode = "name";
   let dragPeakId = null, sectModalTab = "bonus";
+  const expandedPeaks = new Set();
+  const expandedMembers = new Set();
 
   function pad(n) { return String(n).padStart(2, "0"); }
   function fmtTime(ts) {
@@ -2218,10 +2244,12 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
       </div>`;
     }).join("") || '<div class="muted" style="font-size:.65rem">暂无组员</div>';
 
+    const isOpen = expandedPeaks.has(String(p.id));
     return `
-      <article class="sect-card ${p.camp}" draggable="true" data-peak-id="${p.id}">
+      <article class="sect-card ${p.camp}" data-peak-id="${p.id}">
         <div class="mount-shape"><span class="mount-peak-light"></span></div>
         <div class="mount-body">
+          <span class="drag-handle" draggable="true" title="拖拽换边/排序" data-drag-peak="${p.id}">⠿</span>
           <div class="seal-rank">${medals[rankIdx] || (rankIdx + 1)}</div>
           <div class="sect-top">
             <div class="sect-logo">${logo}</div>
@@ -2243,28 +2271,33 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
             </div>
             <button type="button" class="fight-btn" data-open-sect="${p.id}">出招</button>
           </div>
-          <button type="button" class="member-toggle" data-toggle-members="${p.id}">组员 ${members.length} ▾ 展开</button>
-          <div class="member-bars" data-members-of="${p.id}">${memberBars}</div>
+          <button type="button" class="member-toggle" data-toggle-members="${p.id}">${isOpen ? `组员 ${members.length} ▴ 收起` : `组员 ${members.length} ▾ 展开`}</button>
+          <div class="member-bars ${isOpen ? "open" : ""}" data-members-of="${p.id}">${memberBars}</div>
         </div>
       </article>`;
   }
 
   function bindPeakListDnD(listEl) {
     listEl.querySelectorAll(".sect-card").forEach((card) => {
-      card.addEventListener("dragstart", (e) => {
-        dragPeakId = Number(card.dataset.peakId);
-        card.classList.add("dragging");
-        e.dataTransfer.setData("text/plain", String(dragPeakId));
-        e.dataTransfer.effectAllowed = "move";
-      });
-      card.addEventListener("dragend", () => {
-        card.classList.remove("dragging");
-        dragPeakId = null;
-        document.querySelectorAll(".camp-col").forEach((c) => c.classList.remove("drag-over"));
-      });
+      const peakId = String(card.dataset.peakId);
+      const handle = card.querySelector("[data-drag-peak]");
+      if (handle) {
+        handle.addEventListener("dragstart", (e) => {
+          dragPeakId = Number(peakId);
+          card.classList.add("dragging");
+          e.dataTransfer.setData("text/plain", peakId);
+          e.dataTransfer.effectAllowed = "move";
+          e.stopPropagation();
+        });
+        handle.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          dragPeakId = null;
+          document.querySelectorAll(".camp-col").forEach((c) => c.classList.remove("drag-over"));
+        });
+      }
       card.addEventListener("click", (e) => {
-        if (e.target.closest("button") || e.target.closest("[data-member-row]")) return;
-        openSectModal(Number(card.dataset.peakId), "bonus");
+        if (e.target.closest("button") || e.target.closest("[data-member-row]") || e.target.closest(".drag-handle")) return;
+        openSectModal(Number(peakId), "bonus");
       });
       const btn = card.querySelector("[data-open-sect]");
       if (btn) btn.addEventListener("click", (e) => {
@@ -2275,16 +2308,22 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
       const box = card.querySelector(".member-bars");
       if (tog && box) {
         tog.addEventListener("click", (e) => {
+          e.preventDefault();
           e.stopPropagation();
-          const open = box.classList.toggle("open");
+          const open = !box.classList.contains("open");
+          box.classList.toggle("open", open);
+          if (open) expandedPeaks.add(peakId); else expandedPeaks.delete(peakId);
           const n = box.querySelectorAll("[data-member-row]").length;
           tog.textContent = open ? `组员 ${n} ▴ 收起` : `组员 ${n} ▾ 展开`;
         });
       }
       card.querySelectorAll("[data-member-row]").forEach((row) => {
+        const mid = row.dataset.memberRow;
+        if (expandedMembers.has(mid)) row.classList.add("open");
         row.addEventListener("click", (e) => {
           e.stopPropagation();
-          row.classList.toggle("open");
+          const open = row.classList.toggle("open");
+          if (open) expandedMembers.add(mid); else expandedMembers.delete(mid);
         });
       });
     });
@@ -2296,6 +2335,7 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
       col.ondragleave = () => col.classList.remove("drag-over");
       col.ondrop = async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         col.classList.remove("drag-over");
         const id = Number(e.dataTransfer.getData("text/plain") || dragPeakId);
         const camp = col.dataset.camp;
@@ -2303,11 +2343,11 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
         await movePeakToCamp(id, camp, e.target.closest(".sect-card"));
       };
     });
-    // reorder inside list
     document.querySelectorAll(".peak-list").forEach((list) => {
-      list.ondragover = (e) => e.preventDefault();
+      list.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); };
       list.ondrop = async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const id = Number(e.dataTransfer.getData("text/plain") || dragPeakId);
         const camp = list.dataset.camp;
         const over = e.target.closest(".sect-card");
@@ -2660,17 +2700,56 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   }
 
   function randCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
-  function renderQr(host, url, size) {
-    host.innerHTML = "";
-    if (typeof QRCode !== "undefined" && QRCode.toCanvas) {
-      QRCode.toCanvas(url, { width: size, margin: 1 }, (err, canvas) => {
-        if (!err && canvas) host.appendChild(canvas);
-        else host.innerHTML = `<a href="${url}" style="word-break:break-all;color:#333">${url}</a>`;
-      });
-    } else host.innerHTML = `<a href="${url}" style="word-break:break-all;color:#333;font-size:12px">${url}</a>`;
+  function publicPageUrl(query) {
+    return `${location.origin}${location.pathname}${query.startsWith("?") ? query : "?" + query}`;
   }
-  /** 微信签到：码在结束前长期有效（默认 4 小时），可手动刷新 */
-  const CHECKIN_TTL_MS = 4 * 60 * 60 * 1000;
+  function renderQr(host, url, size) {
+    if (!host) return;
+    host.innerHTML = "";
+    host.style.textAlign = "center";
+    const box = document.createElement("div");
+    box.style.cssText = `display:inline-block;padding:8px;background:#fff;border-radius:6px`;
+    host.appendChild(box);
+    let ok = false;
+    if (typeof QRCode !== "undefined") {
+      try {
+        // qrcodejs API
+        // eslint-disable-next-line no-new
+        new QRCode(box, {
+          text: url,
+          width: size || 180,
+          height: size || 180,
+          colorDark: "#111111",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel ? QRCode.CorrectLevel.M : 1
+        });
+        ok = true;
+      } catch (err) {
+        console.warn("QR render failed", err);
+      }
+    }
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = ok ? "扫码或点此打开" : url;
+    link.style.cssText = "display:block;margin-top:8px;font-size:12px;word-break:break-all;color:#333";
+    host.appendChild(link);
+    if (demoMode) {
+      const warn = document.createElement("div");
+      warn.className = "demo-qr-warn";
+      warn.textContent = "DEMO 模式：手机扫码需与投屏同一浏览器数据源；多设备请配置 Firebase。当前链接：" + location.origin;
+      host.appendChild(warn);
+    }
+    if (!ok) {
+      const tip = document.createElement("div");
+      tip.style.cssText = "margin-top:6px;font-size:12px;color:#a33";
+      tip.textContent = "二维码库未加载，请用上方链接打开";
+      host.appendChild(tip);
+    }
+  }
+  /** 微信签到：结束签到前长期有效，可手动刷新换码 */
+  const CHECKIN_TTL_MS = 12 * 60 * 60 * 1000;
   async function generateCheckinCode() {
     await updatePaths({
       "config/checkin_code": randCode(),
@@ -2698,12 +2777,7 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
       const cd = document.getElementById("checkin-countdown");
       if (!cd) return;
       if (!state.config?.checkin_active) { cd.textContent = "未开启"; return; }
-      const left = Math.max(0, Math.ceil(((state.config.checkin_expires_at || 0) - Date.now()) / 1000));
-      if (left <= 0) cd.textContent = "已过期，请刷新码";
-      else {
-        const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60);
-        cd.textContent = h > 0 ? `剩余 ${h}小时${m}分` : `剩余 ${m}分${left % 60}秒`;
-      }
+      cd.textContent = "扫码签到中 · 点「结束签到」关闭";
     }, 1000);
   }
   function renderTeacherCheckin() {
@@ -2725,13 +2799,12 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
     ).join("") || '<span class="muted">全员已签</span>';
     const code = state.config?.checkin_code || "------";
     document.getElementById("checkin-code-text").textContent = code;
-    const left = Math.max(0, Math.ceil(((state.config?.checkin_expires_at || 0) - Date.now()) / 1000));
     document.getElementById("checkin-countdown").textContent = state.config?.checkin_active
-      ? (left > 0 ? "微信扫码中" : "已过期")
+      ? "扫码签到中 · 点「结束签到」关闭"
       : "未开启";
     const qrHost = document.getElementById("checkin-qr");
     if (state.config?.checkin_active && code !== "------") {
-      renderQr(qrHost, `${location.origin}${location.pathname}?mode=checkin&code=${code}`, 220);
+      renderQr(qrHost, publicPageUrl(`?mode=checkin&code=${code}`), 200);
     } else {
       qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333">点击「生成微信签到码」投屏</div>';
     }
@@ -2739,14 +2812,22 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 
   function renderTeacherVote() {
     document.getElementById("vote-title").textContent = state.config?.title || "投票";
-    document.getElementById("teacher-vote-grid").innerHTML = getPeaksArray().map((p) => `
+    const open = !!(state.config && state.config.voting_open);
+    const totalVotes = getPeaksArray().reduce((s, p) => s + (p.votes || 0), 0);
+    document.getElementById("teacher-vote-grid").innerHTML = `
+      <div class="vote-card" style="grid-column:1/-1">
+        <div style="font-family:var(--font-brush);font-size:1.3rem;color:var(--gold)">${open ? "投票进行中" : "投票已关闭"}</div>
+        <div class="muted">累计票数 ${totalVotes} · 学生扫码进入投票页</div>
+      </div>
+    ` + getPeaksArray().slice().sort((a, b) => (b.votes || 0) - (a.votes || 0)).map((p, i) => `
       <div class="vote-card">
         <div style="font-size:1.8rem">${p.icon}</div>
-        <div style="font-weight:700;font-family:var(--font-brush);font-size:1.4rem">${p.name}</div>
+        <div style="font-weight:700;font-family:var(--font-brush);font-size:1.4rem">#${i + 1} ${p.name}</div>
         <div class="muted">${p.slogan || ""}</div>
         <div class="votes">${p.votes || 0}</div>
+        <div class="muted">${totalVotes ? ((p.votes || 0) / totalVotes * 100).toFixed(0) : 0}%</div>
       </div>`).join("");
-    renderQr(document.getElementById("student-vote-qr"), `${location.origin}${location.pathname}?mode=student`, 140);
+    renderQr(document.getElementById("student-vote-qr"), publicPageUrl("?mode=student"), 160);
   }
   function openAwardModal() {
     const peaks = getPeaksArray().slice().sort((a, b) => (b.votes || 0) - (a.votes || 0));
@@ -2917,6 +2998,7 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
       updates[`disciples/${d.id}/voted`] = false;
       updates[`disciples/${d.id}/voted_for`] = "";
     });
+    localStorage.removeItem(LS_VOTE_KEY);
     await updatePaths(updates);
   }
   async function doSettleRanks() {
@@ -2956,11 +3038,14 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
     const open = !!(state.config && state.config.voting_open);
     const localVote = localStorage.getItem(LS_VOTE_KEY);
     const already = (me && me.voted) || !!localVote;
-    if (!open) voteArea.innerHTML = `<div style="text-align:center;padding:1rem">投票已关闭</div>`;
-    else if (already) voteArea.innerHTML = `<div style="text-align:center;padding:1rem">你已投票给 ${(me&&me.voted_for)||localVote||""}</div>`;
-    else {
-      voteArea.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.4rem;margin-bottom:.6rem">为心仪门派投票</div>
-        <div class="stack">${getPeaksArray().map((p)=>`<div class="vote-card"><div>${p.icon} ${p.name}</div><div class="muted">${p.slogan||""}</div><button type="button" class="big-vote-btn" data-vote-peak="${p.id}">投票</button></div>`).join("")}</div>`;
+    const votedName = (me && me.voted_for) || localVote || "";
+    if (!open) {
+      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票已关闭</div><div class="muted" style="margin-top:.4rem">${votedName ? `你投给了 ${esc(votedName)}` : "等待老师开启下一轮"}</div></div>`;
+    } else if (already) {
+      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票成功</div><div style="margin-top:.45rem;font-size:1.15rem">你已投票给 <strong style="color:var(--gold)">${esc(votedName)}</strong></div><div class="muted" style="margin-top:.35rem">本轮每人仅一票 · 可点右上角查看排行</div></div>`;
+    } else {
+      voteArea.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.4rem;margin-bottom:.6rem;text-align:center;color:var(--gold)">投票进行中 · 点选山峰</div>
+        <div class="stack">${getPeaksArray().map((p)=>`<div class="vote-card"><div style="font-size:1.5rem">${p.icon} ${esc(p.name)}</div><div class="muted">${esc(p.slogan||"")}</div><div class="votes" style="font-size:1.4rem">${p.votes||0}</div><button type="button" class="big-vote-btn" data-vote-peak="${p.id}">投给这组</button></div>`).join("")}</div>`;
       voteArea.querySelectorAll("[data-vote-peak]").forEach((btn) => btn.onclick = () => confirmStudentVote(Number(btn.dataset.votePeak)));
     }
   }
@@ -2990,13 +3075,22 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
     const me = findDiscipleByLocal();
     if (!me) { alert("请先绑定身份"); openStudentPickModal(); return; }
     if (!(state.config && state.config.voting_open)) { alert("投票已关闭"); return; }
-    if (me.voted) { alert("已投过票"); return; }
+    if (me.voted || localStorage.getItem(LS_VOTE_KEY)) { alert("本轮已投过票"); renderStudent(); return; }
     const peak = findPeak(peakId);
+    if (!peak) return;
     if (!confirm(`确认投票给 ${peak.icon} ${peak.name}？`)) return;
-    await updatePaths({ [`peaks/${peakKey(peakId)}/votes`]: (peak.votes||0)+1, [`disciples/${me.id}/voted`]: true, [`disciples/${me.id}/voted_for`]: peak.name });
+    await updatePaths({
+      [`peaks/${peakKey(peakId)}/votes`]: (peak.votes || 0) + 1,
+      [`disciples/${me.id}/voted`]: true,
+      [`disciples/${me.id}/voted_for`]: peak.name
+    });
     localStorage.setItem(LS_VOTE_KEY, peak.name);
-    const burst = document.createElement("div"); burst.className = "toast-levelup"; burst.innerHTML = `<div class="success-burst">✅</div>`;
-    document.getElementById("fx-host").appendChild(burst); setTimeout(() => burst.remove(), 900);
+    const burst = document.createElement("div");
+    burst.className = "toast-levelup";
+    burst.innerHTML = `<div class="msg">✅ 投票成功<br/><span style="font-size:.7em">${peak.icon} ${esc(peak.name)}</span></div>`;
+    document.getElementById("fx-host").appendChild(burst);
+    setTimeout(() => burst.remove(), 1600);
+    playHitSfx(5, "任务");
     renderStudent();
   }
   function renderStudentRank() {
@@ -3021,14 +3115,10 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   }
   function isCodeValid(code) {
     const cfg = state.config || {};
-    if (!cfg.checkin_active || !cfg.checkin_code || !code) return false;
-    if (cfg.checkin_code !== code) return false;
-    if (cfg.checkin_expires_at && cfg.checkin_expires_at < Date.now()) return false;
-    return true;
+    // 结束签到前码始终有效（过期时间仅作提示，不拦截）
+    return !!(cfg.checkin_active && cfg.checkin_code && code && cfg.checkin_code === code);
   }
-  function codeOk(code) {
-    return isCodeValid(code) || (demoMode && state.config?.checkin_active && state.config?.checkin_code === code);
-  }
+  function codeOk(code) { return isCodeValid(code); }
   async function applyCheckin(discipleId) {
     const d = state.disciples[discipleId];
     if (!d) return { ok: false, msg: "未找到学员" };
@@ -3425,8 +3515,19 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
       const labelBtn = document.querySelector('[data-action="toggle-session"]');
       if (labelBtn) labelBtn.textContent = next === "am" ? "下午签到" : "上午签到";
     }
-    if (act === "open-vote") await updatePaths({ "config/voting_open": true });
-    if (act === "close-vote") { await updatePaths({ "config/voting_open": false }); openAwardModal(); }
+    if (act === "open-vote") {
+      localStorage.removeItem(LS_VOTE_KEY);
+      await updatePaths({ "config/voting_open": true });
+      setTeacherView("vote");
+      alert("投票已开启，请学生扫右侧二维码");
+      return;
+    }
+    if (act === "close-vote") {
+      await updatePaths({ "config/voting_open": false });
+      setTeacherView("vote");
+      if (confirm("投票已关闭。是否立刻颁奖？")) openAwardModal();
+      return;
+    }
     if (act === "reset-votes") {
       const updates = {};
       getPeaksArray().forEach((p) => updates[`peaks/${peakKey(p.id)}/votes`] = 0);
