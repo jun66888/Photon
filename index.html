@@ -354,7 +354,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   --arena-scale: 1;
   --camp-count: 3;
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: calc(.4rem * var(--arena-scale));
+  gap: .55rem;
   margin-bottom: 0;
   flex: 1 1 auto;
   min-height: 0;
@@ -613,13 +613,15 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 .member-toggle:hover { border-color: var(--gold) !important; filter: brightness(1.12); }
 .member-bars {
   grid-area: mem;
-  margin-top: 0; padding-top: .25rem;
+  margin-top: 0; padding-top: .3rem;
   border-top: 1px dashed rgba(255,255,255,.12);
-  display: none; flex-direction: column; gap: .14rem;
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: .2rem .55rem;
   max-height: min(32vh, 8.5rem); overflow: auto;
   min-height: 0;
 }
-.member-bars.open { display: flex; }
+.member-bars.open { display: grid; }
 @media (max-width: 1100px) {
   .sect-card .mount-body {
     grid-template-columns: auto minmax(0, 1fr) auto;
