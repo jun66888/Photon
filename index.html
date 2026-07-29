@@ -688,15 +688,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 .vote-card .votes { font-family: var(--font-num); font-size: 2.2rem; color: var(--gold); font-weight: 800; }
 
 /* 小组作品投票 · 实时追赶榜 */
-.vote-race-shell {
-  display: grid;
-  grid-template-columns: 1fr minmax(140px, 180px);
-  gap: 1rem;
-  align-items: start;
-}
-@media (max-width: 860px) {
-  .vote-race-shell { grid-template-columns: 1fr; }
-}
 .vote-race-meta {
   display: flex; flex-wrap: wrap; gap: .55rem 1rem; align-items: baseline;
   margin-bottom: .85rem; padding: .55rem .75rem;
@@ -832,12 +823,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   25% { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
   75% { opacity: 1; transform: translate(-50%, 0) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -10px) scale(.98); }
-}
-.vote-qr-dock {
-  text-align: center; padding: .6rem;
-  border: 2px solid rgba(240,193,75,.3); border-radius: 10px;
-  background: rgba(7,9,15,.72);
-  position: sticky; top: 1rem;
 }
 .big-vote-btn {
   width: 100%; margin-top: .6rem; padding: .9rem; font-size: 1.1rem; font-weight: 900;
@@ -1505,8 +1490,82 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   padding: .5rem .15rem; border-bottom: 1px solid rgba(255,255,255,.08); font-size: .9rem;
 }
 .qr-box {
-  background: #fff; padding: 12px; display: inline-block;
-  border: 3px solid var(--gold); border-radius: 8px;
+  background: #fff; padding: 14px; display: inline-block;
+  border: 3px solid var(--gold); border-radius: 10px;
+  position: relative;
+  max-width: 100%;
+}
+.qr-stage {
+  display: flex; flex-direction: column; align-items: center; gap: .45rem;
+  width: 100%;
+}
+.qr-resizable {
+  position: relative;
+  display: inline-block;
+  background: #fff;
+  border: 3px solid var(--gold);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+  max-width: min(92vw, 720px);
+}
+.qr-resizable .qr-canvas-host {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+.qr-resizable .qr-canvas-host img,
+.qr-resizable .qr-canvas-host canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.qr-resizable .qr-resize-handle {
+  position: absolute; right: 0; bottom: 0;
+  width: 36px; height: 36px; cursor: nwse-resize;
+  background:
+    linear-gradient(135deg, transparent 48%, rgba(139,90,43,.45) 49%, rgba(139,90,43,.45) 56%, transparent 57%),
+    linear-gradient(135deg, transparent 64%, rgba(201,162,39,.95) 65%, rgba(201,162,39,.95) 74%, transparent 75%);
+  z-index: 3;
+}
+.qr-resizable .qr-size-tip {
+  position: absolute; left: 10px; bottom: 6px;
+  font-size: .68rem; color: #8a6d18; pointer-events: none;
+  opacity: .75;
+}
+.qr-link-line {
+  display: block; margin-top: .35rem; font-size: .78rem;
+  word-break: break-all; color: #ffe39a; text-align: center; max-width: min(92vw, 720px);
+}
+.vote-qr-dock {
+  text-align: center; padding: .75rem;
+  border: 2px solid rgba(240,193,75,.3); border-radius: 10px;
+  background: rgba(7,9,15,.72);
+  position: sticky; top: 1rem;
+  min-width: min(48vw, 420px);
+}
+.vote-race-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 48%);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .vote-race-shell { grid-template-columns: 1fr; }
+  .vote-qr-dock { position: static; min-width: 0; }
+}
+.checkin-qr-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 48%) minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .checkin-qr-layout { grid-template-columns: 1fr; }
 }
 .name-chip {
   display: inline-block; margin: .2rem; padding: .3rem .55rem;
@@ -2014,12 +2073,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div>已签到 <strong id="checkin-count">0</strong> / <strong id="checkin-total">25</strong></div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
         <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「结束签到」前一直有效</p>
-        <div class="row" style="align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
-          <div>
+        <div class="checkin-qr-layout">
+          <div class="qr-stage">
             <div class="muted">签到码 <span id="checkin-code-text">------</span> · <span id="checkin-countdown">进行中</span></div>
-            <div class="qr-box" id="checkin-qr" style="margin-top:.5rem"></div>
+            <div class="qr-box" id="checkin-qr"></div>
           </div>
-          <div style="flex:1;min-width:220px">
+          <div>
             <h4 class="course-section-title" style="color:var(--ok)">已签到 · 金光修炼</h4>
             <div id="checked-list"></div>
             <h4 class="course-section-title" style="color:var(--danger);margin-top:.9rem">未签到</h4>
@@ -2197,6 +2256,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const LS_VOTE_KEY = "gy_arena_vote";
   const LS_SCAN_KEY = "gy_arena_checkin_scans";
   const LS_EDIT_BOX_KEY = "gy_arena_edit_boxes";
+  const LS_QR_SIZE_KEY = "gy_arena_qr_sizes";
   const DEMO_DB_KEY = "gy_arena_demo_db_v3";
 
   const PEAK_THRESHOLDS = [
@@ -4459,38 +4519,81 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function publicPageUrl(query) {
     return `${location.origin}${location.pathname}${query.startsWith("?") ? query : "?" + query}`;
   }
-  function renderQr(host, url, size) {
+  function defaultQrSize() {
+    const half = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.48);
+    return Math.max(220, Math.min(560, half));
+  }
+  function loadQrSizes() {
+    try { return JSON.parse(localStorage.getItem(LS_QR_SIZE_KEY) || "{}"); } catch (e) { return {}; }
+  }
+  function saveQrSize(key, size) {
+    const map = loadQrSizes();
+    map[key] = size;
+    localStorage.setItem(LS_QR_SIZE_KEY, JSON.stringify(map));
+  }
+  function getQrSize(key) {
+    const saved = Number(loadQrSizes()[key]);
+    if (saved && saved >= 160) return Math.min(720, saved);
+    return defaultQrSize();
+  }
+  function renderQr(host, url, sizeOrKey) {
     if (!host) return;
+    const key = typeof sizeOrKey === "string" ? sizeOrKey : (host.id || "qr");
+    let size = typeof sizeOrKey === "number" ? sizeOrKey : getQrSize(key);
+    size = Math.max(160, Math.min(720, Number(size) || defaultQrSize()));
+
+    host.classList.add("qr-stage");
     host.innerHTML = "";
-    host.style.textAlign = "center";
-    const box = document.createElement("div");
-    box.style.cssText = `display:inline-block;padding:8px;background:#fff;border-radius:6px`;
-    host.appendChild(box);
+
+    const frame = document.createElement("div");
+    frame.className = "qr-resizable";
+    frame.style.width = size + "px";
+    frame.dataset.qrKey = key;
+
+    const canvasHost = document.createElement("div");
+    canvasHost.className = "qr-canvas-host";
+    frame.appendChild(canvasHost);
+
+    const tip = document.createElement("div");
+    tip.className = "qr-size-tip";
+    tip.textContent = "右下角拖拽改大小";
+    frame.appendChild(tip);
+
+    const handle = document.createElement("div");
+    handle.className = "qr-resize-handle";
+    handle.title = "拖拽改大小";
+    frame.appendChild(handle);
+    host.appendChild(frame);
+
     let ok = false;
-    if (typeof QRCode !== "undefined") {
+    const paint = (px) => {
+      canvasHost.innerHTML = "";
+      if (typeof QRCode === "undefined") return false;
       try {
-        // qrcodejs API
-        // eslint-disable-next-line no-new
-        new QRCode(box, {
+        new QRCode(canvasHost, {
           text: url,
-          width: size || 180,
-          height: size || 180,
+          width: px,
+          height: px,
           colorDark: "#111111",
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel ? QRCode.CorrectLevel.M : 1
         });
-        ok = true;
+        return true;
       } catch (err) {
         console.warn("QR render failed", err);
+        return false;
       }
-    }
+    };
+    ok = paint(size);
+
     const link = document.createElement("a");
+    link.className = "qr-link-line";
     link.href = url;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = ok ? "扫码或点此打开" : url;
-    link.style.cssText = "display:block;margin-top:8px;font-size:12px;word-break:break-all;color:#333";
+    link.textContent = ok ? "扫码或点此打开（码已放大，可拖角缩放）" : url;
     host.appendChild(link);
+
     if (demoMode) {
       const warn = document.createElement("div");
       warn.className = "demo-qr-warn";
@@ -4498,11 +4601,46 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       host.appendChild(warn);
     }
     if (!ok) {
-      const tip = document.createElement("div");
-      tip.style.cssText = "margin-top:6px;font-size:12px;color:#a33";
-      tip.textContent = "二维码库未加载，请用上方链接打开";
-      host.appendChild(tip);
+      const fail = document.createElement("div");
+      fail.style.cssText = "margin-top:6px;font-size:12px;color:#a33;text-align:center";
+      fail.textContent = "二维码库未加载，请用上方链接打开";
+      host.appendChild(fail);
     }
+
+    let resizing = false;
+    const beginResize = (e) => {
+      if (e.button != null && e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      resizing = true;
+      try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+      const startX = e.clientX;
+      const startSize = size;
+      const onMove = (ev) => {
+        if (!resizing) return;
+        const next = Math.max(160, Math.min(720, Math.round(startSize + (ev.clientX - startX) * 1.15)));
+        size = next;
+        frame.style.width = next + "px";
+        tip.textContent = next + "px · 松手定稿";
+      };
+      const onUp = (ev) => {
+        resizing = false;
+        try { handle.releasePointerCapture(ev.pointerId); } catch (err) {}
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        tip.textContent = "右下角拖拽改大小";
+        saveQrSize(key, size);
+        paint(size);
+      };
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    };
+    handle.addEventListener("pointerdown", beginResize);
+    // 右下角空白区也可拖
+    frame.addEventListener("pointerdown", (e) => {
+      const r = frame.getBoundingClientRect();
+      if (e.clientX > r.right - 40 && e.clientY > r.bottom - 40) beginResize(e);
+    });
   }
   /** 微信签到：结束签到前长期有效，可手动刷新换码 */
   const CHECKIN_TTL_MS = 12 * 60 * 60 * 1000;
@@ -4560,7 +4698,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       : "未开启";
     const qrHost = document.getElementById("checkin-qr");
     if (state.config?.checkin_active && code !== "------") {
-      renderQr(qrHost, publicPageUrl(`?mode=checkin&code=${code}`), 200);
+      renderQr(qrHost, publicPageUrl(`?mode=checkin&code=${code}`), "checkin-qr");
     } else {
       qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333">点击「生成微信签到码」投屏</div>';
     }
@@ -4736,7 +4874,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!sorted.some((p) => String(p.id) === String(id))) delete votePrevMap[id];
     });
 
-    renderQr(document.getElementById("student-vote-qr"), publicPageUrl("?mode=student"), 150);
+    renderQr(document.getElementById("student-vote-qr"), publicPageUrl("?mode=student"), "student-vote-qr");
   }
 
   async function demoCastVote() {
