@@ -222,11 +222,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   color: var(--gold) !important; background: #0c101c !important;
   padding: .35rem .4rem !important; min-height: 2.05rem;
 }
-#sort-mode {
-  color: var(--ink) !important; background: #0c101c !important;
-  width: auto; min-width: 6.2rem; min-height: 2.05rem;
-  padding: .35rem .55rem !important;
-}
 .round-chip {
   display: inline-flex; align-items: center; gap: .25rem;
   padding: .28rem .55rem; border: 1px solid rgba(240,193,75,.4);
@@ -1279,13 +1274,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
         <label class="tool-inline"><span>天数</span>
           <input id="day-input" class="day-input" type="number" min="1" value="1" />
         </label>
-        <label class="tool-inline"><span>排序</span>
-          <select id="sort-mode" title="排序">
-            <option value="name">首字母序</option>
-            <option value="exp">经验序</option>
-            <option value="score">积分序</option>
-          </select>
-        </label>
         <button type="button" id="btn-toggle-contrib" class="ghost" data-action="toggle-contrib" title="各组贡献占比">贡献 ▾</button>
         <span class="toolbar-grow"></span>
         <button type="button" data-action="add-peak-red">＋光影山峰</button>
@@ -1643,7 +1631,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
       config: {
         day: 1, week: 1, voting_open: false, title: "第1周最佳作品",
         checkin_code: "", checkin_expires_at: 0, checkin_session: "am", checkin_active: false,
-        sort_mode: "name", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟"
+        sort_mode: "score", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟"
       },
       peaks, disciples, score_logs: {}, bonus_presets, tasks
     };
@@ -1651,7 +1639,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 
   let db = null, arenaRef = null, state = buildSeedArena(), demoMode = !FIREBASE_READY;
   let recentRotateTimer = null, recentLogIndex = 0, checkinRefreshTimer = null;
-  let logFilter = "today", teacherView = "main", sortMode = "name";
+  let logFilter = "today", teacherView = "main", sortMode = "score";
   let dragPeakId = null, sectModalTab = "bonus";
   const expandedPeaks = new Set();
   const expandedMembers = new Set();
@@ -1686,24 +1674,32 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   function peakExpTotal(peakId) {
     return disciplesOfPeak(peakId).reduce((s, d) => s + (d.exp || 0), 0);
   }
+  /** 山峰固定按积分高低（同分再比经验） */
   function sortPeaks(list) {
-    const mode = sortMode || state.config?.sort_mode || "name";
-    const arr = list.slice();
-    if (mode === "exp") arr.sort((a, b) => peakExpTotal(b.id) - peakExpTotal(a.id) || (b.score || 0) - (a.score || 0));
-    else if (mode === "score") arr.sort((a, b) => (b.score || 0) - (a.score || 0));
-    else arr.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "zh-CN") || (a.sort_order || 0) - (b.sort_order || 0));
-    return arr;
+    return list.slice().sort((a, b) =>
+      (b.score || 0) - (a.score || 0) ||
+      peakExpTotal(b.id) - peakExpTotal(a.id) ||
+      (a.sort_order || 0) - (b.sort_order || 0)
+    );
   }
+  /** 组员默认按经验/贡献高低；设置页等可传 "name" */
   function sortDisciples(list, mode) {
-    const m = mode || sortMode || "name";
+    const m = mode || "score";
     const arr = list.slice();
-    if (m === "exp" || m === "score") arr.sort((a, b) => (b.exp || 0) - (a.exp || 0) || (b.contributed || 0) - (a.contributed || 0));
-    else arr.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "zh-CN"));
-    // captains first within same sort when name mode
-    if (m === "name") arr.sort((a, b) => {
+    if (m === "name") {
+      arr.sort((a, b) => {
+        const ca = a.role === "队长" ? 0 : 1, cb = b.role === "队长" ? 0 : 1;
+        if (ca !== cb) return ca - cb;
+        return String(a.name || "").localeCompare(String(b.name || ""), "zh-CN");
+      });
+      return arr;
+    }
+    arr.sort((a, b) => {
       const ca = a.role === "队长" ? 0 : 1, cb = b.role === "队长" ? 0 : 1;
       if (ca !== cb) return ca - cb;
-      return String(a.name || "").localeCompare(String(b.name || ""), "zh-CN");
+      return (b.exp || 0) - (a.exp || 0) ||
+        (b.contributed || 0) - (a.contributed || 0) ||
+        String(a.name || "").localeCompare(String(b.name || ""), "zh-CN");
     });
     return arr;
   }
@@ -2657,9 +2653,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     document.getElementById("day-label").textContent = day;
     const dayInput = document.getElementById("day-input");
     if (document.activeElement !== dayInput) dayInput.value = day;
-    const sortSel = document.getElementById("sort-mode");
-    sortMode = state.config?.sort_mode || sortMode || "name";
-    if (document.activeElement !== sortSel) sortSel.value = sortMode;
+    sortMode = "score";
 
     const { red, blue } = campTotals();
     document.getElementById("red-total").textContent = red;
@@ -2750,7 +2744,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     const memberPane = `
       <div class="row" style="margin-bottom:.5rem">
         <button type="button" class="primary" id="m-add">＋弟子</button>
-        <span class="muted">当前 ${members.length} 人 · 按${sortMode==="exp"?"经验":"首字母"}排序</span>
+        <span class="muted">当前 ${members.length} 人 · 按经验高低</span>
       </div>
       <div>
         ${members.map((d) => `
@@ -3850,10 +3844,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
       });
     }
     document.getElementById("day-input").addEventListener("change", async (e) => changeDay(e.target.value));
-    document.getElementById("sort-mode").addEventListener("change", async (e) => {
-      sortMode = e.target.value;
-      await updatePaths({ "config/sort_mode": sortMode });
-    });
     document.querySelectorAll("[data-log-filter]").forEach((btn) => {
       btn.addEventListener("click", () => {
         logFilter = btn.dataset.logFilter;
