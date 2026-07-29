@@ -4350,7 +4350,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function peakFeedText(peakId, peakName, day) {
     const logs = getLogsArray()
       .filter((l) => Number(l.peak_id) === Number(peakId) && (day == null || l.day === day))
-      .slice(0, 12);
+      .slice(0, 10);
     if (!logs.length) return `${peakName}战报：静候出招……`;
     return `${peakName}战报：` + logs.map((l) => `+${l.points}（${l.reason}）`).join(" ｜ ");
   }
