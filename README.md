@@ -6,47 +6,32 @@
 
 ---
 
-## 本地部署（推荐）
+## 马上预览
 
-### 环境要求
+云端已装好依赖并启动服务时，请看 [`PREVIEW.md`](PREVIEW.md) 里的公网链接（`*.trycloudflare.com`）。
 
-- 已安装 [Node.js](https://nodejs.org/)（建议 18+，自带 `npx`）
-- 或任意静态服务器（Python / VS Code Live Server 等）
+## 本地部署（你自己的电脑）
 
-### 1. 拉取代码
+### 1. 拉取并安装依赖（一次性）
 
 ```bash
 git clone https://github.com/jun66888/Photon.git
 cd Photon
 git checkout cursor/guangyingmeng-arena-f9c7
+npm install
 ```
 
-也可以只下载本分支里的 `index.html`，单独放到一个空文件夹。
+需要：[Node.js 18+](https://nodejs.org/)（安装后自带 `npm`）。
 
-### 2. 启动本地服务
-
-**方式 A：一键脚本**
-
-- Windows：双击 `start.bat`
-- macOS / Linux：
-
-```bash
-chmod +x start.sh
-./start.sh
-```
-
-**方式 B：npm**
+### 2. 启动
 
 ```bash
 npm start
 ```
 
-**方式 C：Python（无 Node 时）**
+或 Windows 双击 `start.bat` / macOS·Linux 执行 `./start.sh`。
 
-```bash
-# Python 3
-python -m http.server 3000
-```
+无 Node 时可用：`python -m http.server 3000`
 
 ### 3. 浏览器打开
 
@@ -57,16 +42,9 @@ python -m http.server 3000
 | 签到端 | http://localhost:3000/?mode=checkin&code=老师生成的码 |
 | 毕业回忆 | http://localhost:3000/?mode=memories |
 
-左上角若显示 **DEMO · 本地模式**，说明当前未接 Firebase，加分等操作仍可用，数据只保存在本机浏览器。
+左上角 **DEMO · 本地模式** = 未接 Firebase，数据在本机浏览器，界面可完整体验。
 
-### 手机连同一台电脑（局域网）
-
-1. 电脑与手机连同一个 Wi-Fi  
-2. 查电脑局域网 IP（如 `192.168.1.8`）  
-3. 手机访问：`http://192.168.1.8:3000/?mode=student`  
-4. 签到二维码也会自动用当前访问的主机名生成  
-
-> 不要用云端 Agent 里的 `localhost`，那是远程虚拟机地址，你本机打不开。
+手机同 Wi-Fi 访问电脑局域网 IP，例如 `http://192.168.1.8:3000/?mode=student`。
 
 ---
 
