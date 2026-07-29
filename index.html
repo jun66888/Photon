@@ -2249,13 +2249,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <span class="brand-name">光影盟</span>
     </button>
     <nav class="brand-nav-links" id="teacher-nav-links">
+      <button type="button" id="nav-fullscreen" data-action="toggle-fullscreen" title="全屏投屏">全屏</button>
       <button type="button" data-action="goto-main" data-nav="main">主页</button>
       <button type="button" data-action="custom-score">加分</button>
       <button type="button" data-action="goto-checkin" data-nav="checkin">签到</button>
       <button type="button" data-action="goto-vote" data-nav="vote">投票</button>
       <button type="button" data-action="goto-logs" data-nav="logs">日志</button>
       <button type="button" data-action="goto-settings" data-nav="settings">设置</button>
-      <button type="button" id="nav-fullscreen" data-action="toggle-fullscreen" title="全屏投屏">全屏</button>
     </nav>
   </header>
 
@@ -2267,13 +2267,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     </button>
     <div class="rail-label">课程</div>
     <nav id="rail-nav-links">
+      <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
       <button type="button" class="rail-btn" data-action="goto-main" data-nav="main"><span class="ico">⚔</span>对擂</button>
       <button type="button" class="rail-btn" data-action="goto-checkin" data-nav="checkin"><span class="ico">签</span>签到</button>
       <button type="button" class="rail-btn" data-action="goto-vote" data-nav="vote"><span class="ico">票</span>投票</button>
       <button type="button" class="rail-btn" data-action="goto-logs" data-nav="logs"><span class="ico">录</span>日志</button>
       <button type="button" class="rail-btn" data-action="custom-score"><span class="ico">＋</span>加分</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
-      <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
     </nav>
     <div class="rail-day">
       <div class="muted" style="font-size:.65rem">DAY</div>
@@ -2297,6 +2297,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div id="teacher-main" class="subview course-page">
       <div class="arena-duel-hero" id="arena-duel-hero">
         <div class="arena-duel-toolbar">
+          <button type="button" class="primary" id="hero-fullscreen" data-action="toggle-fullscreen" title="全屏投屏 · Ctrl/⌘+Shift+F">全屏</button>
           <span class="duel-label">山峰对擂</span>
           <span class="round-chip">DAY <span id="day-label">1</span></span>
           <label class="tool-inline"><span>天数</span>
@@ -2305,7 +2306,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <span class="toolbar-grow"></span>
           <button type="button" data-action="add-peak-red">＋光影山峰</button>
           <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
-          <button type="button" class="primary" id="hero-fullscreen" data-action="toggle-fullscreen" title="全屏投屏 · Ctrl/⌘+Shift+F">全屏</button>
         </div>
         <div class="hall-banner" id="hall-home-banner" hidden></div>
         <div class="mission-board as-hero" id="mission-board" aria-label="门派任务与两派对阵">
