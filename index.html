@@ -307,17 +307,9 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   display: flex; flex-direction: column; gap: .4rem;
   margin-bottom: 0; flex: 0 0 auto;
 }
-.arena-duel-toolbar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .45rem;
-  padding: .3rem .4rem;
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 8px;
-  background: rgba(12,18,32,.55);
-}
-.arena-duel-toolbar .toolbar-grow { flex: 1 1 auto; min-width: .25rem; }
 .mission-publish-top {
   min-height: 5.4rem;
-  padding: .65rem .9rem;
+  padding: .7rem 1rem;
   border-style: solid;
   border-width: 2px;
   border-color: rgba(240,193,75,.55);
@@ -326,12 +318,82 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     radial-gradient(120% 90% at 50% 0%, rgba(240,193,75,.2), transparent 55%),
     linear-gradient(160deg, rgba(28,34,52,.98), rgba(10,14,24,.96));
   box-shadow: 0 10px 24px rgba(0,0,0,.28), inset 0 0 0 1px rgba(240,193,75,.12);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  color: inherit;
+}
+.mission-publish-top:hover {
+  border-color: var(--gold);
+  box-shadow: 0 12px 28px rgba(0,0,0,.32), inset 0 0 0 1px rgba(240,193,75,.22);
 }
 .mission-publish-top .mb-kicker {
-  font-size: .72rem; letter-spacing: .2em;
+  font-size: .72rem; letter-spacing: .2em; color: var(--gold); font-weight: 700;
+  margin-bottom: .35rem;
 }
-.mission-publish-top .mb-title {
-  font-size: clamp(1.4rem, 3vw, 2rem);
+.mission-weight-list {
+  display: flex; flex-direction: column; gap: .28rem;
+  width: 100%;
+}
+.mission-weight-item {
+  display: flex; flex-direction: column; gap: .08rem;
+  padding: .15rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.mission-weight-item:last-child { border-bottom: none; }
+.mission-weight-item .mw-title {
+  font-family: var(--font-brush);
+  color: #fff5e8;
+  letter-spacing: .05em;
+  line-height: 1.2;
+}
+.mission-weight-item .mw-desc {
+  color: var(--ink-soft);
+  line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.mission-weight-item .mw-meta {
+  display: flex; flex-wrap: wrap; gap: .25rem .4rem; margin-top: .1rem;
+}
+.mission-weight-empty {
+  font-size: .9rem; color: var(--ink-soft); padding: .35rem 0;
+}
+.mission-items-editor {
+  display: flex; flex-direction: column; gap: .55rem;
+  max-height: min(52vh, 420px); overflow: auto;
+  padding-right: .15rem;
+}
+.mission-item-card {
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 8px;
+  padding: .55rem .65rem;
+  background: rgba(10,14,24,.72);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .4rem .55rem;
+}
+.mission-item-card.hidden-item {
+  opacity: .55;
+  border-style: dashed;
+}
+.mission-item-card .mic-main { grid-column: 1 / -1; display: flex; flex-direction: column; gap: .35rem; }
+.mission-item-card .mic-tools {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem;
+  grid-column: 1 / -1;
+}
+.mission-item-card .mic-tools label {
+  display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .78rem; color: var(--ink-soft); margin: 0;
+}
+.mission-item-card .mic-tools input[type="number"] {
+  width: 4.2rem; min-height: 2rem; padding: .2rem .35rem;
+}
+.mission-item-card .weight-val {
+  font-family: var(--font-num); color: var(--gold); font-weight: 800; min-width: 1.6rem;
+}
+.arena-duel-toolbar {
+  display: none !important;
 }
 .mission-board.as-hero {
   min-height: 0;
@@ -372,7 +434,9 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 .mission-publish .mb-meta {
   display: flex; flex-wrap: wrap; gap: .25rem .45rem; margin-top: .1rem;
 }
-.mission-publish .mb-tag {
+.mission-publish .mb-tag,
+.mission-weight-item .mb-tag,
+.mb-tag {
   font-size: .68rem; padding: .12rem .4rem; border-radius: 4px;
   border: 1px solid rgba(240,193,75,.35); color: #ffe39a;
   background: rgba(240,193,75,.08); letter-spacing: .06em;
@@ -2310,6 +2374,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" data-action="goto-checkin" data-nav="checkin">签到</button>
       <button type="button" data-action="goto-vote" data-nav="vote">投票</button>
       <button type="button" data-action="goto-logs" data-nav="logs">日志</button>
+      <button type="button" data-action="edit-camp-mission">任务</button>
       <button type="button" data-action="goto-settings" data-nav="settings">设置</button>
     </nav>
   </header>
@@ -2320,7 +2385,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <span class="brand-seal">盟</span>
       <span class="brand-name">光影盟</span>
     </button>
-    <div class="rail-label">课程</div>
+    <div class="rail-label">常用</div>
     <nav id="rail-nav-links">
       <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
       <button type="button" class="rail-btn" data-action="goto-main" data-nav="main"><span class="ico">⚔</span>对擂</button>
@@ -2328,9 +2393,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" class="rail-btn" data-action="goto-vote" data-nav="vote"><span class="ico">票</span>投票</button>
       <button type="button" class="rail-btn" data-action="goto-logs" data-nav="logs"><span class="ico">录</span>日志</button>
       <button type="button" class="rail-btn" data-action="custom-score"><span class="ico">＋</span>加分</button>
+      <button type="button" class="rail-btn" data-action="edit-camp-mission" title="编辑今日门派任务"><span class="ico">任</span>任务</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
     </nav>
-    <div class="rail-day">
+    <div class="rail-day" id="rail-day-box" title="点击到设置调整天数" data-action="goto-settings" style="cursor:pointer">
       <div class="muted" style="font-size:.65rem">DAY</div>
       <div class="day-num" id="rail-day-label">1</div>
     </div>
@@ -2342,21 +2408,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div id="edit-box-layer" aria-label="编辑框层"></div>
     <div id="teacher-main" class="subview course-page">
       <div class="arena-duel-hero" id="arena-duel-hero">
-        <button type="button" class="mission-publish mission-publish-top" id="mission-publish-bar" data-action="edit-camp-mission" title="点击编辑门派任务">
-          <div class="mb-kicker">门派任务发布</div>
-          <div class="mb-title" id="mission-board-title">今日门派任务</div>
-          <div class="mb-desc" id="mission-board-desc">点击编辑今日门派任务</div>
-          <div class="mb-meta" id="mission-board-meta"></div>
+        <button type="button" class="mission-publish-top" id="mission-publish-bar" data-action="edit-camp-mission" title="点击管理今日门派任务 · 可调权重与显隐">
+          <div class="mb-kicker">今日门派任务</div>
+          <div class="mission-weight-list" id="mission-board-list">
+            <div class="mission-weight-empty">点击添加门派任务</div>
+          </div>
         </button>
-        <div class="arena-duel-toolbar" aria-label="对擂工具">
-          <span class="round-chip">DAY <span id="day-label">1</span></span>
-          <label class="tool-inline"><span>天数</span>
-            <input id="day-input" class="day-input" type="number" min="1" value="1" />
-          </label>
-          <span class="toolbar-grow"></span>
-          <button type="button" data-action="add-peak-red">＋光影山峰</button>
-          <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
-        </div>
         <div class="hall-banner" id="hall-home-banner" hidden></div>
         <div class="mission-board as-hero" id="mission-board" aria-label="两派对阵属性">
           <button type="button" class="mission-camp-chip red" data-action="camp-attrs" data-camp="red" title="点击设定光影派系属性">
@@ -2989,7 +3046,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           red_note: "侧重镜头与故事表达",
           blue_focus: "声浪情绪特训",
           blue_element: "水",
-          blue_note: "侧重声音与情绪传递"
+          blue_note: "侧重声音与情绪传递",
+          items: [
+            {
+              id: "mission_main",
+              title: "今日门派任务",
+              desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
+              weight: 90,
+              visible: true,
+              points: 10,
+              difficulty: "进阶",
+              category: "任务"
+            }
+          ]
         }
       },
       peaks, disciples, score_logs: {}, bonus_presets, tasks
@@ -4283,12 +4352,55 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     red_note: "侧重镜头与故事表达",
     blue_focus: "声浪情绪特训",
     blue_element: "水",
-    blue_note: "侧重声音与情绪传递"
+    blue_note: "侧重声音与情绪传递",
+    items: []
   };
+
+  function newMissionItem(partial) {
+    const p = partial || {};
+    return {
+      id: p.id || ("mission_" + Date.now() + "_" + Math.floor(Math.random() * 1000)),
+      title: (p.title || "").trim() || "未命名任务",
+      desc: (p.desc || "").trim(),
+      weight: Math.max(1, Math.min(100, Number(p.weight) || 50)),
+      visible: p.visible !== false,
+      points: Number(p.points) || 0,
+      difficulty: p.difficulty || "普通",
+      category: p.category || "任务"
+    };
+  }
 
   function getCampMission() {
     const raw = (state.config && state.config.camp_mission) || {};
-    return { ...DEFAULT_CAMP_MISSION, ...raw };
+    const m = { ...DEFAULT_CAMP_MISSION, ...raw };
+    let items = Array.isArray(m.items) ? m.items.filter(Boolean).map((it) => newMissionItem(it)) : [];
+    if (!items.length && (m.title || m.desc)) {
+      items = [newMissionItem({
+        id: "mission_legacy",
+        title: m.title || "今日门派任务",
+        desc: m.desc || "",
+        weight: 90,
+        visible: m.status !== "draft",
+        points: m.points,
+        difficulty: m.difficulty,
+        category: m.category
+      })];
+    }
+    items.sort((a, b) => (b.weight || 0) - (a.weight || 0) || String(a.title).localeCompare(String(b.title), "zh-CN"));
+    m.items = items;
+    return m;
+  }
+
+  function missionFontSize(weight) {
+    const w = Math.max(1, Math.min(100, Number(weight) || 50));
+    const px = 0.95 + (w / 100) * 1.25;
+    return px.toFixed(2) + "rem";
+  }
+
+  function missionDescSize(weight) {
+    const w = Math.max(1, Math.min(100, Number(weight) || 50));
+    const px = 0.7 + (w / 100) * 0.28;
+    return px.toFixed(2) + "rem";
   }
 
   function getCampLiveStats(camp) {
@@ -4349,20 +4461,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span>侧重 <b>${esc(m.blue_focus || "—")}</b></span>
         <span>山峰 <b>${blueLive.peakCount}</b> · 弟子 <b>${blueLive.memberCount}</b></span>`;
     }
-    const title = document.getElementById("mission-board-title");
-    const desc = document.getElementById("mission-board-desc");
-    const meta = document.getElementById("mission-board-meta");
-    if (title) title.textContent = m.title || "门派任务";
-    if (desc) desc.textContent = m.desc || "点击编辑今日门派任务";
-    if (meta) {
-      const tags = [
-        m.status === "published" ? "已发布" : "草稿",
-        m.difficulty || "普通",
-        `奖励 +${m.points || 0}`,
-        m.category || "任务"
-      ];
-      if (m.deadline) tags.push("截止 " + m.deadline);
-      meta.innerHTML = tags.map((t) => `<span class="mb-tag">${esc(t)}</span>`).join("");
+    const list = document.getElementById("mission-board-list");
+    if (list) {
+      const visible = (m.items || []).filter((it) => it.visible !== false);
+      if (!visible.length) {
+        list.innerHTML = `<div class="mission-weight-empty">暂无显示中的任务 · 点击管理权重与显隐</div>`;
+      } else {
+        list.innerHTML = visible.map((it) => `
+          <div class="mission-weight-item" data-weight="${it.weight}">
+            <div class="mw-title" style="font-size:${missionFontSize(it.weight)}">${esc(it.title)}</div>
+            ${it.desc ? `<div class="mw-desc" style="font-size:${missionDescSize(it.weight)}">${esc(it.desc)}</div>` : ""}
+            <div class="mw-meta">
+              <span class="mb-tag">权重 ${it.weight}</span>
+              ${it.difficulty ? `<span class="mb-tag">${esc(it.difficulty)}</span>` : ""}
+              ${it.points ? `<span class="mb-tag">+${it.points}</span>` : ""}
+            </div>
+          </div>`).join("");
+      }
     }
   }
 
@@ -4394,40 +4509,94 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const m = getCampMission();
     const redLive = getCampLiveStats("red");
     const blueLive = getCampLiveStats("blue");
+    let draftItems = (m.items || []).map((it) => ({ ...it }));
+
+    function sortDraft() {
+      draftItems.sort((a, b) => (b.weight || 0) - (a.weight || 0) || String(a.title).localeCompare(String(b.title), "zh-CN"));
+    }
+
+    function renderItemsEditor() {
+      const host = document.getElementById("cm-items-editor");
+      if (!host) return;
+      sortDraft();
+      if (!draftItems.length) {
+        host.innerHTML = `<div class="muted">还没有任务 · 点下方「添加任务」</div>`;
+        return;
+      }
+      host.innerHTML = draftItems.map((it, idx) => `
+        <div class="mission-item-card ${it.visible === false ? "hidden-item" : ""}" data-idx="${idx}">
+          <div class="mic-main">
+            <label><span>任务标题</span><input type="text" maxlength="40" data-f="title" value="${esc(it.title || "")}" placeholder="例如：镜头叙事挑战" /></label>
+            <label><span>任务说明</span><textarea rows="2" maxlength="160" data-f="desc" placeholder="补充说明">${esc(it.desc || "")}</textarea></label>
+          </div>
+          <div class="mic-tools">
+            <label>权重 <input type="range" min="1" max="100" data-f="weight" value="${it.weight || 50}" /><b class="weight-val">${it.weight || 50}</b></label>
+            <label><input type="checkbox" data-f="visible" ${it.visible !== false ? "checked" : ""} /> 显示</label>
+            <label>奖励 <input type="number" min="0" data-f="points" value="${Number(it.points) || 0}" /></label>
+            <label>难度
+              <select data-f="difficulty">
+                ${["普通","进阶","挑战","传说"].map((d) => `<option ${d === (it.difficulty || "普通") ? "selected" : ""}>${d}</option>`).join("")}
+              </select>
+            </label>
+            <button type="button" class="ghost" data-del-item="${idx}">删除</button>
+          </div>
+        </div>`).join("");
+
+      host.querySelectorAll(".mission-item-card").forEach((card) => {
+        const idx = Number(card.dataset.idx);
+        card.querySelectorAll("[data-f]").forEach((el) => {
+          const applyField = () => {
+            const f = el.dataset.f;
+            if (f === "visible") {
+              draftItems[idx].visible = el.checked;
+              card.classList.toggle("hidden-item", draftItems[idx].visible === false);
+            } else if (f === "weight") {
+              draftItems[idx].weight = Math.max(1, Math.min(100, Number(el.value) || 50));
+              const lab = card.querySelector(".weight-val");
+              if (lab) lab.textContent = String(draftItems[idx].weight);
+            } else if (f === "points") draftItems[idx].points = Number(el.value) || 0;
+            else draftItems[idx][f] = el.value;
+          };
+          el.addEventListener("input", applyField);
+          el.addEventListener("change", () => {
+            applyField();
+            if (el.dataset.f === "weight") {
+              const keepId = draftItems[idx].id;
+              renderItemsEditor();
+              host.querySelectorAll(".mission-item-card").forEach((c) => {
+                const i = Number(c.dataset.idx);
+                if (draftItems[i] && draftItems[i].id === keepId) {
+                  const w = c.querySelector('[data-f="weight"]');
+                  if (w) w.focus();
+                }
+              });
+            }
+          });
+        });
+        const del = card.querySelector("[data-del-item]");
+        if (del) del.onclick = () => {
+          draftItems.splice(idx, 1);
+          renderItemsEditor();
+        };
+      });
+    }
+
     openModal(`
       <div class="mission-edit-modal-root">
-        <h3>门派任务发布</h3>
-        <p class="muted" style="text-align:center;margin-bottom:.55rem">编辑任务属性 · 两侧同步弹出光影 / 声浪派系属性</p>
+        <h3>今日门派任务</h3>
+        <p class="muted" style="text-align:center;margin-bottom:.55rem">可添加多条 · 权重越高字号越大、排越前 · 可单独隐藏</p>
         <div class="mission-edit-layout">
           ${renderFactionPane("red", m, redLive)}
           <div class="mission-center-pane stack">
-            <label><span>任务标题</span><input id="cm-title" type="text" maxlength="32" value="${esc(m.title || "")}" /></label>
-            <label><span>任务说明</span><textarea id="cm-desc" rows="3" maxlength="160">${esc(m.desc || "")}</textarea></label>
-            <div class="row" style="gap:.5rem">
-              <label style="flex:1"><span>奖励真气</span><input id="cm-points" type="number" min="0" value="${Number(m.points) || 0}" /></label>
-              <label style="flex:1"><span>难度</span>
-                <select id="cm-diff">
-                  ${["普通","进阶","挑战","传说"].map((d) => `<option ${d === (m.difficulty || "进阶") ? "selected" : ""}>${d}</option>`).join("")}
-                </select>
-              </label>
+            <div class="row" style="justify-content:space-between;align-items:center">
+              <strong style="color:var(--gold)">任务列表</strong>
+              <button type="button" class="primary" id="cm-add-item">＋添加任务</button>
             </div>
-            <div class="row" style="gap:.5rem">
-              <label style="flex:1"><span>类别</span>
-                <select id="cm-cat">
-                  ${["任务","日常","擂台","自定义"].map((c) => `<option ${c === (m.category || "任务") ? "selected" : ""}>${c}</option>`).join("")}
-                </select>
-              </label>
-              <label style="flex:1"><span>状态</span>
-                <select id="cm-status">
-                  <option value="published" ${m.status !== "draft" ? "selected" : ""}>已发布</option>
-                  <option value="draft" ${m.status === "draft" ? "selected" : ""}>草稿</option>
-                </select>
-              </label>
-            </div>
-            <label><span>截止（可选）</span><input id="cm-deadline" type="text" maxlength="24" value="${esc(m.deadline || "")}" placeholder="例如：今日下课前" /></label>
+            <div class="mission-items-editor" id="cm-items-editor"></div>
+            <label><span>截止（可选，全局）</span><input id="cm-deadline" type="text" maxlength="24" value="${esc(m.deadline || "")}" placeholder="例如：今日下课前" /></label>
             <div class="row" style="justify-content:flex-end;margin-top:.35rem">
               <button type="button" class="ghost" id="modal-cancel">取消</button>
-              <button type="button" class="primary" id="cm-save">保存发布</button>
+              <button type="button" class="primary" id="cm-save">保存</button>
             </div>
           </div>
           ${renderFactionPane("blue", m, blueLive)}
@@ -4442,26 +4611,36 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         pane.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
     }
+    renderItemsEditor();
+    document.getElementById("cm-add-item").onclick = () => {
+      draftItems.push(newMissionItem({ title: "新门派任务", desc: "", weight: 50, visible: true, points: 10, difficulty: "普通" }));
+      renderItemsEditor();
+    };
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("cm-save").onclick = async () => {
+      sortDraft();
+      const items = draftItems.map((it) => newMissionItem(it));
+      const top = items.find((it) => it.visible !== false) || items[0] || newMissionItem({ title: "今日门派任务" });
       const next = {
-        title: (document.getElementById("cm-title").value || "").trim() || "今日门派任务",
-        desc: (document.getElementById("cm-desc").value || "").trim(),
-        points: Number(document.getElementById("cm-points").value) || 0,
-        difficulty: document.getElementById("cm-diff").value,
-        category: document.getElementById("cm-cat").value,
-        status: document.getElementById("cm-status").value,
+        title: top.title,
+        desc: top.desc,
+        points: top.points,
+        difficulty: top.difficulty,
+        category: top.category || "任务",
+        status: items.some((it) => it.visible !== false) ? "published" : "draft",
         deadline: (document.getElementById("cm-deadline").value || "").trim(),
         red_focus: (document.getElementById("cm-red-focus").value || "").trim(),
         red_element: document.getElementById("cm-red-element").value,
         red_note: (document.getElementById("cm-red-note").value || "").trim(),
         blue_focus: (document.getElementById("cm-blue-focus").value || "").trim(),
         blue_element: document.getElementById("cm-blue-element").value,
-        blue_note: (document.getElementById("cm-blue-note").value || "").trim()
+        blue_note: (document.getElementById("cm-blue-note").value || "").trim(),
+        items
       };
       await updatePaths({ "config/camp_mission": next });
       closeModal();
       renderMissionBoard();
+      if (teacherView === "settings") renderSettings();
     };
   }
 
@@ -4712,9 +4891,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function renderTeacherMain() {
     const day = state.config?.day || 1;
-    document.getElementById("day-label").textContent = day;
+    const dayLabel = document.getElementById("day-label");
+    if (dayLabel) dayLabel.textContent = day;
     const dayInput = document.getElementById("day-input");
-    if (document.activeElement !== dayInput) dayInput.value = day;
+    if (dayInput && document.activeElement !== dayInput) dayInput.value = day;
     sortMode = "score";
 
     const hall = getHallDisciples();
@@ -6161,8 +6341,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (runtime) {
       runtime.innerHTML = `
         <span class="meta-pill">模式 · ${demoMode ? "DEMO 本地" : "Firebase"}</span>
-        <span class="meta-pill">DAY ${day}</span>
-        <span class="meta-pill">任务 · ${esc(m.status === "draft" ? "草稿" : "已发布")}</span>
+        <label class="tool-inline" style="margin:0"><span>天数</span>
+          <input id="day-input" class="day-input" type="number" min="1" value="${day}" />
+        </label>
+        <span class="meta-pill">任务 · ${(m.items || []).filter((x) => x.visible !== false).length}/${(m.items || []).length || 0} 显示</span>
+        <button type="button" data-action="add-peak-red">＋光影山峰</button>
+        <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
         <button type="button" id="settings-sfx-toggle">${sfxEnabled ? (pal3PackReady ? "🔊 音效开·包" : "🔊 音效开") : "🔇 音效关"}</button>
         <button type="button" id="settings-sfx-import">导入音效包</button>
         <button type="button" data-action="export-data">导出</button>
@@ -6176,6 +6360,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <button type="button" id="btn-memories" data-action="goto-memories" ${day < 20 ? "disabled" : ""}>回忆${day < 20 ? "·D20" : ""}</button>
         ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}
         <input type="file" id="settings-sfx-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
+      const dayIn = document.getElementById("day-input");
+      if (dayIn) dayIn.onchange = async (e) => { await changeDay(e.target.value); renderSettings(); };
       const sfxToggle = document.getElementById("settings-sfx-toggle");
       if (sfxToggle) sfxToggle.onclick = () => {
         sfxEnabled = !sfxEnabled;
@@ -6225,10 +6411,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     const missionHost = document.getElementById("settings-mission");
     if (missionHost) {
+      const items = m.items || [];
+      const shown = items.filter((x) => x.visible !== false);
+      const preview = shown[0] || items[0];
       missionHost.innerHTML = `
         <button type="button" class="settings-mission-btn" data-action="edit-camp-mission">
-          <div class="sm-title">${esc(m.title || "门派任务")}</div>
-          <div class="sm-desc">${esc(m.desc || "点击编辑任务与两派属性")} · ${esc(m.difficulty || "进阶")} · +${m.points || 0} · ${m.status === "draft" ? "草稿" : "已发布"}</div>
+          <div class="sm-title">${esc(preview ? preview.title : "门派任务")}</div>
+          <div class="sm-desc">${shown.length} 条显示 / 共 ${items.length} 条 · 权重排序 · 点击管理显隐</div>
         </button>`;
     }
 
@@ -7191,7 +7380,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     };
     bindNavHost(document.getElementById("brand-nav"));
     bindNavHost(document.getElementById("rail-left"));
-    document.getElementById("day-input").addEventListener("change", async (e) => changeDay(e.target.value));
+    const dayInputEl = document.getElementById("day-input");
+    if (dayInputEl) dayInputEl.addEventListener("change", async (e) => changeDay(e.target.value));
     document.querySelectorAll("[data-log-filter]").forEach((btn) => {
       btn.addEventListener("click", () => {
         logFilter = btn.dataset.logFilter;
