@@ -851,6 +851,54 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e4ebf6; font-weight: 700;
 }
 .member-bar-row .mname.cap { color: var(--gold); }
+.member-bar-row .mname.in { color: #ffe39a; text-shadow: 0 0 10px rgba(240,193,75,.85), 0 0 18px rgba(255,215,100,.45); }
+.member-bar-row .mname.out { color: #ff8a9a; }
+.member-bar-row.check-in {
+  background: linear-gradient(90deg, rgba(240,193,75,.12), transparent);
+  border-radius: 4px; padding: .1rem .15rem;
+}
+.member-bar-row.check-out {
+  background: linear-gradient(90deg, rgba(180,30,50,.14), transparent);
+  border-radius: 4px; padding: .1rem .15rem;
+}
+.member-status {
+  grid-column: 1 / -1;
+  font-size: .68rem; padding: 0 0 .15rem .1rem;
+}
+.member-status.cultivating { color: #ffe39a; }
+.member-status.absent { color: #ff8a9a; }
+.hall-banner {
+  margin: .4rem 0 .7rem; padding: .55rem .7rem;
+  border: 1px dashed rgba(240,193,75,.45); border-radius: 8px;
+  background: rgba(240,193,75,.06); color: #ffe39a; font-size: .85rem;
+}
+.hall-picker {
+  max-height: 42vh; overflow: auto; display: flex; flex-direction: column; gap: .35rem;
+}
+.hall-pick-row {
+  display: flex; justify-content: space-between; align-items: center; gap: .5rem;
+  padding: .45rem .55rem; border: 1px solid rgba(255,255,255,.12); border-radius: 6px;
+  background: rgba(0,0,0,.25); cursor: grab;
+}
+.hall-pick-row.other { border-color: rgba(255,107,132,.35); }
+.custom-text-field { display: flex; flex-direction: column; gap: .35rem; }
+.custom-text-field input, .custom-text-field textarea {
+  width: 100%; font-size: .95rem;
+}
+.idol-upload-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.idol-preview {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 2px solid var(--gold); object-fit: cover; background: rgba(0,0,0,.35);
+  display: grid; place-items: center; font-size: 2rem; overflow: hidden;
+}
+.idol-preview img { width: 100%; height: 100%; object-fit: cover; }
+body.mode-mobile-clean #brand-nav,
+body.mode-mobile-clean #sfx-bar,
+body.mode-mobile-clean .demo-tip,
+body.mode-mobile-clean #arena-ticker { display: none !important; }
+body.mode-mobile-clean { --brand-nav-offset: 0px; }
+body.mode-mobile-clean #student-screen,
+body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 .member-track {
   height: 7px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.1);
   border-radius: 99px; overflow: hidden;
@@ -1618,6 +1666,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
         <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
       </div>
 
+      <div class="hall-banner" id="hall-home-banner" hidden></div>
       <div class="fight-hud" id="pk-bar">
         <div class="pk-side red">
           <div class="pk-inline">
@@ -1733,7 +1782,11 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
         <button type="button" data-action="back-main" class="ghost">返回</button>
       </div>
       <div class="paper panel">
-        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">角色名册</h4>
+        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">运行与音效</h4>
+        <div id="settings-demo-box" style="margin-bottom:1rem"></div>
+        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">大厅 · 未入峰</h4>
+        <div id="settings-hall" style="margin-bottom:1rem"></div>
+        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">小组名册</h4>
         <div id="settings-peaks"></div>
         <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-peak">＋添加角色</button></div>
         <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">弟子名册</h4>
@@ -1934,8 +1987,36 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     { label: "晴空", color: "#4fc3f7" },
     { label: "墨青", color: "#7e8ba3" },
     { label: "柳芽", color: "#aeea00" },
-    { label: "玄黑", color: "#90a4ae" },
-    { label: "朱砂", color: "#ff7043" }
+    { label: "玄黑", color: "#546e7a" },
+    { label: "朱砂", color: "#ff7043" },
+    { label: "霜银", color: "#cfd8dc" },
+    { label: "胭脂", color: "#e53935" },
+    { label: "松绿", color: "#26a69a" },
+    { label: "靛蓝", color: "#5c6bc0" },
+    { label: "琥珀", color: "#ffb300" },
+    { label: "玫紫", color: "#ab47bc" },
+    { label: "湖青", color: "#00acc1" },
+    { label: "玄金", color: "#c9a227" }
+  ];
+  /** 拳皇风格角色音效包（合成还原气质；可再导入本地采样） */
+  const KOF_SFX_PACKS = [
+    { id: "kyo", name: "草薙京", tag: "炎", hue: "#ff3b5c" },
+    { id: "iori", name: "八神庵", tag: "暗炎", hue: "#ab47bc" },
+    { id: "terry", name: "特瑞", tag: "热血", hue: "#ff9f43" },
+    { id: "mai", name: "不知火舞", tag: "扇舞", hue: "#ff6b9d" },
+    { id: "k", name: "K'", tag: "冷焰", hue: "#90a4ae" },
+    { id: "athena", name: "雅典娜", tag: "超能", hue: "#b388ff" },
+    { id: "joe", name: "乔·东", tag: "台风", hue: "#f0c14b" },
+    { id: "ryo", name: "罗伯特", tag: "极虎", hue: "#ff7043" },
+    { id: "king", name: "金", tag: "腿技", hue: "#5c6bc0" },
+    { id: "chang", name: "陈国汉", tag: "刚猛", hue: "#26a69a" }
+  ];
+  const PEAK_BGM_PRESETS = [
+    { id: "none", name: "无 BGM" },
+    { id: "battle", name: "对擂鼓点" },
+    { id: "neon", name: "霓虹节奏" },
+    { id: "zen", name: "静心修炼" },
+    { id: "custom", name: "自定义上传" }
   ];
   const PEAK_NAME_PRESETS = [
     "光影峰","创意峰","追光峰","声浪峰","音浪峰",
@@ -2054,6 +2135,9 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       win_quote: meta.win_quote || "此局，我方胜！",
       badge: meta.badge || "新锐",
       color: meta.color || (meta.camp === "blue" ? "#2ee6ff" : "#ff3b5c"),
+      sfx_pack: meta.sfx_pack || "kyo",
+      bgm_id: meta.bgm_id || "none",
+      bgm_url: meta.bgm_url || "",
       sort_order: meta.sort_order != null ? meta.sort_order : meta.id,
       score: meta.score || 0,
       votes: meta.votes || 0,
@@ -2131,6 +2215,20 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   }
   function disciplesOfPeak(peakId) {
     return getDisciplesArray().filter((d) => d.peak === peakId);
+  }
+  function isInHall(d) {
+    return !d || d.peak == null || Number(d.peak) < 0;
+  }
+  function getHallDisciples() {
+    return sortDisciples(getDisciplesArray().filter(isInHall), "name");
+  }
+  function discipleCheckedIn(d) {
+    if (!d) return false;
+    const flag = checkinFlagSafe();
+    return !!d[flag];
+  }
+  function checkinFlagSafe() {
+    return (state.config?.checkin_session || "am") === "pm" ? "checked_in_pm" : "checked_in_am";
   }
   function peakExpTotal(peakId) {
     return disciplesOfPeak(peakId).reduce((s, d) => s + (d.exp || 0), 0);
@@ -2556,6 +2654,59 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     noiseBurst(now + 0.05, 0.32, 0.08, { type: "lowpass", freq: 900, freqTo: 180, q: 0.8, decay: 1.1 });
   }
 
+  /** 拳皇风格角色包：按角色调不同音色轮廓 */
+  function playKofPackSfx(packId, points) {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    const now = ctx.currentTime;
+    const p = Math.max(1, Number(points) || 5);
+    const profiles = {
+      kyo: { base: 220, type: "sawtooth", rise: 1.8, noise: 1800 },
+      iori: { base: 180, type: "square", rise: 1.5, noise: 900 },
+      terry: { base: 260, type: "sawtooth", rise: 2.2, noise: 1400 },
+      mai: { base: 440, type: "triangle", rise: 1.3, noise: 2600 },
+      k: { base: 200, type: "square", rise: 1.6, noise: 700 },
+      athena: { base: 520, type: "sine", rise: 1.9, noise: 3200 },
+      joe: { base: 300, type: "sawtooth", rise: 2.4, noise: 1600 },
+      ryo: { base: 240, type: "triangle", rise: 1.7, noise: 1200 },
+      king: { base: 280, type: "square", rise: 1.4, noise: 1100 },
+      chang: { base: 140, type: "sawtooth", rise: 1.2, noise: 500 }
+    };
+    const pf = profiles[packId] || profiles.kyo;
+    tone(pf.base, now, 0.12, pf.type, 0.08, pf.base * pf.rise, 0.01);
+    tone(pf.base * 1.5, now + 0.08, 0.18, "triangle", 0.05, pf.base * pf.rise * 1.2, 0.02);
+    noiseBurst(now + 0.05, 0.2 + p * 0.008, 0.07 + Math.min(0.08, p * 0.004), {
+      type: "bandpass", freq: pf.noise, freqTo: pf.noise * 0.4, q: 1.1, decay: 1.2
+    });
+    if (p >= 10) tone(pf.base * 2, now + 0.2, 0.35, "sine", 0.07, pf.base * 2.4, 0.03);
+  }
+  function playPeakSfx(peakId, points) {
+    const peak = findPeak(peakId);
+    playKofPackSfx(peak?.sfx_pack || "kyo", points);
+  }
+
+  let peakBgmAudio = null;
+  function playPeakBgm(peak) {
+    if (!peak || !sfxEnabled) return;
+    if (peakBgmAudio) { try { peakBgmAudio.pause(); } catch (e) {} peakBgmAudio = null; }
+    if (peak.bgm_id === "custom" && peak.bgm_url) {
+      peakBgmAudio = new Audio(peak.bgm_url);
+      peakBgmAudio.loop = true;
+      peakBgmAudio.volume = 0.35;
+      peakBgmAudio.play().catch(() => {});
+      return;
+    }
+    if (!peak.bgm_id || peak.bgm_id === "none") return;
+    // 合成短循环鼓点作占位 BGM
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    for (let i = 0; i < 4; i++) {
+      noiseBurst(now + i * 0.35, 0.08, 0.05, { type: "lowpass", freq: 180, freqTo: 80, q: 0.6, decay: 2 });
+      tone(90, now + i * 0.35, 0.1, "sine", 0.04, 60, 0.01);
+    }
+  }
+
   function showVoteToast(text, kind) {
     document.querySelectorAll(".vote-toast").forEach((n) => n.remove());
     const el = document.createElement("div");
@@ -2809,7 +2960,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   }
 
   function ensureSfxToggle() {
-    if (document.getElementById("sfx-toggle")) return;
+    if (document.getElementById("sfx-toggle")) {
+      syncBrandNavVisibility();
+      return;
+    }
     const bar = document.createElement("div");
     bar.className = "sfx-bar";
     bar.id = "sfx-bar";
@@ -2848,6 +3002,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       // 延迟到用户手势后再解码；先标好 UI
       updateSfxToggleLabel();
     }
+    syncBrandNavVisibility();
   }
 
   function ensureSwordCursorTrail() {
@@ -3000,21 +3155,26 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       ? `<img src="${p.logo_url}" alt="" />`
       : `<span>${p.icon || "⛰️"}</span>`;
     const captain = p.captain_name || members.find((d) => d.role === "队长")?.name || "虚位以待";
+    const inCount = members.filter(discipleCheckedIn).length;
+    const outCount = members.length - inCount;
     const memberBars = members.map((d) => {
       const prog = personalProgress(d);
       const isCap = d.role === "队长" || d.name === captain;
-      return `<div class="member-bar-row" data-member-row="${d.id}">
-        <div class="mname ${isCap ? "cap" : ""}">${esc(d.name)}${isCap ? "★" : ""}</div>
+      const ok = discipleCheckedIn(d);
+      return `<div class="member-bar-row ${ok ? "check-in" : "check-out"}" data-member-row="${d.id}">
+        <div class="mname ${isCap ? "cap" : ""} ${ok ? "in" : "out"}">${esc(d.name)}${isCap ? "★" : ""}</div>
         <div class="member-track"><i style="width:${prog.pct}%"></i></div>
         <div class="mlv">Lv${prog.level}</div>
-        <div class="member-detail">称号 ${esc(prog.title)} · 经验 ${d.exp || 0} · 贡献 ${d.contributed || 0} · ${esc(d.weapon || "笔")} · ${esc(d.rank || "")}</div>
+        <div class="member-status ${ok ? "cultivating" : "absent"}">${ok ? "✦ 持续修炼中 · 真气汇入" : "未签到"}</div>
+        <div class="member-detail">称号 ${esc(prog.title)} · 经验 ${d.exp || 0} · 贡献 ${d.contributed || 0} · ${esc(d.rank || "")}</div>
       </div>`;
-    }).join("") || '<div class="muted" style="font-size:.65rem">暂无组员</div>';
+    }).join("") || '<div class="muted" style="font-size:.65rem">暂无组员 · 从大厅入峰</div>';
 
     const isOpen = isMembersOpen(p.id, campCount);
     const toggleLabel = isOpen ? `组员 ${members.length} ▴` : `组员 ${members.length} ▾`;
     const day = state.config?.day || 1;
     const feed = peakFeedText(p.id, p.name, day);
+    const pack = KOF_SFX_PACKS.find((x) => x.id === p.sfx_pack) || KOF_SFX_PACKS[0];
     return `
       <article class="sect-card ${p.camp}" data-peak-id="${p.id}" style="--theme:${esc(p.color || (p.camp === "blue" ? "#2ee6ff" : "#ff3b5c"))}">
         <div class="mount-body">
@@ -3025,11 +3185,12 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
             <div class="sect-name-row">
               <div class="sect-name">${esc(p.name)}</div>
               <div class="sect-tags">
-                <span class="tag">${esc(p.element || "光")}·${esc(p.style || "剑")}</span>
+                <span class="tag">${esc(p.element || "光")}</span>
                 <span class="tag">EXP ${peakExpTotal(p.id)}</span>
+                <span class="tag" title="专属音效">${esc(pack.name)}</span>
               </div>
             </div>
-            <div class="sect-meta">${esc(captain)} · ${esc(p.peak_level_name || "")} · ${members.length}人</div>
+            <div class="sect-meta">${esc(captain)} · ${esc(p.peak_level_name || "")} · ${members.length}人 · <span style="color:#ffe39a">签到${inCount}</span>${outCount ? ` · <span style="color:#ff8a9a">未签${outCount}</span>` : ""}</div>
             <div class="sect-bar-row">
               <span class="hp-pct">${Math.round(p.progress || 0)}%</span>
               <div class="exp-track group-long"><div class="exp-fill ${blink ? "blink" : ""}" style="width:${p.progress || 0}%"></div></div>
@@ -3186,6 +3347,18 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     if (document.activeElement !== dayInput) dayInput.value = day;
     sortMode = "score";
 
+    const hall = getHallDisciples();
+    const hallBanner = document.getElementById("hall-home-banner");
+    if (hallBanner) {
+      if (hall.length) {
+        hallBanner.hidden = false;
+        hallBanner.textContent = `大厅未入峰 ${hall.length} 人：` + hall.slice(0, 12).map((d) => d.name).join("、") + (hall.length > 12 ? "…" : "") + " · 请在小组「弟子名册」入峰";
+      } else {
+        hallBanner.hidden = true;
+        hallBanner.textContent = "";
+      }
+    }
+
     const { red, blue } = campTotals();
     document.getElementById("red-total").textContent = red;
     document.getElementById("blue-total").textContent = blue;
@@ -3246,7 +3419,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const members = sortDisciples(disciplesOfPeak(peakId));
     const presets = getPresetsArray();
     const theme = peak.color || (peak.camp === "blue" ? "#2ee6ff" : "#ff3b5c");
-    const logo = `<span id="sect-logo-preview" style="display:inline-grid;place-items:center;width:64px;height:64px;border:2px solid ${esc(theme)};border-radius:50%;background:rgba(0,0,0,.35)"><span id="sect-icon-preview" style="font-size:2.2rem;color:${esc(theme)}">${esc(peak.icon || "⚔️")}</span></span>`;
 
     const bonusPane = `
       <div class="bonus-grid">
@@ -3274,56 +3446,96 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       ["虚位以待"].concat(members.map((d) => d.name)),
       peak.captain_name || "虚位以待"
     );
+    const idolHtml = peak.logo_url
+      ? `<img src="${esc(peak.logo_url)}" alt="偶像" />`
+      : `<span id="sect-icon-preview">${esc(peak.icon || "⚔️")}</span>`;
     const attrPane = `
       <div class="attr-grid">
+        <div class="choice-field span-2">
+          <div class="field-name">小组偶像 / 照片</div>
+          <div class="idol-upload-row">
+            <div class="idol-preview" id="sect-idol-preview">${idolHtml}</div>
+            <div class="stack" style="flex:1;gap:.35rem">
+              <input type="file" id="a-logo-file" accept="image/*" />
+              <button type="button" class="ghost" id="a-logo-clear">清除照片，改用图标</button>
+              <input type="hidden" id="a-logo" value="${esc(peak.logo_url || "")}" />
+            </div>
+          </div>
+        </div>
         ${renderChoiceField("icon", "小组图标", ensureInList(PEAK_ICON_PRESETS, peak.icon || "⚔️"), peak.icon || "⚔️", "icons")}
-        ${renderChoiceField("color", "主题色", THEME_COLOR_PRESETS.map((c) => ({ ...c, value: c.color })), theme, "swatches")}
-        ${renderChoiceField("name", "组名", ensureInList(PEAK_NAME_PRESETS, peak.name), peak.name, "wide")}
+        ${renderChoiceField("color", "主题色（20色）", THEME_COLOR_PRESETS.map((c) => ({ ...c, value: c.color })), theme, "swatches")}
+        <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">组名（可自定义）</div>
+          <input id="a-name" type="text" maxlength="12" value="${esc(peak.name || "")}" placeholder="输入小组名称" />
+          <div class="choice-grid">${PEAK_NAME_PRESETS.slice(0, 8).map((n) => `<button type="button" class="choice-chip" data-fill-name="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+        </div>
         ${renderChoiceField("camp", "阵营", [
           { value: "red", label: "光影大派", html: "光影大派" },
           { value: "blue", label: "声浪大派", html: "声浪大派" }
         ], peak.camp === "blue" ? "blue" : "red", "camp")}
         ${renderChoiceField("captain", "队长", captainOpts, peak.captain_name || "虚位以待")}
         ${renderChoiceField("element", "属性", ELEMENT_PRESETS, peak.element || "光")}
-        ${renderChoiceField("style", "兵器", STYLE_PRESETS, peak.style || "剑")}
-        ${renderChoiceField("slogan", "口号", ensureInList(SLOGAN_PRESETS, peak.slogan || ""), peak.slogan || SLOGAN_PRESETS[0], "wide")}
-        ${renderChoiceField("art", "绝学", ensureInList(ART_PRESETS, peak.art || ""), peak.art || ART_PRESETS[0])}
-        ${renderChoiceField("base", "驻地", ensureInList(BASE_PRESETS, peak.base || ""), peak.base || BASE_PRESETS[0])}
-        ${renderChoiceField("badge", "徽章", ensureInList(BADGE_PRESETS, peak.badge || ""), peak.badge || BADGE_PRESETS[0])}
-        ${renderChoiceField("win", "胜利台词", ensureInList(WIN_PRESETS, peak.win_quote || ""), peak.win_quote || WIN_PRESETS[0], "wide")}
-        ${renderChoiceField("intro", "简介", ensureInList(INTRO_PRESETS, peak.intro || ""), peak.intro || INTRO_PRESETS[0], "wide")}
+        <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">口号（可自定义）</div>
+          <input id="a-slogan" type="text" maxlength="24" value="${esc(peak.slogan || "")}" placeholder="输入小组口号" />
+          <div class="choice-grid">${SLOGAN_PRESETS.map((n) => `<button type="button" class="choice-chip" data-fill-slogan="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+        </div>
+        <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">简介（可自定义）</div>
+          <textarea id="a-intro" rows="2" maxlength="80" placeholder="介绍本组风格">${esc(peak.intro || "")}</textarea>
+        </div>
+        ${renderChoiceField("sfx", "专属音效包（拳皇风）", KOF_SFX_PACKS.map((k) => ({ value: k.id, label: k.name, html: `${k.name}<small style="opacity:.7"> · ${k.tag}</small>` })), peak.sfx_pack || "kyo", "wide")}
+        ${renderChoiceField("bgm", "专属 BGM", PEAK_BGM_PRESETS.map((b) => ({ value: b.id, label: b.name, html: b.name })), peak.bgm_id || "none")}
+        <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">自定义 BGM 文件（选「自定义上传」后生效）</div>
+          <input type="file" id="a-bgm-file" accept="audio/*" />
+          <input type="hidden" id="a-bgm-url" value="${esc(peak.bgm_url || "")}" />
+          <p class="muted" style="margin:0;font-size:.75rem">拳皇正版采样请自行合法下载后导入；内置为拳皇风格合成音色。</p>
+        </div>
       </div>
       <div class="row" style="margin-top:.8rem;justify-content:space-between">
-        <button type="button" class="danger" id="a-delete">删除角色</button>
-        <button type="button" class="primary" id="a-save">保存属性</button>
+        <button type="button" class="danger" id="a-delete">删除小组</button>
+        <span class="row">
+          <button type="button" id="a-preview-sfx">试听音效</button>
+          <button type="button" class="primary" id="a-save">保存属性</button>
+        </span>
       </div>`;
 
+    const hall = getHallDisciples();
+    const others = getDisciplesArray().filter((d) => !isInHall(d) && d.peak !== peakId);
     const memberPane = `
-      <div class="row" style="margin-bottom:.5rem">
-        <button type="button" class="primary" id="m-add">＋弟子</button>
-        <span class="muted">当前 ${members.length} 人 · 按经验高低</span>
+      <div class="hall-banner">大厅未入峰 ${hall.length} 人${hall.length ? "：" + hall.slice(0, 8).map((d) => d.name).join("、") + (hall.length > 8 ? "…" : "") : " · 签到后进入大厅，再从此处入峰"}</div>
+      <div class="row" style="margin-bottom:.5rem;flex-wrap:wrap">
+        <button type="button" class="primary" id="m-from-hall">从大厅入峰</button>
+        <button type="button" id="m-from-all">从名册选择</button>
+        <button type="button" id="m-add">＋新建弟子</button>
+        <span class="muted">本组 ${members.length} 人</span>
       </div>
       <div>
-        ${members.map((d) => `
+        ${members.map((d) => {
+          const ok = discipleCheckedIn(d);
+          return `
           <div class="disciple-row">
             <span>
-              ${d.name}${d.role==="队长"?'<span class="captain-badge">队长</span>':""}
-              <span class="muted"> · ${d.title} Lv${d.level} · ${d.weapon || ""} · 经验${d.exp||0}</span>
+              <span style="color:${ok ? "#ffe39a" : "#ff8a9a"}">${esc(d.name)}</span>${d.role==="队长"?'<span class="captain-badge">队长</span>':""}
+              <span class="muted"> · ${esc(d.student_id || "无学号")} · ${ok ? "修炼中" : "未签到"} · Lv${d.level}</span>
             </span>
             <span class="row">
               <button type="button" data-make-cap="${d.id}">任队长</button>
               <button type="button" data-edit-d="${d.id}">改</button>
-              <button type="button" class="danger" data-del-d="${d.id}">删</button>
+              <button type="button" class="danger" data-to-hall="${d.id}">回大厅</button>
             </span>
-          </div>`).join("") || '<p class="muted">暂无弟子</p>'}
-      </div>`;
+          </div>`;
+        }).join("") || '<p class="muted">暂无弟子 · 请从大厅入峰</p>'}
+      </div>
+      <p class="muted" style="margin-top:.6rem;font-size:.78rem">其他组 ${others.length} 人可迁入；确认后原组自动减员。</p>`;
 
     openModal(`
       <div class="row" style="justify-content:center;gap:1rem;align-items:center;margin-bottom:.3rem">
-        ${logo}
+        <div class="idol-preview" style="width:64px;height:64px">${peak.logo_url ? `<img src="${esc(peak.logo_url)}" alt="" />` : `<span style="font-size:2rem">${esc(peak.icon || "⚔️")}</span>`}</div>
         <div>
           <h3 style="margin:0" id="sect-title-preview">${esc(peak.name)}</h3>
-          <div class="muted" style="text-align:center">${esc(peak.intro || "")}</div>
+          <div class="muted" style="text-align:center">${esc(peak.slogan || peak.intro || "")}</div>
         </div>
       </div>
       <div class="modal-tabs">
@@ -3351,6 +3563,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
           else if ((preset.reason || "").includes("银牌")) bonus = 200;
           else if ((preset.reason || "").includes("铜牌")) bonus = 100;
           await scoreFromModal(peakId, preset.points, preset.reason, preset.category, bonus);
+          playPeakSfx(peakId, preset.points);
         };
       });
       document.querySelectorAll("[data-custom-pts]").forEach((btn) => {
@@ -3369,29 +3582,75 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
         const pts = Number(document.getElementById("sect-custom-pts").value);
         const reason = document.getElementById("sect-custom-reason").value.trim() || "出招加分";
         await scoreFromModal(peakId, pts, reason, "自定义", 0);
+        playPeakSfx(peakId, pts);
       };
     }
     if (sectModalTab === "attr") {
       bindChoiceFields(document.getElementById("sect-pane"));
+      document.querySelectorAll("[data-fill-name]").forEach((b) => {
+        b.onclick = () => { document.getElementById("a-name").value = b.dataset.fillName; };
+      });
+      document.querySelectorAll("[data-fill-slogan]").forEach((b) => {
+        b.onclick = () => { document.getElementById("a-slogan").value = b.dataset.fillSlogan; };
+      });
+      const logoFile = document.getElementById("a-logo-file");
+      if (logoFile) {
+        logoFile.onchange = () => {
+          const f = logoFile.files && logoFile.files[0];
+          if (!f) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            document.getElementById("a-logo").value = reader.result;
+            const prev = document.getElementById("sect-idol-preview");
+            if (prev) prev.innerHTML = `<img src="${reader.result}" alt="" />`;
+          };
+          reader.readAsDataURL(f);
+        };
+      }
+      const clearBtn = document.getElementById("a-logo-clear");
+      if (clearBtn) clearBtn.onclick = () => {
+        document.getElementById("a-logo").value = "";
+        const icon = document.getElementById("a-icon")?.value || peak.icon || "⚔️";
+        document.getElementById("sect-idol-preview").innerHTML = `<span>${icon}</span>`;
+      };
+      const bgmFile = document.getElementById("a-bgm-file");
+      if (bgmFile) {
+        bgmFile.onchange = () => {
+          const f = bgmFile.files && bgmFile.files[0];
+          if (!f) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            document.getElementById("a-bgm-url").value = reader.result;
+            const bgmInput = document.getElementById("a-bgm");
+            if (bgmInput) bgmInput.value = "custom";
+          };
+          reader.readAsDataURL(f);
+        };
+      }
+      document.getElementById("a-preview-sfx").onclick = () => {
+        const pack = document.getElementById("a-sfx")?.value || peak.sfx_pack || "kyo";
+        playKofPackSfx(pack, 12);
+      };
       document.getElementById("a-save").onclick = async () => {
         const camp = document.getElementById("a-camp").value;
         let captain_name = document.getElementById("a-captain").value;
         if (captain_name === "虚位以待") captain_name = "";
+        const name = (document.getElementById("a-name").value || "").trim() || peak.name;
+        const slogan = (document.getElementById("a-slogan").value || "").trim();
+        const intro = (document.getElementById("a-intro").value || "").trim();
         const updates = {
-          [`peaks/${peakKey(peakId)}/name`]: document.getElementById("a-name").value,
+          [`peaks/${peakKey(peakId)}/name`]: name,
           [`peaks/${peakKey(peakId)}/icon`]: document.getElementById("a-icon").value,
           [`peaks/${peakKey(peakId)}/captain_name`]: captain_name,
           [`peaks/${peakKey(peakId)}/camp`]: camp,
-          [`peaks/${peakKey(peakId)}/slogan`]: document.getElementById("a-slogan").value,
-          [`peaks/${peakKey(peakId)}/art`]: document.getElementById("a-art").value,
-          [`peaks/${peakKey(peakId)}/base`]: document.getElementById("a-base").value,
-          [`peaks/${peakKey(peakId)}/badge`]: document.getElementById("a-badge").value,
+          [`peaks/${peakKey(peakId)}/slogan`]: slogan,
           [`peaks/${peakKey(peakId)}/element`]: document.getElementById("a-element").value,
-          [`peaks/${peakKey(peakId)}/style`]: document.getElementById("a-style").value,
-          [`peaks/${peakKey(peakId)}/win_quote`]: document.getElementById("a-win").value,
           [`peaks/${peakKey(peakId)}/color`]: document.getElementById("a-color").value,
-          [`peaks/${peakKey(peakId)}/intro`]: document.getElementById("a-intro").value,
-          [`peaks/${peakKey(peakId)}/logo_url`]: ""
+          [`peaks/${peakKey(peakId)}/intro`]: intro,
+          [`peaks/${peakKey(peakId)}/logo_url`]: document.getElementById("a-logo").value || "",
+          [`peaks/${peakKey(peakId)}/sfx_pack`]: document.getElementById("a-sfx")?.value || "kyo",
+          [`peaks/${peakKey(peakId)}/bgm_id`]: document.getElementById("a-bgm")?.value || "none",
+          [`peaks/${peakKey(peakId)}/bgm_url`]: document.getElementById("a-bgm-url")?.value || ""
         };
         disciplesOfPeak(peakId).forEach((d) => {
           updates[`disciples/${d.id}/camp`] = camp;
@@ -3401,11 +3660,12 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
         closeModal();
       };
       document.getElementById("a-delete").onclick = async () => {
-        if (!confirm("确认删除此门派？弟子将保留但失去门派归属（peak=-1）")) return;
+        if (!confirm("确认删除此小组？弟子将回到大厅（未入峰）")) return;
         const updates = { [`peaks/${peakKey(peakId)}`]: null };
         disciplesOfPeak(peakId).forEach((d) => {
           updates[`disciples/${d.id}/peak`] = -1;
           updates[`disciples/${d.id}/role`] = "弟子";
+          updates[`disciples/${d.id}/camp`] = "red";
         });
         if (demoMode) {
           delete state.peaks[peakKey(peakId)];
@@ -3419,6 +3679,8 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     }
     if (sectModalTab === "members") {
       document.getElementById("m-add").onclick = () => quickAddDisciple(peakId);
+      document.getElementById("m-from-hall").onclick = () => openEnterPeakPicker(peakId, "hall");
+      document.getElementById("m-from-all").onclick = () => openEnterPeakPicker(peakId, "all");
       document.querySelectorAll("[data-make-cap]").forEach((b) => {
         b.onclick = async () => {
           const id = b.dataset.makeCap;
@@ -3434,14 +3696,100 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       document.querySelectorAll("[data-edit-d]").forEach((b) => {
         b.onclick = () => editDiscipleModal(b.dataset.editD, peakId);
       });
-      document.querySelectorAll("[data-del-d]").forEach((b) => {
+      document.querySelectorAll("[data-to-hall]").forEach((b) => {
         b.onclick = async () => {
-          if (!confirm("删除该弟子？")) return;
-          await setPath("disciples/" + b.dataset.delD, null);
+          if (!confirm("将该弟子移回大厅（未入峰）？")) return;
+          await sendDiscipleToHall(b.dataset.toHall);
           openSectModal(peakId, "members");
         };
       });
     }
+  }
+
+  async function sendDiscipleToHall(discipleId) {
+    const d = state.disciples[discipleId];
+    if (!d) return;
+    const updates = {
+      [`disciples/${discipleId}/peak`]: -1,
+      [`disciples/${discipleId}/role`]: "弟子"
+    };
+    const oldPeak = findPeak(d.peak);
+    if (oldPeak && oldPeak.captain_id === discipleId) {
+      updates[`peaks/${peakKey(oldPeak.id)}/captain_id`] = "";
+      updates[`peaks/${peakKey(oldPeak.id)}/captain_name`] = "";
+    }
+    await updatePaths(updates);
+  }
+
+  async function assignDiscipleToPeak(discipleId, peakId) {
+    const d = state.disciples[discipleId];
+    const peak = findPeak(peakId);
+    if (!d || !peak) return false;
+    if (d.peak === peakId) return true;
+    if (!isInHall(d)) {
+      const old = findPeak(d.peak);
+      const oldName = old ? old.name : "其他组";
+      if (!confirm(`「${d.name}」目前在「${oldName}」。确认入峰到「${peak.name}」？\n原组将自动减员。`)) return false;
+    }
+    const updates = {
+      [`disciples/${discipleId}/peak`]: peakId,
+      [`disciples/${discipleId}/camp`]: peak.camp,
+      [`disciples/${discipleId}/role`]: "弟子"
+    };
+    const oldPeak = findPeak(d.peak);
+    if (oldPeak && oldPeak.captain_id === discipleId) {
+      updates[`peaks/${peakKey(oldPeak.id)}/captain_id`] = "";
+      updates[`peaks/${peakKey(oldPeak.id)}/captain_name`] = "";
+    }
+    await updatePaths(updates);
+    return true;
+  }
+
+  function openEnterPeakPicker(peakId, mode) {
+    const peak = findPeak(peakId);
+    if (!peak) return;
+    const list = (mode === "hall" ? getHallDisciples() : getDisciplesArray().filter((d) => d.peak !== peakId))
+      .slice()
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "zh-CN"));
+    openModal(`
+      <h3>${mode === "hall" ? "大厅入峰" : "从名册入峰"} · ${esc(peak.name)}</h3>
+      <input id="hall-search" type="search" placeholder="搜索姓名 / 学号" style="margin:.5rem 0" />
+      <div class="hall-picker" id="hall-picker-list">
+        ${list.map((d) => {
+          const other = !isInHall(d);
+          const pk = findPeak(d.peak);
+          return `<div class="hall-pick-row ${other ? "other" : ""}" draggable="true" data-enter="${d.id}">
+            <span><b>${esc(d.name)}</b> <span class="muted">${esc(d.student_id || "无学号")}${other ? " · 现属 " + esc(pk ? pk.name : "他组") : " · 大厅"}</span></span>
+            <button type="button" class="primary" data-enter-btn="${d.id}">入峰</button>
+          </div>`;
+        }).join("") || '<p class="muted">暂无可选弟子</p>'}
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:.8rem">
+        <button type="button" class="ghost" id="modal-cancel">返回</button>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = () => openSectModal(peakId, "members");
+    document.getElementById("hall-search").oninput = () => {
+      const q = (document.getElementById("hall-search").value || "").trim();
+      document.querySelectorAll("#hall-picker-list .hall-pick-row").forEach((row) => {
+        const id = row.dataset.enter;
+        const d = state.disciples[id];
+        const hit = !q || (d.name || "").includes(q) || String(d.student_id || "").includes(q);
+        row.style.display = hit ? "" : "none";
+      });
+    };
+    const doEnter = async (id) => {
+      const ok = await assignDiscipleToPeak(id, peakId);
+      if (ok) openSectModal(peakId, "members");
+    };
+    document.querySelectorAll("[data-enter-btn]").forEach((b) => {
+      b.onclick = () => doEnter(b.dataset.enterBtn);
+    });
+    document.querySelectorAll("[data-enter]").forEach((row) => {
+      row.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("text/plain", row.dataset.enter);
+      });
+      row.addEventListener("dblclick", () => doEnter(row.dataset.enter));
+    });
   }
 
   function esc(s) {
@@ -3467,25 +3815,32 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const defaultIcon = camp === "blue" ? "🌊" : "🐉";
     const defaultColor = camp === "blue" ? "#2ee6ff" : "#ff3b5c";
     openModal(`
-      <h3>新建山峰</h3>
+      <h3>新建小组</h3>
       <div class="attr-grid" id="new-peak-form">
         ${renderChoiceField("icon", "小组图标", PEAK_ICON_PRESETS, defaultIcon, "icons")}
-        ${renderChoiceField("color", "主题色", THEME_COLOR_PRESETS.map((c) => ({ ...c, value: c.color })), defaultColor, "swatches")}
-        ${renderChoiceField("name", "组名", PEAK_NAME_PRESETS, defaultName, "wide")}
+        ${renderChoiceField("color", "主题色（20色）", THEME_COLOR_PRESETS.map((c) => ({ ...c, value: c.color })), defaultColor, "swatches")}
+        <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">组名（可自定义）</div>
+          <input id="a-name" type="text" maxlength="12" value="${esc(defaultName)}" />
+        </div>
         ${renderChoiceField("camp", "阵营", [
           { value: "red", label: "光影大派", html: "光影大派" },
           { value: "blue", label: "声浪大派", html: "声浪大派" }
         ], camp === "blue" ? "blue" : "red", "camp")}
-        ${renderChoiceField("slogan", "口号", SLOGAN_PRESETS, SLOGAN_PRESETS[0], "wide")}
-        ${renderChoiceField("art", "绝学", ART_PRESETS, ART_PRESETS[0])}
-        ${renderChoiceField("base", "驻地", BASE_PRESETS, BASE_PRESETS[0])}
+        <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">口号（可自定义）</div>
+          <input id="a-slogan" type="text" maxlength="24" value="${esc(SLOGAN_PRESETS[0])}" />
+        </div>
         ${renderChoiceField("element", "属性", ELEMENT_PRESETS, camp === "blue" ? "水" : "光")}
-        ${renderChoiceField("style", "兵器", STYLE_PRESETS, camp === "blue" ? "琴" : "剑")}
-        ${renderChoiceField("intro", "简介", INTRO_PRESETS, INTRO_PRESETS[INTRO_PRESETS.length - 1], "wide")}
+        ${renderChoiceField("sfx", "专属音效包", KOF_SFX_PACKS.map((k) => ({ value: k.id, label: k.name, html: k.name })), "kyo")}
+        <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">简介（可自定义）</div>
+          <textarea id="a-intro" rows="2">${esc(INTRO_PRESETS[INTRO_PRESETS.length - 1])}</textarea>
+        </div>
       </div>
       <div class="row" style="justify-content:flex-end;margin-top:1rem">
         <button type="button" class="ghost" id="modal-cancel">取消</button>
-        <button type="button" class="primary" id="new-peak-go">创建山峰</button>
+        <button type="button" class="primary" id="new-peak-go">创建小组</button>
       </div>`);
     document.getElementById("modal-cancel").onclick = closeModal;
     bindChoiceFields(document.getElementById("new-peak-form"));
@@ -3496,16 +3851,14 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       const order = getPeaksArray().filter((p) => p.camp === nextCamp).length;
       await setPath("peaks/" + peakKey(id), makePeak({
         id,
-        name: document.getElementById("a-name").value,
+        name: (document.getElementById("a-name").value || "").trim() || defaultName,
         icon: document.getElementById("a-icon").value,
         color: document.getElementById("a-color").value,
         camp: nextCamp,
-        slogan: document.getElementById("a-slogan").value,
-        art: document.getElementById("a-art").value,
-        base: document.getElementById("a-base").value,
+        slogan: (document.getElementById("a-slogan").value || "").trim(),
         element: document.getElementById("a-element").value,
-        style: document.getElementById("a-style").value,
-        intro: document.getElementById("a-intro").value,
+        intro: (document.getElementById("a-intro").value || "").trim(),
+        sfx_pack: document.getElementById("a-sfx")?.value || "kyo",
         captain_name: "",
         sort_order: order
       }));
@@ -3552,10 +3905,22 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const { mode } = getMode();
     const nav = document.getElementById("brand-nav");
     const links = document.getElementById("teacher-nav-links");
+    const mobileClean = mode === "checkin" || mode === "student";
+    document.body.classList.toggle("mode-mobile-clean", mobileClean);
     if (!nav) return;
-    nav.style.display = "";
-    document.body.classList.add("has-brand-nav");
+    if (mobileClean) {
+      nav.style.display = "none";
+      document.body.classList.remove("has-brand-nav");
+    } else {
+      nav.style.display = "";
+      document.body.classList.add("has-brand-nav");
+    }
     if (links) links.style.display = mode === "teacher" ? "" : "none";
+    const sfx = document.getElementById("sfx-bar");
+    if (sfx) sfx.style.display = mobileClean ? "none" : "";
+    document.querySelectorAll(".demo-tip").forEach((el) => {
+      el.style.display = mobileClean ? "none" : "";
+    });
   }
 
   function openCustomScoreModal() {
@@ -3673,10 +4038,10 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     document.getElementById("checkin-total").textContent = disciples.length;
     document.getElementById("checkin-progress").style.width = (disciples.length ? checked.length / disciples.length * 100 : 0) + "%";
     document.getElementById("checked-list").innerHTML = checked.map((d) =>
-      `<span class="name-chip ok">${d.student_id || "---"} ${d.name}${d[timeFlag] ? " · " + fmtTime(d[timeFlag]) : ""}</span>`
+      `<span class="name-chip ok" style="color:#ffe39a;border-color:rgba(240,193,75,.7);text-shadow:0 0 8px rgba(240,193,75,.8)">${d.student_id || "---"} ${d.name}${d[timeFlag] ? " · " + fmtTime(d[timeFlag]) : ""} · 修炼中</span>`
     ).join("") || '<span class="muted">暂无</span>';
     document.getElementById("unchecked-list").innerHTML = unchecked.map((d) =>
-      `<span class="name-chip miss">${d.student_id || "未注册"} ${d.name}</span>`
+      `<span class="name-chip miss">${d.student_id || "未注册"} ${d.name}${isInHall(d) ? " · 大厅" : ""}</span>`
     ).join("") || '<span class="muted">全员已签</span>';
     const code = state.config?.checkin_code || "------";
     document.getElementById("checkin-code-text").textContent = code;
@@ -3922,17 +4287,64 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   }
 
   function renderSettings() {
+    const hall = getHallDisciples();
+    const hallHost = document.getElementById("settings-hall");
+    if (hallHost) {
+      hallHost.innerHTML = hall.length
+        ? hall.map((d) => `<span class="name-chip miss">${esc(d.student_id || "---")} ${esc(d.name)}</span>`).join("")
+        : '<span class="muted">大厅空闲 · 签到新学员会进入这里</span>';
+    }
+    const demoBox = document.getElementById("settings-demo-box");
+    if (demoBox) {
+      demoBox.innerHTML = `
+        <div class="list-item"><span>运行模式</span><span>${demoMode ? "DEMO · ARENA（本地）" : "Firebase 云端"}</span></div>
+        <div class="row" style="margin-top:.4rem;flex-wrap:wrap">
+          <button type="button" id="settings-sfx-toggle">${sfxEnabled ? "🔊 音效开" : "🔇 音效关"}</button>
+          <button type="button" id="settings-sfx-import">导入音效包</button>
+          <button type="button" id="settings-clear-demo">重置 DEMO 数据</button>
+        </div>
+        <p class="muted" style="margin-top:.45rem;font-size:.75rem">音效开关与 DEMO 标识已移入设置；签到/学生扫码页不再显示顶栏。</p>
+        <input type="file" id="settings-sfx-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
+      document.getElementById("settings-sfx-toggle").onclick = () => {
+        sfxEnabled = !sfxEnabled;
+        localStorage.setItem("gy_arena_sfx", sfxEnabled ? "1" : "0");
+        updateSfxToggleLabel();
+        renderSettings();
+      };
+      document.getElementById("settings-sfx-import").onclick = () => document.getElementById("settings-sfx-file").click();
+      document.getElementById("settings-sfx-file").onchange = (e) => {
+        if (e.target.files?.length) importPal3SoundPack(e.target.files);
+        e.target.value = "";
+      };
+      document.getElementById("settings-clear-demo").onclick = () => {
+        if (!confirm("确认清空本地 DEMO 数据并刷新？")) return;
+        localStorage.removeItem(DEMO_DB_KEY);
+        location.reload();
+      };
+    }
     document.getElementById("settings-peaks").innerHTML = getPeaksArray().map((p) => `
-      <div class="list-item"><span>${p.icon} ${p.name} · ${p.camp} · 队长${p.captain_name||"无"}</span>
+      <div class="list-item"><span>${p.icon} ${p.name} · ${p.camp} · 音效${(KOF_SFX_PACKS.find(k=>k.id===p.sfx_pack)||{}).name||"默认"}</span>
         <span class="row"><button type="button" data-sp="${p.id}">改</button><button type="button" class="danger" data-dp="${p.id}">删</button></span></div>`).join("");
     document.querySelectorAll("[data-sp]").forEach((b) => b.onclick = () => openSectModal(Number(b.dataset.sp), "attr"));
     document.querySelectorAll("[data-dp]").forEach((b) => b.onclick = async () => {
-      if (!confirm("删除门派？")) return;
-      await setPath("peaks/" + peakKey(Number(b.dataset.dp)), null);
+      if (!confirm("删除小组？弟子回大厅")) return;
+      const pid = Number(b.dataset.dp);
+      const updates = { [`peaks/${peakKey(pid)}`]: null };
+      disciplesOfPeak(pid).forEach((d) => {
+        updates[`disciples/${d.id}/peak`] = -1;
+        updates[`disciples/${d.id}/role`] = "弟子";
+      });
+      if (demoMode) {
+        delete state.peaks[peakKey(pid)];
+        Object.keys(updates).forEach((k) => { if (!k.startsWith("peaks/")) applyLocalPath(k, updates[k]); });
+        saveDemo(); renderAll();
+      } else await arenaRef.update(updates);
+      renderSettings();
     });
-    document.getElementById("settings-disciples").innerHTML = sortDisciples(getDisciplesArray()).map((d) => {
+    document.getElementById("settings-disciples").innerHTML = sortDisciples(getDisciplesArray(), "name").map((d) => {
       const peak = findPeak(d.peak);
-      return `<div class="list-item"><span>${d.name}${d.role==="队长"?"·队长":""} · ${peak?peak.name:"无门派"} · 经验${d.exp||0}</span>
+      const place = peak ? peak.name : "大厅·未入峰";
+      return `<div class="list-item"><span>${esc(d.name)}${d.role==="队长"?"·队长":""} · ${esc(place)} · ${esc(d.trait||d.title||"")} · 经验${d.exp||0}</span>
         <span class="row"><button type="button" data-ed="${d.id}">改</button><button type="button" class="danger" data-dd="${d.id}">删</button></span></div>`;
     }).join("");
     document.querySelectorAll("[data-ed]").forEach((b) => b.onclick = () => editDiscipleModal(b.dataset.ed));
@@ -3948,16 +4360,20 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   }
 
   function editDiscipleModal(id, returnPeakId) {
-    const d = state.disciples[id] || { name: "", student_id: "", peak: 0, camp: "red", role: "弟子", weapon: "笔" };
+    const d = state.disciples[id] || { name: "", student_id: "", peak: -1, camp: "red", role: "弟子", trait: "新晋侠客" };
     const peaks = getPeaksArray();
+    const peakVal = isInHall(d) ? -1 : Number(d.peak);
     openModal(`
-      <h3>编辑弟子</h3>
+      <h3>弟子属性</h3>
       <div class="stack">
         <label>姓名<input id="ed-name" value="${esc(d.name||"")}" /></label>
         <label>学号<input id="ed-sid" value="${esc(d.student_id||"")}" /></label>
-        <label>门派<select id="ed-peak">${peaks.map((p)=>`<option value="${p.id}" ${Number(d.peak)===p.id?"selected":""}>${p.icon} ${p.name}</option>`).join("")}</select></label>
+        <label>所属<select id="ed-peak">
+          <option value="-1" ${peakVal<0?"selected":""}>大厅 · 未入峰</option>
+          ${peaks.map((p)=>`<option value="${p.id}" ${peakVal===p.id?"selected":""}>${p.icon} ${p.name}</option>`).join("")}
+        </select></label>
         <label>身份<select id="ed-role"><option value="弟子" ${d.role!=="队长"?"selected":""}>弟子</option><option value="队长" ${d.role==="队长"?"selected":""}>队长</option></select></label>
-        <label>兵器/道具<input id="ed-weapon" value="${esc(d.weapon||"")}" /></label>
+        <label>个人特质<input id="ed-trait" value="${esc(d.trait||d.title||"")}" placeholder="如：镜头感 / 节奏控" /></label>
         <div class="row" style="justify-content:flex-end">
           <button type="button" class="ghost" id="modal-cancel">取消</button>
           <button type="button" class="primary" id="ed-save">保存</button>
@@ -3966,16 +4382,21 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("ed-save").onclick = async () => {
       const peakId = Number(document.getElementById("ed-peak").value);
-      const peak = findPeak(peakId);
+      const peak = peakId < 0 ? null : findPeak(peakId);
       const name = document.getElementById("ed-name").value.trim();
       const role = document.getElementById("ed-role").value;
+      const trait = document.getElementById("ed-trait").value.trim();
+      if (peak && !isInHall({ peak: d.peak }) && d.peak !== peakId) {
+        const old = findPeak(d.peak);
+        if (old && !confirm(`「${name||d.name}」将从「${old.name}」迁入「${peak.name}」，原组减员。确认？`)) return;
+      }
       const updates = {
         [`disciples/${id}/name`]: name,
         [`disciples/${id}/student_id`]: document.getElementById("ed-sid").value.trim(),
         [`disciples/${id}/peak`]: peakId,
         [`disciples/${id}/camp`]: peak ? peak.camp : "red",
-        [`disciples/${id}/role`]: role,
-        [`disciples/${id}/weapon`]: document.getElementById("ed-weapon").value.trim()
+        [`disciples/${id}/role`]: peakId < 0 ? "弟子" : role,
+        [`disciples/${id}/trait`]: trait
       };
       if (role === "队长" && peak) {
         updates[`peaks/${peakKey(peakId)}/captain_name`] = name;
@@ -3988,14 +4409,15 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
         const lv = calcPersonalLevel(0);
         await setPath("disciples/" + id, {
           name, student_id: document.getElementById("ed-sid").value.trim(), peak: peakId, camp: peak?peak.camp:"red",
-          exp: 0, level: lv.level, title: lv.title, rank: "青铜", role, voted: false, contributed: 0,
-          checked_in_am: false, checked_in_pm: false, first_seen: "", voted_for: "", weapon: document.getElementById("ed-weapon").value.trim()
+          exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: peakId<0?"弟子":role, voted: false, contributed: 0,
+          checked_in_am: false, checked_in_pm: false, first_seen: new Date().toISOString(), voted_for: "", trait, weapon: ""
         });
       } else await updatePaths(updates);
       closeModal();
       if (returnPeakId != null) openSectModal(returnPeakId, "members");
     };
   }
+
   function editPresetModal(id) {
     const p = state.bonus_presets[id] || { label: "", points: 1, reason: "", category: "日常", row: 1 };
     openModal(`<h3>编辑加分招式</h3><div class="stack">
@@ -4080,9 +4502,12 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const idCard = document.getElementById("student-identity");
     if (me) {
       const peak = findPeak(me.peak);
-      idCard.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.8rem">${me.name}${me.role==="队长"?' <span class="captain-badge">队长</span>':""}</div>
-        <div class="muted">学号 ${me.student_id||"未分配"} · ${peak ? peak.icon+" "+peak.name : "无门派"}</div>
-        <div style="margin-top:.4rem">${me.title} Lv${me.level} · ${me.rank} · 经验 ${me.exp||0} · 贡献 ${me.contributed||0}</div>`;
+      const place = peak ? `${peak.icon || ""} ${peak.name}` : "大厅 · 待入峰";
+      const ok = discipleCheckedIn(me);
+      idCard.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.8rem;${ok?"color:#ffe39a;text-shadow:0 0 12px rgba(240,193,75,.7)":""}">${esc(me.name)}${me.role==="队长"?' <span class="captain-badge">队长</span>':""}</div>
+        <div class="muted">学号 ${esc(me.student_id||"未分配")} · ${esc(place)}</div>
+        <div style="margin-top:.4rem">${esc(me.trait||me.title||"")} · Lv${me.level} · ${esc(me.rank||"")} · 经验 ${me.exp||0}</div>
+        <div class="muted" style="margin-top:.25rem">${ok ? "✦ 持续修炼中" : "今日尚未签到"}</div>`;
     } else {
       idCard.innerHTML = `<div class="muted">尚未绑定身份</div><button type="button" id="student-pick-self" style="margin-top:.6rem;width:100%">选择我的身份</button>`;
       document.getElementById("student-pick-self").onclick = openStudentPickModal;
@@ -4097,26 +4522,26 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     const liveBoard = sorted.map((p, i) => {
       const pct = totalVotes ? Math.round(((p.votes || 0) / totalVotes) * 100) : 0;
       return `<div class="list-item" style="border-color:${i===0?"rgba(240,193,75,.45)":"rgba(255,255,255,.1)"}">
-        <span>#${i + 1} ${p.icon || ""} ${esc(p.name)}</span>
+        <span>#${i + 1} ${p.icon || ""} ${esc(p.name)} · 作品</span>
         <span style="font-family:var(--font-num);color:var(--gold)">${p.votes || 0} · ${pct}%</span>
       </div>`;
     }).join("");
 
     if (!open) {
-      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票已关闭</div><div class="muted" style="margin-top:.4rem">${votedName ? `你投给了 ${esc(votedName)}` : "等待老师开启下一轮作品投票"}</div></div>
-        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">当前作品票数</div>${liveBoard || '<div class="muted">暂无</div>'}</div>`;
+      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">作品投票已关闭</div><div class="muted" style="margin-top:.4rem">${votedName ? `你投给了 ${esc(votedName)}` : "请等待老师在投屏端点「开启投票」"}</div></div>
+        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">各小组作品票数（实时）</div>${liveBoard || '<div class="muted">暂无小组</div>'}</div>`;
     } else if (already) {
       voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票成功</div><div style="margin-top:.45rem;font-size:1.15rem">你已投票给 <strong style="color:var(--gold)">${esc(votedName)}</strong></div><div class="muted" style="margin-top:.35rem">本轮每人一票 · 大屏实时追赶排序</div></div>
         <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">实时榜</div>${liveBoard}</div>`;
     } else {
       voteArea.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.45rem;margin-bottom:.35rem;text-align:center;color:var(--gold)">小组作品投票</div>
         <p class="muted" style="text-align:center;margin-bottom:.6rem">${esc(state.config?.title || "为本周最佳作品投一票")} · 每人一票</p>
-        <div class="stack">${sorted.map((p)=>`<div class="vote-card" style="--theme:${esc(p.color||"#f0c14b")};border-color:color-mix(in srgb, ${esc(p.color||"#f0c14b")} 45%, transparent)">
+        <div class="stack">${sorted.map((p)=>`<div class="vote-card">
           <div style="font-size:1.5rem">${p.icon || ""} ${esc(p.name)}</div>
           <div class="muted">${esc(p.slogan||"小组作品")}</div>
           <div class="votes" style="font-size:1.4rem">${p.votes||0}</div>
           <button type="button" class="big-vote-btn" data-vote-peak="${p.id}">投给这组作品</button>
-        </div>`).join("")}</div>`;
+        </div>`).join("") || '<div class="muted" style="text-align:center">暂无小组作品</div>'}</div>`;
       voteArea.querySelectorAll("[data-vote-peak]").forEach((btn) => btn.onclick = () => confirmStudentVote(Number(btn.dataset.votePeak)));
     }
   }
@@ -4442,20 +4867,15 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
           [`disciples/${discipleId}/name`]: name
         }, { silent: true });
       } else {
-        const peaks = getPeaksArray();
-        const counts = {};
-        peaks.forEach((p) => { counts[p.id] = 0; });
-        getDisciplesArray().forEach((d) => { counts[d.peak] = (counts[d.peak] || 0) + 1; });
-        const target = peaks.slice().sort((a, b) => (counts[a.id] || 0) - (counts[b.id] || 0))[0] || { id: 0, camp: "red" };
         student_id = await nextStudentId();
         discipleId = "disciple_" + Date.now();
         const lv = calcPersonalLevel(0);
         await setPath("disciples/" + discipleId, {
-          name, student_id, peak: target.id, camp: target.camp,
+          name, student_id, peak: -1, camp: "red",
           exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子",
           voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false,
-          checked_in_am_at: 0, checked_in_pm_at: 0,
-          first_seen: new Date().toISOString(), voted_for: "", weapon: "笔"
+          checked_in_am_at: 0, checked_in_pm_at: 0, trait: "新晋侠客",
+          first_seen: new Date().toISOString(), voted_for: "", weapon: ""
         }, { silent: true });
       }
 
@@ -4663,11 +5083,17 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       if (p.win_quote == null) p.win_quote = "此局，我方胜！";
       if (p.badge == null) p.badge = "新锐";
       if (p.sort_order == null) p.sort_order = p.id;
+      if (!p.sfx_pack) p.sfx_pack = "kyo";
+      if (!p.bgm_id) p.bgm_id = "none";
+      if (p.bgm_url == null) p.bgm_url = "";
+      if (!p.color) p.color = p.camp === "blue" ? "#2ee6ff" : "#ff3b5c";
     });
     getDisciplesArray().forEach((d) => {
       if (!d.role) d.role = "弟子";
-      if (!d.weapon) d.weapon = "笔";
+      if (d.trait == null) d.trait = d.title || "新晋侠客";
+      if (d.peak == null) d.peak = -1;
     });
+    syncBrandNavVisibility();
     const { mode } = getMode();
     if (mode === "teacher") {
       if (teacherView === "main") renderTeacherMain();
@@ -4803,6 +5229,55 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
     box.classList.remove("hidden");
     box.textContent = "启动异常：" + (err && err.message ? err.message : String(err));
   }
+
+  /** 已签到弟子持续修炼：每 10 分钟为所在小组 +1 真气 */
+  let cultivateTimer = null;
+  async function tickCultivation() {
+    const now = Date.now();
+    const peakGain = {};
+    const updates = {};
+    getDisciplesArray().forEach((d) => {
+      if (!discipleCheckedIn(d) || isInHall(d)) return;
+      const last = Number(d.last_cultivate_at || 0);
+      if (last && now - last < 10 * 60 * 1000 - 2000) return;
+      const peak = findPeak(d.peak);
+      if (!peak) return;
+      peakGain[peak.id] = (peakGain[peak.id] || 0) + 1;
+      updates[`disciples/${d.id}/last_cultivate_at`] = now;
+    });
+    const peakIds = Object.keys(peakGain);
+    if (!peakIds.length) return;
+    for (const id of peakIds) {
+      const peak = findPeak(Number(id));
+      if (!peak) continue;
+      const add = peakGain[id];
+      const newScore = (peak.score || 0) + add;
+      const levelInfo = calcPeakLevel(newScore);
+      const pk = peakKey(peak.id);
+      updates[`peaks/${pk}/score`] = newScore;
+      updates[`peaks/${pk}/peak_level`] = levelInfo.peak_level;
+      updates[`peaks/${pk}/peak_level_name`] = levelInfo.peak_level_name;
+      updates[`peaks/${pk}/progress`] = levelInfo.progress;
+      updates[`peaks/${pk}/next_level_score`] = levelInfo.next_level_score;
+    }
+    await updatePaths(updates, { silent: true });
+    for (const id of peakIds) {
+      const peak = findPeak(Number(id));
+      if (!peak) continue;
+      await pushLog({
+        timestamp: Date.now(), peak_id: peak.id, peak_name: peak.name,
+        reason: "持续修炼·真气", points: peakGain[id], category: "日常",
+        operator: "系统", day: state.config?.day || 1
+      });
+    }
+    if (getMode().mode === "teacher" && teacherView === "main") renderTeacherMain();
+  }
+  function startCultivationLoop() {
+    if (cultivateTimer) clearInterval(cultivateTimer);
+    cultivateTimer = setInterval(() => { tickCultivation().catch(() => {}); }, 60 * 1000);
+    setTimeout(() => { tickCultivation().catch(() => {}); }, 2500);
+  }
+
   function bootDemo() {
     // clear old demo if schema too old
     const loaded = loadDemo();
@@ -4829,6 +5304,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
       ensureSfxToggle();
       ensureSwordCursorTrail();
+      startCultivationLoop();
       syncBrandNavVisibility();
       if (m === "teacher") setTeacherView("main");
       if (m === "memories") { /* loader */ } else renderAll();
@@ -4838,13 +5314,16 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
         const blueN = getPeaksArray().filter((p) => p.camp === "blue").length;
         applyArenaDensity(redN, blueN);
       });
-      if (demoMode) {
+      if (demoMode && m === "teacher") {
         const tip = document.createElement("div");
         tip.className = "demo-tip";
         tip.style.cssText = "position:fixed;top:8px;left:8px;z-index:99;font-size:12px;color:#f0c14b;background:rgba(7,9,15,.9);padding:4px 10px;border:2px solid rgba(240,193,75,.5);letter-spacing:.08em";
         tip.textContent = "DEMO · ARENA";
+        tip.title = "可在「设置」中管理";
+        tip.onclick = () => { setTeacherView("settings"); };
         document.body.appendChild(tip);
       }
+      syncBrandNavVisibility();
     } catch (err) { console.error(err); showBootError(err); try { showScreen("teacher"); bootDemo(); renderTeacherMain(); } catch(e2){} }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
