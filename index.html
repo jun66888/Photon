@@ -10,6 +10,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    // CDN 失败时不阻断页面（二维码降级为文字链接）
+    window.__qrReady = typeof QRCode !== "undefined";
+  </script>
   <style>
     :root {
       --bg: #0f0f1a;
@@ -393,8 +397,15 @@
   </style>
 </head>
 <body>
+  <noscript>
+    <div style="padding:2rem;color:#d4af37;background:#0f0f1a;min-height:100vh;font-family:sans-serif">
+      需要启用 JavaScript 才能使用光影盟积分体系。
+    </div>
+  </noscript>
+  <div id="boot-error" class="hidden" style="padding:1.5rem;color:#ff5c7a;background:#1a1020;border-bottom:1px solid #d4af37"></div>
+
   <!-- ===================== TEACHER ===================== -->
-  <div id="teacher-screen" class="screen hidden">
+  <div id="teacher-screen" class="screen">
     <div id="teacher-main" class="subview">
       <div class="row header-bar">
         <div class="app-title">🏔️ 联盟积分榜 · 第<span id="day-label">1</span>天</div>
@@ -1364,12 +1375,21 @@
     qrHost.innerHTML = "";
     if (state.config?.checkin_active && code && code !== "------") {
       const url = `${location.origin}${location.pathname}?mode=checkin&code=${code}`;
-      QRCode.toCanvas(url, { width: 180, margin: 1 }, (err, canvas) => {
-        if (!err) qrHost.appendChild(canvas);
-        else qrHost.textContent = url;
-      });
+      renderQr(qrHost, url, 180);
     } else {
       qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333">点击生成签到码</div>';
+    }
+  }
+
+  function renderQr(host, url, size) {
+    host.innerHTML = "";
+    if (typeof QRCode !== "undefined" && QRCode.toCanvas) {
+      QRCode.toCanvas(url, { width: size, margin: 1 }, (err, canvas) => {
+        if (!err && canvas) host.appendChild(canvas);
+        else host.innerHTML = `<a href="${url}" style="color:#333;word-break:break-all">${url}</a>`;
+      });
+    } else {
+      host.innerHTML = `<div style="padding:.5rem;max-width:${size}px"><a href="${url}" style="color:#111;word-break:break-all;font-size:12px">${url}</a></div>`;
     }
   }
 
@@ -1387,11 +1407,8 @@
       </div>`).join("");
 
     const qrHost = document.getElementById("student-vote-qr");
-    qrHost.innerHTML = "";
     const url = `${location.origin}${location.pathname}?mode=student`;
-    QRCode.toCanvas(url, { width: 140, margin: 1 }, (err, canvas) => {
-      if (!err) qrHost.appendChild(canvas);
-    });
+    renderQr(qrHost, url, 140);
   }
 
   function openAwardModal() {
@@ -2572,51 +2589,65 @@
   }
 
   /* -------------------- 初始化 Firebase / Demo -------------------- */
-  async function init() {
-    const { mode } = getMode();
-    showScreen(["teacher", "student", "checkin", "memories"].includes(mode) ? mode : "teacher");
+  function showBootError(err) {
+    const box = document.getElementById("boot-error");
+    if (!box) return;
+    box.classList.remove("hidden");
+    box.textContent = "启动异常：" + (err && err.message ? err.message : String(err));
+  }
 
-    if (FIREBASE_READY) {
-      try {
-        firebase.initializeApp(FIREBASE_CONFIG);
-        db = firebase.database();
-        arenaRef = db.ref("arena");
-        const snap = await arenaRef.once("value");
-        if (!snap.exists()) {
-          await arenaRef.set(buildSeedArena());
+  async function init() {
+    try {
+      const { mode } = getMode();
+      const m = ["teacher", "student", "checkin", "memories"].includes(mode) ? mode : "teacher";
+      showScreen(m);
+
+      if (FIREBASE_READY && typeof firebase !== "undefined") {
+        try {
+          firebase.initializeApp(FIREBASE_CONFIG);
+          db = firebase.database();
+          arenaRef = db.ref("arena");
+          const snap = await arenaRef.once("value");
+          if (!snap.exists()) {
+            await arenaRef.set(buildSeedArena());
+          }
+          arenaRef.on("value", (s) => {
+            state = s.val() || buildSeedArena();
+            renderAll();
+          });
+          demoMode = false;
+        } catch (err) {
+          console.warn("Firebase 初始化失败，进入本地演示模式", err);
+          demoMode = true;
+          bootDemo();
         }
-        arenaRef.on("value", (s) => {
-          state = s.val() || buildSeedArena();
-          renderAll();
-        });
-        demoMode = false;
-      } catch (err) {
-        console.warn("Firebase 初始化失败，进入本地演示模式", err);
+      } else {
+        console.info("未配置 Firebase，使用本地演示模式（localStorage）");
         demoMode = true;
         bootDemo();
       }
-    } else {
-      console.info("未配置 Firebase，使用本地演示模式（localStorage）");
-      demoMode = true;
-      bootDemo();
-    }
 
-    bindTeacherActions();
-    bindStudentActions();
-    bindMemoriesActions();
+      bindTeacherActions();
+      bindStudentActions();
+      bindMemoriesActions();
 
-    if (mode === "memories") {
-      renderMemoriesBootstrap();
-    } else {
-      renderAll();
-    }
+      if (m === "memories") {
+        renderMemoriesBootstrap();
+      } else {
+        renderAll();
+      }
 
-    // 演示角标
-    if (demoMode) {
-      const tip = document.createElement("div");
-      tip.style.cssText = "position:fixed;top:8px;left:8px;z-index:99;font-size:12px;color:#d4af37;background:rgba(0,0,0,.5);padding:4px 8px;border-radius:8px";
-      tip.textContent = "DEMO · 本地模式（请配置 Firebase）";
-      document.body.appendChild(tip);
+      if (demoMode) {
+        const tip = document.createElement("div");
+        tip.style.cssText = "position:fixed;top:8px;left:8px;z-index:99;font-size:12px;color:#d4af37;background:rgba(0,0,0,.5);padding:4px 8px;border-radius:8px";
+        tip.textContent = "DEMO · 本地模式（请配置 Firebase）";
+        document.body.appendChild(tip);
+      }
+    } catch (err) {
+      console.error(err);
+      showBootError(err);
+      // 至少展示老师端骨架
+      try { showScreen("teacher"); bootDemo(); renderTeacherMain(); } catch (e2) {}
     }
   }
 
@@ -2625,7 +2656,11 @@
     saveDemo();
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
   </script>
 </body>
 </html>
