@@ -415,6 +415,8 @@ input:focus, select:focus, textarea:focus {
 }
 .combo-ring.r2 { animation-delay: .08s; border-color: rgba(46,230,255,.7); }
 .combo-ring.r3 { animation-delay: .16s; border-color: rgba(255,59,92,.65); }
+.combo-ring.r4 { animation-delay: .24s; border-color: rgba(255,227,154,.9); border-width: 4px; }
+.combo-ring.r5 { animation-delay: .32s; border-color: rgba(255,255,255,.85); border-width: 5px; }
 @keyframes ringExpand {
   0% { transform: scale(.3); opacity: 1; }
   100% { transform: scale(8); opacity: 0; }
@@ -426,6 +428,23 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(160deg, rgba(26,34,56,.95), rgba(8,12,22,.96));
   box-shadow: 0 0 50px rgba(240,193,75,.45), 0 0 0 1px rgba(255,255,255,.08);
   animation: comboPop 1.6s cubic-bezier(.16,.9,.25,1) forwards;
+}
+.combo-card.power-2 { animation-duration: 1.7s; }
+.combo-card.power-3 {
+  animation-duration: 1.85s;
+  box-shadow: 0 0 70px rgba(46,230,255,.55), 0 0 100px rgba(255,59,92,.2);
+}
+.combo-card.power-4 {
+  animation: comboPopHard 2s cubic-bezier(.16,.9,.25,1) forwards;
+  border-width: 4px;
+}
+@keyframes comboPopHard {
+  0% { transform: scale(3.2) rotate(-12deg); opacity: 0; filter: blur(8px); }
+  14% { transform: scale(1.12) rotate(2deg); opacity: 1; filter: blur(0); }
+  28% { transform: scale(.96) rotate(-1deg); }
+  42% { transform: scale(1.04) rotate(.5deg); }
+  72% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.06); opacity: 0; }
 }
 @keyframes comboPop {
   0% { transform: scale(2.4) rotate(-8deg); opacity: 0; filter: blur(6px); }
@@ -527,12 +546,63 @@ input:focus, select:focus, textarea:focus {
   60% { transform: translate(-4px, 1px); }
   80% { transform: translate(4px, -1px); }
 }
+.screen-shake.shake-mid { animation: shakeMid .55s ease; }
+@keyframes shakeMid {
+  0%,100% { transform: translate(0); }
+  15% { transform: translate(-10px, 3px) rotate(-.4deg); }
+  35% { transform: translate(11px, -3px) rotate(.4deg); }
+  55% { transform: translate(-8px, 2px); }
+  75% { transform: translate(7px, -2px); }
+}
+.screen-shake.shake-hard { animation: shakeHard .7s ease; }
+@keyframes shakeHard {
+  0%,100% { transform: translate(0) scale(1); }
+  10% { transform: translate(-14px, 4px) scale(1.01) rotate(-.8deg); }
+  25% { transform: translate(16px, -5px) scale(1.015) rotate(.8deg); }
+  40% { transform: translate(-12px, 3px) rotate(-.5deg); }
+  55% { transform: translate(12px, -4px) rotate(.5deg); }
+  70% { transform: translate(-7px, 2px); }
+  85% { transform: translate(6px, -1px); }
+}
 .hit-flash {
   position: fixed; inset: 0; z-index: 84; pointer-events: none;
   background: rgba(255,255,255,.18);
   animation: hitFlash .12s steps(2) forwards;
 }
 @keyframes hitFlash { to { opacity: 0; } }
+.hit-flash.hard { background: rgba(255,230,150,.35); animation: hitFlashHard .28s ease forwards; }
+@keyframes hitFlashHard {
+  0% { opacity: 1; }
+  40% { opacity: .7; background: rgba(255,80,100,.25); }
+  100% { opacity: 0; }
+}
+.combo-card.power-2 .combo-points { font-size: clamp(3.2rem, 9.5vw, 5.8rem); }
+.combo-card.power-3 .combo-points {
+  font-size: clamp(3.4rem, 10vw, 6.1rem);
+  animation: pointsPound .42s ease;
+}
+.combo-card.power-4 .combo-points {
+  font-size: clamp(3.6rem, 11vw, 6.5rem);
+  animation: pointsPound .5s ease;
+  color: #ffe39a;
+}
+.combo-card.power-4 .combo-tag {
+  color: #ffe39a; letter-spacing: .45em;
+  text-shadow: 0 0 16px rgba(240,193,75,.8);
+}
+@keyframes pointsPound {
+  0% { transform: scale(2.2); filter: blur(4px); }
+  40% { transform: scale(.92); }
+  100% { transform: scale(1); filter: blur(0); }
+}
+.sfx-toggle {
+  position: fixed; top: 8px; right: 8px; z-index: 99;
+  font-size: 12px; padding: 4px 10px; letter-spacing: .06em;
+  border: 2px solid rgba(240,193,75,.55);
+  background: rgba(7,9,15,.9); color: var(--gold);
+  font-family: var(--font-num); cursor: pointer;
+}
+.sfx-toggle:hover { border-color: var(--gold); }
 
 .subview { animation: fadeIn .22s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -1127,7 +1197,116 @@ input:focus, select:focus, textarea:focus {
     return ref.key;
   }
 
-  /* -------- FX -------- */
+  /* -------- FX + SFX（分数越高越炸裂） -------- */
+  let sfxEnabled = localStorage.getItem("gy_arena_sfx") !== "0";
+  let audioCtx = null;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+    return audioCtx;
+  }
+
+  function tone(freq, t0, dur, type, vol, slideTo) {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type || "square";
+    o.frequency.setValueAtTime(freq, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+
+  function noiseBurst(t0, dur, vol) {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    const f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.setValueAtTime(2200, t0);
+    f.frequency.exponentialRampToValueAtTime(180, t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(ctx.destination);
+    src.start(t0); src.stop(t0 + dur + 0.02);
+  }
+
+  /** 1=轻击 2=中击 3=重击 4=爆击（分越高越炸） */
+  function powerLevel(points, category) {
+    const p = Number(points) || 0;
+    if (category === "擂台" || p >= 20) return 4;
+    if (p >= 10) return 3;
+    if (p >= 5 || category === "任务") return 2;
+    return 1;
+  }
+
+  function playHitSfx(points, category) {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    const now = ctx.currentTime;
+    const lv = powerLevel(points, category);
+    // 基础打击随等级加长、加厚
+    noiseBurst(now, 0.05 + lv * 0.035, 0.07 + lv * 0.045);
+    tone(160 + lv * 45, now, 0.07 + lv * 0.02, "triangle", 0.1 + lv * 0.04, 55);
+    if (lv === 1) {
+      tone(920, now + 0.015, 0.11, "sine", 0.07, 700);
+      return;
+    }
+    if (lv === 2) {
+      tone(480, now + 0.01, 0.13, "square", 0.075, 240);
+      tone(980, now + 0.05, 0.2, "sine", 0.09, 720);
+      tone(720, now + 0.1, 0.16, "triangle", 0.05, 1100);
+      return;
+    }
+    if (lv === 3) {
+      tone(120, now, 0.24, "sawtooth", 0.11, 48);
+      tone(400, now + 0.035, 0.16, "square", 0.085, 180);
+      tone(860, now + 0.08, 0.22, "sine", 0.1, 420);
+      noiseBurst(now + 0.05, 0.2, 0.17);
+      tone(1280, now + 0.12, 0.28, "triangle", 0.08, 620);
+      tone(540, now + 0.18, 0.3, "sine", 0.06, 1280);
+      return;
+    }
+    // lv4 爆击：层层递增炸裂
+    noiseBurst(now, 0.32, 0.24);
+    tone(80, now, 0.4, "sawtooth", 0.18, 30);
+    tone(160, now + 0.03, 0.22, "square", 0.11, 60);
+    [0, 0.06, 0.12, 0.18, 0.26].forEach((d, i) => {
+      tone(460 + i * 200, now + d, 0.11 + i * 0.02, "square", 0.09 - i * 0.01, 180);
+      noiseBurst(now + d, 0.07 + i * 0.015, 0.09 + i * 0.015);
+    });
+    tone(1100, now + 0.16, 0.38, "sine", 0.13, 520);
+    tone(1500, now + 0.26, 0.42, "triangle", 0.11, 380);
+    tone(640, now + 0.34, 0.5, "sine", 0.09, 1600);
+    tone(1800, now + 0.42, 0.35, "sine", 0.07, 900);
+  }
+
+  function playLevelUpSfx() {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled) return;
+    const now = ctx.currentTime;
+    noiseBurst(now, 0.2, 0.14);
+    [523, 659, 784, 1046].forEach((f, i) => {
+      tone(f, now + i * 0.09, 0.28, "triangle", 0.1, f * 1.02);
+    });
+    tone(1318, now + 0.38, 0.55, "sine", 0.12, 1760);
+  }
+
   function spawnParticles(x, y, color, count, size) {
     const host = document.getElementById("fx-host");
     const layer = document.createElement("div");
@@ -1136,7 +1315,7 @@ input:focus, select:focus, textarea:focus {
       const p = document.createElement("div");
       p.className = "particle";
       const ang = Math.random() * Math.PI * 2;
-      const dist = 60 + Math.random() * 180;
+      const dist = 60 + Math.random() * (140 + count);
       const s = (size || 8) * (0.5 + Math.random());
       p.style.cssText = `left:${x}px;top:${y}px;width:${s}px;height:${s}px;background:${color};box-shadow:0 0 8px ${color}`;
       p.style.setProperty("--dx", Math.cos(ang) * dist + "px");
@@ -1144,7 +1323,7 @@ input:focus, select:focus, textarea:focus {
       layer.appendChild(p);
     }
     host.appendChild(layer);
-    setTimeout(() => layer.remove(), 1100);
+    setTimeout(() => layer.remove(), 1200);
   }
   function inkBurstAt(x, y) {
     const el = document.createElement("div");
@@ -1153,78 +1332,100 @@ input:focus, select:focus, textarea:focus {
     document.getElementById("fx-host").appendChild(el);
     setTimeout(() => el.remove(), 800);
   }
-  function screenShake() {
+  function screenShake(level) {
     const sc = document.getElementById("teacher-screen");
     if (!sc) return;
-    sc.classList.remove("screen-shake");
+    sc.classList.remove("screen-shake", "shake-mid", "shake-hard");
     void sc.offsetWidth;
+    const cls = level >= 4 ? "shake-hard" : level >= 2 ? "shake-mid" : "";
     sc.classList.add("screen-shake");
-    setTimeout(() => sc.classList.remove("screen-shake"), 500);
+    if (cls) sc.classList.add(cls);
+    setTimeout(() => sc.classList.remove("screen-shake", "shake-mid", "shake-hard"), level >= 4 ? 750 : 550);
   }
   function tierOf(category, points) {
-    if (category === "擂台" || points >= 20) return "arena";
-    if (category === "任务" || points >= 5) return "task";
+    const lv = powerLevel(points, category);
+    if (lv >= 4) return "arena";
+    if (lv >= 2) return "task";
     return "daily";
   }
 
   function showComboAnnounce(peak, points, reason, category, newScore) {
     const host = document.getElementById("fx-host");
-    const tier = tierOf(category, points);
+    const pts = Number(points) || 0;
+    const lv = powerLevel(pts, category);
+    const tier = tierOf(category, pts);
+    const tags = { 1: "HIT", 2: "COMBO", 3: "HEAVY HIT", 4: "CRITICAL HIT" };
+
+    playHitSfx(pts, category);
+
+    const ringCount = Math.min(2 + lv, 5);
+    let rings = "";
+    for (let i = 0; i < ringCount; i++) rings += `<div class="combo-ring${i ? " r" + (i + 1) : ""}"></div>`;
+
     const layer = document.createElement("div");
     layer.className = "combo-layer";
     layer.innerHTML = `
       <div class="combo-bg"></div>
-      <div class="combo-ring"></div>
-      <div class="combo-ring r2"></div>
-      <div class="combo-ring r3"></div>
-      <div class="combo-card tier-${tier}">
-        <div class="combo-tag">${tier === "arena" ? "CRITICAL HIT" : tier === "task" ? "SKILL COMBO" : "HIT"}</div>
+      ${rings}
+      <div class="combo-card tier-${tier} power-${lv}">
+        <div class="combo-tag">${tags[lv]} · x${pts}</div>
         <div class="combo-name">${peak.icon || ""} ${esc(peak.name)}</div>
-        <div class="combo-points">+${points}</div>
-        <div class="combo-reason">${esc(reason || "加分")}${peak.win_quote && tier === "arena" ? " · " + esc(peak.win_quote) : ""}</div>
+        <div class="combo-points">+${pts}</div>
+        <div class="combo-reason">${esc(reason || "加分")}${peak.win_quote && lv >= 3 ? " · " + esc(peak.win_quote) : ""}</div>
         <div class="combo-total">TOTAL SCORE ${newScore ?? peak.score ?? 0} · ${esc(peak.peak_level_name || "")} · ${esc(peak.element || "")}${esc(peak.style || "")}</div>
       </div>`;
     host.appendChild(layer);
 
-    // 飘字
-    for (let i = 0; i < 7; i++) {
+    const floatN = 4 + lv * 3;
+    for (let i = 0; i < floatN; i++) {
       const n = document.createElement("div");
       n.className = "float-num";
-      n.textContent = `+${points}`;
-      n.style.left = (42 + Math.random() * 16) + "%";
-      n.style.top = (48 + Math.random() * 10) + "%";
-      n.style.setProperty("--fx", (Math.random() * 80 - 40) + "px");
-      n.style.color = tier === "arena" ? "#f0c14b" : tier === "task" ? "#2ee6ff" : "#3dff9a";
-      n.style.animationDelay = (i * 0.05) + "s";
+      n.textContent = `+${pts}`;
+      n.style.left = (38 + Math.random() * 24) + "%";
+      n.style.top = (42 + Math.random() * 16) + "%";
+      n.style.setProperty("--fx", (Math.random() * 100 - 50) + "px");
+      n.style.color = lv >= 4 ? "#f0c14b" : lv >= 2 ? "#2ee6ff" : "#3dff9a";
+      n.style.fontSize = (1.2 + lv * 0.2) + "rem";
+      n.style.animationDelay = (i * 0.04) + "s";
       layer.appendChild(n);
     }
 
     const cx = innerWidth / 2, cy = innerHeight / 2;
     const hit = document.createElement("div");
-    hit.className = "hit-flash";
+    hit.className = "hit-flash" + (lv >= 3 ? " hard" : "");
     host.appendChild(hit);
-    setTimeout(() => hit.remove(), 160);
+    setTimeout(() => hit.remove(), lv >= 3 ? 300 : 160);
 
-    if (tier === "arena") {
-      spawnParticles(cx, cy, "#f0c14b", 64, 12);
-      spawnParticles(cx, cy, "#2ee6ff", 40, 8);
-      spawnParticles(cx, cy, "#ff3b5c", 32, 7);
+    const base = 16 + lv * 14;
+    spawnParticles(cx, cy, lv >= 4 ? "#f0c14b" : lv >= 2 ? "#2ee6ff" : "#3dff9a", base, 6 + lv * 2);
+    if (lv >= 2) spawnParticles(cx, cy, "#f0c14b", 12 + lv * 8, 5 + lv);
+    if (lv >= 3) {
+      spawnParticles(cx, cy, "#ff3b5c", 18 + lv * 6, 6 + lv);
       inkBurstAt(cx, cy);
-      screenShake();
+      screenShake(lv);
+    } else if (lv >= 2) {
+      screenShake(lv);
+    }
+    if (lv >= 4) {
       const flash = document.createElement("div");
       flash.className = "flash-gold";
       host.appendChild(flash);
-      setTimeout(() => flash.remove(), 1000);
-    } else if (tier === "task") {
-      spawnParticles(cx, cy, "#2ee6ff", 42, 9);
-      spawnParticles(cx, cy, "#f0c14b", 20, 6);
-      screenShake();
-    } else {
-      spawnParticles(cx, cy, "#3dff9a", 28, 8);
-      spawnParticles(cx, cy, "#f0c14b", 10, 5);
+      setTimeout(() => flash.remove(), 1100);
+      // 二次 / 三次冲击，炸裂感递增
+      setTimeout(() => {
+        playHitSfx(12, "任务");
+        spawnParticles(cx, cy, "#ffe39a", 40, 10);
+        screenShake(3);
+      }, 160);
+      setTimeout(() => {
+        const ctx2 = ensureAudio();
+        if (ctx2) noiseBurst(ctx2.currentTime, 0.25, 0.18);
+        spawnParticles(cx, cy, "#fff", 28, 8);
+        inkBurstAt(cx, cy);
+        screenShake(4);
+      }, 420);
     }
 
-    // 卡片高亮（等渲染后）
     requestAnimationFrame(() => {
       const el = document.querySelector(`.sect-card[data-peak-id="${peak.id}"]`);
       if (el) {
@@ -1233,13 +1434,13 @@ input:focus, select:focus, textarea:focus {
         if (scoreEl) {
           scoreEl.classList.remove("flash-green", "flash-blue", "flash-gold");
           void scoreEl.offsetWidth;
-          scoreEl.classList.add(tier === "arena" ? "flash-gold" : tier === "task" ? "flash-blue" : "flash-green");
+          scoreEl.classList.add(lv >= 4 ? "flash-gold" : lv >= 2 ? "flash-blue" : "flash-green");
         }
-        setTimeout(() => el.classList.remove("fx-glow"), 1300);
+        setTimeout(() => el.classList.remove("fx-glow"), 1400);
       }
     });
 
-    setTimeout(() => layer.remove(), 1700);
+    setTimeout(() => layer.remove(), lv >= 4 ? 2000 : 1700);
   }
 
   function playScoreAnimation(peakId, points, category) {
@@ -1247,15 +1448,35 @@ input:focus, select:focus, textarea:focus {
     showComboAnnounce(peak, points, category, category, peak.score);
   }
 
+  function ensureSfxToggle() {
+    if (document.getElementById("sfx-toggle")) return;
+    const btn = document.createElement("button");
+    btn.id = "sfx-toggle";
+    btn.type = "button";
+    btn.className = "sfx-toggle";
+    btn.textContent = sfxEnabled ? "🔊 SFX ON" : "🔇 SFX OFF";
+    btn.onclick = () => {
+      sfxEnabled = !sfxEnabled;
+      localStorage.setItem("gy_arena_sfx", sfxEnabled ? "1" : "0");
+      btn.textContent = sfxEnabled ? "🔊 SFX ON" : "🔇 SFX OFF";
+      if (sfxEnabled) { ensureAudio(); playHitSfx(2, "日常"); }
+    };
+    document.body.appendChild(btn);
+    // 首次交互解锁音频
+    const unlock = () => { ensureAudio(); document.removeEventListener("pointerdown", unlock); };
+    document.addEventListener("pointerdown", unlock, { once: true });
+  }
+
   function playLevelUpAnimation(peak, oldLevel, levelInfo) {
     const host = document.getElementById("fx-host");
     setTimeout(() => {
+      playLevelUpSfx();
       host.appendChild(Object.assign(document.createElement("div"), { className: "flash-gold" }));
       const toast = document.createElement("div");
       toast.className = "toast-levelup";
       toast.innerHTML = `<div class="msg">🔥 ${peak.name} 突破！${PEAK_THRESHOLDS[oldLevel-1]?.name || ""} → ${levelInfo.peak_level_name}</div>`;
       host.appendChild(toast);
-      screenShake();
+      screenShake(4);
       spawnParticles(innerWidth/2, innerHeight/2, "#f0c14b", 50, 11);
       spawnParticles(innerWidth/2, innerHeight/2, "#2ee6ff", 36, 8);
       setTimeout(() => toast.remove(), 2000);
@@ -2583,6 +2804,7 @@ input:focus, select:focus, textarea:focus {
         } catch (err) { console.warn(err); demoMode = true; bootDemo(); }
       } else { demoMode = true; bootDemo(); }
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
+      ensureSfxToggle();
       if (m === "memories") { /* loader */ } else renderAll();
       if (demoMode) {
         const tip = document.createElement("div");

@@ -4,8 +4,10 @@
   "private": true,
   "description": "光影盟·联盟积分体系（本地静态站点）",
   "scripts": {
-    "start": "npx --yes serve -l 3000 .",
-    "dev": "npx --yes serve -l 3000 ."
+    "start": "serve -l 3000 .",
+    "dev": "serve -l 3000 .",
+    "preview": "serve -l 4173 .",
+    "tunnel": "cloudflared tunnel --url http://127.0.0.1:4173 --no-autoupdate"
   },
   "dependencies": {
     "serve": "^14.2.6"
