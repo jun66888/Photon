@@ -196,6 +196,9 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(180deg, #3a4668, #1c2438);
   color: #ffe39a;
 }
+.brand-nav-links button.seal {
+  font-size: .85rem !important; letter-spacing: .04em; padding: .35rem .75rem !important;
+}
 body.has-brand-nav #sfx-bar { top: 3.35rem; }
 body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 
@@ -390,12 +393,12 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 .camp-head {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: calc(.2rem * var(--arena-scale)); padding-bottom: .15rem;
+  margin-bottom: .15rem; padding-bottom: .1rem;
   border-bottom: 1px solid rgba(255,255,255,.08);
-  flex: 0 0 auto;
+  flex: 0 0 auto; gap: .35rem;
 }
 .camp-head h2 {
-  font-family: var(--font-brush); font-size: calc(1.1rem * var(--arena-scale)); font-weight: 400;
+  font-family: var(--font-brush); font-size: 1rem; font-weight: 400; margin: 0;
 }
 .camp-col.red .camp-head h2 { color: #ff8aa0; }
 .camp-col.blue .camp-head h2 { color: #7ef0ff; }
