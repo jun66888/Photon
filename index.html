@@ -547,13 +547,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
         <div>已签到 <strong id="checkin-count">0</strong> / <strong id="checkin-total">25</strong></div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
         <div class="row" style="margin-bottom:1rem">
-          <button type="button" class="primary" data-action="gen-checkin-code">生成签到码</button>
+          <button type="button" class="primary" data-action="gen-checkin-code">生成微信签到码</button>
+          <button type="button" data-action="refresh-checkin-code">刷新码</button>
           <button type="button" data-action="end-checkin">结束签到</button>
           <button type="button" data-action="toggle-session">下午签到</button>
         </div>
+        <p class="muted" style="margin-bottom:.6rem">请学生用<strong>微信扫一扫</strong>下方二维码 · 码在「结束签到」前一直有效</p>
         <div class="row" style="align-items:flex-start;gap:1.5rem">
           <div>
-            <div class="muted">投屏二维码 · <span id="checkin-code-text">------</span> · <span id="checkin-countdown">30</span>s</div>
+            <div class="muted">签到码 <span id="checkin-code-text">------</span> · <span id="checkin-countdown">进行中</span></div>
             <div class="qr-box" id="checkin-qr" style="margin-top:.5rem"></div>
           </div>
           <div style="flex:1">
@@ -647,10 +649,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
     </div>
   </div>
 
-  <!-- CHECKIN -->
+  <!-- CHECKIN · 微信扫码友好 -->
   <div id="checkin-screen" class="screen hidden">
-    <div class="mobile-shell stack">
-      <div class="app-title" style="font-size:2rem;text-align:center">课堂签到</div>
+    <div class="mobile-shell stack" style="padding-bottom:2rem">
+      <div class="app-title" style="font-size:2rem;text-align:center">微信签到</div>
+      <p class="muted" style="text-align:center;margin-top:-.3rem" id="checkin-session-hint">请确认是本人后签到 · 每时段仅一次</p>
       <div class="paper panel" id="checkin-body"></div>
     </div>
   </div>
@@ -1465,39 +1468,72 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
       });
     } else host.innerHTML = `<a href="${url}" style="word-break:break-all;color:#333;font-size:12px">${url}</a>`;
   }
+  /** 微信签到：码在结束前长期有效（默认 4 小时），可手动刷新 */
+  const CHECKIN_TTL_MS = 4 * 60 * 60 * 1000;
   async function generateCheckinCode() {
-    await updatePaths({ "config/checkin_code": randCode(), "config/checkin_expires_at": Date.now() + 30000, "config/checkin_active": true });
+    await updatePaths({
+      "config/checkin_code": randCode(),
+      "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS,
+      "config/checkin_active": true
+    });
     startCheckinRefreshLoop();
+    renderTeacherCheckin();
+  }
+  async function refreshCheckinCode() {
+    if (!state.config?.checkin_active) {
+      await generateCheckinCode();
+      return;
+    }
+    await updatePaths({
+      "config/checkin_code": randCode(),
+      "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS
+    });
     renderTeacherCheckin();
   }
   function startCheckinRefreshLoop() {
     if (checkinRefreshTimer) clearInterval(checkinRefreshTimer);
-    checkinRefreshTimer = setInterval(async () => {
-      if (teacherView !== "checkin" || !state.config?.checkin_active) return;
-      const left = Math.max(0, Math.ceil(((state.config.checkin_expires_at || 0) - Date.now()) / 1000));
+    checkinRefreshTimer = setInterval(() => {
+      if (teacherView !== "checkin") return;
       const cd = document.getElementById("checkin-countdown");
-      if (cd) cd.textContent = String(left);
-      if (left <= 0) await updatePaths({ "config/checkin_code": randCode(), "config/checkin_expires_at": Date.now() + 30000 });
-    }, 500);
+      if (!cd) return;
+      if (!state.config?.checkin_active) { cd.textContent = "未开启"; return; }
+      const left = Math.max(0, Math.ceil(((state.config.checkin_expires_at || 0) - Date.now()) / 1000));
+      if (left <= 0) cd.textContent = "已过期，请刷新码";
+      else {
+        const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60);
+        cd.textContent = h > 0 ? `剩余 ${h}小时${m}分` : `剩余 ${m}分${left % 60}秒`;
+      }
+    }, 1000);
   }
   function renderTeacherCheckin() {
     const session = state.config?.checkin_session || "am";
     document.getElementById("checkin-session-label").textContent = session === "pm" ? "下午" : "上午";
     const flag = session === "pm" ? "checked_in_pm" : "checked_in_am";
+    const timeFlag = session === "pm" ? "checked_in_pm_at" : "checked_in_am_at";
     const disciples = sortDisciples(getDisciplesArray(), "name");
     const checked = disciples.filter((d) => d[flag]);
     const unchecked = disciples.filter((d) => !d[flag]);
     document.getElementById("checkin-count").textContent = checked.length;
     document.getElementById("checkin-total").textContent = disciples.length;
     document.getElementById("checkin-progress").style.width = (disciples.length ? checked.length / disciples.length * 100 : 0) + "%";
-    document.getElementById("checked-list").innerHTML = checked.map((d) => `<span class="name-chip ok">${d.student_id || "---"} ${d.name}</span>`).join("") || '<span class="muted">暂无</span>';
-    document.getElementById("unchecked-list").innerHTML = unchecked.map((d) => `<span class="name-chip miss">${d.student_id || "未注册"} ${d.name}</span>`).join("") || '<span class="muted">全员已签</span>';
+    document.getElementById("checked-list").innerHTML = checked.map((d) =>
+      `<span class="name-chip ok">${d.student_id || "---"} ${d.name}${d[timeFlag] ? " · " + fmtTime(d[timeFlag]) : ""}</span>`
+    ).join("") || '<span class="muted">暂无</span>';
+    document.getElementById("unchecked-list").innerHTML = unchecked.map((d) =>
+      `<span class="name-chip miss">${d.student_id || "未注册"} ${d.name}</span>`
+    ).join("") || '<span class="muted">全员已签</span>';
     const code = state.config?.checkin_code || "------";
     document.getElementById("checkin-code-text").textContent = code;
-    document.getElementById("checkin-countdown").textContent = String(Math.max(0, Math.ceil(((state.config?.checkin_expires_at || 0) - Date.now()) / 1000)));
+    const left = Math.max(0, Math.ceil(((state.config?.checkin_expires_at || 0) - Date.now()) / 1000));
+    document.getElementById("checkin-countdown").textContent = state.config?.checkin_active
+      ? (left > 0 ? "微信扫码中" : "已过期")
+      : "未开启";
     const qrHost = document.getElementById("checkin-qr");
-    if (state.config?.checkin_active && code !== "------") renderQr(qrHost, `${location.origin}${location.pathname}?mode=checkin&code=${code}`, 180);
-    else qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333">点击生成签到码</div>';
+    if (state.config?.checkin_active && code !== "------") {
+      renderQr(qrHost, `${location.origin}${location.pathname}?mode=checkin&code=${code}`, 220);
+    } else {
+      qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333">点击「生成微信签到码」投屏</div>';
+    }
   }
 
   function renderTeacherVote() {
@@ -1673,6 +1709,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
     getDisciplesArray().forEach((d) => {
       updates[`disciples/${d.id}/checked_in_am`] = false;
       updates[`disciples/${d.id}/checked_in_pm`] = false;
+      updates[`disciples/${d.id}/checked_in_am_at`] = 0;
+      updates[`disciples/${d.id}/checked_in_pm_at`] = 0;
       updates[`disciples/${d.id}/voted`] = false;
       updates[`disciples/${d.id}/voted_for`] = "";
     });
@@ -1691,7 +1729,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
   function findDiscipleByLocal() {
     const local = getLocalStudent();
     if (!local) return null;
-    return getDisciplesArray().find((d) => (local.student_id && d.student_id === local.student_id) || (local.name && d.name === local.name)) || null;
+    if (local.disciple_id && state.disciples && state.disciples[local.disciple_id]) {
+      return { id: local.disciple_id, ...state.disciples[local.disciple_id] };
+    }
+    return getDisciplesArray().find((d) =>
+      (local.student_id && d.student_id === local.student_id) ||
+      (local.name && d.name === local.name)
+    ) || null;
   }
   function renderStudent() {
     const me = findDiscipleByLocal();
@@ -1766,105 +1810,213 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
     const ids = getDisciplesArray().map((d) => parseInt(d.student_id, 10)).filter((n) => !isNaN(n));
     return String((ids.length ? Math.max(...ids) : 0) + 1).padStart(3, "0");
   }
+  function checkinFlag() {
+    return (state.config?.checkin_session || "am") === "pm" ? "checked_in_pm" : "checked_in_am";
+  }
+  function checkinTimeFlag() {
+    return (state.config?.checkin_session || "am") === "pm" ? "checked_in_pm_at" : "checked_in_am_at";
+  }
   function isCodeValid(code) {
     const cfg = state.config || {};
-    return !!(cfg.checkin_active && cfg.checkin_code === code && (cfg.checkin_expires_at || 0) >= Date.now());
+    if (!cfg.checkin_active || !cfg.checkin_code || !code) return false;
+    if (cfg.checkin_code !== code) return false;
+    if (cfg.checkin_expires_at && cfg.checkin_expires_at < Date.now()) return false;
+    return true;
   }
   function codeOk(code) {
-    return isCodeValid(code) || (demoMode && state.config?.checkin_code === code && state.config?.checkin_active);
+    return isCodeValid(code) || (demoMode && state.config?.checkin_active && state.config?.checkin_code === code);
   }
   async function applyCheckin(discipleId) {
     const d = state.disciples[discipleId];
     if (!d) return { ok: false, msg: "未找到学员" };
-    const flag = (state.config?.checkin_session || "am") === "pm" ? "checked_in_pm" : "checked_in_am";
-    if (d[flag]) return { ok: false, msg: "已签到 ✓", already: true };
-    await updatePaths({ [`disciples/${discipleId}/${flag}`]: true });
+    const flag = checkinFlag();
+    const timeFlag = checkinTimeFlag();
+    if (d[flag]) {
+      return { ok: false, msg: `本时段已签到 ✓ ${d[timeFlag] ? fmtTime(d[timeFlag]) : ""}`, already: true, at: d[timeFlag] };
+    }
+    const now = Date.now();
+    await updatePaths({
+      [`disciples/${discipleId}/${flag}`]: true,
+      [`disciples/${discipleId}/${timeFlag}`]: now
+    });
     if (d.peak >= 0) await addScoreToPeak(d.peak, 2, "签到", "日常");
-    return { ok: true };
+    return { ok: true, at: now };
   }
+
+  let checkinNameSelected = false;
+
+  function renderCheckinSuccess(name, student_id, at, already) {
+    const body = document.getElementById("checkin-body");
+    body.innerHTML = `
+      <div style="text-align:center" class="stack">
+        <div class="success-burst">${already ? "✓" : "✅"}</div>
+        <div style="font-family:var(--font-brush);font-size:1.8rem;color:var(--seal)">${esc(name)}</div>
+        <div class="badge-fly">学号 ${esc(student_id)}</div>
+        <p style="margin-top:.5rem;font-size:1.1rem">${already ? "本时段已签到" : "签到成功 · 门派 +2 分"}</p>
+        <p class="muted">${at ? fmtTime(at) : ""} · 每时段仅可签到一次</p>
+      </div>`;
+  }
+
+  function renderCheckinIdentityStep(code, local, me) {
+    const body = document.getElementById("checkin-body");
+    const flag = checkinFlag();
+    const timeFlag = checkinTimeFlag();
+    const sessionLabel = (state.config?.checkin_session || "am") === "pm" ? "下午" : "上午";
+    const hint = document.getElementById("checkin-session-hint");
+    if (hint) hint.textContent = `${sessionLabel}签到 · 点自己的名字确认，再点签到`;
+
+    if (me && me[flag]) {
+      renderCheckinSuccess(local.name, local.student_id, me[timeFlag], true);
+      return;
+    }
+
+    const selected = checkinNameSelected;
+    body.innerHTML = `
+      <div class="stack">
+        <p class="muted" style="text-align:center">微信已记住你，请确认身份</p>
+        <button type="button" id="ci-name-card" style="width:100%;padding:1.1rem;text-align:left;border:2px solid ${selected ? "var(--seal)" : "var(--frame)"};background:${selected ? "rgba(163,32,32,.08)" : "#fff8e7"}">
+          <div style="font-family:var(--font-brush);font-size:1.9rem;color:var(--seal)">${esc(local.name)}</div>
+          <div class="muted">学号 ${esc(local.student_id)} · 点击选择我</div>
+        </button>
+        <button type="button" class="primary" id="ci-do" style="padding:1rem;font-size:1.25rem;width:100%" ${selected ? "" : "disabled"}>签到</button>
+        <button type="button" class="ghost" id="ci-who" style="width:100%">不是我？换一个名字</button>
+      </div>`;
+
+    document.getElementById("ci-name-card").onclick = () => {
+      checkinNameSelected = true;
+      renderCheckinIdentityStep(code, local, me);
+    };
+    document.getElementById("ci-do").onclick = async () => {
+      if (!checkinNameSelected) { alert("请先点击上面的名字确认是本人"); return; }
+      if (!codeOk(code)) { alert("签到已结束或二维码已失效，请重新扫老师投屏码"); renderCheckin(); return; }
+      const disciple = findDiscipleByLocal();
+      if (!disciple) { localStorage.removeItem(LS_STUDENT_KEY); checkinNameSelected = false; renderCheckin(); return; }
+      const res = await applyCheckin(disciple.id);
+      renderCheckinSuccess(local.name, local.student_id, res.at || Date.now(), !!res.already);
+      checkinNameSelected = false;
+    };
+    document.getElementById("ci-who").onclick = () => {
+      checkinNameSelected = false;
+      showWhoList(code);
+    };
+  }
+
   function renderCheckin() {
     const { code } = getMode();
     const body = document.getElementById("checkin-body");
+    const sessionLabel = (state.config?.checkin_session || "am") === "pm" ? "下午" : "上午";
+    const hint = document.getElementById("checkin-session-hint");
+    if (hint) hint.textContent = `${sessionLabel}签到 · 微信扫码 · 每时段仅一次`;
+
     if (!codeOk(code)) {
-      body.innerHTML = `<div style="text-align:center;padding:1rem"><div style="font-size:2rem">⛔</div><p style="margin:.8rem 0">签到码无效或已过期</p></div>`;
+      body.innerHTML = `
+        <div style="text-align:center;padding:1rem" class="stack">
+          <div style="font-size:2.4rem">⛔</div>
+          <p>签到未开启或二维码已失效</p>
+          <p class="muted">请用微信重新扫描老师投屏上的二维码</p>
+        </div>`;
       return;
     }
+
     const local = getLocalStudent();
-    if (!local) {
-      body.innerHTML = `<div class="stack"><h3 style="font-family:var(--font-brush);color:var(--seal);font-size:1.6rem">欢迎入江湖！请留下姓名</h3>
-        <input id="ci-name" type="text" maxlength="4" placeholder="2-4个中文名" />
-        <button type="button" class="primary" id="ci-register">确认并注册</button>
-        <button type="button" id="ci-who">你是哪位？</button></div>`;
-      document.getElementById("ci-register").onclick = () => registerAndCheckin(code);
-      document.getElementById("ci-who").onclick = () => showWhoList(code);
-      return;
-    }
     const me = findDiscipleByLocal();
-    const flag = (state.config?.checkin_session || "am") === "pm" ? "checked_in_pm" : "checked_in_am";
-    if (me && me[flag]) {
-      body.innerHTML = `<div style="text-align:center"><div>${local.name} · 学号 ${local.student_id}</div><div class="success-burst">✓</div><div>已签到</div></div>`;
+    if (local && me && local.student_id) {
+      renderCheckinIdentityStep(code, { name: me.name || local.name, student_id: me.student_id || local.student_id }, me);
       return;
     }
-    body.innerHTML = `<div style="text-align:center" class="stack"><div>${local.name} · 学号 ${local.student_id}</div>
-      <button type="button" class="primary" id="ci-do" style="padding:1rem;font-size:1.2rem">签到</button>
-      <button type="button" class="ghost" id="ci-who">不是我？</button></div>`;
-    document.getElementById("ci-do").onclick = async () => {
-      if (!codeOk(code)) { alert("签到码已失效"); renderCheckin(); return; }
-      const disciple = findDiscipleByLocal();
-      if (!disciple) { localStorage.removeItem(LS_STUDENT_KEY); renderCheckin(); return; }
-      const res = await applyCheckin(disciple.id);
-      body.innerHTML = `<div style="text-align:center"><div class="success-burst">${res.ok?"✅":"✓"}</div><div class="badge-fly">学号 ${local.student_id}</div><p style="margin-top:1rem">${res.ok?"签到成功 +2":res.msg}</p></div>`;
-    };
-    document.getElementById("ci-who").onclick = () => { localStorage.removeItem(LS_STUDENT_KEY); showWhoList(code); };
+
+    body.innerHTML = `
+      <div class="stack">
+        <h3 style="font-family:var(--font-brush);color:var(--seal);font-size:1.7rem;text-align:center">第一次来？留下姓名</h3>
+        <p class="muted" style="text-align:center">系统会自动生成学号，下次微信扫码会记住你</p>
+        <input id="ci-name" type="text" maxlength="4" placeholder="请输入真实姓名（2-4个字）" autocomplete="name" style="font-size:1.15rem;padding:.8rem;text-align:center" />
+        <button type="button" class="primary" id="ci-register" style="padding:.9rem;font-size:1.1rem">生成学号并继续</button>
+        <div style="height:1px;background:rgba(139,90,43,.3);margin:.3rem 0"></div>
+        <p class="muted" style="text-align:center">换过手机？从名单找回自己</p>
+        <button type="button" id="ci-who">点我的名字</button>
+      </div>`;
+    const nameInput = document.getElementById("ci-name");
+    nameInput.focus();
+    document.getElementById("ci-register").onclick = () => registerAndCheckin(code);
+    nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") registerAndCheckin(code); });
+    document.getElementById("ci-who").onclick = () => showWhoList(code);
   }
+
   async function registerAndCheckin(code) {
     const name = (document.getElementById("ci-name").value || "").trim();
     if (!/^[\u4e00-\u9fa5]{2,4}$/.test(name)) { alert("请输入2-4个中文名"); return; }
-    if (!codeOk(code)) { alert("签到码无效"); return; }
-    let existing = getDisciplesArray().find((d) => d.name === name);
-    if (existing && existing.student_id) { alert("该名字已注册，请点「你是哪位？」"); showWhoList(code); return; }
+    if (!codeOk(code)) { alert("签到码无效，请重新扫码"); return; }
+
+    const sameNameRegistered = getDisciplesArray().find((d) => d.name === name && d.student_id);
+    if (sameNameRegistered) {
+      alert("这个名字已经登记过学号了，请在名单里点自己的名字");
+      showWhoList(code, name);
+      return;
+    }
+
+    let existing = getDisciplesArray().find((d) => d.name === name && !d.student_id);
     let discipleId, student_id;
     if (existing) {
-      discipleId = existing.id; student_id = await nextStudentId();
-      await updatePaths({ [`disciples/${discipleId}/student_id`]: student_id, [`disciples/${discipleId}/first_seen`]: new Date().toISOString(), [`disciples/${discipleId}/name`]: name });
+      discipleId = existing.id;
+      student_id = await nextStudentId();
+      await updatePaths({
+        [`disciples/${discipleId}/student_id`]: student_id,
+        [`disciples/${discipleId}/first_seen`]: new Date().toISOString(),
+        [`disciples/${discipleId}/name`]: name
+      });
     } else {
       const peaks = getPeaksArray();
-      const counts = {}; peaks.forEach((p) => counts[p.id] = 0);
+      const counts = {};
+      peaks.forEach((p) => { counts[p.id] = 0; });
       getDisciplesArray().forEach((d) => { counts[d.peak] = (counts[d.peak] || 0) + 1; });
-      const target = peaks.slice().sort((a,b)=>(counts[a.id]||0)-(counts[b.id]||0))[0] || { id: 0, camp: "red" };
-      student_id = await nextStudentId(); discipleId = "disciple_" + Date.now();
+      const target = peaks.slice().sort((a, b) => (counts[a.id] || 0) - (counts[b.id] || 0))[0] || { id: 0, camp: "red" };
+      student_id = await nextStudentId();
+      discipleId = "disciple_" + Date.now();
       const lv = calcPersonalLevel(0);
-      await setPath("disciples/" + discipleId, { name, student_id, peak: target.id, camp: target.camp, exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子", voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false, first_seen: new Date().toISOString(), voted_for: "", weapon: "笔" });
+      await setPath("disciples/" + discipleId, {
+        name, student_id, peak: target.id, camp: target.camp,
+        exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子",
+        voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false,
+        checked_in_am_at: 0, checked_in_pm_at: 0,
+        first_seen: new Date().toISOString(), voted_for: "", weapon: "笔"
+      });
     }
+
     setLocalStudent({ student_id, name, disciple_id: discipleId });
-    const body = document.getElementById("checkin-body");
-    body.innerHTML = `<div style="text-align:center" class="stack"><p>${name}，你的学号是 <strong style="color:var(--seal)">${student_id}</strong></p><button type="button" class="primary" id="ci-confirm-first">确认签到</button></div>`;
-    document.getElementById("ci-confirm-first").onclick = async () => {
-      const res = await applyCheckin(discipleId);
-      body.innerHTML = `<div style="text-align:center"><div class="success-burst">✅</div><div class="badge-fly">学号 ${student_id}</div><p style="margin-top:1rem">${res.ok?"签到成功":res.msg}</p></div>`;
-    };
+    checkinNameSelected = true;
+    const me = { id: discipleId, ...(state.disciples[discipleId] || {}), name, student_id };
+    renderCheckinIdentityStep(code, { name, student_id }, me);
   }
-  function showWhoList(code) {
+
+  function showWhoList(code, highlightName) {
     const list = sortDisciples(getDisciplesArray().filter((d) => d.student_id), "name");
     const body = document.getElementById("checkin-body");
-    body.innerHTML = `<h3 style="font-family:var(--font-brush);color:var(--seal)">你是哪位？</h3>
-      <div class="stack" style="max-height:55vh;overflow:auto;margin-top:.75rem">${list.map((d)=>`<button type="button" data-who="${d.id}">${d.student_id} · ${d.name}</button>`).join("")||'<div class="muted">暂无</div>'}</div>
-      <button type="button" class="ghost" id="ci-back" style="margin-top:.8rem">返回</button>`;
-    document.getElementById("ci-back").onclick = () => renderCheckin();
+    const hint = document.getElementById("checkin-session-hint");
+    if (hint) hint.textContent = "点自己的名字 → 再点签到";
+
+    body.innerHTML = `
+      <h3 style="font-family:var(--font-brush);color:var(--seal);text-align:center">点我的名字</h3>
+      <p class="muted" style="text-align:center;margin-bottom:.5rem">找到后进入签到，每时段只能签一次</p>
+      <div class="stack" style="max-height:55vh;overflow:auto">
+        ${list.map((d) => {
+          const hi = highlightName && d.name === highlightName;
+          return `<button type="button" data-who="${d.id}" style="text-align:left;padding:.85rem;${hi ? "border-color:var(--seal);background:rgba(163,32,32,.08)" : ""}">
+            <div style="font-size:1.2rem;font-weight:700">${esc(d.name)}</div>
+            <div class="muted">学号 ${esc(d.student_id)}</div>
+          </button>`;
+        }).join("") || '<div class="muted">还没有人登记，请先输入姓名</div>'}
+      </div>
+      <button type="button" class="ghost" id="ci-back" style="margin-top:.8rem;width:100%">返回</button>`;
+
+    document.getElementById("ci-back").onclick = () => { checkinNameSelected = false; renderCheckin(); };
     body.querySelectorAll("[data-who]").forEach((btn) => {
       btn.onclick = () => {
-        const d = state.disciples[btn.dataset.who];
-        openModal(`<h3>验证学号</h3><p class="muted">确认你是 ${d.name}？</p><input id="verify-sid" type="text" style="margin:.8rem 0" />
-          <div class="row" style="justify-content:flex-end"><button type="button" class="ghost" id="modal-cancel">取消</button><button type="button" class="primary" id="verify-ok">绑定并签到</button></div>`);
-        document.getElementById("modal-cancel").onclick = closeModal;
-        document.getElementById("verify-ok").onclick = async () => {
-          if (document.getElementById("verify-sid").value.trim() !== d.student_id) { alert("学号不正确"); return; }
-          setLocalStudent({ student_id: d.student_id, name: d.name, disciple_id: btn.dataset.who });
-          closeModal();
-          if (!codeOk(code)) { alert("签到码已失效"); renderCheckin(); return; }
-          const res = await applyCheckin(btn.dataset.who);
-          document.getElementById("checkin-body").innerHTML = `<div style="text-align:center"><div class="success-burst">${res.ok?"✅":"✓"}</div><p>${res.ok?"签到成功":res.msg}</p></div>`;
-        };
+        const id = btn.dataset.who;
+        const d = state.disciples[id];
+        if (!d) return;
+        setLocalStudent({ student_id: d.student_id, name: d.name, disciple_id: id });
+        checkinNameSelected = true;
+        renderCheckinIdentityStep(code, { name: d.name, student_id: d.student_id }, { id, ...d });
       };
     });
   }
@@ -2058,10 +2210,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
       }
       if (act === "goto-memories" && (state.config?.day||1) >= 20) location.href = location.pathname + "?mode=memories";
       if (act === "gen-checkin-code") await generateCheckinCode();
+      if (act === "refresh-checkin-code") await refreshCheckinCode();
       if (act === "end-checkin") await updatePaths({ "config/checkin_active": false, "config/checkin_code": "" });
       if (act === "toggle-session") {
         const next = (state.config?.checkin_session || "am") === "am" ? "pm" : "am";
         await updatePaths({ "config/checkin_session": next });
+        const labelBtn = document.querySelector('[data-action="toggle-session"]');
+        if (labelBtn) labelBtn.textContent = next === "am" ? "下午签到" : "上午签到";
       }
       if (act === "open-vote") await updatePaths({ "config/voting_open": true });
       if (act === "close-vote") { await updatePaths({ "config/voting_open": false }); openAwardModal(); }
