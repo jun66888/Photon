@@ -1844,9 +1844,11 @@ input:focus, select:focus, textarea:focus {
       const s = Number(document.getElementById("award-silver").value);
       const b = Number(document.getElementById("award-bronze").value);
       closeModal();
-      await addScoreToPeak(g, 30, "擂台金牌", "擂台", { awardBonusExp: 300 });
-      await addScoreToPeak(s, 20, "擂台银牌", "擂台", { awardBonusExp: 200 });
-      await addScoreToPeak(b, 10, "擂台铜牌", "擂台", { awardBonusExp: 100 });
+      await scoreFromModal(g, 30, "擂台金牌", "擂台", 300);
+      await new Promise((r) => setTimeout(r, 900));
+      await scoreFromModal(s, 20, "擂台银牌", "擂台", 200);
+      await new Promise((r) => setTimeout(r, 900));
+      await scoreFromModal(b, 10, "擂台铜牌", "擂台", 100);
     };
   }
 
