@@ -142,9 +142,55 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600;
 }
 
-.header-bar { justify-content: space-between; margin-bottom: .45rem; }
-.screen.compact-arena { padding: .55rem .7rem 3.2rem; }
-.app-title.compact { font-size: clamp(1.45rem, 3vw, 2.1rem); letter-spacing: .1em; }
+.header-bar { justify-content: space-between; margin-bottom: .35rem; }
+.screen.compact-arena { padding: 4.6rem .7rem 3.2rem; }
+.app-title.compact { font-size: clamp(1.2rem, 2.6vw, 1.7rem); letter-spacing: .1em; }
+
+/* 中上部徽标 + 导航（始终可见） */
+.brand-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  display: flex; flex-direction: column; align-items: center;
+  padding: .35rem .55rem .4rem;
+  background:
+    linear-gradient(180deg, rgba(8,12,20,.96), rgba(8,12,20,.88) 70%, transparent);
+  pointer-events: none;
+}
+.brand-nav > * { pointer-events: auto; }
+.brand-emblem {
+  display: inline-flex; align-items: center; gap: .45rem;
+  border: none !important; background: transparent !important; box-shadow: none !important;
+  padding: .15rem .4rem !important; cursor: pointer;
+  transform: none !important;
+}
+.brand-emblem:hover { filter: brightness(1.15); }
+.brand-seal {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-brush); font-size: 1.35rem; color: #1a1205;
+  background:
+    radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 50%, #8a6d18);
+  border: 2px solid #fff3c4;
+  box-shadow: 0 0 18px rgba(240,193,75,.55), 0 0 0 3px rgba(240,193,75,.12);
+}
+.brand-name {
+  font-family: var(--font-brush); font-size: 1.55rem; color: var(--gold);
+  letter-spacing: .18em; text-shadow: 0 0 14px rgba(240,193,75,.45);
+}
+.brand-nav-links {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: .28rem;
+  margin-top: .15rem; max-width: 980px;
+}
+.brand-nav-links button {
+  font-size: .72rem !important; padding: .28rem .55rem !important;
+  min-width: 0; box-shadow: 0 2px 0 #0a0d16;
+}
+.brand-nav-links button.active-nav {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
+body.has-brand-nav #sfx-toggle { top: 4.8rem; }
+body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 .day-input {
   width: 4.2rem; text-align: center; font-weight: 800; font-family: var(--font-num);
   color: var(--gold) !important; background: #0c101c !important;
@@ -263,7 +309,7 @@ input:focus, select:focus, textarea:focus {
   background: rgba(10, 14, 26, .85);
   box-shadow: var(--shadow);
   position: relative;
-  max-height: calc(100vh - 14.5rem);
+  max-height: calc(100vh - 16.5rem);
   overflow: auto;
 }
 .camp-col.red {
@@ -1064,15 +1110,34 @@ input:focus, select:focus, textarea:focus {
   <noscript><div class="screen paper panel">需要启用 JavaScript</div></noscript>
   <div id="boot-error" class="hidden" style="padding:1rem;background:#5c1010;color:#fff5e8"></div>
 
+  <!-- 始终中上部：光影盟徽标 + 导航 -->
+  <header id="brand-nav" class="brand-nav">
+    <button type="button" class="brand-emblem" id="brand-home" title="回到主页">
+      <span class="brand-seal">盟</span>
+      <span class="brand-name">光影盟</span>
+    </button>
+    <nav class="brand-nav-links" id="teacher-nav-links">
+      <button type="button" data-action="goto-main" data-nav="main">主页</button>
+      <button type="button" data-action="custom-score">自定义加分</button>
+      <button type="button" data-action="goto-checkin" data-nav="checkin">签到</button>
+      <button type="button" data-action="goto-vote" data-nav="vote">投票</button>
+      <button type="button" data-action="goto-logs" data-nav="logs">日志</button>
+      <button type="button" data-action="goto-settings" data-nav="settings">设置</button>
+      <button type="button" data-action="export-data">导出</button>
+      <button type="button" id="btn-memories" data-action="goto-memories" disabled>回忆</button>
+      <button type="button" class="seal" data-action="settle-ranks">段位结算</button>
+    </nav>
+  </header>
+
   <!-- TEACHER -->
   <div id="teacher-screen" class="screen compact-arena">
     <div id="teacher-main" class="subview">
       <div class="row header-bar">
         <div>
-          <div class="app-title compact">光影盟 · 山峰对擂</div>
+          <div class="app-title compact">山峰对擂</div>
           <div class="muted" style="margin-top:.1rem;font-size:.78rem">
             <span class="round-chip">DAY <span id="day-label">1</span></span>
-            <span style="margin-left:.35rem">阵营 → 山峰组 → 组员 · 点开组员看详情</span>
+            <span style="margin-left:.35rem">阵营 → 组 → 组员</span>
           </div>
         </div>
         <div class="row">
@@ -1131,16 +1196,6 @@ input:focus, select:focus, textarea:focus {
         </section>
       </div>
 
-      <div class="row func-bar paper panel compact">
-        <button type="button" data-action="custom-score">自定义加分</button>
-        <button type="button" data-action="goto-checkin">签到模式</button>
-        <button type="button" data-action="goto-vote">投票模式</button>
-        <button type="button" data-action="goto-logs">积分日志</button>
-        <button type="button" data-action="goto-settings">对战设置</button>
-        <button type="button" data-action="export-data">导出</button>
-        <button type="button" id="btn-memories" data-action="goto-memories" disabled>毕业回忆</button>
-        <button type="button" class="seal" data-action="settle-ranks">段位结算</button>
-      </div>
     </div>
 
     <div id="teacher-checkin" class="subview checkin-board hidden">
@@ -2551,10 +2606,35 @@ input:focus, select:focus, textarea:focus {
     });
     const ticker = document.querySelector(".ticker");
     if (ticker) ticker.style.display = view === "main" ? "" : "none";
+    document.querySelectorAll("#teacher-nav-links [data-nav]").forEach((b) => {
+      b.classList.toggle("active-nav", b.dataset.nav === view);
+    });
     if (view === "checkin") renderTeacherCheckin();
     if (view === "vote") renderTeacherVote();
     if (view === "logs") renderLogs();
     if (view === "settings") renderSettings();
+  }
+
+  function goHome() {
+    const { mode } = getMode();
+    if (mode !== "teacher") {
+      location.href = location.pathname + "?mode=teacher";
+      return;
+    }
+    showScreen("teacher");
+    setTeacherView("main");
+    renderTeacherMain();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function syncBrandNavVisibility() {
+    const { mode } = getMode();
+    const nav = document.getElementById("brand-nav");
+    const links = document.getElementById("teacher-nav-links");
+    if (!nav) return;
+    nav.style.display = "";
+    document.body.classList.add("has-brand-nav");
+    if (links) links.style.display = mode === "teacher" ? "" : "none";
   }
 
   function openCustomScoreModal() {
@@ -3317,51 +3397,70 @@ input:focus, select:focus, textarea:focus {
     else if (mode === "checkin") renderCheckin();
   }
 
+  async function handleTeacherAction(act, btn) {
+    if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
+    if (act === "custom-score") { openCustomScoreModal(); return; }
+    if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
+    if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); return; }
+    if (act === "goto-logs") { showScreen("teacher"); setTeacherView("logs"); return; }
+    if (act === "goto-settings") { showScreen("teacher"); setTeacherView("settings"); return; }
+    if (act === "export-data") {
+      openModal(`<h3>导出</h3><div class="row" style="justify-content:center;margin-top:1rem">
+        <button type="button" class="primary" id="ex-json">JSON</button><button type="button" id="ex-csv">CSV</button><button type="button" class="ghost" id="modal-cancel">取消</button></div>`);
+      document.getElementById("modal-cancel").onclick = closeModal;
+      document.getElementById("ex-json").onclick = () => { exportJSON(); closeModal(); };
+      document.getElementById("ex-csv").onclick = () => { exportCSV(); closeModal(); };
+      return;
+    }
+    if (act === "goto-memories" && (state.config?.day || 1) >= 20) {
+      location.href = location.pathname + "?mode=memories";
+      return;
+    }
+    if (act === "gen-checkin-code") await generateCheckinCode();
+    if (act === "refresh-checkin-code") await refreshCheckinCode();
+    if (act === "end-checkin") await updatePaths({ "config/checkin_active": false, "config/checkin_code": "" });
+    if (act === "toggle-session") {
+      const next = (state.config?.checkin_session || "am") === "am" ? "pm" : "am";
+      await updatePaths({ "config/checkin_session": next });
+      const labelBtn = document.querySelector('[data-action="toggle-session"]');
+      if (labelBtn) labelBtn.textContent = next === "am" ? "下午签到" : "上午签到";
+    }
+    if (act === "open-vote") await updatePaths({ "config/voting_open": true });
+    if (act === "close-vote") { await updatePaths({ "config/voting_open": false }); openAwardModal(); }
+    if (act === "reset-votes") {
+      const updates = {};
+      getPeaksArray().forEach((p) => updates[`peaks/${peakKey(p.id)}/votes`] = 0);
+      getDisciplesArray().forEach((d) => { updates[`disciples/${d.id}/voted`] = false; updates[`disciples/${d.id}/voted_for`] = ""; });
+      await updatePaths(updates); localStorage.removeItem(LS_VOTE_KEY);
+    }
+    if (act === "award") openAwardModal();
+    if (act === "add-peak" || act === "add-peak-red") await addPeak("red");
+    if (act === "add-peak-blue") await addPeak("blue");
+    if (act === "add-disciple") editDiscipleModal("disciple_" + Date.now());
+    if (act === "add-preset") editPresetModal("bp_" + Date.now());
+    if (act === "settle-ranks") await doSettleRanks();
+    if (act === "export-csv") exportCSV();
+    if (act === "export-json") exportJSON();
+  }
+
   function bindTeacherActions() {
     document.getElementById("teacher-screen").addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-action]");
       if (!btn) return;
-      const act = btn.dataset.action;
-      if (act === "back-main") setTeacherView("main");
-      if (act === "custom-score") openCustomScoreModal();
-      if (act === "goto-checkin") { setTeacherView("checkin"); startCheckinRefreshLoop(); }
-      if (act === "goto-vote") setTeacherView("vote");
-      if (act === "goto-logs") setTeacherView("logs");
-      if (act === "goto-settings") setTeacherView("settings");
-      if (act === "export-data") {
-        openModal(`<h3>导出</h3><div class="row" style="justify-content:center;margin-top:1rem">
-          <button type="button" class="primary" id="ex-json">JSON</button><button type="button" id="ex-csv">CSV</button><button type="button" class="ghost" id="modal-cancel">取消</button></div>`);
-        document.getElementById("modal-cancel").onclick = closeModal;
-        document.getElementById("ex-json").onclick = () => { exportJSON(); closeModal(); };
-        document.getElementById("ex-csv").onclick = () => { exportCSV(); closeModal(); };
-      }
-      if (act === "goto-memories" && (state.config?.day||1) >= 20) location.href = location.pathname + "?mode=memories";
-      if (act === "gen-checkin-code") await generateCheckinCode();
-      if (act === "refresh-checkin-code") await refreshCheckinCode();
-      if (act === "end-checkin") await updatePaths({ "config/checkin_active": false, "config/checkin_code": "" });
-      if (act === "toggle-session") {
-        const next = (state.config?.checkin_session || "am") === "am" ? "pm" : "am";
-        await updatePaths({ "config/checkin_session": next });
-        const labelBtn = document.querySelector('[data-action="toggle-session"]');
-        if (labelBtn) labelBtn.textContent = next === "am" ? "下午签到" : "上午签到";
-      }
-      if (act === "open-vote") await updatePaths({ "config/voting_open": true });
-      if (act === "close-vote") { await updatePaths({ "config/voting_open": false }); openAwardModal(); }
-      if (act === "reset-votes") {
-        const updates = {};
-        getPeaksArray().forEach((p) => updates[`peaks/${peakKey(p.id)}/votes`] = 0);
-        getDisciplesArray().forEach((d) => { updates[`disciples/${d.id}/voted`] = false; updates[`disciples/${d.id}/voted_for`] = ""; });
-        await updatePaths(updates); localStorage.removeItem(LS_VOTE_KEY);
-      }
-      if (act === "award") openAwardModal();
-      if (act === "add-peak" || act === "add-peak-red") await addPeak("red");
-      if (act === "add-peak-blue") await addPeak("blue");
-      if (act === "add-disciple") editDiscipleModal("disciple_" + Date.now());
-      if (act === "add-preset") editPresetModal("bp_" + Date.now());
-      if (act === "settle-ranks") await doSettleRanks();
-      if (act === "export-csv") exportCSV();
-      if (act === "export-json") exportJSON();
+      await handleTeacherAction(btn.dataset.action, btn);
     });
+    const brandNav = document.getElementById("brand-nav");
+    if (brandNav) {
+      brandNav.addEventListener("click", async (e) => {
+        if (e.target.closest("#brand-home") || e.target.closest(".brand-emblem")) {
+          goHome();
+          return;
+        }
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        await handleTeacherAction(btn.dataset.action, btn);
+      });
+    }
     document.getElementById("day-input").addEventListener("change", async (e) => changeDay(e.target.value));
     document.getElementById("sort-mode").addEventListener("change", async (e) => {
       sortMode = e.target.value;
@@ -3428,9 +3527,12 @@ input:focus, select:focus, textarea:focus {
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
       ensureSfxToggle();
       ensureSwordCursorTrail();
+      syncBrandNavVisibility();
+      if (m === "teacher") setTeacherView("main");
       if (m === "memories") { /* loader */ } else renderAll();
       if (demoMode) {
         const tip = document.createElement("div");
+        tip.className = "demo-tip";
         tip.style.cssText = "position:fixed;top:8px;left:8px;z-index:99;font-size:12px;color:#f0c14b;background:rgba(7,9,15,.9);padding:4px 10px;border:2px solid rgba(240,193,75,.5);letter-spacing:.08em";
         tip.textContent = "DEMO · ARENA";
         document.body.appendChild(tip);
