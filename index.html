@@ -4574,7 +4574,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return getCampMission().items.find((it) => String(it.id) === String(missionId)) || null;
   }
 
-  async function saveCampMissionPatch(mutator) {
+  async function saveCampMissionPatch(mutator, opts) {
     const m = getCampMission();
     const next = {
       ...m,
@@ -4591,7 +4591,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       next.category = top.category;
       next.status = (next.items || []).some((it) => it.visible !== false) ? "published" : "draft";
     }
-    await updatePaths({ "config/camp_mission": next });
+    await updatePaths({ "config/camp_mission": next }, opts);
   }
 
   function getCampMission() {
@@ -4748,7 +4748,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         points: pts,
         at: Date.now()
       });
-    });
+    }, { silent: true });
     if (pts > 0) {
       await addScoreToDisciple(discipleId, pts, reason, "任务");
     } else {
