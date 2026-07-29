@@ -749,6 +749,53 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 }
 .vote-race-meta .vr-status.on { color: var(--ok); }
 .vote-race-meta .vr-status.off { color: #ffb0bd; }
+.vote-toggle-bar {
+  display: inline-flex; flex-wrap: wrap; gap: .35rem; align-items: center;
+  padding: .2rem; border-radius: 8px;
+  background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.1);
+}
+.vote-toggle-bar button {
+  min-height: 2.15rem !important; padding: .35rem .75rem !important;
+  transition: opacity .15s ease, filter .15s ease, border-color .15s ease;
+}
+.vote-toggle-bar button.is-active {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 12px rgba(240,193,75,.28), 0 2px 0 #0a0d16;
+}
+.vote-toggle-bar button.is-dim,
+.vote-toggle-bar button:disabled {
+  opacity: .38; filter: grayscale(.35); cursor: not-allowed;
+  box-shadow: none !important;
+}
+.vote-gate-banner {
+  text-align: center; padding: .75rem .7rem; margin-bottom: .7rem;
+  border-radius: 10px; border: 2px solid rgba(255,255,255,.14);
+  font-family: var(--font-brush); font-size: 1.35rem; letter-spacing: .06em;
+}
+.vote-gate-banner.on {
+  border-color: rgba(61,255,154,.55); color: #9dffc8;
+  background: rgba(61,255,154,.1);
+  box-shadow: 0 0 18px rgba(61,255,154,.12);
+}
+.vote-gate-banner.off {
+  border-color: rgba(255,59,92,.45); color: #ffb0bd;
+  background: rgba(138,16,40,.22);
+}
+.vote-qr-dock .vote-qr-state {
+  display: inline-flex; align-items: center; gap: .35rem;
+  margin-bottom: .45rem; padding: .28rem .55rem; border-radius: 6px;
+  font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+}
+.vote-qr-dock .vote-qr-state.on {
+  color: #9dffc8; border: 1px solid rgba(61,255,154,.45); background: rgba(61,255,154,.1);
+}
+.vote-qr-dock .vote-qr-state.off {
+  color: #ffb0bd; border: 1px solid rgba(255,59,92,.4); background: rgba(138,16,40,.2);
+}
+.vote-success-box.off-box {
+  border-color: rgba(255,59,92,.45); background: rgba(138,16,40,.16);
+}
+.vote-success-box.off-box .big { color: #ffb0bd; }
 .vote-race-board {
   display: flex; flex-direction: column; gap: .55rem;
   min-height: 40vh;
@@ -2290,8 +2337,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="ch-sub">各小组作品实时追赶 · 反超升位 · 跌落回落</div>
         </div>
         <div class="ch-actions">
-          <button type="button" class="primary" data-action="open-vote">开启投票</button>
-          <button type="button" data-action="close-vote">关闭投票</button>
+          <div class="vote-toggle-bar" id="vote-toggle-bar" role="group" aria-label="投票开关">
+            <button type="button" id="btn-vote-open" class="primary" data-action="open-vote">开启投票</button>
+            <button type="button" id="btn-vote-close" data-action="close-vote" disabled>关闭投票</button>
+          </div>
           <button type="button" data-action="reset-votes">重置票数</button>
           <button type="button" class="seal" data-action="award">颁奖</button>
           <button type="button" data-action="demo-vote" title="投屏演示用：随机给一小组加一票">模拟一票</button>
@@ -2302,7 +2351,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="vote-race-shell">
           <div class="vote-race-board" id="vote-race-board" aria-live="polite"></div>
           <div class="vote-qr-dock">
-            <div class="muted" style="margin-bottom:.35rem">扫码给小组作品投票</div>
+            <div id="vote-qr-state" class="vote-qr-state off">投票未开启</div>
+            <div class="muted" style="margin-bottom:.35rem" id="vote-qr-hint">先点「开启投票」，再让学生扫下方二维码</div>
             <div class="qr-box" id="student-vote-qr"></div>
           </div>
         </div>
@@ -3721,7 +3771,62 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function getMode() {
     const p = new URLSearchParams(location.search);
-    return { mode: p.get("mode") || "teacher", code: p.get("code") || "" };
+    return {
+      mode: p.get("mode") || "teacher",
+      code: p.get("code") || "",
+      vote: p.get("vote") || ""
+    };
+  }
+
+  /** DEMO 跨设备：二维码携带 vote=1/0，学生端据此同步开关 */
+  function applyVoteUrlGate() {
+    const { mode, vote } = getMode();
+    if (mode !== "student") return;
+    if (!state.config) state.config = {};
+    if (vote === "1" || vote === "open" || vote === "on") {
+      state.config.voting_open = true;
+      if (demoMode) saveDemo();
+    } else if (vote === "0" || vote === "closed" || vote === "off") {
+      state.config.voting_open = false;
+      if (demoMode) saveDemo();
+    }
+  }
+
+  function studentVoteUrl(open) {
+    return publicPageUrl(open ? "?mode=student&vote=1" : "?mode=student&vote=0");
+  }
+
+  function syncVoteToggleButtons(open) {
+    const openBtn = document.getElementById("btn-vote-open");
+    const closeBtn = document.getElementById("btn-vote-close");
+    if (openBtn) {
+      openBtn.disabled = !!open;
+      openBtn.classList.toggle("primary", !open);
+      openBtn.classList.toggle("is-active", !open);
+      openBtn.classList.toggle("is-dim", !!open);
+      openBtn.textContent = open ? "投票进行中" : "开启投票";
+      openBtn.title = open ? "投票已开启，请用右侧关闭" : "开启后学生扫码即可投票";
+    }
+    if (closeBtn) {
+      closeBtn.disabled = !open;
+      closeBtn.classList.toggle("primary", !!open);
+      closeBtn.classList.toggle("seal", !!open);
+      closeBtn.classList.toggle("is-active", !!open);
+      closeBtn.classList.toggle("is-dim", !open);
+      closeBtn.textContent = open ? "关闭投票" : "关闭投票";
+      closeBtn.title = open ? "点击关闭本轮投票" : "请先开启投票";
+    }
+    const st = document.getElementById("vote-qr-state");
+    if (st) {
+      st.className = "vote-qr-state " + (open ? "on" : "off");
+      st.textContent = open ? "● 投票进行中 · 可扫码" : "○ 投票未开启";
+    }
+    const hint = document.getElementById("vote-qr-hint");
+    if (hint) {
+      hint.textContent = open
+        ? "二维码已带开启状态 · 学生扫码即可投票（未开启时扫码会显示已关闭）"
+        : "先点「开启投票」，二维码会切换为可投票状态，再让学生扫码";
+    }
   }
   function showScreen(mode) {
     ["teacher", "student", "checkin", "memories"].forEach((m) => {
@@ -5389,6 +5494,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderTeacherVote() {
     document.getElementById("vote-title").textContent = state.config?.title || "小组作品投票";
     const open = !!(state.config && state.config.voting_open);
+    syncVoteToggleButtons(open);
     const sorted = getVoteSortedPeaks();
     const totalVotes = sorted.reduce((s, p) => s + (p.votes || 0), 0);
     const maxVotes = Math.max(1, ...sorted.map((p) => p.votes || 0));
@@ -5396,9 +5502,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const meta = document.getElementById("vote-race-meta");
     if (meta) {
       meta.innerHTML = `
-        <span class="vr-status ${open ? "on" : "off"}">${open ? "投票进行中 · 票数实时追赶" : "投票已关闭"}</span>
+        <span class="vr-status ${open ? "on" : "off"}">${open ? "● 投票进行中" : "○ 投票未开启 / 已关闭"}</span>
         <span class="muted">累计 <b style="color:var(--gold);font-family:var(--font-num)">${totalVotes}</b> 票</span>
-        <span class="muted">按小组作品票数排序 · 反超即上升</span>`;
+        <span class="muted">${open ? "学生扫右侧码即可投票 · 榜单实时追赶" : "点「开启投票」后，再让学生扫码"}</span>`;
     }
 
     const board = document.getElementById("vote-race-board");
@@ -5528,7 +5634,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!sorted.some((p) => String(p.id) === String(id))) delete votePrevMap[id];
     });
 
-    renderQr(document.getElementById("student-vote-qr"), publicPageUrl("?mode=student"), "student-vote-qr");
+    renderQr(document.getElementById("student-vote-qr"), studentVoteUrl(open), "student-vote-qr");
   }
 
   async function demoCastVote() {
@@ -6032,6 +6138,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       document.getElementById("student-pick-self").onclick = openStudentPickModal;
     }
     const voteArea = document.getElementById("student-vote-area");
+    applyVoteUrlGate();
     const open = !!(state.config && state.config.voting_open);
     const localVote = localStorage.getItem(LS_VOTE_KEY);
     const already = (me && me.voted) || !!localVote;
@@ -6045,15 +6152,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span style="font-family:var(--font-num);color:var(--gold)">${p.votes || 0} · ${pct}%</span>
       </div>`;
     }).join("");
+    const gate = `<div class="vote-gate-banner ${open ? "on" : "off"}">${open ? "● 投票进行中" : "○ 投票未开启 / 已关闭"}</div>`;
 
     if (!open) {
-      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">作品投票已关闭</div><div class="muted" style="margin-top:.4rem">${votedName ? `你投给了 ${esc(votedName)}` : "请等待老师在投屏端点「开启投票」"}</div></div>
-        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">各小组作品票数（实时）</div>${liveBoard || '<div class="muted">暂无小组</div>'}</div>`;
+      voteArea.innerHTML = `${gate}<div class="vote-success-box off-box"><div class="big">作品投票未开启</div><div class="muted" style="margin-top:.4rem">${votedName ? `你此前投给了 ${esc(votedName)}` : "请等老师在大屏点「开启投票」后，重新扫码进入"}</div>
+        <button type="button" id="student-refresh-vote" style="margin-top:.75rem;width:100%">刷新投票状态</button></div>
+        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">各小组作品票数</div>${liveBoard || '<div class="muted">暂无小组</div>'}</div>`;
+      const raf = document.getElementById("student-refresh-vote");
+      if (raf) raf.onclick = () => location.reload();
     } else if (already) {
-      voteArea.innerHTML = `<div class="vote-success-box"><div class="big">投票成功</div><div style="margin-top:.45rem;font-size:1.15rem">你已投票给 <strong style="color:var(--gold)">${esc(votedName)}</strong></div><div class="muted" style="margin-top:.35rem">本轮每人一票 · 大屏实时追赶排序</div></div>
+      voteArea.innerHTML = `${gate}<div class="vote-success-box"><div class="big">投票成功</div><div style="margin-top:.45rem;font-size:1.15rem">你已投票给 <strong style="color:var(--gold)">${esc(votedName)}</strong></div><div class="muted" style="margin-top:.35rem">本轮每人一票 · 大屏实时追赶排序</div></div>
         <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">实时榜</div>${liveBoard}</div>`;
     } else {
-      voteArea.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.45rem;margin-bottom:.35rem;text-align:center;color:var(--gold)">小组作品投票</div>
+      voteArea.innerHTML = `${gate}<div style="font-family:var(--font-brush);font-size:1.45rem;margin-bottom:.35rem;text-align:center;color:var(--gold)">小组作品投票</div>
         <p class="muted" style="text-align:center;margin-bottom:.6rem">${esc(state.config?.title || "为本周最佳作品投一票")} · 每人一票</p>
         <div class="stack">${sorted.map((p)=>`<div class="vote-card">
           <div style="font-size:1.5rem">${p.icon || ""} ${esc(p.name)}</div>
@@ -6659,16 +6770,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (labelBtn) labelBtn.textContent = next === "am" ? "下午签到" : "上午签到";
     }
     if (act === "open-vote") {
+      if (state.config?.voting_open) { setTeacherView("vote"); syncVoteToggleButtons(true); return; }
       localStorage.removeItem(LS_VOTE_KEY);
       resetVoteBoardSnapshot();
       await updatePaths({ "config/voting_open": true });
       setTeacherView("vote");
-      alert("作品投票已开启：学生扫码给各小组作品投票，大屏实时追赶排序");
+      syncVoteToggleButtons(true);
       return;
     }
     if (act === "close-vote") {
+      if (!(state.config && state.config.voting_open)) return;
       await updatePaths({ "config/voting_open": false });
       setTeacherView("vote");
+      syncVoteToggleButtons(false);
       if (confirm("投票已关闭。是否立刻颁奖？")) openAwardModal();
       return;
     }
@@ -6848,6 +6962,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           demoMode = false;
         } catch (err) { console.warn(err); demoMode = true; bootDemo(); }
       } else { demoMode = true; bootDemo(); }
+      applyVoteUrlGate();
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
       ensureSfxToggle();
       ensureSwordCursorTrail();
