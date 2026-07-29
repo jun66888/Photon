@@ -119,17 +119,39 @@ button.danger { border-color: var(--danger); color: #ffb0bd; background: rgba(13
 .paper::after { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
 .panel { padding: 1rem 1.1rem; }
 input[type="text"], input[type="number"], select, textarea {
-  background: #0c101c; border: 2px solid rgba(240,193,75,.28);
-  border-radius: 6px; padding: .55rem .75rem; outline: none; width: 100%; color: var(--ink);
+  background: #f4efe4; border: 2px solid rgba(240,193,75,.55);
+  border-radius: 6px; padding: .55rem .75rem; outline: none; width: 100%;
+  color: #1a1205; caret-color: #1a1205;
 }
+input::placeholder, textarea::placeholder { color: #7a6a4a; }
 input:focus, select:focus, textarea:focus {
-  border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(46,230,255,.2);
+  border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(46,230,255,.25);
+  background: #fffaf0;
+}
+.modal label, .attr-grid label {
+  display: flex; flex-direction: column; gap: .28rem;
+  color: #f0e6c8; font-size: .88rem; font-weight: 700;
+}
+.modal label > span, .attr-grid .field-name { color: #ffe39a; }
+.modal .muted { color: #b8c4d8 !important; }
+.modal input, .modal select, .modal textarea,
+.attr-grid input, .attr-grid select, .attr-grid textarea {
+  background: #fff8e8 !important;
+  color: #14100a !important;
+  border-color: #c9a227 !important;
+  font-weight: 600;
 }
 
-.header-bar { justify-content: space-between; margin-bottom: .85rem; }
+.header-bar { justify-content: space-between; margin-bottom: .45rem; }
+.screen.compact-arena { padding: .55rem .7rem 3.2rem; }
+.app-title.compact { font-size: clamp(1.45rem, 3vw, 2.1rem); letter-spacing: .1em; }
 .day-input {
   width: 4.2rem; text-align: center; font-weight: 800; font-family: var(--font-num);
-  color: var(--gold); background: #0c101c;
+  color: var(--gold) !important; background: #0c101c !important;
+}
+#sort-mode {
+  color: var(--ink) !important; background: #0c101c !important;
+  width: auto; min-width: 6.5rem;
 }
 .round-chip {
   display: inline-flex; align-items: center; gap: .35rem;
@@ -138,47 +160,43 @@ input:focus, select:focus, textarea:focus {
   background: rgba(240,193,75,.08);
 }
 
-/* 两派对擂 HUD + 长经验条 */
+/* 两派对擂 HUD + 长经验条（紧凑一屏） */
 .fight-hud {
-  display: grid; grid-template-columns: 1fr auto 1fr; gap: .85rem 1rem; align-items: start;
-  margin-bottom: 1rem; padding: 1.1rem 1.15rem 1.2rem;
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: .35rem .7rem; align-items: start;
+  margin-bottom: .55rem; padding: .55rem .75rem .6rem;
   background:
     linear-gradient(90deg, rgba(138,16,40,.28), transparent 42%, transparent 58%, rgba(10,106,122,.24)),
     linear-gradient(180deg, rgba(40,60,48,.2), transparent 40%),
     var(--panel);
   border: 2px solid var(--frame);
-  border-radius: 14px;
+  border-radius: 10px;
   box-shadow: var(--shadow), 0 0 40px rgba(240,193,75,.08);
   position: relative; overflow: hidden;
 }
-.fight-hud::before {
-  content: "山峰对擂";
-  position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
-  font-family: var(--font-brush); font-size: .95rem; letter-spacing: .2em; color: var(--ink-soft);
-}
-.pk-side { text-align: center; position: relative; z-index: 1; padding-top: .55rem; }
+.fight-hud::before { content: none; }
+.pk-side { text-align: center; position: relative; z-index: 1; padding-top: 0; }
 .pk-side .camp-label {
-  font-family: var(--font-brush); font-size: 1.45rem; letter-spacing: .08em;
+  font-family: var(--font-brush); font-size: 1.15rem; letter-spacing: .06em;
 }
 .pk-side.red .camp-label { color: #ff8aa0; }
 .pk-side.blue .camp-label { color: #7ef0ff; }
 .pk-side .score {
-  font-family: var(--font-num); font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: 1.05;
+  font-family: var(--font-num); font-size: clamp(1.5rem, 3.2vw, 2.2rem); line-height: 1.05;
   font-weight: 800;
 }
 .pk-side.red .score { color: var(--red); text-shadow: 0 0 22px rgba(255,59,92,.55); }
 .pk-side.blue .score { color: var(--cyan); text-shadow: 0 0 22px rgba(46,230,255,.5); }
-.hp-wrap { margin-top: .45rem; }
+.hp-wrap { margin-top: .2rem; }
 .hp-label {
-  display: flex; justify-content: space-between; font-size: .7rem; color: var(--ink-soft);
-  margin-bottom: .15rem; font-family: var(--font-num); letter-spacing: .08em;
+  display: flex; justify-content: space-between; font-size: .62rem; color: var(--ink-soft);
+  margin-bottom: .1rem; font-family: var(--font-num); letter-spacing: .06em;
 }
 .pk-track {
-  height: 22px; border-radius: 4px; background: #07090f;
-  overflow: hidden; display: flex; border: 2px solid rgba(255,255,255,.12);
+  height: 12px; border-radius: 3px; background: #07090f;
+  overflow: hidden; display: flex; border: 1px solid rgba(255,255,255,.12);
   box-shadow: inset 0 0 8px rgba(0,0,0,.6);
 }
-.pk-track.long { height: 26px; }
+.pk-track.long { height: 14px; }
 .pk-track .fill-red {
   background: linear-gradient(180deg, #ff7a92, var(--red) 45%, #8a1028);
   height: 100%; position: relative;
@@ -192,36 +210,37 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(180deg, rgba(255,255,255,.35), transparent);
 }
 .pk-vs {
-  width: 72px; height: 72px; border-radius: 50%; margin-top: 1.4rem;
+  width: 48px; height: 48px; border-radius: 50%; margin-top: .55rem;
   display: grid; place-items: center;
-  font-family: var(--font-num); font-weight: 800; font-size: 1.4rem;
+  font-family: var(--font-num); font-weight: 800; font-size: 1rem;
   color: #1a1205; background: radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 45%, #8a6d18);
-  border: 3px solid #fff3c4;
-  box-shadow: 0 0 30px rgba(240,193,75,.55), 0 0 0 4px rgba(240,193,75,.15);
+  border: 2px solid #fff3c4;
+  box-shadow: 0 0 20px rgba(240,193,75,.45), 0 0 0 3px rgba(240,193,75,.12);
   animation: vsPulse 1.6s ease-in-out infinite;
   z-index: 2;
 }
 @keyframes vsPulse {
   0%,100% { transform: scale(1); }
-  50% { transform: scale(1.08); box-shadow: 0 0 42px rgba(240,193,75,.8), 0 0 0 6px rgba(240,193,75,.2); }
+  50% { transform: scale(1.06); box-shadow: 0 0 28px rgba(240,193,75,.7), 0 0 0 4px rgba(240,193,75,.18); }
 }
 .contrib-panel {
-  margin-top: .7rem; text-align: left;
-  display: flex; flex-direction: column; gap: .35rem;
+  margin-top: .35rem; text-align: left;
+  display: flex; flex-direction: column; gap: .18rem;
+  max-height: 4.6rem; overflow: auto;
 }
 .contrib-title {
-  font-size: .72rem; color: var(--ink-soft); letter-spacing: .12em;
-  font-family: var(--font-num); margin-bottom: .1rem;
+  font-size: .62rem; color: var(--ink-soft); letter-spacing: .08em;
+  font-family: var(--font-num); margin-bottom: 0;
 }
 .contrib-row {
-  display: grid; grid-template-columns: 4.2rem 1fr auto; gap: .4rem; align-items: center;
-  font-size: .78rem;
+  display: grid; grid-template-columns: 3.4rem 1fr auto; gap: .28rem; align-items: center;
+  font-size: .68rem;
 }
 .contrib-row .cname {
-  font-family: var(--font-brush); font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-brush); font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .contrib-bar {
-  height: 10px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
+  height: 6px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
   border-radius: 2px; overflow: hidden;
 }
 .contrib-bar > i {
@@ -231,19 +250,21 @@ input:focus, select:focus, textarea:focus {
 .pk-side.red .contrib-bar > i { background: linear-gradient(90deg, rgba(255,120,140,.35), var(--red)); }
 .pk-side.blue .contrib-bar > i { background: linear-gradient(90deg, rgba(100,220,240,.35), var(--cyan)); }
 .contrib-meta {
-  font-family: var(--font-num); font-size: .72rem; color: var(--ink-soft); min-width: 5.5rem; text-align: right;
+  font-family: var(--font-num); font-size: .62rem; color: var(--ink-soft); min-width: 4.4rem; text-align: right;
 }
 
 .camps-board {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; margin-bottom: .55rem;
 }
 @media (max-width: 900px) { .camps-board { grid-template-columns: 1fr; } }
 .camp-col {
-  min-height: 320px; padding: .9rem;
-  border-radius: 14px; border: 2px solid rgba(255,255,255,.1);
+  min-height: 0; padding: .55rem;
+  border-radius: 10px; border: 2px solid rgba(255,255,255,.1);
   background: rgba(10, 14, 26, .85);
   box-shadow: var(--shadow);
   position: relative;
+  max-height: calc(100vh - 14.5rem);
+  overflow: auto;
 }
 .camp-col.red {
   border-color: rgba(255,59,92,.4);
@@ -265,41 +286,41 @@ input:focus, select:focus, textarea:focus {
 }
 .camp-head {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: .65rem; padding-bottom: .4rem;
-  border-bottom: 2px solid rgba(255,255,255,.08);
+  margin-bottom: .35rem; padding-bottom: .25rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
 }
 .camp-head h2 {
-  font-family: var(--font-brush); font-size: 1.7rem; font-weight: 400;
+  font-family: var(--font-brush); font-size: 1.25rem; font-weight: 400;
 }
 .camp-col.red .camp-head h2 { color: #ff8aa0; }
 .camp-col.blue .camp-head h2 { color: #7ef0ff; }
-.camp-tools button { font-size: .82rem; padding: .3rem .65rem; }
-.peak-list { display: flex; flex-direction: column; gap: .95rem; min-height: 160px; }
-.sort-hint { font-size: .75rem; color: var(--ink-soft); margin-bottom: .4rem; }
+.camp-tools button { font-size: .75rem; padding: .22rem .5rem; }
+.peak-list { display: flex; flex-direction: column; gap: .45rem; min-height: 80px; }
+.sort-hint { font-size: .68rem; color: var(--ink-soft); margin-bottom: .25rem; }
 
-/* 山峰形态组卡 */
+/* 山峰形态组卡（紧凑） */
 .sect-card {
   position: relative;
-  border: 2px solid rgba(255,255,255,.12);
-  border-radius: 12px 12px 8px 8px;
-  padding: 0 0 .75rem;
+  border: none;
+  border-radius: 10px;
+  padding: 0;
   cursor: grab;
   background: transparent;
   box-shadow: none;
-  transition: transform .18s ease, filter .18s ease;
+  transition: transform .15s ease, filter .15s ease;
   user-select: none;
   overflow: visible;
 }
 .sect-card::before { content: none; }
 .sect-card .mount-shape {
   position: relative;
-  height: 78px;
-  margin: 0 .35rem;
+  height: 36px;
+  margin: 0 .2rem;
   clip-path: polygon(0% 100%, 8% 62%, 22% 78%, 38% 28%, 50% 8%, 62% 30%, 78% 70%, 92% 55%, 100% 100%);
   background:
     linear-gradient(180deg, rgba(255,255,255,.18), transparent 35%),
     linear-gradient(160deg, #3a4a3a 0%, #1a2830 55%, #0c1218 100%);
-  box-shadow: 0 0 22px rgba(240,193,75,.18);
+  box-shadow: 0 0 14px rgba(240,193,75,.14);
   animation: mountGlow 3.6s ease-in-out infinite;
 }
 .sect-card.red .mount-shape {
@@ -319,8 +340,8 @@ input:focus, select:focus, textarea:focus {
   50% { filter: brightness(1.12); }
 }
 .sect-card .mount-peak-light {
-  position: absolute; left: 48%; top: 6%; width: 10px; height: 10px; border-radius: 50%;
-  background: #ffe39a; box-shadow: 0 0 16px #f0c14b, 0 0 28px rgba(46,230,255,.45);
+  position: absolute; left: 48%; top: 8%; width: 6px; height: 6px; border-radius: 50%;
+  background: #ffe39a; box-shadow: 0 0 10px #f0c14b, 0 0 16px rgba(46,230,255,.4);
   animation: peakTwinkle 2.2s ease-in-out infinite;
 }
 @keyframes peakTwinkle {
@@ -329,52 +350,49 @@ input:focus, select:focus, textarea:focus {
 }
 .sect-card .mount-body {
   position: relative; z-index: 1;
-  margin: -1.1rem .2rem 0;
-  padding: .85rem .75rem .55rem;
-  border: 2px solid rgba(255,255,255,.12);
-  border-radius: 10px;
+  margin: -.55rem .1rem 0;
+  padding: .45rem .5rem .4rem;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(20,28,36,.96), rgba(10,14,22,.98));
-  box-shadow: 0 8px 24px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.04);
+  box-shadow: 0 4px 14px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
 }
-.sect-card.red .mount-body { border-color: rgba(255,59,92,.4); box-shadow: 0 8px 24px rgba(255,59,92,.12), 0 0 18px rgba(255,59,92,.08); }
-.sect-card.blue .mount-body { border-color: rgba(46,230,255,.35); box-shadow: 0 8px 24px rgba(46,230,255,.1), 0 0 18px rgba(46,230,255,.08); }
+.sect-card.red .mount-body { border-color: rgba(255,59,92,.4); box-shadow: 0 4px 14px rgba(255,59,92,.1), 0 0 12px rgba(255,59,92,.06); }
+.sect-card.blue .mount-body { border-color: rgba(46,230,255,.35); box-shadow: 0 4px 14px rgba(46,230,255,.08), 0 0 12px rgba(46,230,255,.06); }
 .sect-card:active { cursor: grabbing; }
-.sect-card:hover { transform: translateY(-4px); }
-.sect-card:hover .mount-shape { filter: brightness(1.15); }
+.sect-card:hover { transform: translateY(-2px); }
+.sect-card:hover .mount-shape { filter: brightness(1.12); }
 .sect-card.dragging { opacity: .4; transform: scale(.96) rotate(1deg); }
 .sect-card .seal-rank {
-  position: absolute; top: .35rem; right: .4rem; z-index: 2;
-  min-width: 1.85rem; height: 1.85rem; padding: 0 .3rem;
-  border-radius: 4px;
-  border: 2px solid var(--gold); color: #1a1205;
-  font-family: var(--font-num); font-size: .85rem; font-weight: 800;
+  position: absolute; top: .25rem; right: .3rem; z-index: 2;
+  min-width: 1.35rem; height: 1.35rem; padding: 0 .22rem;
+  border-radius: 3px;
+  border: 1px solid var(--gold); color: #1a1205;
+  font-family: var(--font-num); font-size: .7rem; font-weight: 800;
   display: grid; place-items: center;
   background: linear-gradient(180deg, #ffe39a, var(--gold));
-  box-shadow: 0 0 12px rgba(240,193,75,.45);
+  box-shadow: 0 0 8px rgba(240,193,75,.35);
 }
-.sect-top { display: flex; gap: .65rem; align-items: center; position: relative; }
+.sect-top { display: flex; gap: .4rem; align-items: center; position: relative; }
 .sect-logo {
-  width: 52px; height: 52px; flex: 0 0 52px;
+  width: 36px; height: 36px; flex: 0 0 36px;
   border: 2px solid var(--gold);
   border-radius: 50% 50% 40% 40%;
   background: radial-gradient(circle at 30% 25%, #2a3350, #0c101c);
   display: grid; place-items: center;
-  font-size: 1.6rem; overflow: hidden;
-  box-shadow: 0 0 0 2px rgba(0,0,0,.5), 0 0 14px rgba(240,193,75,.25);
+  font-size: 1.1rem; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 0 8px rgba(240,193,75,.2);
 }
 .sect-card.red .sect-logo { border-color: #ff6b84; }
 .sect-card.blue .sect-logo { border-color: #2ee6ff; }
 .sect-logo img { width: 100%; height: 100%; object-fit: cover; }
-.sect-name { font-family: var(--font-brush); font-size: 1.45rem; line-height: 1.05; color: #fff; }
-.sect-meta { font-size: .78rem; color: var(--ink-soft); margin-top: .12rem; }
-.sect-slogan {
-  margin: .35rem 0 .25rem; font-size: .85rem; color: #c9d4e8;
-  border-left: 3px solid var(--gold); padding-left: .45rem;
-}
+.sect-name { font-family: var(--font-brush); font-size: 1.15rem; line-height: 1.05; color: #fff; }
+.sect-meta { font-size: .68rem; color: var(--ink-soft); margin-top: .05rem; }
+.sect-slogan { display: none; }
 .sect-score {
-  font-family: var(--font-num); font-size: 1.85rem; font-weight: 800; line-height: 1;
-  color: var(--gold); text-shadow: 0 0 16px rgba(240,193,75,.45);
+  font-family: var(--font-num); font-size: 1.25rem; font-weight: 800; line-height: 1;
+  color: var(--gold); text-shadow: 0 0 12px rgba(240,193,75,.4);
 }
 .sect-score.flash-green { animation: scoreBoomGreen .5s ease forwards; }
 .sect-score.flash-blue { animation: scoreBoomBlue .6s ease forwards; }
@@ -404,10 +422,10 @@ input:focus, select:focus, textarea:focus {
   100% { transform: scale(1); }
 }
 .exp-track {
-  height: 14px; background: #07090f; border: 2px solid rgba(255,255,255,.1);
-  margin: .25rem 0 .15rem; overflow: hidden; position: relative; border-radius: 3px;
+  height: 9px; background: #07090f; border: 1px solid rgba(255,255,255,.1);
+  margin: .15rem 0 .08rem; overflow: hidden; position: relative; border-radius: 3px;
 }
-.exp-track.group-long { height: 18px; border-radius: 4px; }
+.exp-track.group-long { height: 11px; border-radius: 3px; }
 .exp-fill {
   height: 100%; width: 0%;
   background: linear-gradient(90deg, #2ee6ff, #3dff9a 50%, var(--gold));
@@ -421,13 +439,13 @@ input:focus, select:focus, textarea:focus {
   animation: shine .8s linear infinite;
 }
 @keyframes shine { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.need-next { font-size: .75rem; color: var(--ink-soft); }
+.need-next { font-size: .65rem; color: var(--ink-soft); }
 .need-next.urgent { color: var(--red); font-weight: 800; animation: urgentPulse .8s infinite; }
 @keyframes urgentPulse { 50% { opacity: .45; } }
-.sect-foot { display: flex; justify-content: space-between; align-items: end; gap: .5rem; margin-top: .15rem; position: relative; z-index: 1; }
-.sect-tags { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .25rem; }
+.sect-foot { display: flex; justify-content: space-between; align-items: end; gap: .35rem; margin-top: .1rem; position: relative; z-index: 1; }
+.sect-tags { display: flex; gap: .2rem; flex-wrap: wrap; margin-top: .12rem; }
 .tag {
-  font-size: .68rem; padding: .1rem .35rem;
+  font-size: .6rem; padding: .06rem .28rem;
   border: 1px solid rgba(255,255,255,.15);
   background: rgba(0,0,0,.35); border-radius: 3px; color: var(--ink-soft);
   font-family: var(--font-num); letter-spacing: .02em;
@@ -435,24 +453,31 @@ input:focus, select:focus, textarea:focus {
 .fight-btn {
   background: linear-gradient(180deg, #ffd76a, #c49216) !important;
   color: #1a1205 !important; border-color: #ffe39a !important;
-  font-size: .85rem !important; padding: .4rem .7rem !important;
+  font-size: .72rem !important; padding: .28rem .5rem !important;
+}
+.member-toggle {
+  margin-top: .3rem; width: 100%;
+  font-size: .68rem !important; padding: .22rem .4rem !important;
+  background: rgba(0,0,0,.28) !important; box-shadow: none !important;
+  border-color: rgba(255,255,255,.14) !important; color: #d7e0f0 !important;
 }
 .member-bars {
-  margin-top: .45rem; padding-top: .4rem;
+  margin-top: .28rem; padding-top: .28rem;
   border-top: 1px dashed rgba(255,255,255,.1);
-  display: flex; flex-direction: column; gap: .28rem;
-  max-height: 9.5rem; overflow: auto;
+  display: none; flex-direction: column; gap: .18rem;
+  max-height: 7.5rem; overflow: auto;
 }
+.member-bars.open { display: flex; }
 .member-bar-row {
-  display: grid; grid-template-columns: 3.6rem 1fr auto; gap: .35rem; align-items: center;
-  font-size: .72rem;
+  display: grid; grid-template-columns: 3.2rem 1fr auto; gap: .25rem; align-items: center;
+  font-size: .64rem;
 }
 .member-bar-row .mname {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #d7e0f0;
 }
 .member-bar-row .mname.cap { color: var(--gold); }
 .member-track {
-  height: 7px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.08);
+  height: 5px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.08);
   border-radius: 99px; overflow: hidden;
 }
 .member-track > i {
@@ -460,36 +485,15 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(90deg, rgba(126,240,255,.55), rgba(240,193,75,.85));
 }
 .member-bar-row .mlv {
-  font-family: var(--font-num); color: var(--ink-soft); font-size: .66rem; min-width: 3.2rem; text-align: right;
+  font-family: var(--font-num); color: var(--ink-soft); font-size: .58rem; min-width: 4.6rem; text-align: right;
 }
-
-/* 派别下排行树 */
-.rank-tree {
-  margin-top: 1rem; padding-top: .7rem;
-  border-top: 2px solid rgba(255,255,255,.08);
+.member-detail {
+  grid-column: 1 / -1;
+  display: none; color: #aeb9cc; font-size: .6rem; padding: .05rem 0 .1rem .1rem;
 }
-.rank-tree h3 {
-  font-family: var(--font-brush); font-size: 1.25rem; margin-bottom: .45rem;
-  color: var(--gold);
-}
-.rank-group {
-  margin-bottom: .55rem; padding: .45rem .55rem;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 8px; background: rgba(0,0,0,.22);
-}
-.rank-group-head {
-  display: flex; justify-content: space-between; gap: .4rem; align-items: baseline;
-  font-size: .9rem;
-}
-.rank-group-head .gname { font-family: var(--font-brush); font-size: 1.15rem; }
-.rank-group-head .gscore { font-family: var(--font-num); color: var(--gold); }
-.rank-members { margin-top: .3rem; padding-left: .35rem; }
-.rank-member {
-  display: flex; justify-content: space-between; gap: .4rem;
-  font-size: .75rem; padding: .12rem 0; color: var(--ink-soft);
-  border-bottom: 1px dotted rgba(255,255,255,.06);
-}
-.rank-member strong { color: #e8eef8; font-weight: 600; }
+.member-bar-row.open .member-detail { display: block; }
+.func-bar.compact { padding: .45rem .55rem; margin-bottom: .4rem; gap: .35rem; }
+.func-bar.compact button { min-width: 0; font-size: .75rem; padding: .28rem .55rem; }
 
 .func-bar { margin-bottom: .8rem; }
 .func-bar button { min-width: 6.4rem; }
@@ -1061,14 +1065,14 @@ input:focus, select:focus, textarea:focus {
   <div id="boot-error" class="hidden" style="padding:1rem;background:#5c1010;color:#fff5e8"></div>
 
   <!-- TEACHER -->
-  <div id="teacher-screen" class="screen">
+  <div id="teacher-screen" class="screen compact-arena">
     <div id="teacher-main" class="subview">
       <div class="row header-bar">
         <div>
-          <div class="app-title">光影盟 · 山峰对擂</div>
-          <div class="muted" style="margin-top:.2rem">
+          <div class="app-title compact">光影盟 · 山峰对擂</div>
+          <div class="muted" style="margin-top:.1rem;font-size:.78rem">
             <span class="round-chip">DAY <span id="day-label">1</span></span>
-            <span style="margin-left:.45rem">组员成山 · 山峰成派 · 拖拽换边 · 点击出招</span>
+            <span style="margin-left:.35rem">阵营 → 山峰组 → 组员 · 点开组员看详情</span>
           </div>
         </div>
         <div class="row">
@@ -1112,9 +1116,8 @@ input:focus, select:focus, textarea:focus {
               <button type="button" data-action="add-peak-red">＋山峰</button>
             </div>
           </div>
-          <p class="sort-hint">每座山峰是一组 · 拖拽换边/调序 · 点击出招或改属性</p>
+          <p class="sort-hint">拖拽换边 · 出招加分 · 展开组员看数值</p>
           <div class="peak-list" id="list-red" data-camp="red"></div>
-          <div class="rank-tree" id="rank-red"></div>
         </section>
         <section class="camp-col blue" data-camp="blue" id="camp-blue">
           <div class="camp-head">
@@ -1123,13 +1126,12 @@ input:focus, select:focus, textarea:focus {
               <button type="button" data-action="add-peak-blue">＋山峰</button>
             </div>
           </div>
-          <p class="sort-hint">每座山峰是一组 · 拖拽换边/调序 · 点击出招或改属性</p>
+          <p class="sort-hint">拖拽换边 · 出招加分 · 展开组员看数值</p>
           <div class="peak-list" id="list-blue" data-camp="blue"></div>
-          <div class="rank-tree" id="rank-blue"></div>
         </section>
       </div>
 
-      <div class="row func-bar paper panel">
+      <div class="row func-bar paper panel compact">
         <button type="button" data-action="custom-score">自定义加分</button>
         <button type="button" data-action="goto-checkin">签到模式</button>
         <button type="button" data-action="goto-vote">投票模式</button>
@@ -2140,37 +2142,12 @@ input:focus, select:focus, textarea:focus {
     }).join("");
   }
 
-  function renderRankTree(camp, peaks) {
-    const sorted = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
-    if (!sorted.length) return "";
-    return `<h3>${camp === "blue" ? "声浪" : "光影"} · 山峰排行</h3>` + sorted.map((p, i) => {
-      const members = sortDisciples(disciplesOfPeak(p.id), "exp")
-        .slice()
-        .sort((a, b) => (b.contributed || 0) - (a.contributed || 0) || (b.exp || 0) - (a.exp || 0));
-      return `<div class="rank-group">
-        <div class="rank-group-head">
-          <span class="gname">#${i + 1} ${esc(p.icon || "")} ${esc(p.name)}</span>
-          <span class="gscore">${p.score || 0} 分</span>
-        </div>
-        <div class="rank-members">
-          ${members.map((d, mi) => {
-            const lv = calcPersonalLevel(d.exp || 0);
-            return `<div class="rank-member">
-              <span>${mi + 1}. <strong>${esc(d.name)}</strong>${d.role === "队长" ? " · 队长" : ""} · ${esc(lv.title)}</span>
-              <span>Lv${lv.level} · 贡献 ${d.contributed || 0} · EXP ${d.exp || 0}</span>
-            </div>`;
-          }).join("") || '<div class="muted" style="font-size:.75rem">暂无组员</div>'}
-        </div>
-      </div>`;
-    }).join("");
-  }
-
   function renderSectCard(p, rankIdx) {
     const members = sortDisciples(disciplesOfPeak(p.id), "exp");
     const remain = Math.max(0, (p.next_level_score || 0) - (p.score || 0));
     const urgent = p.peak_level < 5 && remain <= 100;
     const blink = (p.progress || 0) > 90;
-    const medals = ["1st", "2nd", "3rd"];
+    const medals = ["1", "2", "3"];
     const logo = p.logo_url
       ? `<img src="${p.logo_url}" alt="" />`
       : `<span>${p.icon || "⛰️"}</span>`;
@@ -2178,12 +2155,13 @@ input:focus, select:focus, textarea:focus {
     const memberBars = members.map((d) => {
       const prog = personalProgress(d);
       const isCap = d.role === "队长" || d.name === captain;
-      return `<div class="member-bar-row">
+      return `<div class="member-bar-row" data-member-row="${d.id}">
         <div class="mname ${isCap ? "cap" : ""}">${esc(d.name)}${isCap ? "★" : ""}</div>
         <div class="member-track"><i style="width:${prog.pct}%"></i></div>
-        <div class="mlv">Lv${prog.level} · ${d.exp || 0}</div>
+        <div class="mlv">Lv${prog.level}</div>
+        <div class="member-detail">称号 ${esc(prog.title)} · 经验 ${d.exp || 0} · 贡献 ${d.contributed || 0} · ${esc(d.weapon || "笔")} · ${esc(d.rank || "")}</div>
       </div>`;
-    }).join("") || '<div class="muted" style="font-size:.72rem">暂无组员，点击山峰添加</div>';
+    }).join("") || '<div class="muted" style="font-size:.65rem">暂无组员</div>';
 
     return `
       <article class="sect-card ${p.camp}" draggable="true" data-peak-id="${p.id}">
@@ -2194,26 +2172,24 @@ input:focus, select:focus, textarea:focus {
             <div class="sect-logo">${logo}</div>
             <div style="flex:1;min-width:0">
               <div class="sect-name">${esc(p.name)}</div>
-              <div class="sect-meta">队长 ${esc(captain)} · ${esc(p.peak_level_name || "")} · 组员 ${members.length}</div>
+              <div class="sect-meta">${esc(captain)} · ${esc(p.peak_level_name || "")} · ${members.length}人</div>
               <div class="sect-tags">
                 <span class="tag">${esc(p.element || "光")}·${esc(p.style || "剑")}</span>
-                <span class="tag">${esc(p.badge || "新锐")}</span>
-                <span class="tag">${esc(p.art || "绝学")}</span>
-                <span class="tag">总EXP ${peakExpTotal(p.id)}</span>
+                <span class="tag">EXP ${peakExpTotal(p.id)}</span>
               </div>
             </div>
           </div>
-          <div class="sect-slogan">「${esc(p.slogan || "峰回路转，侠义同行")}」</div>
           <div class="sect-foot">
             <div style="flex:1;min-width:0">
-              <div class="hp-label"><span>山峰经验</span><span>${Math.round(p.progress || 0)}%</span></div>
+              <div class="hp-label"><span>组经验</span><span>${Math.round(p.progress || 0)}%</span></div>
               <div class="sect-score">${p.score || 0}</div>
               <div class="exp-track group-long"><div class="exp-fill ${blink ? "blink" : ""}" style="width:${p.progress || 0}%"></div></div>
-              <div class="need-next ${urgent ? "urgent" : ""}">${p.peak_level >= 5 ? "已登顶" : `距下境 ${remain}`}</div>
+              <div class="need-next ${urgent ? "urgent" : ""}">${p.peak_level >= 5 ? "已登顶" : `下境 -${remain}`}</div>
             </div>
             <button type="button" class="fight-btn" data-open-sect="${p.id}">出招</button>
           </div>
-          <div class="member-bars">${memberBars}</div>
+          <button type="button" class="member-toggle" data-toggle-members="${p.id}">组员 ${members.length} ▾ 展开</button>
+          <div class="member-bars" data-members-of="${p.id}">${memberBars}</div>
         </div>
       </article>`;
   }
@@ -2232,13 +2208,29 @@ input:focus, select:focus, textarea:focus {
         document.querySelectorAll(".camp-col").forEach((c) => c.classList.remove("drag-over"));
       });
       card.addEventListener("click", (e) => {
-        if (e.target.closest("button")) return;
+        if (e.target.closest("button") || e.target.closest("[data-member-row]")) return;
         openSectModal(Number(card.dataset.peakId), "bonus");
       });
       const btn = card.querySelector("[data-open-sect]");
       if (btn) btn.addEventListener("click", (e) => {
         e.stopPropagation();
         openSectModal(Number(btn.dataset.openSect), "bonus");
+      });
+      const tog = card.querySelector("[data-toggle-members]");
+      const box = card.querySelector(".member-bars");
+      if (tog && box) {
+        tog.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const open = box.classList.toggle("open");
+          const n = box.querySelectorAll("[data-member-row]").length;
+          tog.textContent = open ? `组员 ${n} ▴ 收起` : `组员 ${n} ▾ 展开`;
+        });
+      }
+      card.querySelectorAll("[data-member-row]").forEach((row) => {
+        row.addEventListener("click", (e) => {
+          e.stopPropagation();
+          row.classList.toggle("open");
+        });
       });
     });
   }
@@ -2325,8 +2317,6 @@ input:focus, select:focus, textarea:focus {
 
     document.getElementById("list-red").innerHTML = redList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
     document.getElementById("list-blue").innerHTML = blueList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
-    document.getElementById("rank-red").innerHTML = renderRankTree("red", redList);
-    document.getElementById("rank-blue").innerHTML = renderRankTree("blue", blueList);
 
     bindPeakListDnD(document.getElementById("list-red"));
     bindPeakListDnD(document.getElementById("list-blue"));
@@ -2367,20 +2357,20 @@ input:focus, select:focus, textarea:focus {
 
     const attrPane = `
       <div class="attr-grid">
-        <label>角色名<input id="a-name" value="${esc(peak.name)}" /></label>
-        <label>图标/Emoji<input id="a-icon" value="${esc(peak.icon)}" /></label>
-        <label>队长名<input id="a-captain" value="${esc(peak.captain_name || "")}" /></label>
-        <label>阵营<select id="a-camp"><option value="red" ${peak.camp==="red"?"selected":""}>1P 光影</option><option value="blue" ${peak.camp==="blue"?"selected":""}>2P 声浪</option></select></label>
-        <label>口号<input id="a-slogan" value="${esc(peak.slogan || "")}" /></label>
-        <label>绝学<input id="a-art" value="${esc(peak.art || "")}" /></label>
-        <label>驻地<input id="a-base" value="${esc(peak.base || "")}" /></label>
-        <label>徽章<input id="a-badge" value="${esc(peak.badge || "")}" /></label>
-        <label>属性<select id="a-element"><option>光</option><option>火</option><option>风</option><option>水</option><option>雷</option></select></label>
-        <label>兵器<select id="a-style"><option>刀</option><option>剑</option><option>掌</option><option>琴</option><option>鼓</option></select></label>
-        <label>主题色<input id="a-color" value="${esc(peak.color || "")}" /></label>
-        <label>胜利台词<input id="a-win" value="${esc(peak.win_quote || "")}" /></label>
-        <label style="grid-column:1/-1">简介<textarea id="a-intro" rows="2">${esc(peak.intro || "")}</textarea></label>
-        <label style="grid-column:1/-1">Logo 图片 URL<input id="a-logo" value="${esc(peak.logo_url || "")}" placeholder="https://..." /></label>
+        <label><span class="field-name">组名</span><input id="a-name" value="${esc(peak.name)}" /></label>
+        <label><span class="field-name">图标/Emoji</span><input id="a-icon" value="${esc(peak.icon)}" /></label>
+        <label><span class="field-name">队长名</span><input id="a-captain" value="${esc(peak.captain_name || "")}" /></label>
+        <label><span class="field-name">阵营</span><select id="a-camp"><option value="red" ${peak.camp==="red"?"selected":""}>光影大派</option><option value="blue" ${peak.camp==="blue"?"selected":""}>声浪大派</option></select></label>
+        <label><span class="field-name">口号</span><input id="a-slogan" value="${esc(peak.slogan || "")}" /></label>
+        <label><span class="field-name">绝学</span><input id="a-art" value="${esc(peak.art || "")}" /></label>
+        <label><span class="field-name">驻地</span><input id="a-base" value="${esc(peak.base || "")}" /></label>
+        <label><span class="field-name">徽章</span><input id="a-badge" value="${esc(peak.badge || "")}" /></label>
+        <label><span class="field-name">属性</span><select id="a-element"><option>光</option><option>火</option><option>风</option><option>水</option><option>雷</option></select></label>
+        <label><span class="field-name">兵器</span><select id="a-style"><option>刀</option><option>剑</option><option>掌</option><option>琴</option><option>鼓</option></select></label>
+        <label><span class="field-name">主题色</span><input id="a-color" value="${esc(peak.color || "")}" /></label>
+        <label><span class="field-name">胜利台词</span><input id="a-win" value="${esc(peak.win_quote || "")}" /></label>
+        <label style="grid-column:1/-1"><span class="field-name">简介</span><textarea id="a-intro" rows="2">${esc(peak.intro || "")}</textarea></label>
+        <label style="grid-column:1/-1"><span class="field-name">Logo 图片 URL</span><input id="a-logo" value="${esc(peak.logo_url || "")}" placeholder="https://..." /></label>
       </div>
       <div class="row" style="margin-top:.8rem;justify-content:space-between">
         <button type="button" class="danger" id="a-delete">删除角色</button>
