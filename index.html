@@ -36,11 +36,19 @@ html, body {
   min-height: 100%;
   color: var(--ink);
   font-family: var(--font-ui);
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M8 32 L18 10 L22 10 L32 32 L26 32 L22 18 L18 18 L14 32 Z' fill='%23f0c14b' stroke='%23fff3c4' stroke-width='1'/%3E%3Cpath d='M19 6 L21 6 L21 11 L19 11 Z' fill='%23ffe39a'/%3E%3Ccircle cx='20' cy='14' r='2' fill='%232ee6ff'/%3E%3C/svg%3E") 8 8, crosshair;
   background:
-    radial-gradient(1000px 420px at 0% 0%, rgba(255,59,92,.22), transparent 50%),
-    radial-gradient(1000px 420px at 100% 0%, rgba(46,230,255,.18), transparent 50%),
-    radial-gradient(800px 500px at 50% 100%, rgba(240,193,75,.08), transparent 55%),
-    linear-gradient(180deg, #12182a 0%, var(--bg0) 55%, #05070c 100%);
+    radial-gradient(1000px 420px at 0% 0%, rgba(255,59,92,.18), transparent 50%),
+    radial-gradient(1000px 420px at 100% 0%, rgba(46,230,255,.14), transparent 50%),
+    radial-gradient(900px 520px at 50% 110%, rgba(120,180,140,.1), transparent 55%),
+    linear-gradient(180deg, #15201f 0%, #0b1220 45%, #05070c 100%);
+}
+#cursor-spark {
+  position: fixed; width: 8px; height: 8px; border-radius: 50%;
+  pointer-events: none; z-index: 9999;
+  background: radial-gradient(circle, #ffe39a, transparent 70%);
+  box-shadow: 0 0 10px #f0c14b, 0 0 18px rgba(46,230,255,.45);
+  mix-blend-mode: screen; opacity: 0;
 }
 body::before {
   content: "";
@@ -130,26 +138,27 @@ input:focus, select:focus, textarea:focus {
   background: rgba(240,193,75,.08);
 }
 
-/* Fighting HUD VS bar */
+/* 两派对擂 HUD + 长经验条 */
 .fight-hud {
-  display: grid; grid-template-columns: 1fr auto 1fr; gap: .75rem; align-items: center;
-  margin-bottom: 1rem; padding: 1rem 1.1rem 1.15rem;
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: .85rem 1rem; align-items: start;
+  margin-bottom: 1rem; padding: 1.1rem 1.15rem 1.2rem;
   background:
-    linear-gradient(90deg, rgba(138,16,40,.35), transparent 40%, transparent 60%, rgba(10,106,122,.3)),
+    linear-gradient(90deg, rgba(138,16,40,.28), transparent 42%, transparent 58%, rgba(10,106,122,.24)),
+    linear-gradient(180deg, rgba(40,60,48,.2), transparent 40%),
     var(--panel);
   border: 2px solid var(--frame);
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: var(--shadow), 0 0 40px rgba(240,193,75,.08);
   position: relative; overflow: hidden;
 }
 .fight-hud::before {
-  content: "ROUND";
+  content: "山峰对擂";
   position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
-  font-family: var(--font-num); font-size: .65rem; letter-spacing: .3em; color: var(--ink-soft);
+  font-family: var(--font-brush); font-size: .95rem; letter-spacing: .2em; color: var(--ink-soft);
 }
-.pk-side { text-align: center; position: relative; z-index: 1; }
+.pk-side { text-align: center; position: relative; z-index: 1; padding-top: .55rem; }
 .pk-side .camp-label {
-  font-family: var(--font-brush); font-size: 1.35rem; letter-spacing: .08em;
+  font-family: var(--font-brush); font-size: 1.45rem; letter-spacing: .08em;
 }
 .pk-side.red .camp-label { color: #ff8aa0; }
 .pk-side.blue .camp-label { color: #7ef0ff; }
@@ -159,16 +168,17 @@ input:focus, select:focus, textarea:focus {
 }
 .pk-side.red .score { color: var(--red); text-shadow: 0 0 22px rgba(255,59,92,.55); }
 .pk-side.blue .score { color: var(--cyan); text-shadow: 0 0 22px rgba(46,230,255,.5); }
-.hp-wrap { margin-top: .4rem; }
+.hp-wrap { margin-top: .45rem; }
 .hp-label {
   display: flex; justify-content: space-between; font-size: .7rem; color: var(--ink-soft);
   margin-bottom: .15rem; font-family: var(--font-num); letter-spacing: .08em;
 }
 .pk-track {
-  height: 16px; border-radius: 3px; background: #07090f;
+  height: 22px; border-radius: 4px; background: #07090f;
   overflow: hidden; display: flex; border: 2px solid rgba(255,255,255,.12);
   box-shadow: inset 0 0 8px rgba(0,0,0,.6);
 }
+.pk-track.long { height: 26px; }
 .pk-track .fill-red {
   background: linear-gradient(180deg, #ff7a92, var(--red) 45%, #8a1028);
   height: 100%; position: relative;
@@ -182,7 +192,7 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(180deg, rgba(255,255,255,.35), transparent);
 }
 .pk-vs {
-  width: 72px; height: 72px; border-radius: 50%;
+  width: 72px; height: 72px; border-radius: 50%; margin-top: 1.4rem;
   display: grid; place-items: center;
   font-family: var(--font-num); font-weight: 800; font-size: 1.4rem;
   color: #1a1205; background: radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 45%, #8a6d18);
@@ -195,6 +205,34 @@ input:focus, select:focus, textarea:focus {
   0%,100% { transform: scale(1); }
   50% { transform: scale(1.08); box-shadow: 0 0 42px rgba(240,193,75,.8), 0 0 0 6px rgba(240,193,75,.2); }
 }
+.contrib-panel {
+  margin-top: .7rem; text-align: left;
+  display: flex; flex-direction: column; gap: .35rem;
+}
+.contrib-title {
+  font-size: .72rem; color: var(--ink-soft); letter-spacing: .12em;
+  font-family: var(--font-num); margin-bottom: .1rem;
+}
+.contrib-row {
+  display: grid; grid-template-columns: 4.2rem 1fr auto; gap: .4rem; align-items: center;
+  font-size: .78rem;
+}
+.contrib-row .cname {
+  font-family: var(--font-brush); font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.contrib-bar {
+  height: 10px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 2px; overflow: hidden;
+}
+.contrib-bar > i {
+  display: block; height: 100%; width: 0;
+  transition: width .45s ease;
+}
+.pk-side.red .contrib-bar > i { background: linear-gradient(90deg, rgba(255,120,140,.35), var(--red)); }
+.pk-side.blue .contrib-bar > i { background: linear-gradient(90deg, rgba(100,220,240,.35), var(--cyan)); }
+.contrib-meta {
+  font-family: var(--font-num); font-size: .72rem; color: var(--ink-soft); min-width: 5.5rem; text-align: right;
+}
 
 .camps-board {
   display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;
@@ -202,7 +240,7 @@ input:focus, select:focus, textarea:focus {
 @media (max-width: 900px) { .camps-board { grid-template-columns: 1fr; } }
 .camp-col {
   min-height: 320px; padding: .9rem;
-  border-radius: 12px; border: 2px solid rgba(255,255,255,.1);
+  border-radius: 14px; border: 2px solid rgba(255,255,255,.1);
   background: rgba(10, 14, 26, .85);
   box-shadow: var(--shadow);
   position: relative;
@@ -210,14 +248,16 @@ input:focus, select:focus, textarea:focus {
 .camp-col.red {
   border-color: rgba(255,59,92,.4);
   background:
-    linear-gradient(180deg, rgba(138,16,40,.25), transparent 30%),
-    rgba(12, 10, 18, .9);
+    linear-gradient(180deg, rgba(138,16,40,.22), transparent 28%),
+    linear-gradient(180deg, transparent 60%, rgba(40,70,50,.12)),
+    rgba(12, 10, 18, .92);
 }
 .camp-col.blue {
   border-color: rgba(46,230,255,.35);
   background:
-    linear-gradient(180deg, rgba(10,106,122,.25), transparent 30%),
-    rgba(8, 14, 22, .9);
+    linear-gradient(180deg, rgba(10,106,122,.22), transparent 28%),
+    linear-gradient(180deg, transparent 60%, rgba(30,60,70,.12)),
+    rgba(8, 14, 22, .92);
 }
 .camp-col.drag-over {
   outline: 2px dashed var(--gold);
@@ -234,41 +274,77 @@ input:focus, select:focus, textarea:focus {
 .camp-col.red .camp-head h2 { color: #ff8aa0; }
 .camp-col.blue .camp-head h2 { color: #7ef0ff; }
 .camp-tools button { font-size: .82rem; padding: .3rem .65rem; }
-.peak-list { display: flex; flex-direction: column; gap: .7rem; min-height: 180px; }
+.peak-list { display: flex; flex-direction: column; gap: .95rem; min-height: 160px; }
 .sort-hint { font-size: .75rem; color: var(--ink-soft); margin-bottom: .4rem; }
 
-/* Fighter select cards */
+/* 山峰形态组卡 */
 .sect-card {
   position: relative;
   border: 2px solid rgba(255,255,255,.12);
-  border-radius: 10px;
-  padding: .75rem .8rem .7rem;
+  border-radius: 12px 12px 8px 8px;
+  padding: 0 0 .75rem;
   cursor: grab;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.06), transparent 40%),
-    linear-gradient(180deg, #1a2238, #101624);
-  box-shadow: 0 6px 0 #07090f, 0 10px 24px rgba(0,0,0,.35);
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  background: transparent;
+  box-shadow: none;
+  transition: transform .18s ease, filter .18s ease;
   user-select: none;
-  overflow: hidden;
+  overflow: visible;
 }
-.sect-card::before {
-  content: "SELECT";
-  position: absolute; right: .5rem; bottom: .35rem;
-  font-family: var(--font-num); font-size: .55rem; letter-spacing: .15em;
-  color: rgba(255,255,255,.12);
+.sect-card::before { content: none; }
+.sect-card .mount-shape {
+  position: relative;
+  height: 78px;
+  margin: 0 .35rem;
+  clip-path: polygon(0% 100%, 8% 62%, 22% 78%, 38% 28%, 50% 8%, 62% 30%, 78% 70%, 92% 55%, 100% 100%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.18), transparent 35%),
+    linear-gradient(160deg, #3a4a3a 0%, #1a2830 55%, #0c1218 100%);
+  box-shadow: 0 0 22px rgba(240,193,75,.18);
+  animation: mountGlow 3.6s ease-in-out infinite;
 }
+.sect-card.red .mount-shape {
+  background:
+    linear-gradient(180deg, rgba(255,160,170,.25), transparent 40%),
+    linear-gradient(160deg, #5a3040 0%, #2a1520 55%, #12080c 100%);
+  box-shadow: 0 0 26px rgba(255,59,92,.22);
+}
+.sect-card.blue .mount-shape {
+  background:
+    linear-gradient(180deg, rgba(160,240,255,.22), transparent 40%),
+    linear-gradient(160deg, #2a4a55 0%, #122830 55%, #081218 100%);
+  box-shadow: 0 0 26px rgba(46,230,255,.2);
+}
+@keyframes mountGlow {
+  0%,100% { filter: brightness(1); }
+  50% { filter: brightness(1.12); }
+}
+.sect-card .mount-peak-light {
+  position: absolute; left: 48%; top: 6%; width: 10px; height: 10px; border-radius: 50%;
+  background: #ffe39a; box-shadow: 0 0 16px #f0c14b, 0 0 28px rgba(46,230,255,.45);
+  animation: peakTwinkle 2.2s ease-in-out infinite;
+}
+@keyframes peakTwinkle {
+  0%,100% { opacity: .55; transform: scale(.9); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+.sect-card .mount-body {
+  position: relative; z-index: 1;
+  margin: -1.1rem .2rem 0;
+  padding: .85rem .75rem .55rem;
+  border: 2px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(20,28,36,.96), rgba(10,14,22,.98));
+  box-shadow: 0 8px 24px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.sect-card.red .mount-body { border-color: rgba(255,59,92,.4); box-shadow: 0 8px 24px rgba(255,59,92,.12), 0 0 18px rgba(255,59,92,.08); }
+.sect-card.blue .mount-body { border-color: rgba(46,230,255,.35); box-shadow: 0 8px 24px rgba(46,230,255,.1), 0 0 18px rgba(46,230,255,.08); }
 .sect-card:active { cursor: grabbing; }
-.sect-card.red { border-color: rgba(255,59,92,.45); box-shadow: 0 6px 0 #3a0a14, 0 10px 24px rgba(255,59,92,.12); }
-.sect-card.blue { border-color: rgba(46,230,255,.4); box-shadow: 0 6px 0 #063038, 0 10px 24px rgba(46,230,255,.1); }
-.sect-card:hover {
-  transform: translateY(-3px) scale(1.01);
-  border-color: var(--gold);
-  box-shadow: 0 10px 0 #07090f, 0 0 24px rgba(240,193,75,.25);
-}
+.sect-card:hover { transform: translateY(-4px); }
+.sect-card:hover .mount-shape { filter: brightness(1.15); }
 .sect-card.dragging { opacity: .4; transform: scale(.96) rotate(1deg); }
 .sect-card .seal-rank {
-  position: absolute; top: .4rem; right: .45rem;
+  position: absolute; top: .35rem; right: .4rem; z-index: 2;
   min-width: 1.85rem; height: 1.85rem; padding: 0 .3rem;
   border-radius: 4px;
   border: 2px solid var(--gold); color: #1a1205;
@@ -279,25 +355,25 @@ input:focus, select:focus, textarea:focus {
 }
 .sect-top { display: flex; gap: .65rem; align-items: center; position: relative; }
 .sect-logo {
-  width: 64px; height: 64px; flex: 0 0 64px;
-  border: 3px solid var(--gold);
-  border-radius: 8px;
+  width: 52px; height: 52px; flex: 0 0 52px;
+  border: 2px solid var(--gold);
+  border-radius: 50% 50% 40% 40%;
   background: radial-gradient(circle at 30% 25%, #2a3350, #0c101c);
   display: grid; place-items: center;
-  font-size: 2rem; overflow: hidden;
-  box-shadow: 0 0 0 2px rgba(0,0,0,.5), inset 0 0 20px rgba(0,0,0,.45);
+  font-size: 1.6rem; overflow: hidden;
+  box-shadow: 0 0 0 2px rgba(0,0,0,.5), 0 0 14px rgba(240,193,75,.25);
 }
-.sect-card.red .sect-logo { border-color: #ff6b84; box-shadow: 0 0 14px rgba(255,59,92,.35); }
-.sect-card.blue .sect-logo { border-color: #2ee6ff; box-shadow: 0 0 14px rgba(46,230,255,.3); }
+.sect-card.red .sect-logo { border-color: #ff6b84; }
+.sect-card.blue .sect-logo { border-color: #2ee6ff; }
 .sect-logo img { width: 100%; height: 100%; object-fit: cover; }
-.sect-name { font-family: var(--font-brush); font-size: 1.55rem; line-height: 1.05; color: #fff; }
-.sect-meta { font-size: .8rem; color: var(--ink-soft); margin-top: .12rem; }
+.sect-name { font-family: var(--font-brush); font-size: 1.45rem; line-height: 1.05; color: #fff; }
+.sect-meta { font-size: .78rem; color: var(--ink-soft); margin-top: .12rem; }
 .sect-slogan {
-  margin: .4rem 0 .3rem; font-size: .88rem; color: #c9d4e8;
+  margin: .35rem 0 .25rem; font-size: .85rem; color: #c9d4e8;
   border-left: 3px solid var(--gold); padding-left: .45rem;
 }
 .sect-score {
-  font-family: var(--font-num); font-size: 2.3rem; font-weight: 800; line-height: 1;
+  font-family: var(--font-num); font-size: 1.85rem; font-weight: 800; line-height: 1;
   color: var(--gold); text-shadow: 0 0 16px rgba(240,193,75,.45);
 }
 .sect-score.flash-green { animation: scoreBoomGreen .5s ease forwards; }
@@ -328,27 +404,30 @@ input:focus, select:focus, textarea:focus {
   100% { transform: scale(1); }
 }
 .exp-track {
-  height: 12px; background: #07090f; border: 2px solid rgba(255,255,255,.1);
-  margin: .35rem 0 .2rem; overflow: hidden; position: relative; border-radius: 2px;
+  height: 14px; background: #07090f; border: 2px solid rgba(255,255,255,.1);
+  margin: .25rem 0 .15rem; overflow: hidden; position: relative; border-radius: 3px;
 }
+.exp-track.group-long { height: 18px; border-radius: 4px; }
 .exp-fill {
   height: 100%; width: 0%;
   background: linear-gradient(90deg, #2ee6ff, #3dff9a 50%, var(--gold));
   transition: width .45s ease; position: relative;
 }
+.sect-card.red .exp-fill { background: linear-gradient(90deg, #ff6b84, #f0c14b 70%, #ffe39a); }
+.sect-card.blue .exp-fill { background: linear-gradient(90deg, #2ee6ff, #7ef0ff 55%, #f0c14b); }
 .exp-fill.blink::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
   animation: shine .8s linear infinite;
 }
 @keyframes shine { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.need-next { font-size: .78rem; color: var(--ink-soft); }
+.need-next { font-size: .75rem; color: var(--ink-soft); }
 .need-next.urgent { color: var(--red); font-weight: 800; animation: urgentPulse .8s infinite; }
 @keyframes urgentPulse { 50% { opacity: .45; } }
 .sect-foot { display: flex; justify-content: space-between; align-items: end; gap: .5rem; margin-top: .15rem; position: relative; z-index: 1; }
-.sect-tags { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .3rem; }
+.sect-tags { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .25rem; }
 .tag {
-  font-size: .7rem; padding: .12rem .4rem;
+  font-size: .68rem; padding: .1rem .35rem;
   border: 1px solid rgba(255,255,255,.15);
   background: rgba(0,0,0,.35); border-radius: 3px; color: var(--ink-soft);
   font-family: var(--font-num); letter-spacing: .02em;
@@ -358,6 +437,59 @@ input:focus, select:focus, textarea:focus {
   color: #1a1205 !important; border-color: #ffe39a !important;
   font-size: .85rem !important; padding: .4rem .7rem !important;
 }
+.member-bars {
+  margin-top: .45rem; padding-top: .4rem;
+  border-top: 1px dashed rgba(255,255,255,.1);
+  display: flex; flex-direction: column; gap: .28rem;
+  max-height: 9.5rem; overflow: auto;
+}
+.member-bar-row {
+  display: grid; grid-template-columns: 3.6rem 1fr auto; gap: .35rem; align-items: center;
+  font-size: .72rem;
+}
+.member-bar-row .mname {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #d7e0f0;
+}
+.member-bar-row .mname.cap { color: var(--gold); }
+.member-track {
+  height: 7px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 99px; overflow: hidden;
+}
+.member-track > i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, rgba(126,240,255,.55), rgba(240,193,75,.85));
+}
+.member-bar-row .mlv {
+  font-family: var(--font-num); color: var(--ink-soft); font-size: .66rem; min-width: 3.2rem; text-align: right;
+}
+
+/* 派别下排行树 */
+.rank-tree {
+  margin-top: 1rem; padding-top: .7rem;
+  border-top: 2px solid rgba(255,255,255,.08);
+}
+.rank-tree h3 {
+  font-family: var(--font-brush); font-size: 1.25rem; margin-bottom: .45rem;
+  color: var(--gold);
+}
+.rank-group {
+  margin-bottom: .55rem; padding: .45rem .55rem;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px; background: rgba(0,0,0,.22);
+}
+.rank-group-head {
+  display: flex; justify-content: space-between; gap: .4rem; align-items: baseline;
+  font-size: .9rem;
+}
+.rank-group-head .gname { font-family: var(--font-brush); font-size: 1.15rem; }
+.rank-group-head .gscore { font-family: var(--font-num); color: var(--gold); }
+.rank-members { margin-top: .3rem; padding-left: .35rem; }
+.rank-member {
+  display: flex; justify-content: space-between; gap: .4rem;
+  font-size: .75rem; padding: .12rem 0; color: var(--ink-soft);
+  border-bottom: 1px dotted rgba(255,255,255,.06);
+}
+.rank-member strong { color: #e8eef8; font-weight: 600; }
 
 .func-bar { margin-bottom: .8rem; }
 .func-bar button { min-width: 6.4rem; }
@@ -775,6 +907,43 @@ input:focus, select:focus, textarea:focus {
   font-family: var(--font-num); cursor: pointer;
 }
 .sfx-toggle:hover { border-color: var(--gold); }
+.wuxia-mist {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 30% 60%, rgba(180,220,200,.18), transparent 45%),
+    radial-gradient(ellipse at 70% 40%, rgba(240,193,75,.12), transparent 40%);
+  animation: mistDrift 1.6s ease forwards;
+}
+@keyframes mistDrift {
+  0% { opacity: 0; transform: scale(1.1); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+.wuxia-ribbon {
+  position: absolute; z-index: 4; width: 55vmin; height: 10px;
+  left: 50%; top: 42%; margin-left: -27.5vmin;
+  background: linear-gradient(90deg, transparent, rgba(240,193,75,.85), rgba(126,240,255,.7), transparent);
+  filter: blur(0.5px); box-shadow: 0 0 18px rgba(240,193,75,.45);
+  animation: ribbonFly .7s ease-out forwards; opacity: 0;
+}
+.wuxia-ribbon.r-a { --rr: -26deg; }
+.wuxia-ribbon.r-b { --rr: 20deg; animation-delay: .08s; top: 52%; height: 7px; }
+@keyframes ribbonFly {
+  0% { transform: scaleX(.2) rotate(var(--rr)); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: scaleX(1.15) rotate(var(--rr)); opacity: 0; }
+}
+.cursor-petal {
+  position: fixed; width: 6px; height: 6px; border-radius: 50% 0 50% 50%;
+  pointer-events: none; z-index: 9998;
+  background: radial-gradient(circle at 30% 30%, #ffe39a, #f0c14b 55%, transparent);
+  box-shadow: 0 0 8px rgba(240,193,75,.7);
+  animation: petalFade .7s ease-out forwards;
+}
+@keyframes petalFade {
+  0% { transform: translate(0,0) scale(1) rotate(0); opacity: .9; }
+  100% { transform: translate(var(--px), var(--py)) scale(0) rotate(120deg); opacity: 0; }
+}
 
 .subview { animation: fadeIn .22s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -896,10 +1065,10 @@ input:focus, select:focus, textarea:focus {
     <div id="teacher-main" class="subview">
       <div class="row header-bar">
         <div>
-          <div class="app-title">光影盟 · 武侠对战榜</div>
+          <div class="app-title">光影盟 · 山峰对擂</div>
           <div class="muted" style="margin-top:.2rem">
             <span class="round-chip">DAY <span id="day-label">1</span></span>
-            <span style="margin-left:.45rem">选择角色出战 · 拖拽换边 · 点击出招加分</span>
+            <span style="margin-left:.45rem">组员成山 · 山峰成派 · 拖拽换边 · 点击出招</span>
           </div>
         </div>
         <div class="row">
@@ -915,44 +1084,48 @@ input:focus, select:focus, textarea:focus {
 
       <div class="fight-hud" id="pk-bar">
         <div class="pk-side red">
-          <div class="camp-label">1P 光影联盟</div>
+          <div class="camp-label">光影大派</div>
           <div class="score" id="red-total">0</div>
           <div class="hp-wrap">
-            <div class="hp-label"><span>HP</span><span>ALLIANCE</span></div>
-            <div class="pk-track"><div class="fill-red" id="red-fill" style="width:50%"></div></div>
+            <div class="hp-label"><span>派别经验</span><span>ALLIANCE EXP</span></div>
+            <div class="pk-track long"><div class="fill-red" id="red-fill" style="width:50%"></div></div>
           </div>
+          <div class="contrib-panel" id="red-contrib"></div>
         </div>
         <div class="pk-vs">VS</div>
         <div class="pk-side blue">
-          <div class="camp-label">2P 声浪联盟</div>
+          <div class="camp-label">声浪大派</div>
           <div class="score" id="blue-total">0</div>
           <div class="hp-wrap">
-            <div class="hp-label"><span>HP</span><span>ALLIANCE</span></div>
-            <div class="pk-track"><div class="fill-blue" id="blue-fill" style="width:50%"></div></div>
+            <div class="hp-label"><span>派别经验</span><span>ALLIANCE EXP</span></div>
+            <div class="pk-track long"><div class="fill-blue" id="blue-fill" style="width:50%"></div></div>
           </div>
+          <div class="contrib-panel" id="blue-contrib"></div>
         </div>
       </div>
 
       <div class="camps-board">
         <section class="camp-col red" data-camp="red" id="camp-red">
           <div class="camp-head">
-            <h2>1P 出战席 · 光影</h2>
+            <h2>光影 · 山峰群</h2>
             <div class="camp-tools row">
-              <button type="button" data-action="add-peak-red">＋角色</button>
+              <button type="button" data-action="add-peak-red">＋山峰</button>
             </div>
           </div>
-          <p class="sort-hint">拖拽角色卡换边/调序 · 点击出招加分或改属性</p>
+          <p class="sort-hint">每座山峰是一组 · 拖拽换边/调序 · 点击出招或改属性</p>
           <div class="peak-list" id="list-red" data-camp="red"></div>
+          <div class="rank-tree" id="rank-red"></div>
         </section>
         <section class="camp-col blue" data-camp="blue" id="camp-blue">
           <div class="camp-head">
-            <h2>2P 出战席 · 声浪</h2>
+            <h2>声浪 · 山峰群</h2>
             <div class="camp-tools row">
-              <button type="button" data-action="add-peak-blue">＋角色</button>
+              <button type="button" data-action="add-peak-blue">＋山峰</button>
             </div>
           </div>
-          <p class="sort-hint">拖拽角色卡换边/调序 · 点击出招加分或改属性</p>
+          <p class="sort-hint">每座山峰是一组 · 拖拽换边/调序 · 点击出招或改属性</p>
           <div class="peak-list" id="list-blue" data-camp="blue"></div>
+          <div class="rank-tree" id="rank-blue"></div>
         </section>
       </div>
 
@@ -1474,6 +1647,28 @@ input:focus, select:focus, textarea:focus {
     kofWhoosh(t0 + 0.12, "kick");
   }
 
+  /** 武侠风：剑气 / 琴音（大分时与拳脚音融合） */
+  function wuxiaSword(t0) {
+    noiseBurst(t0, 0.16, 0.14, { type: "bandpass", freq: 3200, freqTo: 500, q: 2.4, decay: 1.2 });
+    tone(880, t0, 0.18, "triangle", 0.08, 220);
+    tone(1320, t0 + 0.04, 0.22, "sine", 0.07, 440);
+    tone(520, t0 + 0.02, 0.12, "sawtooth", 0.05, 160);
+  }
+  function wuxiaQin(t0) {
+    [392, 494, 587, 784].forEach((f, i) => {
+      tone(f, t0 + i * 0.05, 0.28, "triangle", 0.06, f * 1.01);
+      tone(f * 2, t0 + i * 0.05, 0.18, "sine", 0.03, f * 2.02);
+    });
+  }
+  function wuxiaFusion(t0, heavy) {
+    wuxiaSword(t0);
+    if (heavy) {
+      wuxiaQin(t0 + 0.08);
+      noiseBurst(t0 + 0.12, 0.28, 0.12, { type: "lowpass", freq: 700, freqTo: 80, decay: 0.7 });
+      tone(110, t0 + 0.1, 0.4, "sine", 0.1, 55);
+    }
+  }
+
   /** 拳皇风：大招爆发（随机一套） */
   function kofSuper(t0) {
     const style = pick(["fireball", "slash", "meteor", "blast"]);
@@ -1534,21 +1729,27 @@ input:focus, select:focus, textarea:focus {
       kofComboTick(now + 0.07, pick([2, 3]));
       kofWhoosh(now + 0.14, b);
       kofStrike(now + 0.16, b);
+      if (Math.random() > 0.45) wuxiaSword(now + 0.1);
       return;
     }
     if (lv === 3) {
       kofCharge(now);
+      wuxiaFusion(now + 0.05, false);
       kofStrike(now + 0.18, pick(["punch", "kick"]));
       kofComboTick(now + 0.22, 3);
       noiseBurst(now + 0.28, 0.22, 0.2, { type: "lowpass", freq: 1200, freqTo: 60 });
       tone(rand(140, 200), now + 0.18, 0.28, "sawtooth", 0.11, 40);
+      wuxiaSword(now + 0.3);
       return;
     }
+    // 大分：拳皇大招 + 武侠剑气琴音融合
     kofSuper(now);
+    wuxiaFusion(now + 0.12, true);
     setTimeout(() => {
       const c = ensureAudio();
       if (!c || !sfxEnabled) return;
       kofStrike(c.currentTime, pick(["punch", "kick"]));
+      wuxiaSword(c.currentTime);
       noiseBurst(c.currentTime, 0.2, 0.16, { type: "lowpass", freq: 800, freqTo: 50 });
     }, 360);
   }
@@ -1665,8 +1866,17 @@ input:focus, select:focus, textarea:focus {
     const pts = Number(points) || 0;
     const lv = powerLevel(pts, category);
     const tier = tierOf(category, pts);
-    const tags = { 1: pick(["PUNCH", "KICK", "LIGHT HIT"]), 2: "COMBO", 3: "SPECIAL", 4: "MAX SUPER" };
-    const banners = { 2: pick(["COMBO!", "OK!", "HIT!"]), 3: pick(["SPECIAL!", "DM!", "ART!"]), 4: pick(["MAX SUPER!", "☆ SUPER DESPERATION ☆", "CLIMAX!"]) };
+    const tags = {
+      1: pick(["轻拳", "飞脚", "点穴"]),
+      2: pick(["连招", "追击", "破招"]),
+      3: pick(["必杀", "剑气", "绝学"]),
+      4: pick(["超必杀", "万剑归宗", "巅峰一击"])
+    };
+    const banners = {
+      2: pick(["连击！", "好招！", "中！"]),
+      3: pick(["绝学发动！", "剑气纵横！", "SPECIAL!"]),
+      4: pick(["☆ 万剑归宗 ☆", "MAX SUPER!", "山河变色！"])
+    };
 
     playHitSfx(pts, category);
 
@@ -1678,9 +1888,11 @@ input:focus, select:focus, textarea:focus {
     if (lv >= 2) extras.push('<div class="speed-lines"></div>');
     if (lv >= 3) {
       extras.push('<div class="rgb-split"></div>');
+      extras.push('<div class="wuxia-mist"></div>');
       extras.push('<div class="slash-mark s2" style="--rot:-22deg"></div>');
       extras.push('<div class="slash-mark s3" style="--rot:18deg"></div>');
       extras.push('<div class="impact-burst"></div>');
+      extras.push('<div class="wuxia-ribbon r-a"></div><div class="wuxia-ribbon r-b"></div>');
     }
     if (lv >= 4) {
       extras.push('<div class="slash-mark" style="--rot:-8deg;top:46%"></div>');
@@ -1791,17 +2003,35 @@ input:focus, select:focus, textarea:focus {
     btn.id = "sfx-toggle";
     btn.type = "button";
     btn.className = "sfx-toggle";
-    btn.textContent = sfxEnabled ? "🔊 KOF SFX" : "🔇 SFX OFF";
+    btn.textContent = sfxEnabled ? "🔊 武侠音效" : "🔇 音效关";
     btn.onclick = () => {
       sfxEnabled = !sfxEnabled;
       localStorage.setItem("gy_arena_sfx", sfxEnabled ? "1" : "0");
-      btn.textContent = sfxEnabled ? "🔊 KOF SFX" : "🔇 SFX OFF";
+      btn.textContent = sfxEnabled ? "🔊 武侠音效" : "🔇 音效关";
       if (sfxEnabled) { ensureAudio(); playHitSfx(pick([2, 5, 12, 25]), pick(["日常", "任务", "擂台"])); }
     };
     document.body.appendChild(btn);
-    // 首次交互解锁音频
     const unlock = () => { ensureAudio(); document.removeEventListener("pointerdown", unlock); };
     document.addEventListener("pointerdown", unlock, { once: true });
+  }
+
+  function ensureSwordCursorTrail() {
+    if (window.__swordCursorBound) return;
+    window.__swordCursorBound = true;
+    let last = 0;
+    document.addEventListener("pointermove", (e) => {
+      const now = performance.now();
+      if (now - last < 28) return;
+      last = now;
+      const petal = document.createElement("div");
+      petal.className = "cursor-petal";
+      petal.style.left = e.clientX + "px";
+      petal.style.top = e.clientY + "px";
+      petal.style.setProperty("--px", (Math.random() * 24 - 12) + "px");
+      petal.style.setProperty("--py", (18 + Math.random() * 28) + "px");
+      document.body.appendChild(petal);
+      setTimeout(() => petal.remove(), 720);
+    }, { passive: true });
   }
 
   function playLevelUpAnimation(peak, oldLevel, levelInfo) {
@@ -1888,43 +2118,102 @@ input:focus, select:focus, textarea:focus {
     return { red, blue };
   }
 
+  function personalProgress(d) {
+    const lv = calcPersonalLevel(d.exp || 0);
+    const pct = lv.level >= 30 ? 100 : Math.max(0, Math.min(100, (lv.remainder / (lv.need || 1)) * 100));
+    return { ...lv, pct };
+  }
+
+  function renderContribPanel(camp, peaks, total) {
+    const sorted = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+    const max = Math.max(...sorted.map((p) => p.score || 0), 1);
+    if (!sorted.length) return `<div class="contrib-title">各组贡献</div><div class="muted" style="font-size:.75rem">暂无山峰</div>`;
+    return `<div class="contrib-title">各组贡献 · 按分排序</div>` + sorted.map((p) => {
+      const score = p.score || 0;
+      const share = total > 0 ? (score / total * 100) : 0;
+      const depth = 0.32 + 0.68 * (score / max);
+      return `<div class="contrib-row" style="opacity:${depth}">
+        <div class="cname">${esc(p.icon || "")} ${esc(p.name)}</div>
+        <div class="contrib-bar"><i style="width:${share}%;opacity:${0.55 + 0.45 * (score / max)}"></i></div>
+        <div class="contrib-meta">${score} · ${share.toFixed(0)}%</div>
+      </div>`;
+    }).join("");
+  }
+
+  function renderRankTree(camp, peaks) {
+    const sorted = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+    if (!sorted.length) return "";
+    return `<h3>${camp === "blue" ? "声浪" : "光影"} · 山峰排行</h3>` + sorted.map((p, i) => {
+      const members = sortDisciples(disciplesOfPeak(p.id), "exp")
+        .slice()
+        .sort((a, b) => (b.contributed || 0) - (a.contributed || 0) || (b.exp || 0) - (a.exp || 0));
+      return `<div class="rank-group">
+        <div class="rank-group-head">
+          <span class="gname">#${i + 1} ${esc(p.icon || "")} ${esc(p.name)}</span>
+          <span class="gscore">${p.score || 0} 分</span>
+        </div>
+        <div class="rank-members">
+          ${members.map((d, mi) => {
+            const lv = calcPersonalLevel(d.exp || 0);
+            return `<div class="rank-member">
+              <span>${mi + 1}. <strong>${esc(d.name)}</strong>${d.role === "队长" ? " · 队长" : ""} · ${esc(lv.title)}</span>
+              <span>Lv${lv.level} · 贡献 ${d.contributed || 0} · EXP ${d.exp || 0}</span>
+            </div>`;
+          }).join("") || '<div class="muted" style="font-size:.75rem">暂无组员</div>'}
+        </div>
+      </div>`;
+    }).join("");
+  }
+
   function renderSectCard(p, rankIdx) {
-    const members = disciplesOfPeak(p.id);
+    const members = sortDisciples(disciplesOfPeak(p.id), "exp");
     const remain = Math.max(0, (p.next_level_score || 0) - (p.score || 0));
     const urgent = p.peak_level < 5 && remain <= 100;
     const blink = (p.progress || 0) > 90;
     const medals = ["1st", "2nd", "3rd"];
     const logo = p.logo_url
       ? `<img src="${p.logo_url}" alt="" />`
-      : `<span>${p.icon || "⚔️"}</span>`;
+      : `<span>${p.icon || "⛰️"}</span>`;
     const captain = p.captain_name || members.find((d) => d.role === "队长")?.name || "虚位以待";
-    const side = p.camp === "blue" ? "2P" : "1P";
+    const memberBars = members.map((d) => {
+      const prog = personalProgress(d);
+      const isCap = d.role === "队长" || d.name === captain;
+      return `<div class="member-bar-row">
+        <div class="mname ${isCap ? "cap" : ""}">${esc(d.name)}${isCap ? "★" : ""}</div>
+        <div class="member-track"><i style="width:${prog.pct}%"></i></div>
+        <div class="mlv">Lv${prog.level} · ${d.exp || 0}</div>
+      </div>`;
+    }).join("") || '<div class="muted" style="font-size:.72rem">暂无组员，点击山峰添加</div>';
+
     return `
       <article class="sect-card ${p.camp}" draggable="true" data-peak-id="${p.id}">
-        <div class="seal-rank">${medals[rankIdx] || (rankIdx + 1)}</div>
-        <div class="sect-top">
-          <div class="sect-logo">${logo}</div>
-          <div style="flex:1;min-width:0">
-            <div class="sect-name">${p.name}</div>
-            <div class="sect-meta">${side} · 队长 ${captain} · ${p.peak_level_name} Lv${p.peak_level}</div>
-            <div class="sect-tags">
-              <span class="tag">TEAM ${members.length}</span>
-              <span class="tag">${p.element || "光"}·${p.style || "剑"}</span>
-              <span class="tag">${p.badge || "新锐"}</span>
-              <span class="tag">${p.art || "绝学"}</span>
-              <span class="tag">EXP ${peakExpTotal(p.id)}</span>
+        <div class="mount-shape"><span class="mount-peak-light"></span></div>
+        <div class="mount-body">
+          <div class="seal-rank">${medals[rankIdx] || (rankIdx + 1)}</div>
+          <div class="sect-top">
+            <div class="sect-logo">${logo}</div>
+            <div style="flex:1;min-width:0">
+              <div class="sect-name">${esc(p.name)}</div>
+              <div class="sect-meta">队长 ${esc(captain)} · ${esc(p.peak_level_name || "")} · 组员 ${members.length}</div>
+              <div class="sect-tags">
+                <span class="tag">${esc(p.element || "光")}·${esc(p.style || "剑")}</span>
+                <span class="tag">${esc(p.badge || "新锐")}</span>
+                <span class="tag">${esc(p.art || "绝学")}</span>
+                <span class="tag">总EXP ${peakExpTotal(p.id)}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="sect-slogan">「${p.slogan || ""}」</div>
-        <div class="sect-foot">
-          <div style="flex:1">
-            <div class="hp-label"><span>SCORE</span><span>SP ${Math.round(p.progress || 0)}%</span></div>
-            <div class="sect-score">${p.score || 0}</div>
-            <div class="exp-track"><div class="exp-fill ${blink ? "blink" : ""}" style="width:${p.progress || 0}%"></div></div>
-            <div class="need-next ${urgent ? "urgent" : ""}">${p.peak_level >= 5 ? "MAX RANK" : `NEXT -${remain}`}</div>
+          <div class="sect-slogan">「${esc(p.slogan || "峰回路转，侠义同行")}」</div>
+          <div class="sect-foot">
+            <div style="flex:1;min-width:0">
+              <div class="hp-label"><span>山峰经验</span><span>${Math.round(p.progress || 0)}%</span></div>
+              <div class="sect-score">${p.score || 0}</div>
+              <div class="exp-track group-long"><div class="exp-fill ${blink ? "blink" : ""}" style="width:${p.progress || 0}%"></div></div>
+              <div class="need-next ${urgent ? "urgent" : ""}">${p.peak_level >= 5 ? "已登顶" : `距下境 ${remain}`}</div>
+            </div>
+            <button type="button" class="fight-btn" data-open-sect="${p.id}">出招</button>
           </div>
-          <button type="button" class="fight-btn" data-open-sect="${p.id}">出招</button>
+          <div class="member-bars">${memberBars}</div>
         </div>
       </article>`;
   }
@@ -2025,23 +2314,28 @@ input:focus, select:focus, textarea:focus {
 
     const redList = sortPeaks(getPeaksArray().filter((p) => p.camp !== "blue"));
     const blueList = sortPeaks(getPeaksArray().filter((p) => p.camp === "blue"));
-    // rank badges by score within each camp for display
     const redByScore = redList.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
     const blueByScore = blueList.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
     const rankMap = {};
     redByScore.forEach((p, i) => { rankMap[p.id] = i; });
     blueByScore.forEach((p, i) => { rankMap[p.id] = i; });
 
-    document.getElementById("list-red").innerHTML = redList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无门派，点击＋角色</p>';
-    document.getElementById("list-blue").innerHTML = blueList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无门派，点击＋角色</p>';
+    document.getElementById("red-contrib").innerHTML = renderContribPanel("red", redList, red);
+    document.getElementById("blue-contrib").innerHTML = renderContribPanel("blue", blueList, blue);
+
+    document.getElementById("list-red").innerHTML = redList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
+    document.getElementById("list-blue").innerHTML = blueList.map((p) => renderSectCard(p, rankMap[p.id])).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
+    document.getElementById("rank-red").innerHTML = renderRankTree("red", redList);
+    document.getElementById("rank-blue").innerHTML = renderRankTree("blue", blueList);
+
     bindPeakListDnD(document.getElementById("list-red"));
     bindPeakListDnD(document.getElementById("list-blue"));
     setupCampDropZones();
 
     const logs = getLogsArray().filter((l) => l.day === day).slice(0, 30);
     document.getElementById("ticker-text").textContent = logs.length
-      ? "COMBO FEED：" + logs.map((l) => `${l.peak_name}+${l.points}（${l.reason}）`).join(" ｜ ")
-      : "COMBO FEED：等待出招…… READY?";
+      ? "山河战报：" + logs.map((l) => `${l.peak_name}+${l.points}（${l.reason}）`).join(" ｜ ")
+      : "山河战报：静候出招……";
   }
 
   function openModal(html) {
@@ -3143,6 +3437,7 @@ input:focus, select:focus, textarea:focus {
       } else { demoMode = true; bootDemo(); }
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
       ensureSfxToggle();
+      ensureSwordCursorTrail();
       if (m === "memories") { /* loader */ } else renderAll();
       if (demoMode) {
         const tip = document.createElement("div");
