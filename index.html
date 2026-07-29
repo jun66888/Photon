@@ -365,7 +365,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   font-size: .68rem; color: var(--ink-soft); letter-spacing: .06em;
 }
 .mission-done-chip {
-  display: inline-flex; align-items: center; gap: .2rem;
+  display: inline-flex; align-items: center; gap: .25rem;
   font-size: .72rem; padding: .12rem .4rem; border-radius: 99px;
   border: 1px solid rgba(61,255,154,.4);
   background: rgba(61,255,154,.1);
@@ -373,6 +373,72 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 .mission-done-chip b {
   font-family: var(--font-num); color: var(--gold); font-weight: 800;
+}
+.reward-prop-badge {
+  display: inline-flex; align-items: center; gap: .28rem;
+  padding: .18rem .45rem;
+  border-radius: 99px;
+  border: 1px solid rgba(240,193,75,.4);
+  background: linear-gradient(120deg, rgba(240,193,75,.14), rgba(61,255,154,.08));
+  color: #ffe9b8;
+  font-size: .78rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.reward-prop-badge.compact {
+  padding: .1rem .35rem; font-size: .7rem; gap: .18rem;
+}
+.reward-prop-badge.empty {
+  border-color: rgba(255,255,255,.12);
+  background: rgba(0,0,0,.25);
+  color: var(--ink-soft);
+}
+.reward-prop-badge .rp-ico { font-size: 1.05em; }
+.reward-prop-badge .rp-name { color: #fff3d0; font-weight: 700; }
+.reward-prop-badge .rp-pts {
+  font-family: var(--font-num); color: var(--gold); font-weight: 900;
+}
+.combo-card .combo-prop {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  margin: .15rem auto .25rem;
+  padding: .25rem .7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(240,193,75,.5);
+  background: rgba(240,193,75,.12);
+  color: #ffe39a;
+  font-size: clamp(.95rem, 2.2vw, 1.2rem);
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+.combo-card .combo-prop .cp-ico { font-size: 1.25em; }
+.disciple-reward-toast {
+  position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%);
+  z-index: 90;
+  display: flex; align-items: center; gap: .55rem;
+  padding: .65rem 1rem;
+  border-radius: 12px;
+  border: 2px solid rgba(240,193,75,.55);
+  background: rgba(10,14,24,.94);
+  box-shadow: 0 12px 32px rgba(0,0,0,.45), 0 0 24px rgba(240,193,75,.2);
+  animation: discipleRewardIn 1.6s ease forwards;
+  pointer-events: none;
+}
+.disciple-reward-toast .dr-ico { font-size: 1.8rem; line-height: 1; }
+.disciple-reward-toast .dr-body { text-align: left; }
+.disciple-reward-toast .dr-name {
+  font-family: var(--font-brush); color: #fff5e8; font-size: 1.15rem;
+}
+.disciple-reward-toast .dr-prop {
+  color: #ffe39a; font-size: .88rem; font-weight: 700;
+}
+.disciple-reward-toast .dr-prop b {
+  font-family: var(--font-num); color: var(--gold);
+}
+@keyframes discipleRewardIn {
+  0% { opacity: 0; transform: translate(-50%, 18px) scale(.92); }
+  18% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
+  75% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -12px) scale(.98); }
 }
 .mission-board-head {
   display: flex; align-items: center; justify-content: space-between; gap: .5rem;
@@ -3080,6 +3146,61 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const STYLE_PRESETS = ["刀","剑","掌","琴","鼓","枪","弓","笔"];
   const REASON_PRESETS = ["课堂表现","作品分享","完成任务","擂台加分","互助协作","创意亮点","准时签到"];
 
+  /** 分值 → 修仙道具（分值越高，丹药/灵物越珍贵） */
+  const REWARD_PROP_TIERS = [
+    { points: 1, name: "淬体草", icon: "🌿", tip: "凡品灵草，略补气血" },
+    { points: 2, name: "回气丹", icon: "💊", tip: "下品丹药，温养真气" },
+    { points: 3, name: "聚灵砂", icon: "✨", tip: "散碎灵砂，可助吐纳" },
+    { points: 4, name: "清心露", icon: "💧", tip: "凝神静气，心湖不乱" },
+    { points: 5, name: "凝神丹", icon: "🔮", tip: "中品丹药，凝神聚气" },
+    { points: 6, name: "培元果", icon: "🍑", tip: "灵果一枚，培固本源" },
+    { points: 8, name: "玄铁令", icon: "🪙", tip: "门派功勋令，可换灵材" },
+    { points: 10, name: "筑基丹", icon: "⚗️", tip: "筑基关键丹药" },
+    { points: 12, name: "紫霄符", icon: "📜", tip: "符箓一道，可护周身" },
+    { points: 15, name: "金髓丸", icon: "🟡", tip: "淬炼筋骨，金髓暗生" },
+    { points: 20, name: "破境丹", icon: "💠", tip: "冲击瓶颈的上品丹" },
+    { points: 25, name: "玄天果", icon: "🍇", tip: "天材地宝，灵韵浓郁" },
+    { points: 30, name: "化神丹", icon: "🧿", tip: "化神契机，神识暴涨" },
+    { points: 40, name: "九叶灵芝", icon: "🍄", tip: "万年灵芝，造化非凡" },
+    { points: 50, name: "仙酿琼浆", icon: "🍶", tip: "仙家佳酿，一口洗经伐髓" },
+    { points: 80, name: "辟谷金丹", icon: "🌕", tip: "金丹雏形，大道初显" },
+    { points: 100, name: "九转还魂丹", icon: "🐉", tip: "传说丹药，起死回生" }
+  ];
+
+  function rewardPropForPoints(points) {
+    const pts = Math.max(0, Math.round(Number(points) || 0));
+    if (!pts) return { points: 0, name: "空手而归", icon: "🌫️", tip: "暂无赏赐" };
+    let best = REWARD_PROP_TIERS[0];
+    for (let i = 0; i < REWARD_PROP_TIERS.length; i++) {
+      const t = REWARD_PROP_TIERS[i];
+      if (pts >= t.points) best = t;
+      if (t.points === pts) return { ...t, points: pts };
+    }
+    // 非表内分值：取不超过该分的最高档，名称带分值区分
+    if (best.points !== pts) {
+      return {
+        points: pts,
+        name: best.name + "·" + pts + "品",
+        icon: best.icon,
+        tip: best.tip + `（折合 ${pts} 真气）`
+      };
+    }
+    return { ...best, points: pts };
+  }
+
+  function rewardPropBadgeHtml(points, opts) {
+    const o = opts || {};
+    const prop = rewardPropForPoints(points);
+    const pts = prop.points;
+    const compact = !!o.compact;
+    if (!pts) return `<span class="reward-prop-badge empty">${prop.icon} ${esc(prop.name)}</span>`;
+    return `<span class="reward-prop-badge ${compact ? "compact" : ""}" title="${esc(prop.tip)}">
+      <span class="rp-ico">${prop.icon}</span>
+      <span class="rp-name">${esc(prop.name)}</span>
+      ${o.hidePoints ? "" : `<b class="rp-pts">+${pts}</b>`}
+    </span>`;
+  }
+
   function ensureInList(list, value) {
     const arr = list.slice();
     if (value && !arr.includes(value)) arr.unshift(value);
@@ -4008,12 +4129,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return "daily";
   }
 
-  function showComboAnnounce(peak, points, reason, category, newScore) {
+  function showComboAnnounce(peak, points, reason, category, newScore, opts) {
     const host = document.getElementById("fx-host");
     clearFxOverlays();
     const pts = Number(points) || 0;
     const lv = powerLevel(pts, category);
     const tier = tierOf(category, pts);
+    const prop = rewardPropForPoints(pts);
+    const discipleName = (opts && opts.discipleName) || "";
     const tags = {
       1: pick(["轻拳", "飞脚", "点穴"]),
       2: pick(["连招", "追击", "破招"]),
@@ -4049,6 +4172,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       extras.push(`<div class="super-banner">${banners[lv]}</div>`);
     }
 
+    const who = discipleName
+      ? `${esc(discipleName)} · ${peak.icon || ""} ${esc(peak.name)}`
+      : `${peak.icon || ""} ${esc(peak.name)}`;
+
     const layer = document.createElement("div");
     layer.className = `combo-layer lv-${lv}`;
     layer.innerHTML = `
@@ -4056,8 +4183,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       ${extras.join("")}
       ${rings}
       <div class="combo-card tier-${tier} power-${lv}">
-        <div class="combo-tag">${tags[lv]} · x${pts}</div>
-        <div class="combo-name">${peak.icon || ""} ${esc(peak.name)}</div>
+        <div class="combo-tag">${tags[lv]} · ${prop.icon} ${esc(prop.name)}</div>
+        <div class="combo-name">${who}</div>
+        <div class="combo-prop"><span class="cp-ico">${prop.icon}</span>${esc(prop.name)}</div>
         <div class="combo-points">+${pts}</div>
         <div class="combo-reason">${esc(reason || "加分")}${peak.win_quote && lv >= 3 ? " · " + esc(peak.win_quote) : ""}</div>
         <div class="combo-total">TOTAL SCORE ${newScore ?? peak.score ?? 0} · ${esc(peak.peak_level_name || "")} · ${esc(peak.element || "")}${esc(peak.style || "")}</div>
@@ -4069,7 +4197,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     for (let i = 0; i < floatN; i++) {
       const n = document.createElement("div");
       n.className = "float-num";
-      n.textContent = `+${pts}`;
+      n.textContent = `${prop.icon}+${pts}`;
       n.style.left = (28 + Math.random() * 44) + "%";
       n.style.top = (34 + Math.random() * 28) + "%";
       n.style.setProperty("--fx", (Math.random() * 140 - 70) + "px");
@@ -4554,6 +4682,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           peak_id: c.peak_id != null ? c.peak_id : null,
           peak_name: c.peak_name || "",
           points: Number(c.points) || 0,
+          prop_name: c.prop_name || "",
+          prop_icon: c.prop_icon || "",
           at: c.at || Date.now()
         })).filter((c) => c.disciple_id)
       : [];
@@ -4693,9 +4823,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       } else {
         list.innerHTML = visible.map((it) => {
           const done = (it.completions || []);
-          const names = done.slice(0, 8).map((c) =>
-            `<span class="mission-done-chip">${esc(c.name || "弟子")}${it.points ? ` <b>+${it.points}</b>` : ""}</span>`
-          ).join("");
+          const prop = rewardPropForPoints(it.points);
+          const names = done.slice(0, 8).map((c) => {
+            const cp = rewardPropForPoints(c.points != null ? c.points : it.points);
+            return `<span class="mission-done-chip" title="${esc(cp.tip)}">${esc(c.name || "弟子")} ${cp.icon} <b>+${cp.points}</b></span>`;
+          }).join("");
           const more = done.length > 8 ? `<span class="md-label">+${done.length - 8}</span>` : "";
           return `
           <div class="mission-weight-item" data-open-mission="${esc(String(it.id))}" data-weight="${it.weight}" title="点击查看任务详情与完成名单">
@@ -4704,11 +4836,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <div class="mw-meta">
               <span class="mb-tag">权重 ${it.weight}</span>
               ${it.difficulty ? `<span class="mb-tag">${esc(it.difficulty)}</span>` : ""}
-              ${it.points ? `<span class="mb-tag">奖励 +${it.points}</span>` : ""}
+              ${it.points ? rewardPropBadgeHtml(it.points, { compact: true }) : ""}
               <span class="mb-tag">完成 ${done.length}</span>
             </div>
             <div class="mission-done-row">
-              <span class="md-label">已完成</span>
+              <span class="md-label">已获赏</span>
               ${done.length ? names + more : `<span class="md-label">暂无 · 点进详情登记</span>`}
             </div>
           </div>`;
@@ -4735,6 +4867,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     const peak = findPeak(dEntry.peak);
     const pts = Number(mission.points) || 0;
+    const prop = rewardPropForPoints(pts);
     const reason = `完成任务·${mission.title || "门派任务"}`;
     await saveCampMissionPatch((next) => {
       const item = (next.items || []).find((it) => String(it.id) === String(missionId));
@@ -4746,6 +4879,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         peak_id: peak ? peak.id : null,
         peak_name: peak ? peak.name : "大厅",
         points: pts,
+        prop_name: prop.name,
+        prop_icon: prop.icon,
         at: Date.now()
       });
     }, { silent: true });
@@ -4793,6 +4928,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const allDisc = sortDisciples(getDisciplesArray(), "name");
     const pending = allDisc.filter((d) => !doneIds.has(String(d.id)));
     const done = (mission.completions || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+    const rewardProp = rewardPropForPoints(mission.points);
 
     root.innerHTML = `
       <div class="mission-detail-layout">
@@ -4806,22 +4942,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <span class="mb-tag">${esc(mission.category || "任务")}</span>
             <span class="mb-tag">完成 ${done.length} 人</span>
           </div>
-          <div class="mission-reward-banner">完成奖励：每人小组真气 / 个人贡献 <b>+${Number(mission.points) || 0}</b>
-            <div class="muted" style="margin-top:.25rem;font-size:.75rem">把右侧/下方组员拖入完成栏，或点击「记入完成」发放奖励</div>
+          <div class="mission-reward-banner">完成赏赐：${rewardPropBadgeHtml(mission.points)}
+            <div class="muted" style="margin-top:.35rem;font-size:.75rem">${esc(rewardProp.tip)} · 记入完成栏后自动发放给弟子</div>
           </div>
           ${getCampMission().deadline ? `<p class="muted" style="margin-top:.55rem">截止：${esc(getCampMission().deadline)}</p>` : ""}
         </section>
         <section class="stack">
           <div class="mission-drop-zone" id="mission-done-zone">
-            <div class="dz-title">任务完成栏 · 已完成 ${done.length}</div>
+            <div class="dz-title">任务完成栏 · 已获赏 ${done.length}</div>
             <div id="mission-done-list">
-              ${done.length ? done.map((c) => `
-                <span class="mission-member-chip done" data-done-id="${esc(c.disciple_id)}">
+              ${done.length ? done.map((c) => {
+                const cp = rewardPropForPoints(c.points != null ? c.points : mission.points);
+                const icon = c.prop_icon || cp.icon;
+                const pname = c.prop_name || cp.name;
+                return `<span class="mission-member-chip done" data-done-id="${esc(c.disciple_id)}" title="${esc(cp.tip)}">
                   ${esc(c.name || "弟子")}
-                  <span class="mm-pts">+${c.points || mission.points || 0}</span>
+                  <span class="mm-pts">${icon} ${esc(pname)} +${cp.points}</span>
                   <span class="muted" style="font-size:.68rem">${esc(c.peak_name || "")}</span>
                   <button type="button" class="mm-x" data-undone="${esc(c.disciple_id)}" title="从名单移除">×</button>
-                </span>`).join("") : `<div class="dz-empty">把组员拖到这里，标记完成并自动发奖</div>`}
+                </span>`;
+              }).join("") : `<div class="dz-empty">把组员拖到这里，标记完成并自动发赏（${rewardProp.icon}${esc(rewardProp.name)}）</div>`}
             </div>
           </div>
           <div class="mission-pool" id="mission-pool-zone">
@@ -4832,7 +4972,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
                 return `<span class="mission-member-chip" draggable="true" data-pool-id="${d.id}" title="拖到完成栏，或点击记入">
                   ${esc(d.name)}${d.role === "队长" ? "★" : ""}
                   <span class="muted" style="font-size:.68rem">${esc(pk ? pk.name : "大厅")}</span>
-                  <button type="button" data-mark-done="${d.id}" style="font-size:.68rem;padding:.15rem .35rem;min-height:1.5rem">记入完成</button>
+                  <button type="button" data-mark-done="${d.id}" style="font-size:.68rem;padding:.15rem .35rem;min-height:1.5rem">记入获赏</button>
                 </span>`;
               }).join("") : `<div class="dz-empty">全部组员均已完成此任务</div>`}
             </div>
@@ -4840,13 +4980,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </section>
       </div>
       <div class="mission-detail-card" style="margin-top:.85rem">
-        <div class="muted" style="font-size:.72rem;letter-spacing:.16em;color:var(--gold);margin-bottom:.35rem">完成名单与奖励</div>
+        <div class="muted" style="font-size:.72rem;letter-spacing:.16em;color:var(--gold);margin-bottom:.35rem">完成名单与赏赐</div>
         <div class="stack" style="gap:.35rem">
-          ${done.length ? done.map((c, i) => `
-            <div class="list-item" style="border-color:rgba(61,255,154,.28)">
+          ${done.length ? done.map((c, i) => {
+            const cp = rewardPropForPoints(c.points != null ? c.points : mission.points);
+            const icon = c.prop_icon || cp.icon;
+            const pname = c.prop_name || cp.name;
+            return `<div class="list-item" style="border-color:rgba(61,255,154,.28)">
               <span>#${i + 1} ${esc(c.name)} · ${esc(c.peak_name || "大厅")} · ${c.at ? fmtTime(c.at) : ""}</span>
-              <span style="font-family:var(--font-num);color:var(--gold)">+${c.points || mission.points || 0}</span>
-            </div>`).join("") : `<div class="muted">还没有人完成 · 拖入或点击组员开始登记</div>`}
+              <span class="reward-prop-badge compact" title="${esc(cp.tip)}"><span class="rp-ico">${icon}</span><span class="rp-name">${esc(pname)}</span><b class="rp-pts">+${cp.points}</b></span>
+            </div>`;
+          }).join("") : `<div class="muted">还没有人完成 · 拖入或点击组员开始登记</div>`}
         </div>
       </div>`;
 
@@ -4945,7 +5089,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="mic-tools">
             <label>权重 <input type="range" min="1" max="100" data-f="weight" value="${it.weight || 50}" /><b class="weight-val">${it.weight || 50}</b></label>
             <label><input type="checkbox" data-f="visible" ${it.visible !== false ? "checked" : ""} /> 显示</label>
-            <label>奖励 <input type="number" min="0" data-f="points" value="${Number(it.points) || 0}" /></label>
+            <label>奖励/赏赐 <input type="number" min="0" data-f="points" value="${Number(it.points) || 0}" /></label>
+            <span data-prop-preview="${idx}">${rewardPropBadgeHtml(it.points, { compact: true })}</span>
             <label>难度
               <select data-f="difficulty">
                 ${["普通","进阶","挑战","传说"].map((d) => `<option ${d === (it.difficulty || "普通") ? "selected" : ""}>${d}</option>`).join("")}
@@ -4967,8 +5112,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
               draftItems[idx].weight = Math.max(1, Math.min(100, Number(el.value) || 50));
               const lab = card.querySelector(".weight-val");
               if (lab) lab.textContent = String(draftItems[idx].weight);
-            } else if (f === "points") draftItems[idx].points = Number(el.value) || 0;
-            else draftItems[idx][f] = el.value;
+            } else if (f === "points") {
+              draftItems[idx].points = Number(el.value) || 0;
+              const prev = card.querySelector(`[data-prop-preview="${idx}"]`);
+              if (prev) prev.innerHTML = rewardPropBadgeHtml(draftItems[idx].points, { compact: true });
+            } else draftItems[idx][f] = el.value;
           };
           el.addEventListener("input", applyField);
           el.addEventListener("change", () => {
@@ -6133,11 +6281,27 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     showVoteToast(`全体小组 +${points} · ${peaks.length} 组`);
   }
 
+  function showDiscipleRewardToast(discipleName, points) {
+    document.querySelectorAll(".disciple-reward-toast").forEach((n) => n.remove());
+    const prop = rewardPropForPoints(points);
+    const el = document.createElement("div");
+    el.className = "disciple-reward-toast";
+    el.innerHTML = `
+      <div class="dr-ico">${prop.icon}</div>
+      <div class="dr-body">
+        <div class="dr-name">${esc(discipleName || "弟子")} 获赏</div>
+        <div class="dr-prop">${esc(prop.name)} <b>+${prop.points}</b></div>
+      </div>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1650);
+  }
+
   async function addScoreToDisciple(discipleId, points, reason, category) {
     const d = (state.disciples || {})[discipleId];
     if (!d) { alert("未找到队员"); return; }
     const pts = Number(points) || 0;
     if (!pts) { alert("分数无效"); return; }
+    const prop = rewardPropForPoints(pts);
     const id = discipleId;
     const updates = {};
     const newExp = (d.exp || 0) + pts * 10;
@@ -6148,7 +6312,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     updates[`disciples/${id}/contributed`] = (d.contributed || 0) + pts;
     const peak = findPeak(d.peak);
     const day = state.config?.day || 1;
-    const why = (reason || "队员加分") + "·" + (d.name || "弟子");
+    const why = `${reason || "队员加分"}·${d.name || "弟子"}·${prop.name}`;
     closeModal();
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
     if (peak) {
@@ -6168,12 +6332,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       });
       const fresh = findPeak(peak.id);
       if (fresh) {
-        showComboAnnounce(fresh, pts, why, category || "日常", newScore);
+        showComboAnnounce(fresh, pts, why, category || "日常", newScore, { discipleName: d.name || "弟子" });
         if (levelInfo.peak_level > oldLevel) playLevelUpAnimation(fresh, oldLevel, levelInfo);
       }
+      showDiscipleRewardToast(d.name || "弟子", pts);
     } else {
       await updatePaths(updates);
-      showVoteToast(`${d.name || "弟子"} 经验 +${pts * 10}（大厅）`);
+      showDiscipleRewardToast(d.name || "弟子", pts);
       if (typeof renderAll === "function") renderAll();
     }
   }
@@ -6202,9 +6367,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         pane.innerHTML = `
           <p class="score-hub-hint">点选整体加分项，再选作用范围后确认；可在底部管理快捷项。</p>
           <div class="score-hub-quick" id="sh-quick-list">
-            ${opts.map((o) => `<button type="button" data-sq="${o.id}" title="${esc(o.reason)}">
-              <span class="sq-pts">+${o.points}</span><span class="sq-lab">${esc(o.label)}</span>
-            </button>`).join("") || '<div class="muted">暂无快捷项 · 请先设置</div>'}
+            ${opts.map((o) => {
+              const prop = rewardPropForPoints(o.points);
+              return `<button type="button" data-sq="${o.id}" title="${esc(prop.tip)} · ${esc(o.reason)}">
+              <span class="sq-pts">${prop.icon} +${o.points}</span><span class="sq-lab">${esc(o.label)} · ${esc(prop.name)}</span>
+            </button>`;
+            }).join("") || '<div class="muted">暂无快捷项 · 请先设置</div>'}
           </div>
           <div class="field-name" style="margin-top:.55rem;color:#ffe39a;font-size:.85rem">作用范围</div>
           <div class="score-target-row" id="sh-target-row">
@@ -6300,7 +6468,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <label style="flex:2"><span>理由</span><input id="sh-camp-reason" type="text" value="派系加分" /></label>
           </div>
           <div class="score-hub-quick" style="margin-top:.35rem">
-            ${getScoreQuickOptions().slice(0, 6).map((o) => `<button type="button" data-camp-sq="${o.id}"><span class="sq-pts">+${o.points}</span><span class="sq-lab">${esc(o.label)}</span></button>`).join("")}
+            ${getScoreQuickOptions().slice(0, 6).map((o) => {
+              const prop = rewardPropForPoints(o.points);
+              return `<button type="button" data-camp-sq="${o.id}" title="${esc(prop.tip)}"><span class="sq-pts">${prop.icon} +${o.points}</span><span class="sq-lab">${esc(prop.name)}</span></button>`;
+            }).join("")}
           </div>
           <div class="row" style="justify-content:flex-end;margin-top:.45rem">
             <button type="button" class="primary" id="sh-camp-go">确认派系加分</button>
