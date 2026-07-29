@@ -1292,6 +1292,44 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 }
 .bonus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .5rem; }
 .bonus-grid button { font-weight: 800; min-height: 2.7rem; }
+.score-hub-modal { width: min(720px, 96vw); }
+.score-hub-tabs {
+  display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center;
+  margin: .35rem 0 .75rem;
+}
+.score-hub-tabs button {
+  font-size: .82rem !important; padding: .4rem .7rem !important; min-height: 2.2rem;
+}
+.score-hub-tabs button.active {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
+.score-hub-pane { min-height: 12rem; }
+.score-hub-quick {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(7.2rem, 1fr)); gap: .4rem;
+}
+.score-hub-quick button {
+  min-height: 2.8rem; font-weight: 800;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem;
+}
+.score-hub-quick button .sq-pts {
+  font-family: var(--font-num); color: var(--gold); font-size: 1.05rem;
+}
+.score-hub-quick button .sq-lab { font-size: .78rem; }
+.score-target-row {
+  display: flex; flex-wrap: wrap; gap: .35rem; align-items: center;
+}
+.score-target-row button.pick {
+  font-size: .78rem !important; padding: .35rem .55rem !important; min-height: 2rem;
+}
+.score-target-row button.pick.on {
+  border-color: var(--gold); color: #ffe39a;
+  background: rgba(240,193,75,.12);
+}
+.score-hub-hint {
+  font-size: .75rem; color: var(--ink-soft); margin: .2rem 0 .45rem;
+}
 .attr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
 @media (max-width: 640px) { .attr-grid { grid-template-columns: 1fr; } }
 .choice-field { display: flex; flex-direction: column; gap: .35rem; }
@@ -3026,6 +3064,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         day: 1, week: 1, voting_open: false, title: "第1周最佳作品",
         checkin_code: "", checkin_expires_at: 0, checkin_session: "am", checkin_active: false,
         sort_mode: "score", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟",
+        score_quick_options: [
+          { id: "sq0", label: "课堂表现", points: 5, reason: "课堂表现", category: "日常" },
+          { id: "sq1", label: "完成任务", points: 10, reason: "完成任务", category: "任务" },
+          { id: "sq2", label: "作品分享", points: 8, reason: "作品分享", category: "日常" },
+          { id: "sq3", label: "创意亮点", points: 6, reason: "创意亮点", category: "日常" },
+          { id: "sq4", label: "互助协作", points: 4, reason: "互助协作", category: "日常" },
+          { id: "sq5", label: "全员激励", points: 3, reason: "全员激励", category: "日常" }
+        ],
         brand: {
           name: "光影盟",
           seal_text: "盟",
@@ -5669,26 +5715,375 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     });
   }
 
-  function openCustomScoreModal() {
+  function getScoreQuickOptions() {
+    const raw = (state.config && state.config.score_quick_options) || [];
+    if (Array.isArray(raw) && raw.length) {
+      return raw.filter(Boolean).map((o, i) => ({
+        id: o.id || ("sq_" + i),
+        label: (o.label || o.reason || "加分").trim(),
+        points: Number(o.points) || 0,
+        reason: (o.reason || o.label || "加分").trim(),
+        category: o.category || "日常"
+      })).filter((o) => o.points);
+    }
+    return [
+      { id: "sq0", label: "课堂表现", points: 5, reason: "课堂表现", category: "日常" },
+      { id: "sq1", label: "完成任务", points: 10, reason: "完成任务", category: "任务" },
+      { id: "sq2", label: "作品分享", points: 8, reason: "作品分享", category: "日常" },
+      { id: "sq3", label: "创意亮点", points: 6, reason: "创意亮点", category: "日常" }
+    ];
+  }
+
+  async function addScoreToCamp(camp, points, reason, category) {
+    const peaks = getPeaksArray().filter((p) => (camp === "blue" ? p.camp === "blue" : p.camp !== "blue"));
+    if (!peaks.length) { alert(camp === "blue" ? "声浪暂无小组" : "光影暂无小组"); return; }
+    closeModal();
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
+    let last = null;
+    for (const p of peaks) {
+      last = await addScoreToPeak(p.id, points, reason, category, { silent: true, silentFx: true });
+    }
+    if (typeof renderAll === "function") renderAll();
+    const name = camp === "blue" ? (state.config?.alliance_blue_name || "声浪") : (state.config?.alliance_red_name || "光影");
+    showVoteToast(`${name} 全体 +${points} · ${peaks.length} 组`);
+    if (last && peaks[0]) {
+      const peak = findPeak(peaks[0].id);
+      if (peak) showComboAnnounce(peak, Number(points) || 0, reason || "派系加分", category || "日常", peak.score || 0);
+    }
+  }
+
+  async function addScoreToAllPeaks(points, reason, category) {
     const peaks = getPeaksArray();
-    openModal(`
-      <h3>自定义加分</h3>
-      <div class="stack">
-        <label>门派<select id="custom-peak">${peaks.map((p)=>`<option value="${p.id}">${p.icon} ${p.name}</option>`).join("")}</select></label>
-        <label>分数<input id="custom-points" type="number" value="5" /></label>
-        <label>理由<input id="custom-reason" type="text" value="自定义加分" /></label>
+    if (!peaks.length) { alert("暂无小组"); return; }
+    closeModal();
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
+    for (const p of peaks) {
+      await addScoreToPeak(p.id, points, reason, category, { silent: true, silentFx: true });
+    }
+    if (typeof renderAll === "function") renderAll();
+    showVoteToast(`全体小组 +${points} · ${peaks.length} 组`);
+  }
+
+  async function addScoreToDisciple(discipleId, points, reason, category) {
+    const d = (state.disciples || {})[discipleId];
+    if (!d) { alert("未找到队员"); return; }
+    const pts = Number(points) || 0;
+    if (!pts) { alert("分数无效"); return; }
+    const id = discipleId;
+    const updates = {};
+    const newExp = (d.exp || 0) + pts * 10;
+    const lv = calcPersonalLevel(newExp);
+    updates[`disciples/${id}/exp`] = newExp;
+    updates[`disciples/${id}/level`] = lv.level;
+    updates[`disciples/${id}/title`] = lv.title;
+    updates[`disciples/${id}/contributed`] = (d.contributed || 0) + pts;
+    const peak = findPeak(d.peak);
+    const day = state.config?.day || 1;
+    const why = (reason || "队员加分") + "·" + (d.name || "弟子");
+    closeModal();
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
+    if (peak) {
+      const oldLevel = peak.peak_level;
+      const newScore = (peak.score || 0) + pts;
+      const levelInfo = calcPeakLevel(newScore);
+      const pk = peakKey(peak.id);
+      updates[`peaks/${pk}/score`] = newScore;
+      updates[`peaks/${pk}/peak_level`] = levelInfo.peak_level;
+      updates[`peaks/${pk}/peak_level_name`] = levelInfo.peak_level_name;
+      updates[`peaks/${pk}/progress`] = levelInfo.progress;
+      updates[`peaks/${pk}/next_level_score`] = levelInfo.next_level_score;
+      await updatePaths(updates);
+      await pushLog({
+        timestamp: Date.now(), peak_id: peak.id, peak_name: peak.name,
+        reason: why, points: pts, category: category || "日常", operator: OPERATOR, day
+      });
+      const fresh = findPeak(peak.id);
+      if (fresh) {
+        showComboAnnounce(fresh, pts, why, category || "日常", newScore);
+        if (levelInfo.peak_level > oldLevel) playLevelUpAnimation(fresh, oldLevel, levelInfo);
+      }
+    } else {
+      await updatePaths(updates);
+      showVoteToast(`${d.name || "弟子"} 经验 +${pts * 10}（大厅）`);
+      if (typeof renderAll === "function") renderAll();
+    }
+  }
+
+  function openScoreHubModal(startTab) {
+    let tab = startTab || "quick";
+    let targetMode = "peak"; // peak | camp-red | camp-blue | all
+    let selectedPeakId = (getPeaksArray()[0] && getPeaksArray()[0].id) || "";
+    let selectedDiscipleId = "";
+
+    const peaks = () => sortPeaks(getPeaksArray());
+    const disciples = () => sortDisciples(getDisciplesArray(), "name");
+
+    function paint() {
+      const host = document.getElementById("modal-host");
+      const modal = host && host.querySelector(".modal");
+      if (!modal) return;
+      const pane = modal.querySelector("#score-hub-pane");
+      const tabs = modal.querySelectorAll(".score-hub-tabs [data-sh-tab]");
+      tabs.forEach((b) => b.classList.toggle("active", b.dataset.shTab === tab));
+      if (!pane) return;
+
+      if (tab === "quick") {
+        const opts = getScoreQuickOptions();
+        const peakOpts = peaks().map((p) => `<option value="${p.id}" ${String(p.id) === String(selectedPeakId) ? "selected" : ""}>${p.icon || ""} ${esc(p.name)}</option>`).join("");
+        pane.innerHTML = `
+          <p class="score-hub-hint">点选整体加分项，再选作用范围后确认；可在底部管理快捷项。</p>
+          <div class="score-hub-quick" id="sh-quick-list">
+            ${opts.map((o) => `<button type="button" data-sq="${o.id}" title="${esc(o.reason)}">
+              <span class="sq-pts">+${o.points}</span><span class="sq-lab">${esc(o.label)}</span>
+            </button>`).join("") || '<div class="muted">暂无快捷项 · 请先设置</div>'}
+          </div>
+          <div class="field-name" style="margin-top:.55rem;color:#ffe39a;font-size:.85rem">作用范围</div>
+          <div class="score-target-row" id="sh-target-row">
+            <button type="button" class="pick ${targetMode === "peak" ? "on" : ""}" data-tm="peak">指定小组</button>
+            <button type="button" class="pick ${targetMode === "camp-red" ? "on" : ""}" data-tm="camp-red">光影派系</button>
+            <button type="button" class="pick ${targetMode === "camp-blue" ? "on" : ""}" data-tm="camp-blue">声浪派系</button>
+            <button type="button" class="pick ${targetMode === "all" ? "on" : ""}" data-tm="all">全体小组</button>
+          </div>
+          <label id="sh-peak-wrap" style="${targetMode === "peak" ? "" : "display:none"}"><span>小组</span>
+            <select id="sh-peak">${peakOpts || '<option value="">暂无小组</option>'}</select>
+          </label>
+          <div class="row" style="justify-content:space-between;margin-top:.4rem">
+            <button type="button" class="ghost" id="sh-edit-quick">设置快捷项</button>
+            <span class="muted" style="font-size:.75rem">招式预设也可在设置里改</span>
+          </div>`;
+        pane.querySelectorAll("[data-tm]").forEach((b) => {
+          b.onclick = () => {
+            targetMode = b.dataset.tm;
+            paint();
+          };
+        });
+        const peakSel = pane.querySelector("#sh-peak");
+        if (peakSel) peakSel.onchange = () => { selectedPeakId = peakSel.value; };
+        pane.querySelectorAll("[data-sq]").forEach((b) => {
+          b.onclick = async () => {
+            const opt = getScoreQuickOptions().find((x) => String(x.id) === String(b.dataset.sq));
+            if (!opt) return;
+            if (targetMode === "all") await addScoreToAllPeaks(opt.points, opt.reason, opt.category);
+            else if (targetMode === "camp-red") await addScoreToCamp("red", opt.points, opt.reason, opt.category);
+            else if (targetMode === "camp-blue") await addScoreToCamp("blue", opt.points, opt.reason, opt.category);
+            else {
+              const pid = Number((document.getElementById("sh-peak") || {}).value || selectedPeakId);
+              if (!pid && pid !== 0) { alert("请选择小组"); return; }
+              await scoreFromModal(pid, opt.points, opt.reason, opt.category, 0);
+            }
+          };
+        });
+        const editBtn = pane.querySelector("#sh-edit-quick");
+        if (editBtn) editBtn.onclick = () => openScoreQuickEditor();
+        return;
+      }
+
+      if (tab === "peak") {
+        const presets = getPresetsArray();
+        pane.innerHTML = `
+          <p class="score-hub-hint">给单个小组加分：可点招式，或自定义分数。</p>
+          <label><span>小组</span>
+            <select id="sh-peak2">${peaks().map((p) => `<option value="${p.id}" ${String(p.id) === String(selectedPeakId) ? "selected" : ""}>${p.icon || ""} ${esc(p.name)} · ${p.camp === "blue" ? "声浪" : "光影"}</option>`).join("")}</select>
+          </label>
+          <div class="bonus-grid" id="sh-peak-presets">
+            ${presets.map((p) => `<button type="button" data-quick="${p.id}">${esc(p.label)}</button>`).join("") || '<div class="muted">暂无招式 · 请到设置添加</div>'}
+          </div>
+          <div class="row" style="gap:.5rem">
+            <label style="flex:1"><span>自定义分数</span><input id="sh-peak-pts" type="number" value="5" /></label>
+            <label style="flex:2"><span>理由</span><input id="sh-peak-reason" type="text" value="小组加分" list="sh-reason-list" /></label>
+          </div>
+          <datalist id="sh-reason-list">${REASON_PRESETS.map((r) => `<option value="${esc(r)}"></option>`).join("")}</datalist>
+          <div class="row" style="justify-content:flex-end">
+            <button type="button" class="primary" id="sh-peak-go">确认加分</button>
+          </div>`;
+        const sel = pane.querySelector("#sh-peak2");
+        if (sel) sel.onchange = () => { selectedPeakId = sel.value; };
+        pane.querySelectorAll("[data-quick]").forEach((btn) => {
+          btn.onclick = async () => {
+            const preset = state.bonus_presets[btn.dataset.quick];
+            if (!preset) return;
+            const pid = Number(sel.value);
+            let bonus = 0;
+            if ((preset.reason || "").includes("金牌")) bonus = 300;
+            else if ((preset.reason || "").includes("银牌")) bonus = 200;
+            else if ((preset.reason || "").includes("铜牌")) bonus = 100;
+            await scoreFromModal(pid, preset.points, preset.reason, preset.category, bonus);
+          };
+        });
+        pane.querySelector("#sh-peak-go").onclick = async () => {
+          const pid = Number(sel.value);
+          const pts = Number(document.getElementById("sh-peak-pts").value);
+          const reason = (document.getElementById("sh-peak-reason").value || "").trim() || "小组加分";
+          await scoreFromModal(pid, pts, reason, "自定义", 0);
+        };
+        return;
+      }
+
+      if (tab === "camp") {
+        pane.innerHTML = `
+          <p class="score-hub-hint">给某一派系下全部小组同时加分。</p>
+          <div class="score-target-row" style="margin-bottom:.5rem">
+            <button type="button" class="pick on" id="sh-camp-red">光影派系</button>
+            <button type="button" class="pick" id="sh-camp-blue">声浪派系</button>
+          </div>
+          <div class="row" style="gap:.5rem">
+            <label style="flex:1"><span>分数</span><input id="sh-camp-pts" type="number" value="5" /></label>
+            <label style="flex:2"><span>理由</span><input id="sh-camp-reason" type="text" value="派系加分" /></label>
+          </div>
+          <div class="score-hub-quick" style="margin-top:.35rem">
+            ${getScoreQuickOptions().slice(0, 6).map((o) => `<button type="button" data-camp-sq="${o.id}"><span class="sq-pts">+${o.points}</span><span class="sq-lab">${esc(o.label)}</span></button>`).join("")}
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:.45rem">
+            <button type="button" class="primary" id="sh-camp-go">确认派系加分</button>
+          </div>`;
+        let camp = "red";
+        const redB = pane.querySelector("#sh-camp-red");
+        const blueB = pane.querySelector("#sh-camp-blue");
+        const syncCamp = () => {
+          redB.classList.toggle("on", camp === "red");
+          blueB.classList.toggle("on", camp === "blue");
+        };
+        redB.onclick = () => { camp = "red"; syncCamp(); };
+        blueB.onclick = () => { camp = "blue"; syncCamp(); };
+        pane.querySelector("#sh-camp-go").onclick = async () => {
+          const pts = Number(document.getElementById("sh-camp-pts").value);
+          const reason = (document.getElementById("sh-camp-reason").value || "").trim() || "派系加分";
+          await addScoreToCamp(camp, pts, reason, "派系");
+        };
+        pane.querySelectorAll("[data-camp-sq]").forEach((b) => {
+          b.onclick = async () => {
+            const opt = getScoreQuickOptions().find((x) => String(x.id) === String(b.dataset.campSq));
+            if (!opt) return;
+            await addScoreToCamp(camp, opt.points, opt.reason, opt.category);
+          };
+        });
+        return;
+      }
+
+      if (tab === "member") {
+        const list = disciples();
+        if (!selectedDiscipleId && list[0]) selectedDiscipleId = list[0].id;
+        pane.innerHTML = `
+          <p class="score-hub-hint">给指定队员加分：队员经验上涨，若已入峰则小组真气同步增加。</p>
+          <label><span>队员</span>
+            <select id="sh-member">${list.map((d) => {
+              const pk = findPeak(d.peak);
+              const place = pk ? `${pk.icon || ""} ${pk.name}` : "大厅";
+              return `<option value="${d.id}" ${String(d.id) === String(selectedDiscipleId) ? "selected" : ""}>${esc(d.name)} · ${esc(place)} · Lv${d.level || 1}</option>`;
+            }).join("") || '<option value="">暂无队员</option>'}</select>
+          </label>
+          <div class="row" style="gap:.5rem">
+            <label style="flex:1"><span>分数</span><input id="sh-mem-pts" type="number" value="3" /></label>
+            <label style="flex:2"><span>理由</span><input id="sh-mem-reason" type="text" value="队员表现" /></label>
+          </div>
+          <div class="score-hub-quick" style="margin-top:.35rem">
+            ${[1, 2, 3, 5, 8, 10].map((n) => `<button type="button" data-mem-pts="${n}"><span class="sq-pts">+${n}</span><span class="sq-lab">快选</span></button>`).join("")}
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:.45rem">
+            <button type="button" class="primary" id="sh-mem-go">确认队员加分</button>
+          </div>`;
+        const memSel = pane.querySelector("#sh-member");
+        if (memSel) memSel.onchange = () => { selectedDiscipleId = memSel.value; };
+        const runMem = async (pts, reason) => {
+          const mid = (document.getElementById("sh-member") || {}).value;
+          if (!mid) { alert("请选择队员"); return; }
+          await addScoreToDisciple(mid, pts, reason || "队员加分", "日常");
+        };
+        pane.querySelector("#sh-mem-go").onclick = async () => {
+          await runMem(Number(document.getElementById("sh-mem-pts").value), document.getElementById("sh-mem-reason").value.trim());
+        };
+        pane.querySelectorAll("[data-mem-pts]").forEach((b) => {
+          b.onclick = async () => {
+            const reason = (document.getElementById("sh-mem-reason").value || "").trim() || "队员加分";
+            await runMem(Number(b.dataset.memPts), reason);
+          };
+        });
+        return;
+      }
+
+      // custom
+      pane.innerHTML = `
+        <p class="score-hub-hint">自由填写小组、分数与理由。</p>
+        <label><span>小组</span>
+          <select id="custom-peak">${peaks().map((p) => `<option value="${p.id}">${p.icon || ""} ${esc(p.name)}</option>`).join("")}</select>
+        </label>
+        <label><span>分数</span><input id="custom-points" type="number" value="5" /></label>
+        <label><span>理由</span><input id="custom-reason" type="text" value="自定义加分" list="sh-reason-list2" /></label>
+        <datalist id="sh-reason-list2">${REASON_PRESETS.map((r) => `<option value="${esc(r)}"></option>`).join("")}</datalist>
         <div class="row" style="justify-content:flex-end">
-          <button type="button" class="ghost" id="modal-cancel">取消</button>
           <button type="button" class="primary" id="custom-confirm">确认</button>
-        </div>
+        </div>`;
+      pane.querySelector("#custom-confirm").onclick = async () => {
+        const pid = Number(document.getElementById("custom-peak").value);
+        const pts = Number(document.getElementById("custom-points").value);
+        const reason = document.getElementById("custom-reason").value.trim() || "自定义加分";
+        await scoreFromModal(pid, pts, reason, "自定义", 0);
+      };
+    }
+
+    openModal(`
+      <h3>加分中心</h3>
+      <p class="muted" style="text-align:center;margin-top:-.2rem;margin-bottom:.2rem">快捷 · 小组 · 派系 · 队员 · 自定义，一处集中出招</p>
+      <div class="score-hub-tabs">
+        <button type="button" data-sh-tab="quick">整体快捷</button>
+        <button type="button" data-sh-tab="peak">小组加分</button>
+        <button type="button" data-sh-tab="camp">派系加分</button>
+        <button type="button" data-sh-tab="member">队员加分</button>
+        <button type="button" data-sh-tab="custom">自定义</button>
+      </div>
+      <div class="score-hub-pane stack" id="score-hub-pane"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:.6rem">
+        <button type="button" class="ghost" id="modal-cancel">关闭</button>
       </div>`);
+    const modal = document.querySelector("#modal-host .modal");
+    if (modal) modal.classList.add("score-hub-modal");
     document.getElementById("modal-cancel").onclick = closeModal;
-    document.getElementById("custom-confirm").onclick = async () => {
-      const pid = Number(document.getElementById("custom-peak").value);
-      const pts = Number(document.getElementById("custom-points").value);
-      const reason = document.getElementById("custom-reason").value.trim() || "自定义加分";
-      await scoreFromModal(pid, pts, reason, "自定义", 0);
+    document.querySelectorAll(".score-hub-tabs [data-sh-tab]").forEach((b) => {
+      b.onclick = () => { tab = b.dataset.shTab; paint(); };
+    });
+    paint();
+  }
+
+  function openScoreQuickEditor() {
+    const opts = getScoreQuickOptions().map((o) => ({ ...o }));
+    while (opts.length < 6) {
+      opts.push({ id: "sq_new_" + opts.length + "_" + Date.now(), label: "", points: 5, reason: "", category: "日常" });
+    }
+    openModal(`
+      <h3>设置整体加分项</h3>
+      <p class="muted" style="text-align:center;margin-bottom:.5rem">最多保留有分数的项；名称与理由可不同</p>
+      <div class="stack" id="sq-editor">
+        ${opts.map((o, i) => `
+          <div class="row" style="gap:.35rem;align-items:flex-end;flex-wrap:wrap">
+            <label style="flex:1.2;min-width:7rem"><span>名称</span><input data-sqe="label" data-i="${i}" type="text" value="${esc(o.label)}" placeholder="例如：课堂表现" /></label>
+            <label style="width:5rem"><span>分数</span><input data-sqe="points" data-i="${i}" type="number" value="${o.points || 0}" /></label>
+            <label style="flex:1.4;min-width:8rem"><span>理由</span><input data-sqe="reason" data-i="${i}" type="text" value="${esc(o.reason || "")}" placeholder="写入战报" /></label>
+          </div>`).join("")}
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:.7rem">
+        <button type="button" class="ghost" id="sq-back">返回加分</button>
+        <button type="button" class="primary" id="sq-save">保存</button>
+      </div>`);
+    document.getElementById("sq-back").onclick = () => openScoreHubModal("quick");
+    document.getElementById("sq-save").onclick = async () => {
+      const next = [];
+      for (let i = 0; i < opts.length; i++) {
+        const label = (document.querySelector(`[data-sqe="label"][data-i="${i}"]`)?.value || "").trim();
+        const points = Number(document.querySelector(`[data-sqe="points"][data-i="${i}"]`)?.value) || 0;
+        const reason = (document.querySelector(`[data-sqe="reason"][data-i="${i}"]`)?.value || "").trim() || label;
+        if (!label || !points) continue;
+        next.push({
+          id: opts[i].id || ("sq_" + i + "_" + Date.now()),
+          label, points, reason, category: opts[i].category || "日常"
+        });
+      }
+      await updatePaths({ "config/score_quick_options": next });
+      openScoreHubModal("quick");
     };
+  }
+
+  function openCustomScoreModal() {
+    openScoreHubModal("custom");
   }
 
   function randCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
@@ -6353,6 +6748,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span class="meta-pill">任务 · ${(m.items || []).filter((x) => x.visible !== false).length}/${(m.items || []).length || 0} 显示</span>
         <button type="button" data-action="add-peak-red">＋光影山峰</button>
         <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
+        <button type="button" data-action="score-hub">加分中心</button>
+        <button type="button" data-action="edit-score-quick">整体加分项</button>
         <button type="button" id="settings-sfx-toggle">${sfxEnabled ? (pal3PackReady ? "🔊 音效开·包" : "🔊 音效开") : "🔇 音效关"}</button>
         <button type="button" id="settings-sfx-import">导入音效包</button>
         <button type="button" data-action="export-data">导出</button>
@@ -7276,7 +7673,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   async function handleTeacherAction(act, btn) {
     if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
-    if (act === "custom-score") { openCustomScoreModal(); return; }
+    if (act === "custom-score") { openScoreHubModal("quick"); return; }
+    if (act === "score-hub") { openScoreHubModal(btn?.dataset?.tab || "quick"); return; }
+    if (act === "edit-score-quick") { openScoreQuickEditor(); return; }
     if (act === "edit-brand") { openBrandModal(); return; }
     if (act === "toggle-fullscreen") { toggleFullscreen(); return; }
     if (act === "edit-camp-mission") { openCampMissionModal(btn?.dataset?.focusCamp || ""); return; }
