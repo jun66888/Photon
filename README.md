@@ -1,30 +1,92 @@
 # 光影盟 · 联盟积分体系
 
-纯前端单页应用：老师投屏看板、学生投票、课堂签到、毕业回忆。数据通过 **Firebase Realtime Database** 实时同步，可一键部署到 **Vercel**。
+纯前端单页应用，**优先在本地运行**：老师投屏看板、学生投票、课堂签到、毕业回忆。
 
-未填写 Firebase 配置时，会自动进入 **本地 DEMO 模式**（`localStorage`），便于先预览界面与交互。
+未填写 Firebase 时自动进入 **DEMO 本地模式**（数据存在浏览器 `localStorage`），本机即可完整体验。配置 Firebase 后，同一局域网内多设备可实时同步。
 
-## 文件
+---
+
+## 本地部署（推荐）
+
+### 环境要求
+
+- 已安装 [Node.js](https://nodejs.org/)（建议 18+，自带 `npx`）
+- 或任意静态服务器（Python / VS Code Live Server 等）
+
+### 1. 拉取代码
+
+```bash
+git clone https://github.com/jun66888/Photon.git
+cd Photon
+git checkout cursor/guangyingmeng-arena-f9c7
+```
+
+也可以只下载本分支里的 `index.html`，单独放到一个空文件夹。
+
+### 2. 启动本地服务
+
+**方式 A：一键脚本**
+
+- Windows：双击 `start.bat`
+- macOS / Linux：
+
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+**方式 B：npm**
+
+```bash
+npm start
+```
+
+**方式 C：Python（无 Node 时）**
+
+```bash
+# Python 3
+python -m http.server 3000
+```
+
+### 3. 浏览器打开
+
+| 端 | 地址 |
+|----|------|
+| 老师端（默认） | http://localhost:3000/?mode=teacher |
+| 学生端 | http://localhost:3000/?mode=student |
+| 签到端 | http://localhost:3000/?mode=checkin&code=老师生成的码 |
+| 毕业回忆 | http://localhost:3000/?mode=memories |
+
+左上角若显示 **DEMO · 本地模式**，说明当前未接 Firebase，加分等操作仍可用，数据只保存在本机浏览器。
+
+### 手机连同一台电脑（局域网）
+
+1. 电脑与手机连同一个 Wi-Fi  
+2. 查电脑局域网 IP（如 `192.168.1.8`）  
+3. 手机访问：`http://192.168.1.8:3000/?mode=student`  
+4. 签到二维码也会自动用当前访问的主机名生成  
+
+> 不要用云端 Agent 里的 `localhost`，那是远程虚拟机地址，你本机打不开。
+
+---
+
+## 文件说明
 
 | 文件 | 说明 |
 |------|------|
 | `index.html` | 全部 UI + 业务逻辑（内嵌 CSS/JS） |
-| `vercel.json` | Vercel 静态路由，保证 `?mode=` 可用 |
+| `package.json` | `npm start` 本地静态服务 |
+| `start.bat` / `start.sh` | Windows / Unix 一键启动 |
+| `vercel.json` | 可选：以后要上 Vercel 时用 |
 
-## 四种模式
+---
 
-| URL | 用途 |
-|-----|------|
-| `/?mode=teacher`（默认） | 老师端：积分榜、加分、签到投屏、投票、设置 |
-| `/?mode=student` | 学生端：投票与排行榜 |
-| `/?mode=checkin&code=XXXXXX` | 签到端（扫老师二维码） |
-| `/?mode=memories` | 毕业回忆（Day ≥ 20 从老师端进入） |
+## （可选）接 Firebase 做多端实时同步
 
-## Firebase 配置
+仅本机 DEMO 可跳过本节。需要老师电脑 + 学生手机实时同步时再配置。
 
-1. 打开 [Firebase Console](https://console.firebase.google.com/) 创建项目  
-2. 添加 Web 应用，复制配置  
-3. 创建 **Realtime Database**，先用测试规则（开发用）：
+1. [Firebase Console](https://console.firebase.google.com/) 创建项目 → 添加 Web 应用  
+2. 创建 Realtime Database，开发阶段可用测试规则：
 
 ```json
 {
@@ -35,42 +97,20 @@
 }
 ```
 
-4. 编辑 `index.html` 顶部的 `FIREBASE_CONFIG`：
+3. 编辑 `index.html` 顶部 `FIREBASE_CONFIG`，填入你的 `apiKey`、`databaseURL` 等  
+4. 保存后刷新页面；首次打开若 `/arena` 为空会自动写入种子数据  
 
-```js
-const FIREBASE_CONFIG = {
-  apiKey: "...",
-  authDomain: "...",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "...",
-  storageBucket: "...",
-  messagingSenderId: "...",
-  appId: "..."
-};
-```
+---
 
-首次打开老师端时，若 `/arena` 为空会自动写入种子数据（5 座山峰、25 名弟子、13 个加分预设、3 条任务）。
+## （可选）部署到 Vercel
 
-> 前端配置本身会暴露，请勿在库里存放敏感业务密钥；上线前请收紧 RTDB 规则。
-
-## 本地预览
-
-```bash
-npx --yes serve -l 3000 .
-# 浏览器打开 http://localhost:3000/?mode=teacher
-```
-
-## 部署到 Vercel
-
-1. 将本仓库导入 [Vercel](https://vercel.com)  
-2. Framework Preset 选 Other，输出目录为仓库根目录  
-3. 部署后把线上域名填进老师端投屏场景即可生成签到/投票二维码  
-
-也可使用 CLI：
+本地跑通后再做。把本仓库导入 [Vercel](https://vercel.com)，Framework 选 Other，根目录即静态站点。
 
 ```bash
 npx vercel --prod
 ```
+
+---
 
 ## 核心规则摘要
 
@@ -81,6 +121,4 @@ npx vercel --prod
 - **天数切换**：不重置积分，仅重置票数与签到/投票状态  
 - **段位结算**：设置面板手动触发，阵营内按 `contributed` 排名  
 
-## 操作员
-
-加分日志默认 `operator: "李红星"`，可在 `index.html` 中修改常量 `OPERATOR`。
+加分日志默认操作员为 `李红星`，可在 `index.html` 里改常量 `OPERATOR`。

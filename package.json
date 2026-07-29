@@ -1,0 +1,10 @@
+{
+  "name": "guangyingmeng-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "光影盟·联盟积分体系（本地静态站点）",
+  "scripts": {
+    "start": "npx --yes serve -l 3000 .",
+    "dev": "npx --yes serve -l 3000 ."
+  }
+}
