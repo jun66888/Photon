@@ -735,6 +735,30 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   background: linear-gradient(160deg, #1a2238, #101624);
 }
 .vote-card .votes { font-family: var(--font-num); font-size: 2.2rem; color: var(--gold); font-weight: 800; }
+.vote-card .work-title {
+  font-family: var(--font-brush); font-size: 1.35rem; color: #ffe39a;
+  letter-spacing: .06em; margin: .25rem 0 .15rem; line-height: 1.2;
+}
+.vote-card .group-line { font-size: .82rem; color: var(--ink-soft); }
+.vote-race-row .vr-work {
+  font-family: var(--font-brush); font-size: 1.2rem; color: #ffe39a;
+  letter-spacing: .05em; line-height: 1.15; margin-bottom: .1rem;
+}
+.vote-candidates-bar {
+  display: flex; flex-wrap: wrap; gap: .35rem; align-items: center;
+  margin: 0 0 .75rem; padding: .45rem .55rem;
+  border-radius: 8px; border: 1px dashed rgba(240,193,75,.35);
+  background: rgba(240,193,75,.06); font-size: .78rem; color: var(--ink-soft);
+}
+.vote-candidates-bar b { color: var(--gold); font-family: var(--font-num); }
+.vote-cand-chip {
+  display: inline-flex; align-items: center; gap: .25rem;
+  padding: .18rem .45rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.14); background: rgba(7,9,15,.45);
+  color: #e8eef8; font-size: .72rem;
+}
+.vote-cand-chip:hover { border-color: rgba(240,193,75,.5); }
+.vote-cand-chip .wt { color: #ffe39a; }
 
 /* 小组作品投票 · 实时追赶榜 */
 .vote-race-meta {
@@ -2334,7 +2358,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ch-text">
           <div class="ch-kicker">COURSE · VOTE</div>
           <div class="ch-title">作品投票 · <span id="vote-title">第1周最佳作品</span></div>
-          <div class="ch-sub">各小组作品实时追赶 · 反超升位 · 跌落回落</div>
+          <div class="ch-sub">自动载入全部小组作品 · 反超升位 · 跌落回落</div>
         </div>
         <div class="ch-actions">
           <div class="vote-toggle-bar" id="vote-toggle-bar" role="group" aria-label="投票开关">
@@ -2348,6 +2372,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>
       <div class="course-panel">
         <div class="vote-race-meta" id="vote-race-meta"></div>
+        <div class="vote-candidates-bar" id="vote-candidates"></div>
         <div class="vote-race-shell">
           <div class="vote-race-board" id="vote-race-board" aria-live="polite"></div>
           <div class="vote-qr-dock">
@@ -2613,11 +2638,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   const PEAK_SEED = [
-    { id: 0, name: "光影峰", icon: "🦁", slogan: "用画面讲故事", camp: "red", captain_name: "赵伟", art: "光影刀法", base: "映月谷", intro: "以镜头为刃，以故事为魂", element: "光", style: "刀", win_quote: "光落之处，影亦臣服！", badge: "影武者" },
-    { id: 1, name: "创意峰", icon: "🦅", slogan: "创意无限", camp: "red", captain_name: "吴丽", art: "奇思掌", base: "灵感崖", intro: "天马行空，一念成招", element: "风", style: "掌", win_quote: "一念之间，乾坤倒转！", badge: "奇思客" },
-    { id: 2, name: "追光峰", icon: "🐉", slogan: "追光逐影", camp: "red", captain_name: "韩明", art: "追光剑", base: "霞光岭", intro: "逐光而行，影随心动", element: "火", style: "剑", win_quote: "追光千里，剑气长虹！", badge: "追光使" },
-    { id: 3, name: "声浪峰", icon: "🎵", slogan: "用声音传情绪", camp: "blue", captain_name: "杨超", art: "音波琴", base: "听潮阁", intro: "一声入耳，百感丛生", element: "水", style: "琴", win_quote: "弦动山河，声破长空！", badge: "音波师" },
-    { id: 4, name: "音浪峰", icon: "🌊", slogan: "声动九州", camp: "blue", captain_name: "何桂英", art: "潮音诀", base: "沧浪湾", intro: "潮起潮落，声动九州", element: "雷", style: "鼓", win_quote: "潮音起，九州惊！", badge: "潮音将" }
+    { id: 0, name: "光影峰", icon: "🦁", slogan: "用画面讲故事", work_title: "镜中少年", camp: "red", captain_name: "赵伟", art: "光影刀法", base: "映月谷", intro: "以镜头为刃，以故事为魂", element: "光", style: "刀", win_quote: "光落之处，影亦臣服！", badge: "影武者" },
+    { id: 1, name: "创意峰", icon: "🦅", slogan: "创意无限", work_title: "一念成画", camp: "red", captain_name: "吴丽", art: "奇思掌", base: "灵感崖", intro: "天马行空，一念成招", element: "风", style: "掌", win_quote: "一念之间，乾坤倒转！", badge: "奇思客" },
+    { id: 2, name: "追光峰", icon: "🐉", slogan: "追光逐影", work_title: "霞光千里", camp: "red", captain_name: "韩明", art: "追光剑", base: "霞光岭", intro: "逐光而行，影随心动", element: "火", style: "剑", win_quote: "追光千里，剑气长虹！", badge: "追光使" },
+    { id: 3, name: "声浪峰", icon: "🎵", slogan: "用声音传情绪", work_title: "潮声入梦", camp: "blue", captain_name: "杨超", art: "音波琴", base: "听潮阁", intro: "一声入耳，百感丛生", element: "水", style: "琴", win_quote: "弦动山河，声破长空！", badge: "音波师" },
+    { id: 4, name: "音浪峰", icon: "🌊", slogan: "声动九州", work_title: "九州鼓点", camp: "blue", captain_name: "何桂英", art: "潮音诀", base: "沧浪湾", intro: "潮起潮落，声动九州", element: "雷", style: "鼓", win_quote: "潮音起，九州惊！", badge: "潮音将" }
   ];
   const NAME_SEED = ["赵伟","钱芳","孙娜","李敏","周静","吴丽","郑强","王磊","冯军","陈洋","褚勇","卫艳","蒋杰","沈涛","韩明","杨超","朱秀英","秦霞","尤平","许刚","何桂英","吕建华","施伟","张芳","孔娜"];
   const BONUS_PRESETS_SEED = [
@@ -2795,6 +2820,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       icon: meta.icon || "⚔️",
       logo_url: meta.logo_url || "",
       slogan: meta.slogan || "出招口号",
+      work_title: meta.work_title || "",
       camp: meta.camp || "red",
       captain_name: meta.captain_name || "",
       captain_id: meta.captain_id || "",
@@ -4626,6 +4652,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ${renderChoiceField("captain", "队长", captainOpts, peak.captain_name || "虚位以待")}
         ${renderChoiceField("element", "属性", ELEMENT_PRESETS, peak.element || "光")}
         <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">参赛作品名称（投票页展示）</div>
+          <input id="a-work-title" type="text" maxlength="32" value="${esc(peak.work_title || "")}" placeholder="例如：镜中少年" />
+        </div>
+        <div class="choice-field span-2 custom-text-field">
           <div class="field-name">口号（可自定义）</div>
           <input id="a-slogan" type="text" maxlength="24" value="${esc(peak.slogan || "")}" placeholder="输入小组口号" />
           <div class="choice-grid">${SLOGAN_PRESETS.map((n) => `<button type="button" class="choice-chip" data-fill-slogan="${esc(n)}">${esc(n)}</button>`).join("")}</div>
@@ -4788,12 +4818,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         const name = (document.getElementById("a-name").value || "").trim() || peak.name;
         const slogan = (document.getElementById("a-slogan").value || "").trim();
         const intro = (document.getElementById("a-intro").value || "").trim();
+        const work_title = (document.getElementById("a-work-title")?.value || "").trim();
         const updates = {
           [`peaks/${peakKey(peakId)}/name`]: name,
           [`peaks/${peakKey(peakId)}/icon`]: document.getElementById("a-icon").value,
           [`peaks/${peakKey(peakId)}/captain_name`]: captain_name,
           [`peaks/${peakKey(peakId)}/camp`]: camp,
           [`peaks/${peakKey(peakId)}/slogan`]: slogan,
+          [`peaks/${peakKey(peakId)}/work_title`]: work_title,
           [`peaks/${peakKey(peakId)}/element`]: document.getElementById("a-element").value,
           [`peaks/${peakKey(peakId)}/color`]: document.getElementById("a-color").value,
           [`peaks/${peakKey(peakId)}/intro`]: intro,
@@ -4978,6 +5010,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           { value: "blue", label: "声浪大派", html: "声浪大派" }
         ], camp === "blue" ? "blue" : "red", "camp")}
         <div class="choice-field span-2 custom-text-field">
+          <div class="field-name">参赛作品名称（投票页展示）</div>
+          <input id="a-work-title" type="text" maxlength="32" value="${esc(defaultName + "参赛作品")}" placeholder="例如：镜中少年" />
+        </div>
+        <div class="choice-field span-2 custom-text-field">
           <div class="field-name">口号（可自定义）</div>
           <input id="a-slogan" type="text" maxlength="24" value="${esc(SLOGAN_PRESETS[0])}" />
         </div>
@@ -5006,6 +5042,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         color: document.getElementById("a-color").value,
         camp: nextCamp,
         slogan: (document.getElementById("a-slogan").value || "").trim(),
+        work_title: (document.getElementById("a-work-title")?.value || "").trim(),
         element: document.getElementById("a-element").value,
         intro: (document.getElementById("a-intro").value || "").trim(),
         sfx_pack: document.getElementById("a-sfx")?.value || "kyo",
@@ -5463,17 +5500,61 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
   }
 
+  function peakWorkTitle(p) {
+    const t = (p && p.work_title || "").trim();
+    if (t) return t;
+    const name = (p && p.name || "小组").trim();
+    return name + "参赛作品";
+  }
+
   function getVoteSortedPeaks() {
+    // 自动读取当前全部小组作为投票备选
     return getPeaksArray().slice().sort((a, b) =>
       (b.votes || 0) - (a.votes || 0) ||
+      String(peakWorkTitle(a)).localeCompare(String(peakWorkTitle(b)), "zh-CN") ||
       String(a.name || "").localeCompare(String(b.name || ""), "zh-CN") ||
       (a.id || 0) - (b.id || 0)
     );
   }
 
+  function openEditWorkTitleModal(peakId) {
+    const peak = findPeak(peakId);
+    if (!peak) return;
+    openModal(`
+      <h3>编辑参赛作品</h3>
+      <p class="muted" style="text-align:center;margin-bottom:.55rem">${esc(peak.icon || "")} ${esc(peak.name)} · 投票页将展示作品名</p>
+      <div class="stack">
+        <label><span>作品名称</span><input id="wt-title" type="text" maxlength="32" value="${esc(peak.work_title || "")}" placeholder="例如：镜中少年" /></label>
+        <label><span>一句话介绍（可选）</span><input id="wt-slogan" type="text" maxlength="40" value="${esc(peak.slogan || "")}" placeholder="作品短介绍" /></label>
+        <div class="row" style="justify-content:flex-end">
+          <button type="button" class="ghost" id="modal-cancel">取消</button>
+          <button type="button" class="primary" id="wt-save">保存</button>
+        </div>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("wt-save").onclick = async () => {
+      await updatePaths({
+        [`peaks/${peakKey(peakId)}/work_title`]: (document.getElementById("wt-title").value || "").trim(),
+        [`peaks/${peakKey(peakId)}/slogan`]: (document.getElementById("wt-slogan").value || "").trim()
+      });
+      closeModal();
+      if (teacherView === "vote") renderTeacherVote();
+    };
+  }
+
   function ensureVoteRaceRow(board, peak) {
     let row = board.querySelector(`[data-vote-peak="${peak.id}"]`);
-    if (row) return row;
+    if (row) {
+      if (!row.querySelector(".vr-work")) {
+        const body = row.querySelector(".vr-body");
+        if (body) {
+          const work = document.createElement("div");
+          work.className = "vr-work";
+          body.insertBefore(work, body.firstChild);
+        }
+      }
+      return row;
+    }
     row = document.createElement("div");
     row.className = "vote-race-row";
     row.dataset.votePeak = String(peak.id);
@@ -5481,6 +5562,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="vr-rank">#-</div>
       <div class="vr-icon"></div>
       <div class="vr-body">
+        <div class="vr-work"></div>
         <div class="vr-name"></div>
         <div class="vr-sub"></div>
         <div class="vr-track"><i></i></div>
@@ -5505,6 +5587,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span class="vr-status ${open ? "on" : "off"}">${open ? "● 投票进行中" : "○ 投票未开启 / 已关闭"}</span>
         <span class="muted">累计 <b style="color:var(--gold);font-family:var(--font-num)">${totalVotes}</b> 票</span>
         <span class="muted">${open ? "学生扫右侧码即可投票 · 榜单实时追赶" : "点「开启投票」后，再让学生扫码"}</span>`;
+    }
+
+    const cand = document.getElementById("vote-candidates");
+    if (cand) {
+      cand.innerHTML = sorted.length
+        ? `<span>已自动载入 <b>${sorted.length}</b> 个小组作品备选（点击可改作品名）</span>` +
+          sorted.map((p) => `<button type="button" class="vote-cand-chip" data-edit-work="${p.id}" title="编辑参赛作品名">
+            ${esc(p.icon || "")} <span class="wt">${esc(peakWorkTitle(p))}</span> · ${esc(p.name)}
+          </button>`).join("")
+        : `<span class="settings-empty">暂无小组 · 请先在对擂页添加小组，投票页会自动列为备选</span>`;
+      cand.querySelectorAll("[data-edit-work]").forEach((b) => {
+        b.onclick = () => openEditWorkTitleModal(Number(b.dataset.editWork));
+      });
     }
 
     const board = document.getElementById("vote-race-board");
@@ -5534,8 +5629,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       row.classList.toggle("rank3", rank === 3);
       row.querySelector(".vr-rank").textContent = "#" + rank;
       row.querySelector(".vr-icon").textContent = p.icon || "⛰️";
-      row.querySelector(".vr-name").textContent = (p.name || "小组") + " · 作品";
-      row.querySelector(".vr-sub").textContent = p.slogan || p.intro || "小组作品参赛中";
+      const workEl = row.querySelector(".vr-work");
+      if (workEl) workEl.textContent = peakWorkTitle(p);
+      row.querySelector(".vr-name").textContent = (p.name || "小组") + (p.camp === "blue" ? " · 声浪" : " · 光影");
+      row.querySelector(".vr-sub").textContent = p.slogan || p.intro || "参赛作品";
+      row.title = "点击编辑作品名称";
+      row.style.cursor = "pointer";
+      row.onclick = (e) => {
+        if (e.target.closest("button")) return;
+        openEditWorkTitleModal(p.id);
+      };
       const bar = row.querySelector(".vr-track > i");
       const pctBar = Math.max(4, (votes / maxVotes) * 100);
       requestAnimationFrame(() => { bar.style.width = pctBar + "%"; });
@@ -5592,7 +5695,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         setTimeout(() => row.classList.remove("surge"), 800);
         if (idx === 0) {
           playVoteSurgeSfx();
-          showVoteToast(`${e.peak.icon || ""} ${e.peak.name} 反超升至第${e.to}！`);
+          showVoteToast(`${e.peak.icon || ""} ${peakWorkTitle(e.peak)} 反超升至第${e.to}！`);
           const r = row.getBoundingClientRect();
           spawnParticles(r.left + r.width * 0.35, r.top + r.height / 2, e.peak.color || "#f0c14b", 18, 7, { dist: 70, starRatio: 0.35 });
         }
@@ -6148,7 +6251,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const liveBoard = sorted.map((p, i) => {
       const pct = totalVotes ? Math.round(((p.votes || 0) / totalVotes) * 100) : 0;
       return `<div class="list-item" style="border-color:${i===0?"rgba(240,193,75,.45)":"rgba(255,255,255,.1)"}">
-        <span>#${i + 1} ${p.icon || ""} ${esc(p.name)} · 作品</span>
+        <span>#${i + 1} ${p.icon || ""} <strong style="color:#ffe39a">${esc(peakWorkTitle(p))}</strong> · ${esc(p.name)}</span>
         <span style="font-family:var(--font-num);color:var(--gold)">${p.votes || 0} · ${pct}%</span>
       </div>`;
     }).join("");
@@ -6157,21 +6260,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!open) {
       voteArea.innerHTML = `${gate}<div class="vote-success-box off-box"><div class="big">作品投票未开启</div><div class="muted" style="margin-top:.4rem">${votedName ? `你此前投给了 ${esc(votedName)}` : "请等老师在大屏点「开启投票」后，重新扫码进入"}</div>
         <button type="button" id="student-refresh-vote" style="margin-top:.75rem;width:100%">刷新投票状态</button></div>
-        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">各小组作品票数</div>${liveBoard || '<div class="muted">暂无小组</div>'}</div>`;
+        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">各小组参赛作品票数（自动载入 ${sorted.length} 组）</div>${liveBoard || '<div class="muted">暂无小组</div>'}</div>`;
       const raf = document.getElementById("student-refresh-vote");
       if (raf) raf.onclick = () => location.reload();
     } else if (already) {
       voteArea.innerHTML = `${gate}<div class="vote-success-box"><div class="big">投票成功</div><div style="margin-top:.45rem;font-size:1.15rem">你已投票给 <strong style="color:var(--gold)">${esc(votedName)}</strong></div><div class="muted" style="margin-top:.35rem">本轮每人一票 · 大屏实时追赶排序</div></div>
-        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">实时榜</div>${liveBoard}</div>`;
+        <div style="margin-top:.8rem"><div class="muted" style="margin-bottom:.35rem">实时榜 · ${sorted.length} 组作品</div>${liveBoard}</div>`;
     } else {
       voteArea.innerHTML = `${gate}<div style="font-family:var(--font-brush);font-size:1.45rem;margin-bottom:.35rem;text-align:center;color:var(--gold)">小组作品投票</div>
-        <p class="muted" style="text-align:center;margin-bottom:.6rem">${esc(state.config?.title || "为本周最佳作品投一票")} · 每人一票</p>
+        <p class="muted" style="text-align:center;margin-bottom:.6rem">${esc(state.config?.title || "为本周最佳作品投一票")} · 已自动载入 ${sorted.length} 组 · 每人一票</p>
         <div class="stack">${sorted.map((p)=>`<div class="vote-card">
-          <div style="font-size:1.5rem">${p.icon || ""} ${esc(p.name)}</div>
-          <div class="muted">${esc(p.slogan||"小组作品")}</div>
+          <div class="group-line">${p.icon || ""} ${esc(p.name)} · ${p.camp === "blue" ? "声浪" : "光影"}</div>
+          <div class="work-title">${esc(peakWorkTitle(p))}</div>
+          <div class="muted">${esc(p.slogan || p.intro || "参赛作品")}</div>
           <div class="votes" style="font-size:1.4rem">${p.votes||0}</div>
-          <button type="button" class="big-vote-btn" data-vote-peak="${p.id}">投给这组作品</button>
-        </div>`).join("") || '<div class="muted" style="text-align:center">暂无小组作品</div>'}</div>`;
+          <button type="button" class="big-vote-btn" data-vote-peak="${p.id}">投给「${esc(peakWorkTitle(p))}」</button>
+        </div>`).join("") || '<div class="muted" style="text-align:center">暂无小组 · 请先在大屏添加小组</div>'}</div>`;
       voteArea.querySelectorAll("[data-vote-peak]").forEach((btn) => btn.onclick = () => confirmStudentVote(Number(btn.dataset.votePeak)));
     }
   }
@@ -6204,16 +6308,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (me.voted || localStorage.getItem(LS_VOTE_KEY)) { alert("本轮已投过票"); renderStudent(); return; }
     const peak = findPeak(peakId);
     if (!peak) return;
-    if (!confirm(`确认把一票投给「${peak.icon || ""} ${peak.name}」的作品？`)) return;
+    if (!confirm(`确认把一票投给「${peak.icon || ""} ${peakWorkTitle(peak)}」？\n（${peak.name}）`)) return;
     await updatePaths({
       [`peaks/${peakKey(peakId)}/votes`]: (peak.votes || 0) + 1,
       [`disciples/${me.id}/voted`]: true,
-      [`disciples/${me.id}/voted_for`]: peak.name
+      [`disciples/${me.id}/voted_for`]: peakWorkTitle(peak)
     });
-    localStorage.setItem(LS_VOTE_KEY, peak.name);
+    localStorage.setItem(LS_VOTE_KEY, peakWorkTitle(peak));
     const burst = document.createElement("div");
     burst.className = "toast-levelup";
-    burst.innerHTML = `<div class="msg">✅ 投票成功<br/><span style="font-size:.7em">${peak.icon || ""} ${esc(peak.name)} · 作品</span></div>`;
+    burst.innerHTML = `<div class="msg">✅ 投票成功<br/><span style="font-size:.7em">${peak.icon || ""} ${esc(peakWorkTitle(peak))}</span></div>`;
     document.getElementById("fx-host").appendChild(burst);
     setTimeout(() => burst.remove(), 1600);
     playVoteTickSfx();
@@ -6717,6 +6821,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!p.bgm_id) p.bgm_id = "none";
       if (p.bgm_url == null) p.bgm_url = "";
       if (!p.color) p.color = p.camp === "blue" ? "#2ee6ff" : "#ff3b5c";
+      if (p.work_title == null) p.work_title = "";
+      if (!(p.work_title || "").trim()) p.work_title = (p.name || "小组") + "参赛作品";
     });
     getDisciplesArray().forEach((d) => {
       if (!d.role) d.role = "弟子";
