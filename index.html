@@ -4250,9 +4250,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       extras.push(`<div class="super-banner">${banners[lv]}</div>`);
     }
 
-    const who = discipleName
-      ? `${esc(discipleName)} · ${peak.icon || ""} ${esc(peak.name)}`
-      : `${peak.icon || ""} ${esc(peak.name)}`;
+    const who = (opts && opts.displayName)
+      ? esc(opts.displayName)
+      : (discipleName
+        ? `${esc(discipleName)} · ${peak.icon || ""} ${esc(peak.name)}`
+        : `${peak.icon || ""} ${esc(peak.name)}`);
 
     const layer = document.createElement("div");
     layer.className = `combo-layer lv-${lv}`;
@@ -4265,8 +4267,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="combo-name">${who}</div>
         <div class="combo-prop"><span class="cp-ico">${prop.icon}</span>${esc(prop.name)}</div>
         <div class="combo-points">+${pts}</div>
-        <div class="combo-reason">${esc(reason || "加分")}${peak.win_quote && lv >= 3 ? " · " + esc(peak.win_quote) : ""}</div>
-        <div class="combo-total">TOTAL SCORE ${newScore ?? peak.score ?? 0} · ${esc(peak.peak_level_name || "")} · ${esc(peak.element || "")}${esc(peak.style || "")}</div>
+        <div class="combo-reason">${esc(reason || "加分")}${!(opts && opts.displayName) && peak.win_quote && lv >= 3 ? " · " + esc(peak.win_quote) : ""}</div>
+        <div class="combo-total">${(opts && opts.totalLabel)
+          ? esc(opts.totalLabel)
+          : `TOTAL SCORE ${newScore ?? peak.score ?? 0} · ${esc(peak.peak_level_name || "")} · ${esc(peak.element || "")}${esc(peak.style || "")}`}</div>
       </div>`;
     host.appendChild(layer);
     spawnSparks(layer, 4 + lv * 4);
@@ -4324,19 +4328,25 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
 
     requestAnimationFrame(() => {
-      const el = document.querySelector(`.sect-card[data-peak-id="${peak.id}"]`);
-      if (el) {
-        el.classList.add("fx-glow");
-        const scoreEl = el.querySelector(".sect-score");
-        if (scoreEl) {
-          scoreEl.classList.remove("flash-green", "flash-blue", "flash-gold");
-          void scoreEl.offsetWidth;
-          const cls = lv >= 4 ? "flash-gold" : lv >= 2 ? "flash-blue" : "flash-green";
-          scoreEl.classList.add(cls);
-          setTimeout(() => scoreEl.classList.remove("flash-green", "flash-blue", "flash-gold"), lv >= 4 ? 800 : 650);
-        }
-        setTimeout(() => el.classList.remove("fx-glow"), 1200);
-      }
+      const glowIds = (opts && Array.isArray(opts.glowPeakIds) && opts.glowPeakIds.length)
+        ? opts.glowPeakIds
+        : [peak.id];
+      const flashCls = lv >= 4 ? "flash-gold" : lv >= 2 ? "flash-blue" : "flash-green";
+      glowIds.forEach((pid, idx) => {
+        const el = document.querySelector(`.sect-card[data-peak-id="${pid}"]`);
+        if (!el) return;
+        setTimeout(() => {
+          el.classList.add("fx-glow");
+          const scoreEl = el.querySelector(".sect-score");
+          if (scoreEl) {
+            scoreEl.classList.remove("flash-green", "flash-blue", "flash-gold");
+            void scoreEl.offsetWidth;
+            scoreEl.classList.add(flashCls);
+            setTimeout(() => scoreEl.classList.remove("flash-green", "flash-blue", "flash-gold"), lv >= 4 ? 800 : 650);
+          }
+          setTimeout(() => el.classList.remove("fx-glow"), 1200);
+        }, Math.min(idx * 45, 360));
+      });
     });
 
     const life = lv >= 4 ? 2100 : 1650;
@@ -6363,17 +6373,29 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!peaks.length) { alert(camp === "blue" ? "声浪暂无小组" : "光影暂无小组"); return; }
     closeModal();
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
-    let last = null;
+    const leveled = [];
     for (const p of peaks) {
-      last = await addScoreToPeak(p.id, points, reason, category, { silent: true, silentFx: true });
+      const result = await addScoreToPeak(p.id, points, reason, category, { silent: true, silentFx: true });
+      if (result && result.leveledUp) leveled.push({ peakId: p.id, oldLevel: result.oldLevel, levelInfo: result.levelInfo });
     }
     if (typeof renderAll === "function") renderAll();
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
     const name = camp === "blue" ? (state.config?.alliance_blue_name || "声浪") : (state.config?.alliance_red_name || "光影");
     showVoteToast(`${name} 全体 +${points} · ${peaks.length} 组`);
-    if (last && peaks[0]) {
-      const peak = findPeak(peaks[0].id);
-      if (peak) showComboAnnounce(peak, Number(points) || 0, reason || "派系加分", category || "日常", peak.score || 0);
+    const peak = findPeak(peaks[0].id) || peaks[0];
+    if (peak) {
+      showComboAnnounce(peak, Number(points) || 0, reason || "派系加分", category || "日常", peak.score || 0, {
+        displayName: `${name} · 全体 ${peaks.length} 组`,
+        totalLabel: `派系同加 +${Number(points) || 0} · ${peaks.length} 组齐鸣`,
+        glowPeakIds: peaks.map((p) => p.id)
+      });
     }
+    leveled.slice(0, 4).forEach((item, i) => {
+      setTimeout(() => {
+        const pk = findPeak(item.peakId);
+        if (pk) playLevelUpAnimation(pk, item.oldLevel, item.levelInfo);
+      }, 950 + i * 380);
+    });
   }
 
   async function addScoreToAllPeaks(points, reason, category) {
@@ -6381,11 +6403,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!peaks.length) { alert("暂无小组"); return; }
     closeModal();
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
+    const leveled = [];
     for (const p of peaks) {
-      await addScoreToPeak(p.id, points, reason, category, { silent: true, silentFx: true });
+      const result = await addScoreToPeak(p.id, points, reason, category, { silent: true, silentFx: true });
+      if (result && result.leveledUp) leveled.push({ peakId: p.id, oldLevel: result.oldLevel, levelInfo: result.levelInfo });
     }
     if (typeof renderAll === "function") renderAll();
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
     showVoteToast(`全体小组 +${points} · ${peaks.length} 组`);
+    const peak = findPeak(peaks[0].id) || peaks[0];
+    if (peak) {
+      showComboAnnounce(peak, Number(points) || 0, reason || "全体加分", category || "日常", peak.score || 0, {
+        displayName: `全体小组 · ${peaks.length} 组`,
+        totalLabel: `全体同加 +${Number(points) || 0} · ${peaks.length} 组齐鸣`,
+        glowPeakIds: peaks.map((p) => p.id)
+      });
+    }
+    leveled.slice(0, 4).forEach((item, i) => {
+      setTimeout(() => {
+        const pk = findPeak(item.peakId);
+        if (pk) playLevelUpAnimation(pk, item.oldLevel, item.levelInfo);
+      }, 950 + i * 380);
+    });
   }
 
   function showDiscipleRewardToast(discipleName, points) {
