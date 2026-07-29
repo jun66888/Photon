@@ -318,15 +318,10 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     radial-gradient(120% 90% at 50% 0%, rgba(240,193,75,.2), transparent 55%),
     linear-gradient(160deg, rgba(28,34,52,.98), rgba(10,14,24,.96));
   box-shadow: 0 10px 24px rgba(0,0,0,.28), inset 0 0 0 1px rgba(240,193,75,.12);
-  cursor: pointer;
   text-align: left;
   width: 100%;
   font-family: inherit;
   color: inherit;
-}
-.mission-publish-top:hover {
-  border-color: var(--gold);
-  box-shadow: 0 12px 28px rgba(0,0,0,.32), inset 0 0 0 1px rgba(240,193,75,.22);
 }
 .mission-publish-top .mb-kicker {
   font-size: .72rem; letter-spacing: .2em; color: var(--gold); font-weight: 700;
@@ -338,8 +333,14 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 .mission-weight-item {
   display: flex; flex-direction: column; gap: .08rem;
-  padding: .15rem 0;
+  padding: .35rem .2rem .4rem;
   border-bottom: 1px solid rgba(255,255,255,.06);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .18s ease;
+}
+.mission-weight-item:hover {
+  background: rgba(240,193,75,.08);
 }
 .mission-weight-item:last-child { border-bottom: none; }
 .mission-weight-item .mw-title {
@@ -355,6 +356,119 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 .mission-weight-item .mw-meta {
   display: flex; flex-wrap: wrap; gap: .25rem .4rem; margin-top: .1rem;
+}
+.mission-done-row {
+  display: flex; flex-wrap: wrap; gap: .25rem; align-items: center;
+  margin-top: .28rem;
+}
+.mission-done-row .md-label {
+  font-size: .68rem; color: var(--ink-soft); letter-spacing: .06em;
+}
+.mission-done-chip {
+  display: inline-flex; align-items: center; gap: .2rem;
+  font-size: .72rem; padding: .12rem .4rem; border-radius: 99px;
+  border: 1px solid rgba(61,255,154,.4);
+  background: rgba(61,255,154,.1);
+  color: #9dffc4;
+}
+.mission-done-chip b {
+  font-family: var(--font-num); color: var(--gold); font-weight: 800;
+}
+.mission-board-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  margin-bottom: .35rem;
+}
+.mission-board-head .mb-kicker { margin-bottom: 0; }
+.mission-board-head .mb-manage {
+  font-size: .75rem !important; padding: .3rem .55rem !important; min-height: 1.9rem;
+}
+.mission-detail-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: .85rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .mission-detail-layout { grid-template-columns: 1fr; }
+}
+.mission-detail-card {
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(240,193,75,.12), transparent 55%),
+    rgba(10,14,24,.82);
+}
+.mission-detail-card h3 {
+  font-family: var(--font-brush); font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  color: #fff5e8; margin: .2rem 0 .45rem; letter-spacing: .06em;
+}
+.mission-detail-meta {
+  display: flex; flex-wrap: wrap; gap: .3rem; margin: .4rem 0 .6rem;
+}
+.mission-drop-zone {
+  min-height: 7.5rem;
+  border: 2px dashed rgba(61,255,154,.45);
+  border-radius: 10px;
+  padding: .65rem;
+  background: rgba(61,255,154,.06);
+  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.mission-drop-zone.drag-over {
+  border-color: #3dff9a;
+  background: rgba(61,255,154,.14);
+  box-shadow: inset 0 0 0 1px rgba(61,255,154,.35);
+}
+.mission-drop-zone .dz-title {
+  font-size: .82rem; color: #9dffc4; font-weight: 700; margin-bottom: .45rem;
+}
+.mission-drop-zone .dz-empty {
+  font-size: .78rem; color: var(--ink-soft); padding: .6rem .2rem;
+}
+.mission-pool {
+  min-height: 7.5rem;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  padding: .65rem;
+  background: rgba(8,12,20,.72);
+}
+.mission-pool .dz-title {
+  font-size: .82rem; color: #ffe39a; font-weight: 700; margin-bottom: .45rem;
+}
+.mission-member-chip {
+  display: inline-flex; align-items: center; gap: .25rem;
+  margin: .15rem;
+  padding: .28rem .5rem;
+  border-radius: 99px;
+  border: 1px solid rgba(240,193,75,.35);
+  background: rgba(0,0,0,.35);
+  color: #e8eef8;
+  font-size: .78rem;
+  cursor: grab;
+  user-select: none;
+}
+.mission-member-chip:active { cursor: grabbing; }
+.mission-member-chip.done {
+  cursor: default;
+  border-color: rgba(61,255,154,.45);
+  background: rgba(61,255,154,.12);
+  color: #9dffc4;
+}
+.mission-member-chip .mm-pts {
+  font-family: var(--font-num); color: var(--gold); font-weight: 800;
+}
+.mission-member-chip .mm-x {
+  border: none; background: transparent; color: #ff8aa0;
+  cursor: pointer; font-size: .85rem; padding: 0 .15rem; line-height: 1;
+}
+.mission-reward-banner {
+  margin-top: .55rem; padding: .55rem .7rem; border-radius: 8px;
+  border: 1px solid rgba(240,193,75,.35);
+  background: rgba(240,193,75,.08);
+  color: #ffe39a; font-size: .88rem;
+}
+.mission-reward-banner b {
+  font-family: var(--font-num); font-size: 1.15rem; color: var(--gold);
 }
 .mission-weight-empty {
   font-size: .9rem; color: var(--ink-soft); padding: .35rem 0;
@@ -2453,12 +2567,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div id="edit-box-layer" aria-label="编辑框层"></div>
     <div id="teacher-main" class="subview course-page">
       <div class="arena-duel-hero" id="arena-duel-hero">
-        <button type="button" class="mission-publish-top" id="mission-publish-bar" data-action="edit-camp-mission" title="点击管理今日门派任务 · 可调权重与显隐">
-          <div class="mb-kicker">今日门派任务</div>
-          <div class="mission-weight-list" id="mission-board-list">
-            <div class="mission-weight-empty">点击添加门派任务</div>
+        <div class="mission-publish-top" id="mission-publish-bar" aria-label="今日门派任务榜">
+          <div class="mission-board-head">
+            <div class="mb-kicker">今日门派任务</div>
+            <button type="button" class="mb-manage" data-action="edit-camp-mission" title="管理任务权重与显隐">管理</button>
           </div>
-        </button>
+          <div class="mission-weight-list" id="mission-board-list">
+            <div class="mission-weight-empty">点击管理添加门派任务</div>
+          </div>
+        </div>
         <div class="hall-banner" id="hall-home-banner" hidden></div>
         <div class="mission-board as-hero" id="mission-board" aria-label="两派对阵属性">
           <button type="button" class="mission-camp-chip red" data-action="camp-attrs" data-camp="red" title="点击设定光影派系属性">
@@ -2510,6 +2627,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </section>
       </div>
 
+    </div>
+
+    <div id="teacher-mission" class="subview course-page hidden">
+      <div class="course-hero">
+        <div class="ch-seal">任</div>
+        <div class="ch-text">
+          <div class="ch-kicker">COURSE · MISSION</div>
+          <div class="ch-title" id="mission-detail-title">门派任务详情</div>
+          <div class="ch-sub">拖拽或点击组员到完成栏 · 自动发放任务奖励</div>
+        </div>
+        <div class="ch-actions">
+          <button type="button" data-action="goto-main">返回主页</button>
+          <button type="button" data-action="edit-camp-mission">管理任务</button>
+        </div>
+      </div>
+      <div class="course-panel" id="mission-detail-root"></div>
     </div>
 
     <div id="teacher-checkin" class="subview checkin-board course-page hidden">
@@ -3109,7 +3242,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
               visible: true,
               points: 10,
               difficulty: "进阶",
-              category: "任务"
+              category: "任务",
+              completions: []
             }
           ]
         }
@@ -3123,8 +3257,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let logFilter = "today", teacherView = "main", sortMode = "score";
   let logsPage = 1;
   const LOGS_PAGE_SIZE = 12;
-  const VIEW_ORDER = ["main", "checkin", "vote", "logs", "settings"];
+  const VIEW_ORDER = ["main", "mission", "checkin", "vote", "logs", "settings"];
   let dragPeakId = null, sectModalTab = "bonus";
+  let activeMissionId = "";
+  let dragMissionMemberId = "";
   /** 作品投票榜快照：用于追赶排序动效 */
   let votePrevMap = {};
   let voteBoardPrimed = false;
@@ -4411,6 +4547,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function newMissionItem(partial) {
     const p = partial || {};
+    const completions = Array.isArray(p.completions)
+      ? p.completions.filter(Boolean).map((c) => ({
+          disciple_id: String(c.disciple_id || c.id || ""),
+          name: c.name || "",
+          peak_id: c.peak_id != null ? c.peak_id : null,
+          peak_name: c.peak_name || "",
+          points: Number(c.points) || 0,
+          at: c.at || Date.now()
+        })).filter((c) => c.disciple_id)
+      : [];
     return {
       id: p.id || ("mission_" + Date.now() + "_" + Math.floor(Math.random() * 1000)),
       title: (p.title || "").trim() || "未命名任务",
@@ -4419,8 +4565,33 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       visible: p.visible !== false,
       points: Number(p.points) || 0,
       difficulty: p.difficulty || "普通",
-      category: p.category || "任务"
+      category: p.category || "任务",
+      completions
     };
+  }
+
+  function findMissionItem(missionId) {
+    return getCampMission().items.find((it) => String(it.id) === String(missionId)) || null;
+  }
+
+  async function saveCampMissionPatch(mutator) {
+    const m = getCampMission();
+    const next = {
+      ...m,
+      items: (m.items || []).map((it) => ({ ...it, completions: (it.completions || []).slice() }))
+    };
+    mutator(next);
+    // keep legacy top fields in sync
+    const top = (next.items || []).find((it) => it.visible !== false) || next.items[0];
+    if (top) {
+      next.title = top.title;
+      next.desc = top.desc;
+      next.points = top.points;
+      next.difficulty = top.difficulty;
+      next.category = top.category;
+      next.status = (next.items || []).some((it) => it.visible !== false) ? "published" : "draft";
+    }
+    await updatePaths({ "config/camp_mission": next });
   }
 
   function getCampMission() {
@@ -4518,19 +4689,205 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (list) {
       const visible = (m.items || []).filter((it) => it.visible !== false);
       if (!visible.length) {
-        list.innerHTML = `<div class="mission-weight-empty">暂无显示中的任务 · 点击管理权重与显隐</div>`;
+        list.innerHTML = `<div class="mission-weight-empty">暂无显示中的任务 · 点「管理」添加</div>`;
       } else {
-        list.innerHTML = visible.map((it) => `
-          <div class="mission-weight-item" data-weight="${it.weight}">
+        list.innerHTML = visible.map((it) => {
+          const done = (it.completions || []);
+          const names = done.slice(0, 8).map((c) =>
+            `<span class="mission-done-chip">${esc(c.name || "弟子")}${it.points ? ` <b>+${it.points}</b>` : ""}</span>`
+          ).join("");
+          const more = done.length > 8 ? `<span class="md-label">+${done.length - 8}</span>` : "";
+          return `
+          <div class="mission-weight-item" data-open-mission="${esc(String(it.id))}" data-weight="${it.weight}" title="点击查看任务详情与完成名单">
             <div class="mw-title" style="font-size:${missionFontSize(it.weight)}">${esc(it.title)}</div>
             ${it.desc ? `<div class="mw-desc" style="font-size:${missionDescSize(it.weight)}">${esc(it.desc)}</div>` : ""}
             <div class="mw-meta">
               <span class="mb-tag">权重 ${it.weight}</span>
               ${it.difficulty ? `<span class="mb-tag">${esc(it.difficulty)}</span>` : ""}
-              ${it.points ? `<span class="mb-tag">+${it.points}</span>` : ""}
+              ${it.points ? `<span class="mb-tag">奖励 +${it.points}</span>` : ""}
+              <span class="mb-tag">完成 ${done.length}</span>
             </div>
-          </div>`).join("");
+            <div class="mission-done-row">
+              <span class="md-label">已完成</span>
+              ${done.length ? names + more : `<span class="md-label">暂无 · 点进详情登记</span>`}
+            </div>
+          </div>`;
+        }).join("");
+        list.querySelectorAll("[data-open-mission]").forEach((el) => {
+          el.onclick = (e) => {
+            if (e.target.closest("[data-action]")) return;
+            openMissionDetail(el.dataset.openMission);
+          };
+        });
       }
+    }
+  }
+
+  async function completeMissionForDisciple(missionId, discipleId) {
+    const mission = findMissionItem(missionId);
+    if (!mission) { alert("未找到任务"); return; }
+    const dEntry = (state.disciples || {})[discipleId];
+    if (!dEntry) { alert("未找到队员"); return; }
+    const already = (mission.completions || []).some((c) => String(c.disciple_id) === String(discipleId));
+    if (already) {
+      showVoteToast(`${dEntry.name || "队员"} 已在完成名单中`);
+      return;
+    }
+    const peak = findPeak(dEntry.peak);
+    const pts = Number(mission.points) || 0;
+    const reason = `完成任务·${mission.title || "门派任务"}`;
+    await saveCampMissionPatch((next) => {
+      const item = (next.items || []).find((it) => String(it.id) === String(missionId));
+      if (!item) return;
+      if (!Array.isArray(item.completions)) item.completions = [];
+      item.completions.push({
+        disciple_id: String(discipleId),
+        name: dEntry.name || "弟子",
+        peak_id: peak ? peak.id : null,
+        peak_name: peak ? peak.name : "大厅",
+        points: pts,
+        at: Date.now()
+      });
+    });
+    if (pts > 0) {
+      await addScoreToDisciple(discipleId, pts, reason, "任务");
+    } else {
+      showVoteToast(`${dEntry.name || "队员"} 已记入完成`);
+      if (typeof renderAll === "function") renderAll();
+    }
+    if (teacherView === "mission") renderMissionDetail();
+    else if (teacherView === "main") renderMissionBoard();
+  }
+
+  async function removeMissionCompletion(missionId, discipleId) {
+    if (!confirm("仅从完成名单移除，不会扣回已发积分。确认移除？")) return;
+    await saveCampMissionPatch((next) => {
+      const item = (next.items || []).find((it) => String(it.id) === String(missionId));
+      if (!item || !Array.isArray(item.completions)) return;
+      item.completions = item.completions.filter((c) => String(c.disciple_id) !== String(discipleId));
+    });
+    if (teacherView === "mission") renderMissionDetail();
+    else renderMissionBoard();
+  }
+
+  function openMissionDetail(missionId) {
+    activeMissionId = String(missionId || "");
+    showScreen("teacher");
+    setTeacherView("mission");
+    renderMissionDetail();
+  }
+
+  function renderMissionDetail() {
+    const root = document.getElementById("mission-detail-root");
+    const titleEl = document.getElementById("mission-detail-title");
+    if (!root) return;
+    const mission = findMissionItem(activeMissionId) || getCampMission().items.find((it) => it.visible !== false) || getCampMission().items[0];
+    if (!mission) {
+      if (titleEl) titleEl.textContent = "门派任务详情";
+      root.innerHTML = `<div class="muted">暂无门派任务 · <button type="button" data-action="edit-camp-mission">去添加</button></div>`;
+      return;
+    }
+    activeMissionId = String(mission.id);
+    if (titleEl) titleEl.textContent = mission.title || "门派任务详情";
+    const doneIds = new Set((mission.completions || []).map((c) => String(c.disciple_id)));
+    const allDisc = sortDisciples(getDisciplesArray(), "name");
+    const pending = allDisc.filter((d) => !doneIds.has(String(d.id)));
+    const done = (mission.completions || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+
+    root.innerHTML = `
+      <div class="mission-detail-layout">
+        <section class="mission-detail-card">
+          <div class="muted" style="font-size:.72rem;letter-spacing:.16em;color:var(--gold)">任务详情</div>
+          <h3>${esc(mission.title || "未命名任务")}</h3>
+          <p style="color:var(--ink-soft);line-height:1.5;margin:0">${esc(mission.desc || "暂无说明")}</p>
+          <div class="mission-detail-meta">
+            <span class="mb-tag">权重 ${mission.weight || 50}</span>
+            <span class="mb-tag">${esc(mission.difficulty || "普通")}</span>
+            <span class="mb-tag">${esc(mission.category || "任务")}</span>
+            <span class="mb-tag">完成 ${done.length} 人</span>
+          </div>
+          <div class="mission-reward-banner">完成奖励：每人小组真气 / 个人贡献 <b>+${Number(mission.points) || 0}</b>
+            <div class="muted" style="margin-top:.25rem;font-size:.75rem">把右侧/下方组员拖入完成栏，或点击「记入完成」发放奖励</div>
+          </div>
+          ${getCampMission().deadline ? `<p class="muted" style="margin-top:.55rem">截止：${esc(getCampMission().deadline)}</p>` : ""}
+        </section>
+        <section class="stack">
+          <div class="mission-drop-zone" id="mission-done-zone">
+            <div class="dz-title">任务完成栏 · 已完成 ${done.length}</div>
+            <div id="mission-done-list">
+              ${done.length ? done.map((c) => `
+                <span class="mission-member-chip done" data-done-id="${esc(c.disciple_id)}">
+                  ${esc(c.name || "弟子")}
+                  <span class="mm-pts">+${c.points || mission.points || 0}</span>
+                  <span class="muted" style="font-size:.68rem">${esc(c.peak_name || "")}</span>
+                  <button type="button" class="mm-x" data-undone="${esc(c.disciple_id)}" title="从名单移除">×</button>
+                </span>`).join("") : `<div class="dz-empty">把组员拖到这里，标记完成并自动发奖</div>`}
+            </div>
+          </div>
+          <div class="mission-pool" id="mission-pool-zone">
+            <div class="dz-title">可登记组员 · ${pending.length}</div>
+            <div id="mission-pool-list">
+              ${pending.length ? pending.map((d) => {
+                const pk = findPeak(d.peak);
+                return `<span class="mission-member-chip" draggable="true" data-pool-id="${d.id}" title="拖到完成栏，或点击记入">
+                  ${esc(d.name)}${d.role === "队长" ? "★" : ""}
+                  <span class="muted" style="font-size:.68rem">${esc(pk ? pk.name : "大厅")}</span>
+                  <button type="button" data-mark-done="${d.id}" style="font-size:.68rem;padding:.15rem .35rem;min-height:1.5rem">记入完成</button>
+                </span>`;
+              }).join("") : `<div class="dz-empty">全部组员均已完成此任务</div>`}
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="mission-detail-card" style="margin-top:.85rem">
+        <div class="muted" style="font-size:.72rem;letter-spacing:.16em;color:var(--gold);margin-bottom:.35rem">完成名单与奖励</div>
+        <div class="stack" style="gap:.35rem">
+          ${done.length ? done.map((c, i) => `
+            <div class="list-item" style="border-color:rgba(61,255,154,.28)">
+              <span>#${i + 1} ${esc(c.name)} · ${esc(c.peak_name || "大厅")} · ${c.at ? fmtTime(c.at) : ""}</span>
+              <span style="font-family:var(--font-num);color:var(--gold)">+${c.points || mission.points || 0}</span>
+            </div>`).join("") : `<div class="muted">还没有人完成 · 拖入或点击组员开始登记</div>`}
+        </div>
+      </div>`;
+
+    const zone = document.getElementById("mission-done-zone");
+    const bindDrag = (chip) => {
+      chip.addEventListener("dragstart", (e) => {
+        dragMissionMemberId = chip.dataset.poolId;
+        e.dataTransfer.setData("text/plain", dragMissionMemberId);
+        e.dataTransfer.effectAllowed = "copy";
+      });
+      chip.addEventListener("dragend", () => { dragMissionMemberId = ""; });
+    };
+    root.querySelectorAll("[data-pool-id]").forEach(bindDrag);
+    root.querySelectorAll("[data-mark-done]").forEach((btn) => {
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await completeMissionForDisciple(activeMissionId, btn.dataset.markDone);
+      };
+    });
+    root.querySelectorAll("[data-undone]").forEach((btn) => {
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await removeMissionCompletion(activeMissionId, btn.dataset.undone);
+      };
+    });
+    if (zone) {
+      zone.ondragover = (e) => {
+        e.preventDefault();
+        zone.classList.add("drag-over");
+      };
+      zone.ondragleave = () => zone.classList.remove("drag-over");
+      zone.ondrop = async (e) => {
+        e.preventDefault();
+        zone.classList.remove("drag-over");
+        const id = e.dataTransfer.getData("text/plain") || dragMissionMemberId;
+        dragMissionMemberId = "";
+        if (!id) return;
+        await completeMissionForDisciple(activeMissionId, id);
+      };
     }
   }
 
@@ -4562,7 +4919,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const m = getCampMission();
     const redLive = getCampLiveStats("red");
     const blueLive = getCampLiveStats("blue");
-    let draftItems = (m.items || []).map((it) => ({ ...it }));
+    let draftItems = (m.items || []).map((it) => ({
+      ...it,
+      completions: Array.isArray(it.completions) ? it.completions.slice() : []
+    }));
 
     function sortDraft() {
       draftItems.sort((a, b) => (b.weight || 0) - (a.weight || 0) || String(a.title).localeCompare(String(b.title), "zh-CN"));
@@ -4672,7 +5032,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("cm-save").onclick = async () => {
       sortDraft();
-      const items = draftItems.map((it) => newMissionItem(it));
+      const items = draftItems.map((it) => {
+        const prev = (m.items || []).find((x) => String(x.id) === String(it.id));
+        const base = newMissionItem(it);
+        base.completions = Array.isArray(it.completions)
+          ? it.completions.slice()
+          : (prev && Array.isArray(prev.completions) ? prev.completions.slice() : []);
+        return base;
+      });
       const top = items.find((it) => it.visible !== false) || items[0] || newMissionItem({ title: "今日门派任务" });
       const next = {
         title: top.title,
@@ -4693,6 +5060,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       await updatePaths({ "config/camp_mission": next });
       closeModal();
       renderMissionBoard();
+      if (teacherView === "mission") renderMissionDetail();
       if (teacherView === "settings") renderSettings();
     };
   }
@@ -5485,7 +5853,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       ? (nextIdx > prevIdx ? "from-right" : "from-left")
       : "";
 
-    ["main", "checkin", "vote", "logs", "settings"].forEach((v) => {
+    ["main", "mission", "checkin", "vote", "logs", "settings"].forEach((v) => {
       const id = v === "main" ? "teacher-main" : "teacher-" + v;
       const el = document.getElementById(id);
       if (!el) return;
@@ -5511,6 +5879,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     });
     const railDay = document.getElementById("rail-day-label");
     if (railDay) railDay.textContent = String(state.config?.day || 1);
+    if (view === "mission") renderMissionDetail();
     if (view === "checkin") renderTeacherCheckin();
     if (view === "vote") {
       startVoteLiveLoop();
@@ -7663,6 +8032,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const { mode } = getMode();
     if (mode === "teacher") {
       if (teacherView === "main") renderTeacherMain();
+      else if (teacherView === "mission") renderMissionDetail();
       else if (teacherView === "checkin") renderTeacherCheckin();
       else if (teacherView === "vote") renderTeacherVote();
       else if (teacherView === "logs") renderLogs();
