@@ -144,112 +144,139 @@ input:focus, select:focus, textarea:focus {
 }
 
 .header-bar { justify-content: space-between; margin-bottom: .25rem; flex: 0 0 auto; }
-.screen.compact-arena { padding: 4.35rem .55rem 2.6rem; }
-.app-title.compact { font-size: clamp(1.05rem, 2.2vw, 1.45rem); letter-spacing: .1em; }
+.screen.compact-arena { padding: 3.05rem .55rem 2.4rem; }
+.app-title.compact { font-size: clamp(1rem, 2vw, 1.25rem); letter-spacing: .08em; margin: 0; }
 #teacher-main.subview {
   display: flex; flex-direction: column;
-  min-height: calc(100vh - 4.35rem - 2.4rem);
-  gap: .35rem;
+  min-height: calc(100vh - 3.05rem - 2.2rem);
+  gap: .28rem;
 }
 
-/* 中上部徽标 + 导航（始终可见） */
+/* 中上部徽标 + 导航：横排，少占高度 */
 .brand-nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
-  display: flex; flex-direction: column; align-items: center;
-  padding: .35rem .55rem .4rem;
+  display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: .35rem .55rem;
+  padding: .28rem .55rem .3rem;
   background:
-    linear-gradient(180deg, rgba(8,12,20,.96), rgba(8,12,20,.88) 70%, transparent);
+    linear-gradient(180deg, rgba(8,12,20,.97), rgba(8,12,20,.9) 75%, transparent);
   pointer-events: none;
 }
 .brand-nav > * { pointer-events: auto; }
 .brand-emblem {
-  display: inline-flex; align-items: center; gap: .45rem;
+  display: inline-flex; align-items: center; gap: .35rem;
   border: none !important; background: transparent !important; box-shadow: none !important;
-  padding: .15rem .4rem !important; cursor: pointer;
+  padding: .1rem .25rem !important; cursor: pointer;
   transform: none !important;
 }
 .brand-emblem:hover { filter: brightness(1.15); }
 .brand-seal {
-  width: 42px; height: 42px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 50%;
   display: grid; place-items: center;
-  font-family: var(--font-brush); font-size: 1.35rem; color: #1a1205;
+  font-family: var(--font-brush); font-size: 1.05rem; color: #1a1205;
   background:
     radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 50%, #8a6d18);
   border: 2px solid #fff3c4;
-  box-shadow: 0 0 18px rgba(240,193,75,.55), 0 0 0 3px rgba(240,193,75,.12);
+  box-shadow: 0 0 14px rgba(240,193,75,.5), 0 0 0 2px rgba(240,193,75,.12);
 }
 .brand-name {
-  font-family: var(--font-brush); font-size: 1.55rem; color: var(--gold);
-  letter-spacing: .18em; text-shadow: 0 0 14px rgba(240,193,75,.45);
+  font-family: var(--font-brush); font-size: 1.2rem; color: var(--gold);
+  letter-spacing: .14em; text-shadow: 0 0 12px rgba(240,193,75,.4);
 }
 .brand-nav-links {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: .28rem;
-  margin-top: .15rem; max-width: 980px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem;
+  margin-top: 0; max-width: 920px;
 }
 .brand-nav-links button {
-  font-size: .72rem !important; padding: .28rem .55rem !important;
-  min-width: 0; box-shadow: 0 2px 0 #0a0d16;
+  font-size: .8rem !important; padding: .35rem .7rem !important;
+  min-width: 0; min-height: 2.05rem; box-shadow: 0 2px 0 #0a0d16;
 }
 .brand-nav-links button.active-nav {
   border-color: var(--gold);
   background: linear-gradient(180deg, #3a4668, #1c2438);
   color: #ffe39a;
 }
-body.has-brand-nav #sfx-bar { top: 4.8rem; }
-body.has-brand-nav .demo-tip { top: 4.8rem !important; }
+body.has-brand-nav #sfx-bar { top: 3.35rem; }
+body.has-brand-nav .demo-tip { top: 3.35rem !important; }
+
+/* 工具条：标题 + 天数/排序下拉 + 操作按钮一排 */
+.arena-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .45rem;
+  flex: 0 0 auto; margin: 0; padding: .15rem 0;
+}
+.arena-toolbar .tool-inline {
+  display: inline-flex; align-items: center; gap: .28rem;
+  margin: 0; font-size: .78rem; color: var(--ink-soft); font-weight: 700;
+}
+.arena-toolbar .tool-inline > span { white-space: nowrap; }
+.arena-toolbar .toolbar-grow { flex: 1 1 auto; min-width: .25rem; }
+.arena-toolbar button {
+  font-size: .8rem !important; padding: .35rem .7rem !important;
+  min-height: 2.05rem; white-space: nowrap;
+}
 .day-input {
-  width: 4.2rem; text-align: center; font-weight: 800; font-family: var(--font-num);
+  width: 3.6rem; text-align: center; font-weight: 800; font-family: var(--font-num);
   color: var(--gold) !important; background: #0c101c !important;
+  padding: .35rem .4rem !important; min-height: 2.05rem;
 }
 #sort-mode {
   color: var(--ink) !important; background: #0c101c !important;
-  width: auto; min-width: 6.5rem;
+  width: auto; min-width: 6.2rem; min-height: 2.05rem;
+  padding: .35rem .55rem !important;
 }
 .round-chip {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .2rem .65rem; border: 1px solid rgba(240,193,75,.4);
-  border-radius: 999px; font-size: .8rem; color: var(--gold);
-  background: rgba(240,193,75,.08);
+  display: inline-flex; align-items: center; gap: .25rem;
+  padding: .28rem .55rem; border: 1px solid rgba(240,193,75,.4);
+  border-radius: 6px; font-size: .78rem; color: var(--gold);
+  background: rgba(240,193,75,.08); min-height: 2.05rem;
 }
 
-/* 两派对擂 HUD + 长经验条（紧凑一屏） */
+/* 两派对擂 HUD：单行瘦身，贡献改为可展开条 */
 .fight-hud {
-  display: grid; grid-template-columns: 1fr auto 1fr; gap: .25rem .55rem; align-items: start;
-  margin-bottom: 0; padding: .4rem .6rem .45rem;
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: .2rem .4rem; align-items: center;
+  margin-bottom: 0; padding: .28rem .5rem;
   flex: 0 0 auto;
   background:
     linear-gradient(90deg, rgba(138,16,40,.28), transparent 42%, transparent 58%, rgba(10,106,122,.24)),
-    linear-gradient(180deg, rgba(40,60,48,.2), transparent 40%),
     var(--panel);
   border: 2px solid var(--frame);
-  border-radius: 10px;
-  box-shadow: var(--shadow), 0 0 40px rgba(240,193,75,.08);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
   position: relative; overflow: hidden;
 }
 .fight-hud::before { content: none; }
-.pk-side { text-align: center; position: relative; z-index: 1; padding-top: 0; }
+.pk-side {
+  display: flex; align-items: center; gap: .4rem;
+  position: relative; z-index: 1; min-width: 0;
+}
+.pk-side.red { flex-direction: row; }
+.pk-side.blue { flex-direction: row; }
+.pk-inline {
+  display: flex; align-items: baseline; gap: .3rem; flex: 0 0 auto;
+}
 .pk-side .camp-label {
-  font-family: var(--font-brush); font-size: calc(1rem * var(--hud-scale, 1)); letter-spacing: .06em;
+  font-family: var(--font-brush); font-size: .95rem; letter-spacing: .04em; line-height: 1;
 }
 .pk-side.red .camp-label { color: #ff8aa0; }
 .pk-side.blue .camp-label { color: #7ef0ff; }
 .pk-side .score {
-  font-family: var(--font-num); font-size: calc(clamp(1.25rem, 2.8vw, 1.9rem) * var(--hud-scale, 1)); line-height: 1.05;
+  font-family: var(--font-num); font-size: clamp(1.15rem, 2.4vw, 1.55rem); line-height: 1;
   font-weight: 800;
 }
-.pk-side.red .score { color: var(--red); text-shadow: 0 0 22px rgba(255,59,92,.55); }
-.pk-side.blue .score { color: var(--cyan); text-shadow: 0 0 22px rgba(46,230,255,.5); }
-.hp-wrap { margin-top: .2rem; }
+.pk-side.red .score { color: var(--red); text-shadow: 0 0 16px rgba(255,59,92,.45); }
+.pk-side.blue .score { color: var(--cyan); text-shadow: 0 0 16px rgba(46,230,255,.4); }
+.hp-wrap { margin-top: 0; flex: 1 1 auto; min-width: 0; }
 .hp-label {
   display: flex; justify-content: space-between; font-size: .62rem; color: var(--ink-soft);
   margin-bottom: .1rem; font-family: var(--font-num); letter-spacing: .06em;
 }
 .pk-track {
-  height: 12px; border-radius: 3px; background: #07090f;
+  height: 10px; border-radius: 3px; background: #07090f;
   overflow: hidden; display: flex; border: 1px solid rgba(255,255,255,.12);
   box-shadow: inset 0 0 8px rgba(0,0,0,.6);
+  flex: 1 1 auto; min-width: 0;
 }
-.pk-track.long { height: 14px; }
+.pk-track.long { height: 11px; }
 .pk-track .fill-red {
   background: linear-gradient(180deg, #ff7a92, var(--red) 45%, #8a1028);
   height: 100%; position: relative;
@@ -263,49 +290,60 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   background: linear-gradient(180deg, rgba(255,255,255,.35), transparent);
 }
 .pk-vs {
-  width: 48px; height: 48px; border-radius: 50%; margin-top: .55rem;
+  width: 34px; height: 34px; border-radius: 50%; margin: 0;
   display: grid; place-items: center;
-  font-family: var(--font-num); font-weight: 800; font-size: 1rem;
+  font-family: var(--font-num); font-weight: 800; font-size: .78rem;
   color: #1a1205; background: radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 45%, #8a6d18);
   border: 2px solid #fff3c4;
-  box-shadow: 0 0 20px rgba(240,193,75,.45), 0 0 0 3px rgba(240,193,75,.12);
+  box-shadow: 0 0 12px rgba(240,193,75,.4);
   animation: vsPulse 1.6s ease-in-out infinite;
-  z-index: 2;
+  z-index: 2; flex: 0 0 auto;
 }
 @keyframes vsPulse {
   0%,100% { transform: scale(1); }
-  50% { transform: scale(1.06); box-shadow: 0 0 28px rgba(240,193,75,.7), 0 0 0 4px rgba(240,193,75,.18); }
+  50% { transform: scale(1.05); box-shadow: 0 0 18px rgba(240,193,75,.6); }
+}
+.contrib-strip {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .35rem;
+  flex: 0 0 auto;
+  padding: .3rem .4rem;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  background: rgba(8,12,20,.75);
 }
 .contrib-panel {
-  margin-top: .25rem; text-align: left;
-  display: flex; flex-direction: column; gap: .12rem;
-  max-height: calc(3.2rem * var(--hud-scale, 1)); overflow: auto;
+  margin-top: 0; text-align: left;
+  display: flex; flex-direction: column; gap: .1rem;
+  max-height: 5.5rem; overflow: auto;
 }
-.fight-hud[data-teams="1"] .contrib-panel,
-.fight-hud[data-teams="2"] .contrib-panel { max-height: 5.5rem; }
 .contrib-title {
   font-size: .62rem; color: var(--ink-soft); letter-spacing: .08em;
   font-family: var(--font-num); margin-bottom: 0;
 }
 .contrib-row {
-  display: grid; grid-template-columns: 3.4rem 1fr auto; gap: .28rem; align-items: center;
+  display: grid; grid-template-columns: 3.2rem 1fr auto; gap: .25rem; align-items: center;
   font-size: .68rem;
 }
 .contrib-row .cname {
-  font-family: var(--font-brush); font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-brush); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .contrib-bar {
-  height: 6px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
+  height: 5px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1);
   border-radius: 2px; overflow: hidden;
 }
 .contrib-bar > i {
   display: block; height: 100%; width: 0;
   transition: width .45s ease;
 }
-.pk-side.red .contrib-bar > i { background: linear-gradient(90deg, rgba(255,120,140,.35), var(--red)); }
-.pk-side.blue .contrib-bar > i { background: linear-gradient(90deg, rgba(100,220,240,.35), var(--cyan)); }
+.pk-side.red ~ * .contrib-bar > i,
+#red-contrib .contrib-bar > i { background: linear-gradient(90deg, rgba(255,120,140,.35), var(--red)); }
+#blue-contrib .contrib-bar > i { background: linear-gradient(90deg, rgba(100,220,240,.35), var(--cyan)); }
 .contrib-meta {
-  font-family: var(--font-num); font-size: .62rem; color: var(--ink-soft); min-width: 4.4rem; text-align: right;
+  font-family: var(--font-num); font-size: .62rem; color: var(--ink-soft); min-width: 4.2rem; text-align: right;
+}
+@media (max-width: 720px) {
+  .contrib-strip { grid-template-columns: 1fr; }
+  .pk-side .camp-label { display: none; }
 }
 
 .camps-board {
@@ -361,7 +399,10 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 }
 .camp-col.red .camp-head h2 { color: #ff8aa0; }
 .camp-col.blue .camp-head h2 { color: #7ef0ff; }
-.camp-tools button { font-size: calc(.7rem * var(--arena-scale)); padding: .18rem .4rem; }
+.camp-tools button {
+  font-size: .78rem !important; padding: .32rem .65rem !important;
+  min-height: 2rem; white-space: nowrap;
+}
 .peak-list {
   flex: 1 1 auto;
   min-height: 0;
@@ -372,10 +413,7 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   overflow: hidden;
 }
 .peak-list:has(.member-bars.open) { overflow: auto; }
-.sort-hint {
-  font-size: calc(.62rem * var(--arena-scale)); color: var(--ink-soft);
-  margin-bottom: calc(.15rem * var(--arena-scale)); flex: 0 0 auto;
-}
+.sort-hint { display: none; }
 
 /* 山峰形态组卡 — 随 --arena-scale / 队伍数自适应 */
 .sect-card {
@@ -566,13 +604,16 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 .fight-btn {
   background: linear-gradient(180deg, #ffd76a, #c49216) !important;
   color: #1a1205 !important; border-color: #ffe39a !important;
-  font-size: calc(.68rem * var(--arena-scale)) !important;
-  padding: calc(.22rem * var(--arena-scale)) calc(.4rem * var(--arena-scale)) !important;
+  font-size: max(.78rem, calc(.68rem * var(--arena-scale))) !important;
+  padding: .35rem .7rem !important;
+  min-height: 2.05rem; min-width: 3.4rem; flex: 0 0 auto;
+  white-space: nowrap;
 }
 .member-toggle {
-  margin-top: calc(.22rem * var(--arena-scale)); width: 100%;
-  font-size: calc(.7rem * var(--arena-scale)) !important;
-  padding: calc(.28rem * var(--arena-scale)) calc(.4rem * var(--arena-scale)) !important;
+  margin-top: calc(.18rem * var(--arena-scale)); width: 100%;
+  font-size: max(.78rem, calc(.7rem * var(--arena-scale))) !important;
+  padding: .32rem .55rem !important;
+  min-height: 2rem;
   background: linear-gradient(180deg, rgba(240,193,75,.18), rgba(0,0,0,.35)) !important;
   box-shadow: none !important;
   border: 1px dashed rgba(240,193,75,.55) !important; color: #ffe39a !important;
@@ -1229,45 +1270,45 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   <!-- TEACHER -->
   <div id="teacher-screen" class="screen compact-arena">
     <div id="teacher-main" class="subview">
-      <div class="row header-bar">
-        <div>
-          <div class="app-title compact">山峰对擂</div>
-          <div class="muted" style="margin-top:.1rem;font-size:.78rem">
-            <span class="round-chip">DAY <span id="day-label">1</span></span>
-            <span style="margin-left:.35rem">阵营 → 组 → 组员</span>
-          </div>
-        </div>
-        <div class="row">
-          <label class="muted">天数</label>
+      <div class="arena-toolbar">
+        <div class="app-title compact">山峰对擂</div>
+        <span class="round-chip">DAY <span id="day-label">1</span></span>
+        <label class="tool-inline"><span>天数</span>
           <input id="day-input" class="day-input" type="number" min="1" value="1" />
+        </label>
+        <label class="tool-inline"><span>排序</span>
           <select id="sort-mode" title="排序">
             <option value="name">首字母序</option>
             <option value="exp">经验序</option>
             <option value="score">积分序</option>
           </select>
-        </div>
+        </label>
+        <button type="button" id="btn-toggle-contrib" class="ghost" data-action="toggle-contrib" title="各组贡献占比">贡献 ▾</button>
+        <span class="toolbar-grow"></span>
+        <button type="button" data-action="add-peak-red">＋光影山峰</button>
+        <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
       </div>
 
       <div class="fight-hud" id="pk-bar">
         <div class="pk-side red">
-          <div class="camp-label">光影大派</div>
-          <div class="score" id="red-total">0</div>
-          <div class="hp-wrap">
-            <div class="hp-label"><span>派别经验</span><span>ALLIANCE EXP</span></div>
-            <div class="pk-track long"><div class="fill-red" id="red-fill" style="width:50%"></div></div>
+          <div class="pk-inline">
+            <span class="camp-label">光影</span>
+            <span class="score" id="red-total">0</span>
           </div>
-          <div class="contrib-panel" id="red-contrib"></div>
+          <div class="pk-track long"><div class="fill-red" id="red-fill" style="width:50%"></div></div>
         </div>
         <div class="pk-vs">VS</div>
         <div class="pk-side blue">
-          <div class="camp-label">声浪大派</div>
-          <div class="score" id="blue-total">0</div>
-          <div class="hp-wrap">
-            <div class="hp-label"><span>派别经验</span><span>ALLIANCE EXP</span></div>
-            <div class="pk-track long"><div class="fill-blue" id="blue-fill" style="width:50%"></div></div>
+          <div class="pk-track long"><div class="fill-blue" id="blue-fill" style="width:50%"></div></div>
+          <div class="pk-inline">
+            <span class="score" id="blue-total">0</span>
+            <span class="camp-label">声浪</span>
           </div>
-          <div class="contrib-panel" id="blue-contrib"></div>
         </div>
+      </div>
+      <div class="contrib-strip hidden" id="contrib-strip">
+        <div class="contrib-panel" id="red-contrib"></div>
+        <div class="contrib-panel" id="blue-contrib"></div>
       </div>
 
       <div class="camps-board">
@@ -1278,7 +1319,6 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
               <button type="button" data-action="add-peak-red">＋山峰</button>
             </div>
           </div>
-          <p class="sort-hint">拖拽换边 · 出招加分 · 展开组员看数值</p>
           <div class="peak-list" id="list-red" data-camp="red"></div>
         </section>
         <section class="camp-col blue" data-camp="blue" id="camp-blue">
@@ -1288,7 +1328,6 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
               <button type="button" data-action="add-peak-blue">＋山峰</button>
             </div>
           </div>
-          <p class="sort-hint">拖拽换边 · 出招加分 · 展开组员看数值</p>
           <div class="peak-list" id="list-blue" data-camp="blue"></div>
         </section>
       </div>
@@ -2414,8 +2453,9 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   function renderContribPanel(camp, peaks, total) {
     const sorted = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
     const max = Math.max(...sorted.map((p) => p.score || 0), 1);
-    if (!sorted.length) return `<div class="contrib-title">各组贡献</div><div class="muted" style="font-size:.75rem">暂无山峰</div>`;
-    return `<div class="contrib-title">各组贡献 · 按分排序</div>` + sorted.map((p) => {
+    const title = camp === "blue" ? "声浪 · 各组占比" : "光影 · 各组占比";
+    if (!sorted.length) return `<div class="contrib-title">${title}</div><div class="muted" style="font-size:.75rem">暂无山峰</div>`;
+    return `<div class="contrib-title">${title}</div>` + sorted.map((p) => {
       const score = p.score || 0;
       const share = total > 0 ? (score / total * 100) : 0;
       const depth = 0.32 + 0.68 * (score / max);
@@ -3721,6 +3761,18 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 
   async function handleTeacherAction(act, btn) {
     if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
+    if (act === "toggle-contrib") {
+      const strip = document.getElementById("contrib-strip");
+      const tbtn = document.getElementById("btn-toggle-contrib");
+      if (strip) {
+        const open = strip.classList.toggle("hidden") === false;
+        if (tbtn) tbtn.textContent = open ? "贡献 ▴" : "贡献 ▾";
+        const redN = document.querySelectorAll("#list-red .sect-card").length;
+        const blueN = document.querySelectorAll("#list-blue .sect-card").length;
+        applyArenaDensity(redN, blueN);
+      }
+      return;
+    }
     if (act === "custom-score") { openCustomScoreModal(); return; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
     if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); return; }
