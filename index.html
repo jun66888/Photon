@@ -298,9 +298,9 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   font-size: .62rem; letter-spacing: .12em; color: var(--ink-soft); opacity: .85;
 }
 .mission-camp-chip .chip-attrs {
-  display: flex; flex-direction: column; gap: .08rem; width: 100%;
+  display: flex; flex-direction: row; flex-wrap: wrap; gap: .08rem .35rem; width: 100%;
   margin-top: .15rem; font-size: .68rem; color: var(--ink-soft); line-height: 1.2;
-  text-align: center;
+  text-align: center; justify-content: center;
 }
 .mission-camp-chip .chip-attrs b { color: #ffe39a; font-weight: 700; }
 .arena-duel-hero {
@@ -328,37 +328,73 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   margin-bottom: .35rem;
 }
 .mission-weight-list {
-  display: flex; flex-direction: column; gap: .28rem;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: .55rem;
   width: 100%;
 }
 .mission-weight-item {
-  display: flex; flex-direction: column; gap: .08rem;
-  padding: .35rem .2rem .4rem;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background .18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: .28rem;
+  flex: 1 1 220px;
+  max-width: 100%;
+  min-width: min(220px, 100%);
+  padding: .55rem .65rem .6rem;
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(240,193,75,.12), transparent 55%),
+    rgba(8,12,20,.55);
+  cursor: default;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
 }
 .mission-weight-item:hover {
-  background: rgba(240,193,75,.08);
+  border-color: rgba(240,193,75,.5);
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(240,193,75,.18), transparent 55%),
+    rgba(12,16,28,.72);
+  transform: translateY(-1px);
 }
-.mission-weight-item:last-child { border-bottom: none; }
 .mission-weight-item .mw-title {
   font-family: var(--font-brush);
   color: #fff5e8;
   letter-spacing: .05em;
   line-height: 1.2;
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem) !important;
 }
 .mission-weight-item .mw-desc {
   color: var(--ink-soft);
   line-height: 1.35;
+  font-size: .78rem !important;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  min-height: 2.1em;
 }
 .mission-weight-item .mw-meta {
-  display: flex; flex-wrap: wrap; gap: .25rem .4rem; margin-top: .1rem;
+  display: flex; flex-wrap: wrap; gap: .25rem .4rem; margin-top: .05rem;
+  align-items: center;
+}
+.mission-weight-item .mw-top3 {
+  display: flex; flex-direction: row; flex-wrap: wrap;
+  gap: .25rem; align-items: center;
+  margin-top: .1rem;
+  min-height: 1.6rem;
+}
+.mission-weight-item .mw-top3 .md-label {
+  font-size: .68rem; color: var(--ink-soft); letter-spacing: .06em; width: 100%;
+}
+.mission-weight-item .mw-actions {
+  display: flex; flex-direction: row; flex-wrap: wrap;
+  gap: .35rem; align-items: center; margin-top: .15rem;
+}
+.mission-weight-item .mw-actions button {
+  font-size: .78rem !important; padding: .35rem .65rem !important; min-height: 2rem;
 }
 .mission-done-row {
-  display: flex; flex-wrap: wrap; gap: .25rem; align-items: center;
+  display: flex; flex-direction: row; flex-wrap: wrap;
+  gap: .25rem; align-items: center;
   margin-top: .28rem;
 }
 .mission-done-row .md-label {
@@ -371,8 +407,24 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   background: rgba(61,255,154,.1);
   color: #9dffc4;
 }
+.mission-done-chip.rank1 {
+  border-color: rgba(240,193,75,.65);
+  background: rgba(240,193,75,.16);
+  color: #ffe39a;
+}
+.mission-done-chip.rank2 {
+  border-color: rgba(180,200,220,.5);
+  color: #d7e4f5;
+}
+.mission-done-chip.rank3 {
+  border-color: rgba(205,140,80,.5);
+  color: #f0c9a0;
+}
 .mission-done-chip b {
   font-family: var(--font-num); color: var(--gold); font-weight: 800;
+}
+.mission-done-chip .md-rank {
+  font-family: var(--font-num); font-weight: 900; opacity: .9;
 }
 .reward-prop-badge {
   display: inline-flex; align-items: center; gap: .28rem;
@@ -498,9 +550,31 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   padding: .65rem;
   background: rgba(8,12,20,.72);
 }
-.mission-pool .dz-title {
-  font-size: .82rem; color: #ffe39a; font-weight: 700; margin-bottom: .45rem;
+.mission-pool .dz-list,
+.mission-drop-zone .dz-list,
+#mission-done-list,
+#mission-pool-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: .3rem;
+  align-items: center;
 }
+.score-hub-quick,
+.bonus-grid,
+.settings-chips,
+.settings-tiles,
+.vote-candidates-bar,
+.brand-nav-links {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: stretch;
+}
+.settings-tiles { gap: .4rem; }
+.settings-tile { flex: 1 1 160px; min-width: min(160px, 100%); }
+.score-hub-quick button,
+.bonus-grid button { flex: 1 1 7rem; min-width: min(7rem, 100%); }
 .mission-member-chip {
   display: inline-flex; align-items: center; gap: .25rem;
   margin: .15rem;
@@ -537,12 +611,14 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   font-family: var(--font-num); font-size: 1.15rem; color: var(--gold);
 }
 .mission-weight-empty {
+  flex: 1 1 100%;
   font-size: .9rem; color: var(--ink-soft); padding: .35rem 0;
 }
 .mission-items-editor {
-  display: flex; flex-direction: column; gap: .55rem;
+  display: flex; flex-direction: row; flex-wrap: wrap; gap: .55rem;
   max-height: min(52vh, 420px); overflow: auto;
   padding-right: .15rem;
+  align-items: stretch;
 }
 .mission-item-card {
   border: 1px solid rgba(240,193,75,.28);
@@ -552,6 +628,8 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   display: grid;
   grid-template-columns: 1fr auto;
   gap: .4rem .55rem;
+  flex: 1 1 260px;
+  min-width: min(260px, 100%);
 }
 .mission-item-card.hidden-item {
   opacity: .55;
@@ -4740,7 +4818,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         category: m.category
       })];
     }
-    items.sort((a, b) => (b.weight || 0) - (a.weight || 0) || String(a.title).localeCompare(String(b.title), "zh-CN"));
+    items.sort((a, b) =>
+      (b.weight || 0) - (a.weight || 0) ||
+      (Number(b.points) || 0) - (Number(a.points) || 0) ||
+      String(a.title).localeCompare(String(b.title), "zh-CN")
+    );
     m.items = items;
     return m;
   }
@@ -4822,33 +4904,50 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         list.innerHTML = `<div class="mission-weight-empty">暂无显示中的任务 · 点「管理」添加</div>`;
       } else {
         list.innerHTML = visible.map((it) => {
-          const done = (it.completions || []);
-          const prop = rewardPropForPoints(it.points);
-          const names = done.slice(0, 8).map((c) => {
-            const cp = rewardPropForPoints(c.points != null ? c.points : it.points);
-            return `<span class="mission-done-chip" title="${esc(cp.tip)}">${esc(c.name || "弟子")} ${cp.icon} <b>+${cp.points}</b></span>`;
-          }).join("");
-          const more = done.length > 8 ? `<span class="md-label">+${done.length - 8}</span>` : "";
+          const done = (it.completions || []).slice();
+          // 前三名：弟子积分高靠前，同分看贡献与完成时间
+          const ranked = done.slice().sort((a, b) => {
+            const da = (state.disciples || {})[a.disciple_id] || {};
+            const db = (state.disciples || {})[b.disciple_id] || {};
+            const ds = (Number(db.score) || 0) - (Number(da.score) || 0);
+            if (ds) return ds;
+            const dc = (Number(db.contributed) || 0) - (Number(da.contributed) || 0);
+            if (dc) return dc;
+            const dp = (Number(b.points) || 0) - (Number(a.points) || 0);
+            if (dp) return dp;
+            return (Number(a.at) || 0) - (Number(b.at) || 0);
+          }).slice(0, 3);
+          const top3 = ranked.length
+            ? ranked.map((c, i) => {
+                const cp = rewardPropForPoints(c.points != null ? c.points : it.points);
+                const dScore = Number(((state.disciples || {})[c.disciple_id] || {}).score) || 0;
+                return `<span class="mission-done-chip rank${i + 1}" title="第${i + 1}名 · 积分 ${dScore} · ${esc(cp.tip || "")}">
+                  <span class="md-rank">${i + 1}</span>${esc(c.name || "弟子")} ${cp.icon} <b>+${cp.points}</b>
+                </span>`;
+              }).join("")
+            : `<span class="md-label">尚无弟子完成</span>`;
+          const intro = String(it.desc || "暂无说明").trim();
           return `
-          <div class="mission-weight-item" data-open-mission="${esc(String(it.id))}" data-weight="${it.weight}" title="点击查看任务详情与完成名单">
-            <div class="mw-title" style="font-size:${missionFontSize(it.weight)}">${esc(it.title)}</div>
-            ${it.desc ? `<div class="mw-desc" style="font-size:${missionDescSize(it.weight)}">${esc(it.desc)}</div>` : ""}
+          <div class="mission-weight-item" data-weight="${it.weight}">
+            <div class="mw-title" style="font-size:${missionFontSize(it.weight)}">${esc(it.title || "未命名任务")}</div>
+            <div class="mw-desc" title="${esc(intro)}">${esc(intro)}</div>
             <div class="mw-meta">
-              <span class="mb-tag">权重 ${it.weight}</span>
+              ${it.points ? rewardPropBadgeHtml(it.points, { compact: false }) : `<span class="mb-tag">无奖励积分</span>`}
               ${it.difficulty ? `<span class="mb-tag">${esc(it.difficulty)}</span>` : ""}
-              ${it.points ? rewardPropBadgeHtml(it.points, { compact: true }) : ""}
-              <span class="mb-tag">完成 ${done.length}</span>
             </div>
-            <div class="mission-done-row">
-              <span class="md-label">已获赏</span>
-              ${done.length ? names + more : `<span class="md-label">暂无 · 点进详情登记</span>`}
+            <div class="mw-top3">
+              <span class="md-label">获赏前三</span>
+              ${top3}
+            </div>
+            <div class="mw-actions">
+              <button type="button" class="ghost" data-open-mission="${esc(String(it.id))}">任务详情</button>
             </div>
           </div>`;
         }).join("");
-        list.querySelectorAll("[data-open-mission]").forEach((el) => {
-          el.onclick = (e) => {
-            if (e.target.closest("[data-action]")) return;
-            openMissionDetail(el.dataset.openMission);
+        list.querySelectorAll("[data-open-mission]").forEach((btn) => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            openMissionDetail(btn.getAttribute("data-open-mission"));
           };
         });
       }
@@ -4927,7 +5026,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const doneIds = new Set((mission.completions || []).map((c) => String(c.disciple_id)));
     const allDisc = sortDisciples(getDisciplesArray(), "name");
     const pending = allDisc.filter((d) => !doneIds.has(String(d.id)));
-    const done = (mission.completions || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+    const done = (mission.completions || []).slice().sort((a, b) => {
+      const da = (state.disciples || {})[a.disciple_id] || {};
+      const db = (state.disciples || {})[b.disciple_id] || {};
+      const ds = (Number(db.score) || 0) - (Number(da.score) || 0);
+      if (ds) return ds;
+      const dc = (Number(db.contributed) || 0) - (Number(da.contributed) || 0);
+      if (dc) return dc;
+      return (Number(a.at) || 0) - (Number(b.at) || 0);
+    });
     const rewardProp = rewardPropForPoints(mission.points);
 
     root.innerHTML = `
