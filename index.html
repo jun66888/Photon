@@ -1618,6 +1618,192 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   padding: 1.1rem; overflow-y: auto;
 }
 .drawer.show { transform: translateX(0); }
+
+/* ===== 课程分页壳：左右导航常驻，中间舞台翻页 ===== */
+body.teacher-shell {
+  --rail-w: 92px;
+  --rail-right-w: 108px;
+}
+body.teacher-shell.mode-mobile-clean {
+  --rail-w: 0px;
+  --rail-right-w: 0px;
+}
+.course-rail {
+  position: fixed; top: 0; bottom: 0; z-index: 52;
+  display: none; flex-direction: column; align-items: stretch;
+  gap: .45rem; padding: .7rem .4rem .9rem;
+  background:
+    linear-gradient(180deg, rgba(10,14,24,.97), rgba(8,12,20,.92)),
+    radial-gradient(120px 220px at 50% 0%, rgba(240,193,75,.12), transparent 70%);
+  border-color: rgba(240,193,75,.28);
+  box-shadow: 0 0 28px rgba(0,0,0,.35);
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin;
+}
+body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
+.course-rail.left {
+  left: 0; width: var(--rail-w);
+  border-right: 2px solid rgba(240,193,75,.28);
+}
+.course-rail.right {
+  right: 0; width: var(--rail-right-w);
+  border-left: 2px solid rgba(240,193,75,.28);
+}
+.course-rail .rail-brand {
+  display: flex; flex-direction: column; align-items: center; gap: .2rem;
+  margin-bottom: .35rem; padding-bottom: .45rem;
+  border-bottom: 1px solid rgba(240,193,75,.2);
+}
+.course-rail .rail-brand .brand-name {
+  writing-mode: vertical-rl; font-size: 1.05rem; letter-spacing: .2em;
+  height: 4.2rem;
+}
+.course-rail .rail-label {
+  font-size: .65rem; color: var(--ink-soft); text-align: center;
+  letter-spacing: .12em; margin: .15rem 0 .1rem;
+}
+.course-rail button.rail-btn {
+  width: 100%; min-height: 2.55rem; padding: .35rem .2rem !important;
+  font-size: .72rem !important; letter-spacing: .04em;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .12rem;
+  box-shadow: 0 2px 0 #0a0d16;
+}
+.course-rail button.rail-btn .ico { font-size: 1.05rem; line-height: 1; }
+.course-rail button.rail-btn.active-nav {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+  box-shadow: 0 0 12px rgba(240,193,75,.25), 0 2px 0 #0a0d16;
+}
+.course-rail button.rail-btn.seal {
+  font-family: var(--font-brush); font-size: .85rem !important;
+}
+.course-rail .rail-day {
+  margin-top: auto; text-align: center; padding-top: .4rem;
+  border-top: 1px solid rgba(240,193,75,.2);
+}
+.course-rail .rail-day .day-num {
+  font-family: var(--font-num); color: var(--gold); font-size: 1.1rem; font-weight: 800;
+}
+.course-stage-wrap {
+  min-height: 100vh;
+}
+body.teacher-shell:not(.mode-mobile-clean) .course-stage-wrap {
+  margin-left: var(--rail-w);
+  margin-right: var(--rail-right-w);
+}
+body.teacher-shell:not(.mode-mobile-clean) #teacher-screen.screen.compact-arena {
+  padding: .75rem .85rem 1.2rem;
+}
+body.teacher-shell:not(.mode-mobile-clean).has-ticker #teacher-screen.screen.compact-arena {
+  padding-top: 2.9rem;
+}
+body.teacher-shell:not(.mode-mobile-clean) #arena-ticker {
+  left: var(--rail-w); right: var(--rail-right-w); width: auto;
+}
+body.teacher-shell:not(.mode-mobile-clean) #sfx-bar {
+  left: calc(var(--rail-w) + 8px); top: 8px;
+}
+body.teacher-shell:not(.mode-mobile-clean) .demo-tip {
+  left: calc(var(--rail-w) + 8px) !important; top: 8px !important;
+}
+/* 隐藏旧顶栏（教师壳用左右轨代替） */
+body.teacher-shell:not(.mode-mobile-clean) #brand-nav { display: none !important; }
+body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
+body.teacher-shell:not(.mode-mobile-clean).has-brand-nav #sfx-bar { top: 8px; }
+
+.course-page {
+  animation: coursePageIn .38s cubic-bezier(.2,.85,.25,1);
+  min-height: calc(100vh - 1.6rem);
+}
+.course-page.from-right { animation-name: coursePageInRight; }
+.course-page.from-left { animation-name: coursePageInLeft; }
+@keyframes coursePageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes coursePageInRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes coursePageInLeft {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: none; }
+}
+.course-hero {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: .8rem; flex-wrap: wrap;
+  margin-bottom: .85rem; padding: .75rem .95rem;
+  border: 2px solid rgba(240,193,75,.35);
+  border-radius: 10px;
+  background:
+    linear-gradient(105deg, rgba(64,42,8,.35), rgba(12,18,32,.85) 45%, rgba(10,14,24,.9)),
+    radial-gradient(420px 120px at 0% 0%, rgba(240,193,75,.12), transparent 60%);
+  box-shadow: var(--shadow);
+  position: relative; overflow: hidden;
+}
+.course-hero::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: linear-gradient(180deg, var(--gold), transparent);
+}
+.course-hero .ch-seal {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-brush); font-size: 1.35rem; color: #1a1205;
+  background: radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 55%, #8a6d18);
+  border: 2px solid #fff3c4;
+  box-shadow: 0 0 16px rgba(240,193,75,.45);
+  flex: 0 0 auto;
+}
+.course-hero .ch-text { flex: 1; min-width: 0; }
+.course-hero .ch-kicker {
+  font-size: .72rem; color: var(--ink-soft); letter-spacing: .16em; margin-bottom: .15rem;
+}
+.course-hero .ch-title {
+  font-family: var(--font-brush); font-size: clamp(1.55rem, 2.6vw, 2.1rem);
+  color: var(--gold); letter-spacing: .1em; line-height: 1.15;
+  text-shadow: 0 0 14px rgba(240,193,75,.35);
+}
+.course-hero .ch-sub { color: var(--ink-soft); font-size: .85rem; margin-top: .2rem; }
+.course-hero .ch-actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.course-panel {
+  border: 2px solid rgba(240,193,75,.28);
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(22,28,46,.94), rgba(10,14,24,.92));
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.03);
+  padding: 1rem 1.05rem;
+}
+.course-panel + .course-panel { margin-top: .75rem; }
+.course-section-title {
+  font-family: var(--font-brush); font-size: 1.25rem; color: var(--seal);
+  letter-spacing: .08em; margin: 0 0 .55rem;
+  display: flex; align-items: center; gap: .45rem;
+}
+.course-section-title::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 8px rgba(240,193,75,.7);
+}
+.pager-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap;
+  margin-top: .85rem; padding-top: .65rem;
+  border-top: 1px solid rgba(240,193,75,.18);
+}
+.pager-bar .pager-info { color: var(--ink-soft); font-size: .82rem; }
+.pager-bar .pager-btns { display: flex; gap: .35rem; align-items: center; }
+.pager-bar button[disabled] { opacity: .35; }
+
+@media (max-width: 980px) {
+  body.teacher-shell { --rail-w: 76px; --rail-right-w: 86px; }
+  .course-rail button.rail-btn { font-size: .65rem !important; min-height: 2.35rem; }
+}
+@media (max-width: 720px) {
+  body.teacher-shell { --rail-w: 0px; --rail-right-w: 0px; }
+  body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: none; }
+  body.teacher-shell:not(.mode-mobile-clean) #brand-nav { display: flex !important; }
+  body.teacher-shell:not(.mode-mobile-clean) .course-stage-wrap { margin: 0; }
+  body.teacher-shell:not(.mode-mobile-clean) #arena-ticker { left: 0; right: 0; }
+}
+
+
 </style>
 </head>
 <body>
@@ -1625,7 +1811,7 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   <noscript><div class="screen paper panel">需要启用 JavaScript</div></noscript>
   <div id="boot-error" class="hidden" style="padding:1rem;background:#5c1010;color:#fff5e8"></div>
 
-  <!-- 始终中上部：光影盟徽标 + 导航 -->
+  <!-- 顶栏（窄屏回退）；宽屏由左右课程轨接管 -->
   <header id="brand-nav" class="brand-nav">
     <button type="button" class="brand-emblem" id="brand-home" title="回到主页">
       <span class="brand-seal">盟</span>
@@ -1644,7 +1830,38 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
     </nav>
   </header>
 
+  <!-- 左轨：课程分页导航（切换页面时停留） -->
+  <aside class="course-rail left" id="rail-left" aria-label="课程导航">
+    <button type="button" class="brand-emblem rail-brand" id="rail-home" title="回到主页">
+      <span class="brand-seal">盟</span>
+      <span class="brand-name">光影盟</span>
+    </button>
+    <div class="rail-label">课程</div>
+    <nav id="rail-nav-links">
+      <button type="button" class="rail-btn" data-action="goto-main" data-nav="main"><span class="ico">⚔</span>对擂</button>
+      <button type="button" class="rail-btn" data-action="goto-checkin" data-nav="checkin"><span class="ico">签</span>签到</button>
+      <button type="button" class="rail-btn" data-action="goto-vote" data-nav="vote"><span class="ico">票</span>投票</button>
+      <button type="button" class="rail-btn" data-action="goto-logs" data-nav="logs"><span class="ico">录</span>日志</button>
+      <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
+      <button type="button" class="rail-btn" id="btn-memories-rail" data-action="goto-memories" disabled><span class="ico">忆</span>回忆</button>
+    </nav>
+  </aside>
+
+  <!-- 右轨：常用动作（切换页面时停留） -->
+  <aside class="course-rail right" id="rail-right" aria-label="快捷动作">
+    <div class="rail-label">出手</div>
+    <button type="button" class="rail-btn" data-action="custom-score"><span class="ico">＋</span>加分</button>
+    <button type="button" class="rail-btn" data-action="export-data"><span class="ico">⇩</span>导出</button>
+    <button type="button" class="rail-btn seal" data-action="settle-ranks"><span class="ico">印</span>段位</button>
+    <div class="rail-day">
+      <div class="muted" style="font-size:.65rem">DAY</div>
+      <div class="day-num" id="rail-day-label">1</div>
+    </div>
+  </aside>
+
+  <div class="course-stage-wrap">
   <!-- 顶部战报广告牌 -->
+
   <div class="ticker" id="arena-ticker" hidden>
     <div class="ticker-badge">战报</div>
     <div class="ticker-track">
@@ -1654,16 +1871,22 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 
   <!-- TEACHER -->
   <div id="teacher-screen" class="screen compact-arena">
-    <div id="teacher-main" class="subview">
-      <div class="arena-toolbar">
-        <div class="app-title compact">山峰对擂</div>
-        <span class="round-chip">DAY <span id="day-label">1</span></span>
-        <label class="tool-inline"><span>天数</span>
-          <input id="day-input" class="day-input" type="number" min="1" value="1" />
-        </label>
-        <span class="toolbar-grow"></span>
-        <button type="button" data-action="add-peak-red">＋光影山峰</button>
-        <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
+    <div id="teacher-main" class="subview course-page">
+      <div class="course-hero" style="margin-bottom:.45rem;padding:.55rem .8rem">
+        <div class="ch-seal" style="width:40px;height:40px;font-size:1.15rem">盟</div>
+        <div class="ch-text">
+          <div class="ch-kicker">COURSE · ARENA</div>
+          <div class="ch-title" style="font-size:clamp(1.25rem,2.2vw,1.7rem)">山峰对擂</div>
+          <div class="ch-sub">左右导航常驻 · 切换课程页不丢方向</div>
+        </div>
+        <div class="ch-actions">
+          <span class="round-chip">DAY <span id="day-label">1</span></span>
+          <label class="tool-inline"><span>天数</span>
+            <input id="day-input" class="day-input" type="number" min="1" value="1" />
+          </label>
+          <button type="button" data-action="add-peak-red">＋光影山峰</button>
+          <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
+        </div>
       </div>
 
       <div class="hall-banner" id="hall-home-banner" hidden></div>
@@ -1708,99 +1931,126 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 
     </div>
 
-    <div id="teacher-checkin" class="subview checkin-board hidden">
-      <div class="row" style="justify-content:space-between;margin-bottom:1rem">
-        <div class="app-title" style="font-size:2rem">签到看板 · <span id="checkin-session-label">上午</span></div>
-        <button type="button" data-action="back-main" class="ghost">返回</button>
-      </div>
-      <div class="paper panel">
-        <div>已签到 <strong id="checkin-count">0</strong> / <strong id="checkin-total">25</strong></div>
-        <div class="progress-line"><div id="checkin-progress"></div></div>
-        <div class="row" style="margin-bottom:1rem">
-          <button type="button" class="primary" data-action="gen-checkin-code">生成微信签到码</button>
+    <div id="teacher-checkin" class="subview checkin-board course-page hidden">
+      <div class="course-hero">
+        <div class="ch-seal">签</div>
+        <div class="ch-text">
+          <div class="ch-kicker">COURSE · CHECK-IN</div>
+          <div class="ch-title">签到课堂 · <span id="checkin-session-label">上午</span></div>
+          <div class="ch-sub">微信扫码入盟 · 已签弟子金光修炼 · 未签红色提示</div>
+        </div>
+        <div class="ch-actions">
+          <button type="button" class="primary" data-action="gen-checkin-code">生成签到码</button>
           <button type="button" data-action="refresh-checkin-code">刷新码</button>
           <button type="button" data-action="end-checkin">结束签到</button>
           <button type="button" data-action="toggle-session">下午签到</button>
         </div>
-        <p class="muted" style="margin-bottom:.6rem">请学生用<strong>微信扫一扫</strong>下方二维码 · 码在「结束签到」前一直有效</p>
-        <div class="row" style="align-items:flex-start;gap:1.5rem">
+      </div>
+      <div class="course-panel">
+        <div class="course-section-title">本场进度</div>
+        <div>已签到 <strong id="checkin-count">0</strong> / <strong id="checkin-total">25</strong></div>
+        <div class="progress-line"><div id="checkin-progress"></div></div>
+        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「结束签到」前一直有效</p>
+        <div class="row" style="align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
           <div>
             <div class="muted">签到码 <span id="checkin-code-text">------</span> · <span id="checkin-countdown">进行中</span></div>
             <div class="qr-box" id="checkin-qr" style="margin-top:.5rem"></div>
           </div>
-          <div style="flex:1">
-            <h4 style="color:var(--ok)">已签到</h4>
+          <div style="flex:1;min-width:220px">
+            <h4 class="course-section-title" style="color:var(--ok)">已签到 · 金光修炼</h4>
             <div id="checked-list"></div>
-            <h4 style="color:var(--danger);margin-top:.8rem">未签到</h4>
+            <h4 class="course-section-title" style="color:var(--danger);margin-top:.9rem">未签到</h4>
             <div id="unchecked-list"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="teacher-vote" class="subview hidden">
-      <div class="row" style="justify-content:space-between;margin-bottom:.7rem">
-        <div class="app-title" style="font-size:2rem">作品投票 · <span id="vote-title">第1周最佳作品</span></div>
-        <button type="button" data-action="back-main" class="ghost">返回</button>
+    <div id="teacher-vote" class="subview course-page hidden">
+      <div class="course-hero">
+        <div class="ch-seal">票</div>
+        <div class="ch-text">
+          <div class="ch-kicker">COURSE · VOTE</div>
+          <div class="ch-title">作品投票 · <span id="vote-title">第1周最佳作品</span></div>
+          <div class="ch-sub">各小组作品实时追赶 · 反超升位 · 跌落回落</div>
+        </div>
+        <div class="ch-actions">
+          <button type="button" class="primary" data-action="open-vote">开启投票</button>
+          <button type="button" data-action="close-vote">关闭投票</button>
+          <button type="button" data-action="reset-votes">重置票数</button>
+          <button type="button" class="seal" data-action="award">颁奖</button>
+          <button type="button" data-action="demo-vote" title="投屏演示用：随机给一小组加一票">模拟一票</button>
+        </div>
       </div>
-      <div class="row" style="margin-bottom:.7rem">
-        <button type="button" class="primary" data-action="open-vote">开启投票</button>
-        <button type="button" data-action="close-vote">关闭投票</button>
-        <button type="button" data-action="reset-votes">重置票数</button>
-        <button type="button" class="seal" data-action="award">颁奖</button>
-        <button type="button" data-action="demo-vote" title="投屏演示用：随机给一小组加一票">模拟一票</button>
-      </div>
-      <div class="vote-race-meta" id="vote-race-meta"></div>
-      <div class="vote-race-shell">
-        <div class="vote-race-board" id="vote-race-board" aria-live="polite"></div>
-        <div class="vote-qr-dock">
-          <div class="muted" style="margin-bottom:.35rem">扫码给小组作品投票</div>
-          <div class="qr-box" id="student-vote-qr"></div>
+      <div class="course-panel">
+        <div class="vote-race-meta" id="vote-race-meta"></div>
+        <div class="vote-race-shell">
+          <div class="vote-race-board" id="vote-race-board" aria-live="polite"></div>
+          <div class="vote-qr-dock">
+            <div class="muted" style="margin-bottom:.35rem">扫码给小组作品投票</div>
+            <div class="qr-box" id="student-vote-qr"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div id="teacher-logs" class="subview hidden">
-      <div class="row" style="justify-content:space-between;margin-bottom:1rem">
-        <div class="app-title" style="font-size:2rem">积分日志</div>
-        <button type="button" data-action="back-main" class="ghost">返回</button>
-      </div>
-      <div class="paper panel stack">
-        <div class="row">
+    <div id="teacher-logs" class="subview course-page hidden">
+      <div class="course-hero">
+        <div class="ch-seal">录</div>
+        <div class="ch-text">
+          <div class="ch-kicker">COURSE · LOGS</div>
+          <div class="ch-title">山河战报 · 积分日志</div>
+          <div class="ch-sub">出招留痕 · 分页翻阅 · 可按山峰与原因检索</div>
+        </div>
+        <div class="ch-actions">
           <button type="button" data-log-filter="today" class="primary">今日</button>
           <button type="button" data-log-filter="week">本周</button>
           <button type="button" data-log-filter="all">全部</button>
-          <input id="log-search" type="text" placeholder="搜索山峰或原因" style="max-width:240px" />
+          <input id="log-search" type="text" placeholder="搜索山峰或原因" style="max-width:200px" />
         </div>
+      </div>
+      <div class="course-panel stack">
+        <div class="course-section-title">战报名册</div>
         <div id="logs-list"></div>
+        <div class="pager-bar" id="logs-pager">
+          <div class="pager-info" id="logs-pager-info">第 1 页</div>
+          <div class="pager-btns">
+            <button type="button" id="logs-prev">上一页</button>
+            <button type="button" id="logs-next">下一页</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div id="teacher-settings" class="subview hidden">
-      <div class="row" style="justify-content:space-between;margin-bottom:1rem">
-        <div class="app-title" style="font-size:2rem">对战设置</div>
-        <button type="button" data-action="back-main" class="ghost">返回</button>
-      </div>
-      <div class="paper panel">
-        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">运行与音效</h4>
-        <div id="settings-demo-box" style="margin-bottom:1rem"></div>
-        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">大厅 · 未入峰</h4>
-        <div id="settings-hall" style="margin-bottom:1rem"></div>
-        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">小组名册</h4>
-        <div id="settings-peaks"></div>
-        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-peak">＋添加角色</button></div>
-        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">弟子名册</h4>
-        <div id="settings-disciples" style="max-height:260px;overflow:auto"></div>
-        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-disciple">＋添加弟子</button></div>
-        <h4 style="font-family:var(--font-brush);font-size:1.4rem;color:var(--seal)">加分招式</h4>
-        <div id="settings-presets"></div>
-        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-preset">＋添加预设</button></div>
-        <div id="settings-tasks"></div>
-        <div class="row" style="margin-top:1rem">
+    <div id="teacher-settings" class="subview course-page hidden">
+      <div class="course-hero">
+        <div class="ch-seal">设</div>
+        <div class="ch-text">
+          <div class="ch-kicker">COURSE · SETTINGS</div>
+          <div class="ch-title">对战设置 · 名册与招式</div>
+          <div class="ch-sub">大厅入峰 · 音效 DEMO · 小组与弟子名册</div>
+        </div>
+        <div class="ch-actions">
           <button type="button" class="seal" data-action="settle-ranks">段位结算</button>
           <button type="button" data-action="export-csv">导出 CSV</button>
           <button type="button" data-action="export-json">导出 JSON</button>
         </div>
+      </div>
+      <div class="course-panel">
+        <div class="course-section-title">运行与音效</div>
+        <div id="settings-demo-box" style="margin-bottom:1rem"></div>
+        <div class="course-section-title">大厅 · 未入峰</div>
+        <div id="settings-hall" style="margin-bottom:1rem"></div>
+        <div class="course-section-title">小组名册</div>
+        <div id="settings-peaks"></div>
+        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-peak">＋添加小组</button></div>
+        <div class="course-section-title">弟子名册</div>
+        <div id="settings-disciples" style="max-height:260px;overflow:auto"></div>
+        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-disciple">＋添加弟子</button></div>
+        <div class="course-section-title">加分招式</div>
+        <div id="settings-presets"></div>
+        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-preset">＋添加预设</button></div>
+        <div id="settings-tasks"></div>
       </div>
     </div>
 
@@ -2180,6 +2430,9 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   let db = null, arenaRef = null, state = buildSeedArena(), demoMode = !FIREBASE_READY;
   let recentRotateTimer = null, recentLogIndex = 0, checkinRefreshTimer = null;
   let logFilter = "today", teacherView = "main", sortMode = "score";
+  let logsPage = 1;
+  const LOGS_PAGE_SIZE = 12;
+  const VIEW_ORDER = ["main", "checkin", "vote", "logs", "settings"];
   let dragPeakId = null, sectModalTab = "bonus";
   /** 作品投票榜快照：用于追赶排序动效 */
   let votePrevMap = {};
@@ -3364,8 +3617,17 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
     document.getElementById("blue-total").textContent = blue;
 
     const memBtn = document.getElementById("btn-memories");
-    memBtn.disabled = day < 20;
-    memBtn.style.opacity = day < 20 ? .45 : 1;
+    if (memBtn) {
+      memBtn.disabled = day < 20;
+      memBtn.style.opacity = day < 20 ? .45 : 1;
+    }
+    const memRail = document.getElementById("btn-memories-rail");
+    if (memRail) {
+      memRail.disabled = day < 20;
+      memRail.style.opacity = day < 20 ? .45 : 1;
+    }
+    const railDay = document.getElementById("rail-day-label");
+    if (railDay) railDay.textContent = String(day);
 
     const redList = sortPeaks(getPeaksArray().filter((p) => p.camp !== "blue"));
     const blueList = sortPeaks(getPeaksArray().filter((p) => p.camp === "blue"));
@@ -3867,11 +4129,27 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   }
 
   function setTeacherView(view) {
+    const prev = teacherView;
     teacherView = view;
+    const prevIdx = VIEW_ORDER.indexOf(prev);
+    const nextIdx = VIEW_ORDER.indexOf(view);
+    const dir = nextIdx >= 0 && prevIdx >= 0 && nextIdx !== prevIdx
+      ? (nextIdx > prevIdx ? "from-right" : "from-left")
+      : "";
+
     ["main", "checkin", "vote", "logs", "settings"].forEach((v) => {
       const id = v === "main" ? "teacher-main" : "teacher-" + v;
       const el = document.getElementById(id);
-      if (el) el.classList.toggle("hidden", v !== view);
+      if (!el) return;
+      const show = v === view;
+      el.classList.toggle("hidden", !show);
+      if (show) {
+        el.classList.remove("from-left", "from-right");
+        if (dir) {
+          void el.offsetWidth;
+          el.classList.add(dir);
+        }
+      }
     });
     const showTicker = view === "main";
     const ticker = document.getElementById("arena-ticker") || document.querySelector(".ticker");
@@ -3880,12 +4158,14 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
       ticker.style.display = showTicker ? "flex" : "none";
     }
     document.body.classList.toggle("has-ticker", showTicker);
-    document.querySelectorAll("#teacher-nav-links [data-nav]").forEach((b) => {
+    document.querySelectorAll("#teacher-nav-links [data-nav], #rail-nav-links [data-nav]").forEach((b) => {
       b.classList.toggle("active-nav", b.dataset.nav === view);
     });
+    const railDay = document.getElementById("rail-day-label");
+    if (railDay) railDay.textContent = String(state.config?.day || 1);
     if (view === "checkin") renderTeacherCheckin();
     if (view === "vote") renderTeacherVote();
-    if (view === "logs") renderLogs();
+    if (view === "logs") { logsPage = 1; renderLogs(); }
     if (view === "settings") renderSettings();
   }
 
@@ -3907,15 +4187,26 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
     const links = document.getElementById("teacher-nav-links");
     const mobileClean = mode === "checkin" || mode === "student";
     document.body.classList.toggle("mode-mobile-clean", mobileClean);
+    document.body.classList.toggle("teacher-shell", mode === "teacher");
     if (!nav) return;
     if (mobileClean) {
       nav.style.display = "none";
       document.body.classList.remove("has-brand-nav");
+    } else if (mode === "teacher") {
+      // 宽屏用左右轨；窄屏 CSS 会显示顶栏
+      nav.style.display = "";
+      document.body.classList.add("has-brand-nav");
     } else {
       nav.style.display = "";
       document.body.classList.add("has-brand-nav");
     }
     if (links) links.style.display = mode === "teacher" ? "" : "none";
+    const rails = [document.getElementById("rail-left"), document.getElementById("rail-right")];
+    rails.forEach((r) => {
+      if (!r) return;
+      // 交由 CSS .teacher-shell 控制显隐，避免行内 style 盖掉 flex
+      r.style.removeProperty("display");
+    });
     const sfx = document.getElementById("sfx-bar");
     if (sfx) sfx.style.display = mobileClean ? "none" : "";
     document.querySelectorAll(".demo-tip").forEach((el) => {
@@ -4281,9 +4572,25 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
     else if (logFilter === "week") logs = logs.filter((l) => (l.day || 0) > day - 7);
     const q = (document.getElementById("log-search")?.value || "").trim();
     if (q) logs = logs.filter((l) => (l.peak_name || "").includes(q) || (l.reason || "").includes(q));
-    document.getElementById("logs-list").innerHTML = logs.map((l) => `
-      <div class="list-item"><span>${fmtTime(l.timestamp)} | ${l.peak_name} | ${l.reason} | ${l.category||""}</span><span style="color:var(--seal)">+${l.points}</span></div>
-    `).join("") || '<div class="muted">暂无日志</div>';
+    const totalPages = Math.max(1, Math.ceil(logs.length / LOGS_PAGE_SIZE));
+    if (logsPage > totalPages) logsPage = totalPages;
+    if (logsPage < 1) logsPage = 1;
+    const start = (logsPage - 1) * LOGS_PAGE_SIZE;
+    const pageLogs = logs.slice(start, start + LOGS_PAGE_SIZE);
+    const list = document.getElementById("logs-list");
+    if (list) {
+      list.innerHTML = pageLogs.map((l) => `
+        <div class="list-item"><span>${fmtTime(l.timestamp)} | ${esc(l.peak_name)} | ${esc(l.reason)} | ${esc(l.category||"")}</span><span style="color:var(--seal)">+${l.points}</span></div>
+      `).join("") || '<div class="muted">暂无日志</div>';
+    }
+    const info = document.getElementById("logs-pager-info");
+    if (info) info.textContent = logs.length
+      ? `第 ${logsPage} / ${totalPages} 页 · 共 ${logs.length} 条`
+      : "暂无记录";
+    const prev = document.getElementById("logs-prev");
+    const next = document.getElementById("logs-next");
+    if (prev) prev.disabled = logsPage <= 1;
+    if (next) next.disabled = logsPage >= totalPages;
   }
 
   function renderSettings() {
@@ -5181,10 +5488,10 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
       if (!btn) return;
       await handleTeacherAction(btn.dataset.action, btn);
     });
-    const brandNav = document.getElementById("brand-nav");
-    if (brandNav) {
-      brandNav.addEventListener("click", async (e) => {
-        if (e.target.closest("#brand-home") || e.target.closest(".brand-emblem")) {
+    const bindNavHost = (host) => {
+      if (!host) return;
+      host.addEventListener("click", async (e) => {
+        if (e.target.closest("#brand-home") || e.target.closest("#rail-home") || e.target.closest(".brand-emblem")) {
           goHome();
           return;
         }
@@ -5192,16 +5499,25 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
         if (!btn) return;
         await handleTeacherAction(btn.dataset.action, btn);
       });
-    }
+    };
+    bindNavHost(document.getElementById("brand-nav"));
+    bindNavHost(document.getElementById("rail-left"));
+    bindNavHost(document.getElementById("rail-right"));
     document.getElementById("day-input").addEventListener("change", async (e) => changeDay(e.target.value));
     document.querySelectorAll("[data-log-filter]").forEach((btn) => {
       btn.addEventListener("click", () => {
         logFilter = btn.dataset.logFilter;
+        logsPage = 1;
         document.querySelectorAll("[data-log-filter]").forEach((b) => b.classList.toggle("primary", b === btn));
         renderLogs();
       });
     });
-    document.getElementById("log-search").addEventListener("input", () => renderLogs());
+    const logSearch = document.getElementById("log-search");
+    if (logSearch) logSearch.addEventListener("input", () => { logsPage = 1; renderLogs(); });
+    const logsPrev = document.getElementById("logs-prev");
+    const logsNext = document.getElementById("logs-next");
+    if (logsPrev) logsPrev.onclick = () => { logsPage -= 1; renderLogs(); };
+    if (logsNext) logsNext.onclick = () => { logsPage += 1; renderLogs(); };
     document.getElementById("drawer-close").onclick = () => { document.getElementById("drawer-mask").classList.remove("show"); document.getElementById("peak-drawer").classList.remove("show"); };
     document.getElementById("drawer-mask").onclick = () => { document.getElementById("drawer-mask").classList.remove("show"); document.getElementById("peak-drawer").classList.remove("show"); };
   }
