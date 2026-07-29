@@ -242,108 +242,142 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
   background: rgba(240,193,75,.08); min-height: 2.05rem;
 }
 
-/* 两派对擂 HUD：单行瘦身，贡献改为可展开条 */
-.fight-hud {
-  display: grid; grid-template-columns: 1fr auto 1fr; gap: .35rem .5rem; align-items: center;
-  margin-bottom: 0; padding: .4rem .55rem;
+/* 门派任务发布栏（取代原山峰对决 VS 框） */
+.mission-board {
+  display: grid;
+  grid-template-columns: minmax(88px, 140px) 1fr minmax(88px, 140px);
+  gap: .4rem .55rem;
+  align-items: stretch;
+  margin-bottom: 0;
+  padding: .35rem;
   flex: 0 0 auto;
   background:
-    linear-gradient(90deg, rgba(138,16,40,.28), transparent 42%, transparent 58%, rgba(10,106,122,.24)),
+    linear-gradient(90deg, rgba(138,16,40,.22), transparent 38%, transparent 62%, rgba(10,106,122,.2)),
     var(--panel);
   border: 2px solid var(--frame);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  position: relative; overflow: hidden;
-}
-.fight-hud::before { content: none; }
-.pk-side {
-  display: flex; align-items: center; gap: .45rem;
-  position: relative; z-index: 1; min-width: 0;
-}
-.pk-side.red { flex-direction: row; }
-.pk-side.blue { flex-direction: row; }
-.pk-inline {
-  display: flex; flex-direction: column; align-items: center; gap: .1rem; flex: 0 0 auto;
-  min-width: 3.2rem;
-}
-.pk-side .camp-label {
-  font-family: var(--font-brush); font-size: 1rem; letter-spacing: .04em; line-height: 1;
-}
-.pk-side.red .camp-label { color: #ff8aa0; }
-.pk-side.blue .camp-label { color: #7ef0ff; }
-.pk-side .score {
-  font-family: var(--font-num); font-size: clamp(1.2rem, 2.4vw, 1.65rem); line-height: 1;
-  font-weight: 800;
-}
-.pk-side.red .score { color: var(--red); text-shadow: 0 0 16px rgba(255,59,92,.45); }
-.pk-side.blue .score { color: var(--cyan); text-shadow: 0 0 16px rgba(46,230,255,.4); }
-.pk-track {
-  height: 50px; border-radius: 6px; background: #07090f;
-  overflow: hidden; display: flex; flex-direction: row; align-items: stretch;
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: inset 0 0 12px rgba(0,0,0,.65);
-  flex: 1 1 auto; min-width: 0;
-}
-.pk-track.long { height: 50px; }
-.pk-seg {
-  --i: .5;
   position: relative;
-  height: 100%;
-  min-width: 0;
-  flex: 1 1 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .05rem; padding: 0 .2rem;
   overflow: hidden;
-  border-right: 1px solid rgba(0,0,0,.35);
-  transition: filter .2s ease, flex-grow .45s ease;
-  filter: saturate(calc(0.45 + var(--i) * 0.9)) brightness(calc(0.72 + var(--i) * 0.5));
-  box-shadow: inset 0 0 calc(10px + 18px * var(--i)) rgba(255,255,255, calc(0.04 + var(--i) * 0.12));
 }
-.pk-seg:last-child { border-right: 0; }
-.pk-seg.red {
+.mission-camp-chip {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .15rem; padding: .45rem .35rem; min-height: 4.4rem;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 7px; cursor: pointer;
+  background: rgba(7,9,15,.55);
+  transition: border-color .2s ease, transform .18s ease, box-shadow .2s ease;
+  font-family: inherit; color: inherit;
+}
+.mission-camp-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.28);
+}
+.mission-camp-chip.red {
+  border-color: rgba(255,59,92,.45);
+  background: linear-gradient(180deg, rgba(255,59,92,.18), rgba(7,9,15,.5));
+}
+.mission-camp-chip.blue {
+  border-color: rgba(46,230,255,.45);
+  background: linear-gradient(180deg, rgba(46,230,255,.16), rgba(7,9,15,.5));
+}
+.mission-camp-chip .camp-label {
+  font-family: var(--font-brush); font-size: 1.05rem; letter-spacing: .06em; line-height: 1;
+}
+.mission-camp-chip.red .camp-label { color: #ff8aa0; }
+.mission-camp-chip.blue .camp-label { color: #7ef0ff; }
+.mission-camp-chip .score {
+  font-family: var(--font-num); font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+  font-weight: 800; line-height: 1;
+}
+.mission-camp-chip.red .score { color: var(--red); text-shadow: 0 0 14px rgba(255,59,92,.4); }
+.mission-camp-chip.blue .score { color: var(--cyan); text-shadow: 0 0 14px rgba(46,230,255,.35); }
+.mission-camp-chip .chip-hint {
+  font-size: .62rem; letter-spacing: .12em; color: var(--ink-soft); opacity: .85;
+}
+.mission-publish {
+  display: flex; flex-direction: column; justify-content: center; gap: .2rem;
+  text-align: left; padding: .5rem .75rem; min-height: 4.4rem;
+  border: 1px dashed rgba(240,193,75,.45);
+  border-radius: 7px; cursor: pointer;
   background:
-    linear-gradient(180deg, rgba(255,180,190, calc(0.25 + var(--i) * 0.45)), transparent 42%),
-    linear-gradient(180deg, #ff7a92, var(--red) 48%, #6a0c1e);
+    radial-gradient(120% 80% at 50% 0%, rgba(240,193,75,.12), transparent 55%),
+    rgba(10,14,24,.72);
+  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  font-family: inherit; color: inherit; width: 100%;
 }
-.pk-seg.blue {
-  background:
-    linear-gradient(180deg, rgba(180,245,255, calc(0.25 + var(--i) * 0.45)), transparent 42%),
-    linear-gradient(180deg, #7ef0ff, var(--cyan) 48%, #07505c);
+.mission-publish:hover {
+  border-style: solid;
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 1px rgba(240,193,75,.2), 0 0 18px rgba(240,193,75,.12);
 }
-.pk-seg.empty {
-  flex: 1; color: var(--ink-soft); font-size: .78rem;
-  background: repeating-linear-gradient(135deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 6px, transparent 6px, transparent 12px);
+.mission-publish .mb-kicker {
+  font-size: .68rem; letter-spacing: .18em; color: var(--gold); font-weight: 700;
 }
-.pk-seg > span {
-  font-family: var(--font-brush); font-size: .92rem; line-height: 1;
-  color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.65);
-  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.mission-publish .mb-title {
+  font-family: var(--font-brush); font-size: clamp(1.15rem, 2vw, 1.45rem);
+  color: #fff5e8; line-height: 1.15; letter-spacing: .04em;
 }
-.pk-seg > b {
-  font-family: var(--font-num); font-size: .72rem; font-weight: 800; line-height: 1;
-  color: #ffe39a; text-shadow: 0 0 8px rgba(0,0,0,.5);
+.mission-publish .mb-desc {
+  font-size: .78rem; color: var(--ink-soft); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.pk-seg.top {
-  outline: 1px solid rgba(255,227,154,.55);
-  z-index: 1;
+.mission-publish .mb-meta {
+  display: flex; flex-wrap: wrap; gap: .25rem .45rem; margin-top: .1rem;
 }
-.pk-vs {
-  width: 42px; height: 42px; border-radius: 50%; margin: 0;
-  display: grid; place-items: center;
-  font-family: var(--font-num); font-weight: 800; font-size: .85rem;
-  color: #1a1205; background: radial-gradient(circle at 35% 30%, #ffe39a, var(--gold) 45%, #8a6d18);
-  border: 2px solid #fff3c4;
-  box-shadow: 0 0 14px rgba(240,193,75,.45);
-  animation: vsPulse 1.6s ease-in-out infinite;
-  z-index: 2; flex: 0 0 auto;
+.mission-publish .mb-tag {
+  font-size: .68rem; padding: .12rem .4rem; border-radius: 4px;
+  border: 1px solid rgba(240,193,75,.35); color: #ffe39a;
+  background: rgba(240,193,75,.08); letter-spacing: .06em;
 }
-@keyframes vsPulse {
-  0%,100% { transform: scale(1); }
-  50% { transform: scale(1.05); box-shadow: 0 0 18px rgba(240,193,75,.6); }
+.modal.mission-edit-modal {
+  width: min(960px, 96vw);
 }
-@media (max-width: 720px) {
-  .pk-side .camp-label { font-size: .85rem; }
-  .pk-seg > span { font-size: .78rem; }
+.mission-edit-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: .75rem;
+  align-items: start;
+}
+.mission-faction-pane {
+  border-radius: 10px; padding: .7rem .75rem;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(7,9,15,.55);
+  animation: factionPop .38s cubic-bezier(.2,.85,.25,1) both;
+}
+.mission-faction-pane.red {
+  border-color: rgba(255,59,92,.4);
+  background: linear-gradient(165deg, rgba(255,59,92,.16), rgba(7,9,15,.6));
+}
+.mission-faction-pane.blue {
+  border-color: rgba(46,230,255,.4);
+  background: linear-gradient(165deg, rgba(46,230,255,.14), rgba(7,9,15,.6));
+  animation-delay: .08s;
+}
+.mission-faction-pane h4 {
+  margin: 0 0 .45rem; font-family: var(--font-brush); font-size: 1.25rem; letter-spacing: .06em;
+}
+.mission-faction-pane.red h4 { color: #ff8aa0; }
+.mission-faction-pane.blue h4 { color: #7ef0ff; }
+.mission-faction-pane .fa-row {
+  display: flex; justify-content: space-between; gap: .4rem;
+  font-size: .78rem; padding: .22rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.mission-faction-pane .fa-row span:last-child { color: #ffe39a; font-weight: 700; text-align: right; }
+.mission-faction-pane label { margin-top: .45rem; }
+.mission-center-pane {
+  display: flex; flex-direction: column; gap: .45rem;
+  animation: factionPop .32s cubic-bezier(.2,.85,.25,1) .04s both;
+}
+@keyframes factionPop {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 860px) {
+  .mission-board { grid-template-columns: 1fr 1fr; }
+  .mission-publish { grid-column: 1 / -1; order: -1; }
+  .mission-edit-layout { grid-template-columns: 1fr; }
 }
 
 .camps-board {
@@ -1993,22 +2027,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>
 
       <div class="hall-banner" id="hall-home-banner" hidden></div>
-      <div class="fight-hud" id="pk-bar">
-        <div class="pk-side red">
-          <div class="pk-inline">
-            <span class="camp-label">光影</span>
-            <span class="score" id="red-total">0</span>
-          </div>
-          <div class="pk-track long" id="red-segments" title="各组经验占比"></div>
-        </div>
-        <div class="pk-vs">VS</div>
-        <div class="pk-side blue">
-          <div class="pk-track long" id="blue-segments" title="各组经验占比"></div>
-          <div class="pk-inline">
-            <span class="score" id="blue-total">0</span>
-            <span class="camp-label">声浪</span>
-          </div>
-        </div>
+      <div class="mission-board" id="mission-board" aria-label="门派任务发布栏">
+        <button type="button" class="mission-camp-chip red" data-action="edit-camp-mission" data-focus-camp="red" title="查看并编辑光影派系属性">
+          <span class="camp-label">光影</span>
+          <span class="score" id="red-total">0</span>
+          <span class="chip-hint">点看属性</span>
+        </button>
+        <button type="button" class="mission-publish" id="mission-publish-bar" data-action="edit-camp-mission" title="点击编辑门派任务">
+          <div class="mb-kicker">门派任务发布栏 · 点击编辑</div>
+          <div class="mb-title" id="mission-board-title">今日门派任务</div>
+          <div class="mb-desc" id="mission-board-desc">点击此处发布与编辑任务内容</div>
+          <div class="mb-meta" id="mission-board-meta"></div>
+        </button>
+        <button type="button" class="mission-camp-chip blue" data-action="edit-camp-mission" data-focus-camp="blue" title="查看并编辑声浪派系属性">
+          <span class="camp-label">声浪</span>
+          <span class="score" id="blue-total">0</span>
+          <span class="chip-hint">点看属性</span>
+        </button>
       </div>
 
       <div class="camps-board">
@@ -2534,7 +2569,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       config: {
         day: 1, week: 1, voting_open: false, title: "第1周最佳作品",
         checkin_code: "", checkin_expires_at: 0, checkin_session: "am", checkin_active: false,
-        sort_mode: "score", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟"
+        sort_mode: "score", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟",
+        camp_mission: {
+          title: "今日门派任务",
+          desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
+          points: 10,
+          difficulty: "进阶",
+          category: "任务",
+          status: "published",
+          deadline: "",
+          red_focus: "光影叙事特训",
+          red_element: "光",
+          red_note: "侧重镜头与故事表达",
+          blue_focus: "声浪情绪特训",
+          blue_element: "水",
+          blue_note: "侧重声音与情绪传递"
+        }
       },
       peaks, disciples, score_logs: {}, bonus_presets, tasks
     };
@@ -3442,7 +3492,185 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (el) el.classList.toggle("hidden", m !== mode);
     });
   }
-  function campTotals() {
+  const DEFAULT_CAMP_MISSION = {
+    title: "今日门派任务",
+    desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
+    points: 10,
+    difficulty: "进阶",
+    category: "任务",
+    status: "published",
+    deadline: "",
+    red_focus: "光影叙事特训",
+    red_element: "光",
+    red_note: "侧重镜头与故事表达",
+    blue_focus: "声浪情绪特训",
+    blue_element: "水",
+    blue_note: "侧重声音与情绪传递"
+  };
+
+  function getCampMission() {
+    const raw = (state.config && state.config.camp_mission) || {};
+    return { ...DEFAULT_CAMP_MISSION, ...raw };
+  }
+
+  function getCampLiveStats(camp) {
+    const peaks = sortPeaks(getPeaksArray().filter((p) => (camp === "blue" ? p.camp === "blue" : p.camp !== "blue")));
+    const disciples = getDisciplesArray().filter((d) => {
+      if (isInHall(d)) return false;
+      const pk = findPeak(d.peak);
+      if (!pk) return false;
+      return camp === "blue" ? pk.camp === "blue" : pk.camp !== "blue";
+    });
+    const score = peaks.reduce((s, p) => s + (p.score || 0), 0);
+    const top = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+    const elements = {};
+    peaks.forEach((p) => {
+      const el = p.element || "无";
+      elements[el] = (elements[el] || 0) + 1;
+    });
+    const dominant = Object.entries(elements).sort((a, b) => b[1] - a[1])[0];
+    const alliance = camp === "blue"
+      ? (state.config?.alliance_blue_name || "声浪联盟")
+      : (state.config?.alliance_red_name || "光影联盟");
+    return {
+      camp,
+      alliance,
+      score,
+      peakCount: peaks.length,
+      memberCount: disciples.length,
+      topName: top ? `${top.icon || ""} ${top.name}` : "暂无山峰",
+      topScore: top ? (top.score || 0) : 0,
+      dominantElement: dominant ? dominant[0] : "—",
+      peaks
+    };
+  }
+
+  function renderMissionBoard() {
+    const m = getCampMission();
+    const { red, blue } = campTotals();
+    const redEl = document.getElementById("red-total");
+    const blueEl = document.getElementById("blue-total");
+    if (redEl) redEl.textContent = red;
+    if (blueEl) blueEl.textContent = blue;
+    const title = document.getElementById("mission-board-title");
+    const desc = document.getElementById("mission-board-desc");
+    const meta = document.getElementById("mission-board-meta");
+    if (title) title.textContent = m.title || "门派任务";
+    if (desc) desc.textContent = m.desc || "点击编辑任务内容与两派属性";
+    if (meta) {
+      const tags = [
+        m.status === "published" ? "已发布" : "草稿",
+        m.difficulty || "普通",
+        `奖励 +${m.points || 0}`,
+        m.category || "任务"
+      ];
+      if (m.deadline) tags.push("截止 " + m.deadline);
+      tags.push(`光影·${m.red_element || "光"}`);
+      tags.push(`声浪·${m.blue_element || "水"}`);
+      meta.innerHTML = tags.map((t) => `<span class="mb-tag">${esc(t)}</span>`).join("");
+    }
+  }
+
+  function renderFactionPane(camp, m, live) {
+    const isBlue = camp === "blue";
+    const focusId = isBlue ? "cm-blue-focus" : "cm-red-focus";
+    const elemId = isBlue ? "cm-blue-element" : "cm-red-element";
+    const noteId = isBlue ? "cm-blue-note" : "cm-red-note";
+    const focus = isBlue ? m.blue_focus : m.red_focus;
+    const element = isBlue ? m.blue_element : m.red_element;
+    const note = isBlue ? m.blue_note : m.red_note;
+    const label = isBlue ? "声浪" : "光影";
+    const opts = ELEMENT_PRESETS.map((e) => `<option value="${e}" ${e === (element || "") ? "selected" : ""}>${e}</option>`).join("");
+    return `<aside class="mission-faction-pane ${camp}">
+      <h4>${esc(label)} · 派系属性</h4>
+      <div class="fa-row"><span>联盟</span><span>${esc(live.alliance)}</span></div>
+      <div class="fa-row"><span>总真气</span><span>${live.score}</span></div>
+      <div class="fa-row"><span>山峰数</span><span>${live.peakCount}</span></div>
+      <div class="fa-row"><span>弟子数</span><span>${live.memberCount}</span></div>
+      <div class="fa-row"><span>先锋</span><span>${esc(live.topName)} · ${live.topScore}</span></div>
+      <div class="fa-row"><span>主流属性</span><span>${esc(live.dominantElement)}</span></div>
+      <label><span>本场任务侧重</span><input id="${focusId}" type="text" maxlength="24" value="${esc(focus || "")}" placeholder="例如：叙事特训" /></label>
+      <label><span>本场属性</span><select id="${elemId}">${opts}</select></label>
+      <label><span>派系备注</span><textarea id="${noteId}" rows="2" maxlength="80" placeholder="本派本场注意点">${esc(note || "")}</textarea></label>
+    </aside>`;
+  }
+
+  function openCampMissionModal(focusCamp) {
+    const m = getCampMission();
+    const redLive = getCampLiveStats("red");
+    const blueLive = getCampLiveStats("blue");
+    openModal(`
+      <div class="mission-edit-modal-root">
+        <h3>门派任务发布</h3>
+        <p class="muted" style="text-align:center;margin-bottom:.55rem">编辑任务属性 · 两侧同步弹出光影 / 声浪派系属性</p>
+        <div class="mission-edit-layout">
+          ${renderFactionPane("red", m, redLive)}
+          <div class="mission-center-pane stack">
+            <label><span>任务标题</span><input id="cm-title" type="text" maxlength="32" value="${esc(m.title || "")}" /></label>
+            <label><span>任务说明</span><textarea id="cm-desc" rows="3" maxlength="160">${esc(m.desc || "")}</textarea></label>
+            <div class="row" style="gap:.5rem">
+              <label style="flex:1"><span>奖励真气</span><input id="cm-points" type="number" min="0" value="${Number(m.points) || 0}" /></label>
+              <label style="flex:1"><span>难度</span>
+                <select id="cm-diff">
+                  ${["普通","进阶","挑战","传说"].map((d) => `<option ${d === (m.difficulty || "进阶") ? "selected" : ""}>${d}</option>`).join("")}
+                </select>
+              </label>
+            </div>
+            <div class="row" style="gap:.5rem">
+              <label style="flex:1"><span>类别</span>
+                <select id="cm-cat">
+                  ${["任务","日常","擂台","自定义"].map((c) => `<option ${c === (m.category || "任务") ? "selected" : ""}>${c}</option>`).join("")}
+                </select>
+              </label>
+              <label style="flex:1"><span>状态</span>
+                <select id="cm-status">
+                  <option value="published" ${m.status !== "draft" ? "selected" : ""}>已发布</option>
+                  <option value="draft" ${m.status === "draft" ? "selected" : ""}>草稿</option>
+                </select>
+              </label>
+            </div>
+            <label><span>截止（可选）</span><input id="cm-deadline" type="text" maxlength="24" value="${esc(m.deadline || "")}" placeholder="例如：今日下课前" /></label>
+            <div class="row" style="justify-content:flex-end;margin-top:.35rem">
+              <button type="button" class="ghost" id="modal-cancel">取消</button>
+              <button type="button" class="primary" id="cm-save">保存发布</button>
+            </div>
+          </div>
+          ${renderFactionPane("blue", m, blueLive)}
+        </div>
+      </div>`);
+    const modal = document.querySelector("#modal-host .modal");
+    if (modal) modal.classList.add("mission-edit-modal");
+    if (focusCamp === "red" || focusCamp === "blue") {
+      const pane = document.querySelector(`.mission-faction-pane.${focusCamp}`);
+      if (pane) {
+        pane.style.outline = "2px solid var(--gold)";
+        pane.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("cm-save").onclick = async () => {
+      const next = {
+        title: (document.getElementById("cm-title").value || "").trim() || "今日门派任务",
+        desc: (document.getElementById("cm-desc").value || "").trim(),
+        points: Number(document.getElementById("cm-points").value) || 0,
+        difficulty: document.getElementById("cm-diff").value,
+        category: document.getElementById("cm-cat").value,
+        status: document.getElementById("cm-status").value,
+        deadline: (document.getElementById("cm-deadline").value || "").trim(),
+        red_focus: (document.getElementById("cm-red-focus").value || "").trim(),
+        red_element: document.getElementById("cm-red-element").value,
+        red_note: (document.getElementById("cm-red-note").value || "").trim(),
+        blue_focus: (document.getElementById("cm-blue-focus").value || "").trim(),
+        blue_element: document.getElementById("cm-blue-element").value,
+        blue_note: (document.getElementById("cm-blue-note").value || "").trim()
+      };
+      await updatePaths({ "config/camp_mission": next });
+      closeModal();
+      renderMissionBoard();
+    };
+  }
+
+    function campTotals() {
     let red = 0, blue = 0;
     getPeaksArray().forEach((p) => { if (p.camp === "blue") blue += p.score || 0; else red += p.score || 0; });
     return { red, blue };
@@ -3658,7 +3886,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function applyArenaDensity(redCount, blueCount) {
     const board = document.querySelector(".camps-board");
-    const hud = document.getElementById("pk-bar");
+    const hud = document.getElementById("mission-board");
     const main = document.getElementById("teacher-main");
     if (!board) return;
     const maxCamp = Math.max(redCount, blueCount, 1);
@@ -3720,10 +3948,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     redByScore.forEach((p, i) => { rankMap[p.id] = i; });
     blueByScore.forEach((p, i) => { rankMap[p.id] = i; });
 
-    const redSeg = document.getElementById("red-segments");
-    const blueSeg = document.getElementById("blue-segments");
-    if (redSeg) redSeg.innerHTML = renderCampSegments("red", redList, red);
-    if (blueSeg) blueSeg.innerHTML = renderCampSegments("blue", blueList, blue);
+    renderMissionBoard();
 
     document.getElementById("list-red").innerHTML = redList.map((p) => renderSectCard(p, rankMap[p.id], redList.length)).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
     document.getElementById("list-blue").innerHTML = blueList.map((p) => renderSectCard(p, rankMap[p.id], blueList.length)).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
@@ -5738,6 +5963,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   async function handleTeacherAction(act, btn) {
     if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
     if (act === "custom-score") { openCustomScoreModal(); return; }
+    if (act === "edit-camp-mission") { openCampMissionModal(btn?.dataset?.focusCamp || ""); return; }
     if (act === "insert-edit-box") { insertEditBox(); return; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
     if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); return; }
