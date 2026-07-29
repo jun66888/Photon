@@ -152,15 +152,11 @@ input:focus, select:focus, textarea:focus {
 
 .header-bar { justify-content: space-between; margin-bottom: .25rem; flex: 0 0 auto; }
 .screen.compact-arena { padding: 3.05rem .55rem 1rem; }
-body.has-ticker .screen.compact-arena { padding-top: 5.35rem; }
 .app-title.compact { font-size: clamp(1rem, 2vw, 1.25rem); letter-spacing: .08em; margin: 0; }
 #teacher-main.subview {
   display: flex; flex-direction: column;
   min-height: calc(100vh - 3.05rem - 1rem);
   gap: .28rem;
-}
-body.has-ticker #teacher-main.subview {
-  min-height: calc(100vh - 5.35rem - 1rem);
 }
 
 /* 中上部徽标 + 导航：横排，少占高度 */
@@ -219,9 +215,7 @@ body.hide-brand-name .brand-name { display: none !important; }
   font-size: .85rem !important; letter-spacing: .04em; padding: .35rem .75rem !important;
 }
 body.has-brand-nav #sfx-bar { top: 3.35rem; }
-body.has-ticker.has-brand-nav #sfx-bar { top: 5.55rem; }
 body.has-brand-nav .demo-tip { top: 3.35rem !important; }
-body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 
 /* 工具条：标题 + 天数/排序下拉 + 操作按钮一排 */
 .arena-toolbar {
@@ -1071,32 +1065,35 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 
 .func-bar { margin-bottom: .8rem; }
 .func-bar button { min-width: 6.4rem; }
-/* 顶部战报条：低调慢滚 */
+/* 门派任务下方战报条：缩小、慢滚，最多十条 */
 .ticker {
-  position: fixed; left: 0; right: 0; top: 3.05rem; z-index: 48;
-  height: 2.15rem;
+  position: relative; left: auto; right: auto; top: auto; z-index: 1;
+  width: 100%;
+  height: 1.55rem;
+  flex: 0 0 auto;
   display: flex; align-items: stretch;
-  background: rgba(10, 14, 22, .88);
+  margin: .1rem 0 .15rem;
+  background: rgba(10, 14, 22, .72);
   color: #aeb9cc;
-  border-top: 1px solid rgba(255,255,255,.08);
-  border-bottom: 1px solid rgba(240,193,75,.28);
-  box-shadow: 0 4px 14px rgba(0,0,0,.28);
+  border: 1px solid rgba(240,193,75,.2);
+  border-radius: 6px;
+  box-shadow: none;
   overflow: hidden; white-space: nowrap;
   padding: 0;
 }
 .ticker-badge {
   position: relative; z-index: 2;
   flex: 0 0 auto;
-  min-width: 3.4rem;
+  min-width: 2.55rem;
   display: grid; place-items: center;
-  padding: 0 .65rem;
+  padding: 0 .4rem;
   font-family: var(--font-ui);
-  font-size: .78rem;
+  font-size: .68rem;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .06em;
   color: #c9b56a;
-  background: rgba(240,193,75,.1);
-  border-right: 1px solid rgba(240,193,75,.22);
+  background: rgba(240,193,75,.08);
+  border-right: 1px solid rgba(240,193,75,.18);
   box-shadow: none;
   text-shadow: none;
 }
@@ -1109,21 +1106,20 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 .ticker-inner {
   display: inline-block;
   padding-left: 100%;
-  animation: ticker 80s linear infinite;
+  animation: ticker 70s linear infinite;
   font-family: var(--font-ui);
-  font-size: .92rem;
+  font-size: .74rem;
   font-weight: 600;
-  letter-spacing: .06em;
+  letter-spacing: .04em;
   line-height: 1;
   color: #9aa6bc;
   text-shadow: none;
 }
 @keyframes ticker { to { transform: translateX(-100%); } }
 @media (max-width: 720px) {
-  .ticker { height: 1.95rem; top: 3.35rem; }
-  .ticker-badge { font-size: .72rem; min-width: 3rem; padding: 0 .45rem; }
-  .ticker-inner { font-size: .82rem; }
-  body.has-ticker .screen.compact-arena { padding-top: 5.4rem; }
+  .ticker { height: 1.4rem; }
+  .ticker-badge { font-size: .62rem; min-width: 2.3rem; padding: 0 .35rem; }
+  .ticker-inner { font-size: .68rem; }
 }
 
 .modal-mask {
@@ -1916,15 +1912,6 @@ body.teacher-shell:not(.mode-mobile-clean) .course-stage-wrap {
 body.teacher-shell:not(.mode-mobile-clean) #teacher-screen.screen.compact-arena {
   padding: .75rem .85rem 1.2rem;
 }
-body.teacher-shell:not(.mode-mobile-clean).has-ticker #teacher-screen.screen.compact-arena {
-  padding-top: 2.9rem;
-}
-body.teacher-shell:not(.mode-mobile-clean).has-ticker #teacher-main.subview {
-  min-height: calc(100vh - 2.9rem - 1rem);
-}
-body.teacher-shell:not(.mode-mobile-clean) #arena-ticker {
-  left: var(--rail-w); right: 0; width: auto; top: 0;
-}
 /* DEMO / 音效浮层已收入设置，教师端不再遮挡 */
 body.teacher-shell #sfx-bar,
 body.teacher-shell .demo-tip { display: none !important; }
@@ -2231,7 +2218,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: none; }
   body.teacher-shell:not(.mode-mobile-clean) #brand-nav { display: flex !important; }
   body.teacher-shell:not(.mode-mobile-clean) .course-stage-wrap { margin: 0; }
-  body.teacher-shell:not(.mode-mobile-clean) #arena-ticker { left: 0; right: 0; top: 3.05rem; }
 }
 
 
@@ -2282,15 +2268,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   </aside>
 
   <div class="course-stage-wrap">
-  <!-- 顶部战报广告牌 -->
-
-  <div class="ticker" id="arena-ticker" hidden>
-    <div class="ticker-badge">战报</div>
-    <div class="ticker-track">
-      <div class="ticker-inner" id="ticker-text">山河战报：静候出招……</div>
-    </div>
-  </div>
-
   <!-- TEACHER -->
   <div id="teacher-screen" class="screen compact-arena" style="position:relative">
     <div id="edit-box-layer" aria-label="编辑框层"></div>
@@ -2333,6 +2310,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             </div>
             <span class="chip-hint">点设派系属性</span>
           </button>
+        </div>
+      </div>
+
+      <div class="ticker" id="arena-ticker" hidden aria-label="战绩滚动，最多十条">
+        <div class="ticker-badge">战报</div>
+        <div class="ticker-track">
+          <div class="ticker-inner" id="ticker-text">山河战报：静候出招……</div>
         </div>
       </div>
 
@@ -4620,13 +4604,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     applyArenaDensity(redList.length, blueList.length);
     requestAnimationFrame(() => applyArenaDensity(redList.length, blueList.length));
 
-    const logs = getLogsArray().filter((l) => l.day === day).slice(0, 30);
+    const logs = getLogsArray().filter((l) => l.day === day).slice(0, 10);
     const feed = logs.length
       ? "山河战报：" + logs.map((l) => `${l.peak_name}+${l.points}（${l.reason}）`).join(" ｜ ")
       : "山河战报：静候出招……";
     const tickerEl = document.getElementById("ticker-text");
     if (tickerEl) {
-      // 双段拼接，广告牌更密
       tickerEl.textContent = feed + "　　◆　　" + feed + "　　◆　　";
       tickerEl.style.animation = "none";
       void tickerEl.offsetWidth;
