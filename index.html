@@ -2145,6 +2145,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" data-action="goto-vote" data-nav="vote">投票</button>
       <button type="button" data-action="goto-logs" data-nav="logs">日志</button>
       <button type="button" data-action="goto-settings" data-nav="settings">设置</button>
+      <button type="button" id="nav-fullscreen" data-action="toggle-fullscreen" title="全屏投屏">全屏</button>
     </nav>
   </header>
 
@@ -2162,6 +2163,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" class="rail-btn" data-action="goto-logs" data-nav="logs"><span class="ico">录</span>日志</button>
       <button type="button" class="rail-btn" data-action="custom-score"><span class="ico">＋</span>加分</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
+      <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
     </nav>
     <div class="rail-day">
       <div class="muted" style="font-size:.65rem">DAY</div>
@@ -2197,6 +2199,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           </label>
           <button type="button" data-action="add-peak-red">＋光影山峰</button>
           <button type="button" data-action="add-peak-blue">＋声浪山峰</button>
+          <button type="button" class="primary" id="hero-fullscreen" data-action="toggle-fullscreen" title="全屏投屏 · Ctrl/⌘+Shift+F">全屏</button>
         </div>
       </div>
 
@@ -3908,7 +3911,56 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     bindPreview();
   }
 
-    const DEFAULT_CAMP_MISSION = {
+  function isFullscreenActive() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+  }
+
+  function updateFullscreenButtons() {
+    const on = isFullscreenActive();
+    document.body.classList.toggle("is-fullscreen", on);
+    const label = on ? "退出全屏" : "全屏";
+    const rail = document.getElementById("rail-fullscreen");
+    if (rail) rail.innerHTML = `<span class="ico">⛶</span>${on ? "退出" : "全屏"}`;
+    ["nav-fullscreen", "settings-fullscreen", "hero-fullscreen"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = label;
+    });
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (isFullscreenActive()) {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+        if (exit) await exit.call(document);
+      } else {
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (!req) { alert("当前浏览器不支持全屏"); return; }
+        await req.call(el);
+      }
+    } catch (err) {
+      console.warn(err);
+      alert("无法切换全屏，请检查浏览器权限");
+    } finally {
+      updateFullscreenButtons();
+    }
+  }
+
+  function ensureFullscreenBinding() {
+    if (window.__fsBound) return;
+    window.__fsBound = true;
+    ["fullscreenchange", "webkitfullscreenchange", "MSFullscreenChange"].forEach((ev) => {
+      document.addEventListener(ev, updateFullscreenButtons);
+    });
+    document.addEventListener("keydown", (e) => {
+      if ((e.key === "f" || e.key === "F") && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    });
+  }
+
+  const DEFAULT_CAMP_MISSION = {
     title: "今日门派任务",
     desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
     points: 10,
@@ -5675,6 +5727,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <button type="button" data-action="insert-edit-box">插入编辑框</button>
         <button type="button" data-action="edit-brand">品牌标识</button>
         <button type="button" data-action="edit-camp-mission">门派任务</button>
+        <button type="button" id="settings-fullscreen" data-action="toggle-fullscreen">全屏</button>
         <button type="button" id="btn-memories" data-action="goto-memories" ${day < 20 ? "disabled" : ""}>回忆${day < 20 ? "·D20" : ""}</button>
         ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}
         <input type="file" id="settings-sfx-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
@@ -6576,6 +6629,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
     if (act === "custom-score") { openCustomScoreModal(); return; }
     if (act === "edit-brand") { openBrandModal(); return; }
+    if (act === "toggle-fullscreen") { toggleFullscreen(); return; }
     if (act === "edit-camp-mission") { openCampMissionModal(btn?.dataset?.focusCamp || ""); return; }
     if (act === "camp-attrs") { openCampAttrsModal(btn?.dataset?.camp || "red"); return; }
     if (act === "insert-edit-box") { insertEditBox(); return; }
@@ -6797,9 +6851,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
       ensureSfxToggle();
       ensureSwordCursorTrail();
+      ensureFullscreenBinding();
       startCultivationLoop();
       syncBrandNavVisibility();
       applyBrandUI();
+      updateFullscreenButtons();
       if (m === "teacher") setTeacherView("main");
       if (m === "memories") { /* loader */ } else renderAll();
       window.addEventListener("resize", () => {
