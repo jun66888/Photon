@@ -4231,7 +4231,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const label = on ? "退出全屏" : "全屏";
     const rail = document.getElementById("rail-fullscreen");
     if (rail) rail.innerHTML = `<span class="ico">⛶</span>${on ? "退出" : "全屏"}`;
-    ["nav-fullscreen", "settings-fullscreen", "rail-fullscreen"].forEach((id) => {
+    ["nav-fullscreen", "settings-fullscreen"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.textContent = label;
     });
