@@ -393,6 +393,91 @@ input:focus, select:focus, textarea:focus {
   font-family: var(--font-num); border-radius: 3px; background: rgba(240,193,75,.12);
 }
 
+
+/* Combo announce — 加分后全屏特效（弹层已关闭） */
+.combo-layer {
+  position: fixed; inset: 0; z-index: 100; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.combo-layer .combo-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(240,193,75,.22), transparent 42%),
+              rgba(0,0,0,.55);
+  animation: comboBg .2s ease forwards;
+}
+@keyframes comboBg { from { opacity: 0; } to { opacity: 1; } }
+.combo-ring {
+  position: absolute; width: 120px; height: 120px; border-radius: 50%;
+  border: 3px solid rgba(240,193,75,.8);
+  box-shadow: 0 0 30px rgba(240,193,75,.6), inset 0 0 20px rgba(46,230,255,.3);
+  animation: ringExpand 1.1s cubic-bezier(.12,.75,.2,1) forwards;
+}
+.combo-ring.r2 { animation-delay: .08s; border-color: rgba(46,230,255,.7); }
+.combo-ring.r3 { animation-delay: .16s; border-color: rgba(255,59,92,.65); }
+@keyframes ringExpand {
+  0% { transform: scale(.3); opacity: 1; }
+  100% { transform: scale(8); opacity: 0; }
+}
+.combo-card {
+  position: relative; z-index: 2; text-align: center;
+  min-width: min(86vw, 520px); padding: 1.4rem 1.6rem 1.5rem;
+  border: 3px solid var(--gold);
+  background: linear-gradient(160deg, rgba(26,34,56,.95), rgba(8,12,22,.96));
+  box-shadow: 0 0 50px rgba(240,193,75,.45), 0 0 0 1px rgba(255,255,255,.08);
+  animation: comboPop 1.6s cubic-bezier(.16,.9,.25,1) forwards;
+}
+@keyframes comboPop {
+  0% { transform: scale(2.4) rotate(-8deg); opacity: 0; filter: blur(6px); }
+  18% { transform: scale(1.05) rotate(1deg); opacity: 1; filter: blur(0); }
+  70% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.04); opacity: 0; }
+}
+.combo-card .combo-tag {
+  font-family: var(--font-num); font-size: .75rem; letter-spacing: .35em;
+  color: var(--cyan); margin-bottom: .35rem;
+}
+.combo-card .combo-name {
+  font-family: var(--font-brush); font-size: clamp(2.2rem, 6vw, 3.6rem);
+  color: #fff; text-shadow: 0 0 24px rgba(240,193,75,.7), 0 3px 0 #1a1205;
+  line-height: 1.05;
+}
+.combo-card .combo-points {
+  font-family: var(--font-num); font-weight: 800;
+  font-size: clamp(3rem, 9vw, 5.5rem); color: var(--gold);
+  text-shadow: 0 0 30px rgba(240,193,75,.85);
+  margin: .15rem 0;
+}
+.combo-card .combo-reason {
+  font-size: 1.05rem; color: #c9d4e8; margin-bottom: .35rem;
+}
+.combo-card .combo-total {
+  font-family: var(--font-num); font-size: .95rem; color: var(--ink-soft);
+  letter-spacing: .08em;
+}
+.combo-card.tier-arena { border-color: #ffe39a; box-shadow: 0 0 70px rgba(240,193,75,.65), 0 0 120px rgba(255,59,92,.25); }
+.combo-card.tier-task { border-color: var(--cyan); box-shadow: 0 0 60px rgba(46,230,255,.45); }
+.combo-card.tier-task .combo-points { color: var(--cyan); }
+.combo-card.tier-daily .combo-points { color: var(--ok); text-shadow: 0 0 24px rgba(61,255,154,.6); }
+.float-num {
+  position: absolute; font-family: var(--font-num); font-weight: 800;
+  font-size: 1.6rem; color: var(--gold); text-shadow: 0 0 12px rgba(240,193,75,.8);
+  animation: floatNum 1.1s ease-out forwards; pointer-events: none;
+}
+@keyframes floatNum {
+  0% { transform: translate(-50%,0) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--fx)), -120px) scale(1.4); opacity: 0; }
+}
+.sect-card.fx-glow {
+  animation: cardGlowHit 1.2s ease;
+  z-index: 5;
+}
+@keyframes cardGlowHit {
+  0% { box-shadow: 0 0 0 rgba(240,193,75,0); }
+  30% { box-shadow: 0 0 40px rgba(240,193,75,.85), 0 0 80px rgba(46,230,255,.35); transform: scale(1.04); }
+  100% { box-shadow: 0 6px 0 #07090f, 0 10px 24px rgba(0,0,0,.35); transform: scale(1); }
+}
+
 .particles { position: fixed; inset: 0; pointer-events: none; z-index: 80; overflow: hidden; }
 .particle {
   position: absolute; border-radius: 2px;
@@ -808,7 +893,7 @@ input:focus, select:focus, textarea:focus {
   const OPERATOR = "李红星";
   const LS_STUDENT_KEY = "gy_arena_student";
   const LS_VOTE_KEY = "gy_arena_vote";
-  const DEMO_DB_KEY = "gy_arena_demo_db_v2";
+  const DEMO_DB_KEY = "gy_arena_demo_db_v3";
 
   const PEAK_THRESHOLDS = [
     { level: 1, name: "入门", min: 0, next: 500 },
@@ -867,11 +952,11 @@ input:focus, select:focus, textarea:focus {
   }
 
   const PEAK_SEED = [
-    { id: 0, name: "光影峰", icon: "🦁", slogan: "用画面讲故事", camp: "red", captain_name: "赵伟", art: "光影刀法", base: "映月谷", intro: "以镜头为刃，以故事为魂" },
-    { id: 1, name: "创意峰", icon: "🦅", slogan: "创意无限", camp: "red", captain_name: "吴丽", art: "奇思掌", base: "灵感崖", intro: "天马行空，一念成招" },
-    { id: 2, name: "追光峰", icon: "🐉", slogan: "追光逐影", camp: "red", captain_name: "韩明", art: "追光剑", base: "霞光岭", intro: "逐光而行，影随心动" },
-    { id: 3, name: "声浪峰", icon: "🎵", slogan: "用声音传情绪", camp: "blue", captain_name: "杨超", art: "音波琴", base: "听潮阁", intro: "一声入耳，百感丛生" },
-    { id: 4, name: "音浪峰", icon: "🌊", slogan: "声动九州", camp: "blue", captain_name: "何桂英", art: "潮音诀", base: "沧浪湾", intro: "潮起潮落，声动九州" }
+    { id: 0, name: "光影峰", icon: "🦁", slogan: "用画面讲故事", camp: "red", captain_name: "赵伟", art: "光影刀法", base: "映月谷", intro: "以镜头为刃，以故事为魂", element: "光", style: "刀", win_quote: "光落之处，影亦臣服！", badge: "影武者" },
+    { id: 1, name: "创意峰", icon: "🦅", slogan: "创意无限", camp: "red", captain_name: "吴丽", art: "奇思掌", base: "灵感崖", intro: "天马行空，一念成招", element: "风", style: "掌", win_quote: "一念之间，乾坤倒转！", badge: "奇思客" },
+    { id: 2, name: "追光峰", icon: "🐉", slogan: "追光逐影", camp: "red", captain_name: "韩明", art: "追光剑", base: "霞光岭", intro: "逐光而行，影随心动", element: "火", style: "剑", win_quote: "追光千里，剑气长虹！", badge: "追光使" },
+    { id: 3, name: "声浪峰", icon: "🎵", slogan: "用声音传情绪", camp: "blue", captain_name: "杨超", art: "音波琴", base: "听潮阁", intro: "一声入耳，百感丛生", element: "水", style: "琴", win_quote: "弦动山河，声破长空！", badge: "音波师" },
+    { id: 4, name: "音浪峰", icon: "🌊", slogan: "声动九州", camp: "blue", captain_name: "何桂英", art: "潮音诀", base: "沧浪湾", intro: "潮起潮落，声动九州", element: "雷", style: "鼓", win_quote: "潮音起，九州惊！", badge: "潮音将" }
   ];
   const NAME_SEED = ["赵伟","钱芳","孙娜","李敏","周静","吴丽","郑强","王磊","冯军","陈洋","褚勇","卫艳","蒋杰","沈涛","韩明","杨超","朱秀英","秦霞","尤平","许刚","何桂英","吕建华","施伟","张芳","孔娜"];
   const BONUS_PRESETS_SEED = [
@@ -899,17 +984,21 @@ input:focus, select:focus, textarea:focus {
     const level = calcPeakLevel(meta.score || 0);
     return {
       id: meta.id,
-      name: meta.name || "新门派",
+      name: meta.name || "新角色",
       icon: meta.icon || "⚔️",
       logo_url: meta.logo_url || "",
-      slogan: meta.slogan || "门派口号",
+      slogan: meta.slogan || "出招口号",
       camp: meta.camp || "red",
       captain_name: meta.captain_name || "",
       captain_id: meta.captain_id || "",
       art: meta.art || "未传绝学",
       base: meta.base || "未定驻地",
-      intro: meta.intro || "新晋门派，尚待书写传奇",
-      color: meta.color || (meta.camp === "blue" ? "#3aa89a" : "#c45c6a"),
+      intro: meta.intro || "初入擂台的新势力",
+      element: meta.element || "光",
+      style: meta.style || "剑",
+      win_quote: meta.win_quote || "此局，我方胜！",
+      badge: meta.badge || "新锐",
+      color: meta.color || (meta.camp === "blue" ? "#2ee6ff" : "#ff3b5c"),
       sort_order: meta.sort_order != null ? meta.sort_order : meta.id,
       score: meta.score || 0,
       votes: meta.votes || 0,
@@ -1072,56 +1161,106 @@ input:focus, select:focus, textarea:focus {
     sc.classList.add("screen-shake");
     setTimeout(() => sc.classList.remove("screen-shake"), 500);
   }
-  function playScoreAnimation(peakId, points, category) {
-    const el = document.querySelector(`.sect-card[data-peak-id="${peakId}"]`);
-    const scoreEl = el && el.querySelector(".sect-score");
-    if (scoreEl) {
-      scoreEl.classList.remove("flash-green", "flash-blue", "flash-gold");
-      void scoreEl.offsetWidth;
-      if (category === "擂台" || points >= 20) scoreEl.classList.add("flash-gold");
-      else if (category === "任务" || points >= 5) scoreEl.classList.add("flash-blue");
-      else scoreEl.classList.add("flash-green");
+  function tierOf(category, points) {
+    if (category === "擂台" || points >= 20) return "arena";
+    if (category === "任务" || points >= 5) return "task";
+    return "daily";
+  }
+
+  function showComboAnnounce(peak, points, reason, category, newScore) {
+    const host = document.getElementById("fx-host");
+    const tier = tierOf(category, points);
+    const layer = document.createElement("div");
+    layer.className = "combo-layer";
+    layer.innerHTML = `
+      <div class="combo-bg"></div>
+      <div class="combo-ring"></div>
+      <div class="combo-ring r2"></div>
+      <div class="combo-ring r3"></div>
+      <div class="combo-card tier-${tier}">
+        <div class="combo-tag">${tier === "arena" ? "CRITICAL HIT" : tier === "task" ? "SKILL COMBO" : "HIT"}</div>
+        <div class="combo-name">${peak.icon || ""} ${esc(peak.name)}</div>
+        <div class="combo-points">+${points}</div>
+        <div class="combo-reason">${esc(reason || "加分")}${peak.win_quote && tier === "arena" ? " · " + esc(peak.win_quote) : ""}</div>
+        <div class="combo-total">TOTAL SCORE ${newScore ?? peak.score ?? 0} · ${esc(peak.peak_level_name || "")} · ${esc(peak.element || "")}${esc(peak.style || "")}</div>
+      </div>`;
+    host.appendChild(layer);
+
+    // 飘字
+    for (let i = 0; i < 7; i++) {
+      const n = document.createElement("div");
+      n.className = "float-num";
+      n.textContent = `+${points}`;
+      n.style.left = (42 + Math.random() * 16) + "%";
+      n.style.top = (48 + Math.random() * 10) + "%";
+      n.style.setProperty("--fx", (Math.random() * 80 - 40) + "px");
+      n.style.color = tier === "arena" ? "#f0c14b" : tier === "task" ? "#2ee6ff" : "#3dff9a";
+      n.style.animationDelay = (i * 0.05) + "s";
+      layer.appendChild(n);
     }
-    const rect = el ? el.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight/2, width: 0, height: 0 };
-    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+
+    const cx = innerWidth / 2, cy = innerHeight / 2;
     const hit = document.createElement("div");
     hit.className = "hit-flash";
-    document.getElementById("fx-host").appendChild(hit);
-    setTimeout(() => hit.remove(), 140);
-    if (category === "擂台" || points >= 20) {
-      spawnParticles(cx, cy, "#f0c14b", 52, 10);
-      spawnParticles(cx, cy, "#2ee6ff", 28, 7);
-      spawnParticles(cx, cy, "#ff3b5c", 22, 6);
+    host.appendChild(hit);
+    setTimeout(() => hit.remove(), 160);
+
+    if (tier === "arena") {
+      spawnParticles(cx, cy, "#f0c14b", 64, 12);
+      spawnParticles(cx, cy, "#2ee6ff", 40, 8);
+      spawnParticles(cx, cy, "#ff3b5c", 32, 7);
       inkBurstAt(cx, cy);
       screenShake();
       const flash = document.createElement("div");
       flash.className = "flash-gold";
-      document.getElementById("fx-host").appendChild(flash);
-      setTimeout(() => flash.remove(), 900);
-    } else if (category === "任务" || points >= 5) {
-      spawnParticles(cx, cy, "#2ee6ff", 30, 8);
-      spawnParticles(cx, cy, "#f0c14b", 14, 5);
+      host.appendChild(flash);
+      setTimeout(() => flash.remove(), 1000);
+    } else if (tier === "task") {
+      spawnParticles(cx, cy, "#2ee6ff", 42, 9);
+      spawnParticles(cx, cy, "#f0c14b", 20, 6);
       screenShake();
     } else {
-      spawnParticles(cx, cy, "#3dff9a", 18, 7);
+      spawnParticles(cx, cy, "#3dff9a", 28, 8);
+      spawnParticles(cx, cy, "#f0c14b", 10, 5);
     }
+
+    // 卡片高亮（等渲染后）
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.sect-card[data-peak-id="${peak.id}"]`);
+      if (el) {
+        el.classList.add("fx-glow");
+        const scoreEl = el.querySelector(".sect-score");
+        if (scoreEl) {
+          scoreEl.classList.remove("flash-green", "flash-blue", "flash-gold");
+          void scoreEl.offsetWidth;
+          scoreEl.classList.add(tier === "arena" ? "flash-gold" : tier === "task" ? "flash-blue" : "flash-green");
+        }
+        setTimeout(() => el.classList.remove("fx-glow"), 1300);
+      }
+    });
+
+    setTimeout(() => layer.remove(), 1700);
   }
+
+  function playScoreAnimation(peakId, points, category) {
+    const peak = findPeak(peakId) || { id: peakId, name: "角色", score: 0 };
+    showComboAnnounce(peak, points, category, category, peak.score);
+  }
+
   function playLevelUpAnimation(peak, oldLevel, levelInfo) {
     const host = document.getElementById("fx-host");
-    host.appendChild(Object.assign(document.createElement("div"), { className: "flash-gold" }));
-    const toast = document.createElement("div");
-    toast.className = "toast-levelup";
-    toast.innerHTML = `<div class="msg">🔥 ${peak.name}突破！${PEAK_THRESHOLDS[oldLevel-1]?.name || ""} → ${levelInfo.peak_level_name} 🎉</div>`;
-    host.appendChild(toast);
-    screenShake();
-    const el = document.querySelector(`.sect-card[data-peak-id="${peak.id}"]`);
-    if (el) {
-      const r = el.getBoundingClientRect();
-      spawnParticles(r.left + r.width/2, r.top + r.height/2, "#7ed9cb", 40, 10);
-      spawnParticles(r.left + r.width/2, r.top + r.height/2, "#f0d78c", 30, 8);
-    }
-    setTimeout(() => toast.remove(), 2000);
-    setTimeout(() => host.querySelectorAll(".flash-gold").forEach((n) => n.remove()), 1200);
+    setTimeout(() => {
+      host.appendChild(Object.assign(document.createElement("div"), { className: "flash-gold" }));
+      const toast = document.createElement("div");
+      toast.className = "toast-levelup";
+      toast.innerHTML = `<div class="msg">🔥 ${peak.name} 突破！${PEAK_THRESHOLDS[oldLevel-1]?.name || ""} → ${levelInfo.peak_level_name}</div>`;
+      host.appendChild(toast);
+      screenShake();
+      spawnParticles(innerWidth/2, innerHeight/2, "#f0c14b", 50, 11);
+      spawnParticles(innerWidth/2, innerHeight/2, "#2ee6ff", 36, 8);
+      setTimeout(() => toast.remove(), 2000);
+      setTimeout(() => host.querySelectorAll(".flash-gold").forEach((n) => n.remove()), 1200);
+    }, 900);
   }
 
   async function addScoreToPeak(peakId, points, reason, category, opts = {}) {
@@ -1151,9 +1290,27 @@ input:focus, select:focus, textarea:focus {
     });
     await updatePaths(updates);
     await pushLog({ timestamp: Date.now(), peak_id: peak.id, peak_name: peak.name, reason: reason || "加分", points: pts, category: category || "日常", operator: OPERATOR, day });
-    playScoreAnimation(peak.id, pts, category || "日常");
-    if (levelInfo.peak_level > oldLevel) playLevelUpAnimation(peak, oldLevel, levelInfo);
-    return { newScore, levelInfo };
+    const leveledUp = levelInfo.peak_level > oldLevel;
+    if (!opts.silentFx) {
+      const fresh = findPeak(peakId) || { ...peak, score: newScore, peak_level_name: levelInfo.peak_level_name };
+      showComboAnnounce(fresh, pts, reason || "加分", category || "日常", newScore);
+      if (leveledUp) playLevelUpAnimation(fresh, oldLevel, levelInfo);
+    }
+    return { newScore, levelInfo, leveledUp, oldLevel, peak: findPeak(peakId) };
+  }
+
+  /** 从弹层出招：先关面板，再播特效，避免挡住 */
+  async function scoreFromModal(peakId, points, reason, category, awardBonusExp) {
+    closeModal();
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 60)));
+    const result = await addScoreToPeak(peakId, points, reason, category, { awardBonusExp: awardBonusExp || 0, silentFx: true });
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
+    const peak = findPeak(peakId);
+    if (peak && result) {
+      showComboAnnounce(peak, Number(points) || 0, reason || "加分", category || "日常", result.newScore);
+      if (result.leveledUp) playLevelUpAnimation(peak, result.oldLevel, result.levelInfo);
+    }
+    return result;
   }
 
   function getMode() {
@@ -1193,7 +1350,8 @@ input:focus, select:focus, textarea:focus {
             <div class="sect-meta">${side} · 队长 ${captain} · ${p.peak_level_name} Lv${p.peak_level}</div>
             <div class="sect-tags">
               <span class="tag">TEAM ${members.length}</span>
-              <span class="tag">${p.base || "驻地"}</span>
+              <span class="tag">${p.element || "光"}·${p.style || "剑"}</span>
+              <span class="tag">${p.badge || "新锐"}</span>
               <span class="tag">${p.art || "绝学"}</span>
               <span class="tag">EXP ${peakExpTotal(p.id)}</span>
             </div>
@@ -1356,19 +1514,23 @@ input:focus, select:focus, textarea:focus {
 
     const attrPane = `
       <div class="attr-grid">
-        <label>门派名<input id="a-name" value="${esc(peak.name)}" /></label>
+        <label>角色名<input id="a-name" value="${esc(peak.name)}" /></label>
         <label>图标/Emoji<input id="a-icon" value="${esc(peak.icon)}" /></label>
         <label>队长名<input id="a-captain" value="${esc(peak.captain_name || "")}" /></label>
-        <label>阵营<select id="a-camp"><option value="red" ${peak.camp==="red"?"selected":""}>光影(红)</option><option value="blue" ${peak.camp==="blue"?"selected":""}>声浪(蓝)</option></select></label>
+        <label>阵营<select id="a-camp"><option value="red" ${peak.camp==="red"?"selected":""}>1P 光影</option><option value="blue" ${peak.camp==="blue"?"selected":""}>2P 声浪</option></select></label>
         <label>口号<input id="a-slogan" value="${esc(peak.slogan || "")}" /></label>
         <label>绝学<input id="a-art" value="${esc(peak.art || "")}" /></label>
         <label>驻地<input id="a-base" value="${esc(peak.base || "")}" /></label>
+        <label>徽章<input id="a-badge" value="${esc(peak.badge || "")}" /></label>
+        <label>属性<select id="a-element"><option>光</option><option>火</option><option>风</option><option>水</option><option>雷</option></select></label>
+        <label>兵器<select id="a-style"><option>刀</option><option>剑</option><option>掌</option><option>琴</option><option>鼓</option></select></label>
         <label>主题色<input id="a-color" value="${esc(peak.color || "")}" /></label>
+        <label>胜利台词<input id="a-win" value="${esc(peak.win_quote || "")}" /></label>
         <label style="grid-column:1/-1">简介<textarea id="a-intro" rows="2">${esc(peak.intro || "")}</textarea></label>
-        <label style="grid-column:1/-1">Logo 图片 URL（可留空）<input id="a-logo" value="${esc(peak.logo_url || "")}" placeholder="https://..." /></label>
+        <label style="grid-column:1/-1">Logo 图片 URL<input id="a-logo" value="${esc(peak.logo_url || "")}" placeholder="https://..." /></label>
       </div>
       <div class="row" style="margin-top:.8rem;justify-content:space-between">
-        <button type="button" class="danger" id="a-delete">删除门派</button>
+        <button type="button" class="danger" id="a-delete">删除角色</button>
         <button type="button" class="primary" id="a-save">保存属性</button>
       </div>`;
 
@@ -1424,18 +1586,18 @@ input:focus, select:focus, textarea:focus {
           if ((preset.reason || "").includes("金牌")) bonus = 300;
           else if ((preset.reason || "").includes("银牌")) bonus = 200;
           else if ((preset.reason || "").includes("铜牌")) bonus = 100;
-          await addScoreToPeak(peakId, preset.points, preset.reason, preset.category, { awardBonusExp: bonus });
-          openSectModal(peakId, "bonus");
+          await scoreFromModal(peakId, preset.points, preset.reason, preset.category, bonus);
         };
       });
       document.getElementById("sect-custom-go").onclick = async () => {
         const pts = Number(document.getElementById("sect-custom-pts").value);
-        const reason = document.getElementById("sect-custom-reason").value.trim() || "门派加分";
-        await addScoreToPeak(peakId, pts, reason, "自定义");
-        openSectModal(peakId, "bonus");
+        const reason = document.getElementById("sect-custom-reason").value.trim() || "出招加分";
+        await scoreFromModal(peakId, pts, reason, "自定义", 0);
       };
     }
     if (sectModalTab === "attr") {
+      document.getElementById("a-element").value = peak.element || "光";
+      document.getElementById("a-style").value = peak.style || "剑";
       document.getElementById("a-save").onclick = async () => {
         const camp = document.getElementById("a-camp").value;
         const captain_name = document.getElementById("a-captain").value.trim();
@@ -1447,6 +1609,10 @@ input:focus, select:focus, textarea:focus {
           [`peaks/${peakKey(peakId)}/slogan`]: document.getElementById("a-slogan").value.trim(),
           [`peaks/${peakKey(peakId)}/art`]: document.getElementById("a-art").value.trim(),
           [`peaks/${peakKey(peakId)}/base`]: document.getElementById("a-base").value.trim(),
+          [`peaks/${peakKey(peakId)}/badge`]: document.getElementById("a-badge").value.trim(),
+          [`peaks/${peakKey(peakId)}/element`]: document.getElementById("a-element").value,
+          [`peaks/${peakKey(peakId)}/style`]: document.getElementById("a-style").value,
+          [`peaks/${peakKey(peakId)}/win_quote`]: document.getElementById("a-win").value.trim(),
           [`peaks/${peakKey(peakId)}/color`]: document.getElementById("a-color").value.trim(),
           [`peaks/${peakKey(peakId)}/intro`]: document.getElementById("a-intro").value.trim(),
           [`peaks/${peakKey(peakId)}/logo_url`]: document.getElementById("a-logo").value.trim()
@@ -1563,8 +1729,10 @@ input:focus, select:focus, textarea:focus {
       </div>`);
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("custom-confirm").onclick = async () => {
-      await addScoreToPeak(Number(document.getElementById("custom-peak").value), Number(document.getElementById("custom-points").value), document.getElementById("custom-reason").value.trim() || "自定义加分", "自定义");
-      closeModal();
+      const pid = Number(document.getElementById("custom-peak").value);
+      const pts = Number(document.getElementById("custom-points").value);
+      const reason = document.getElementById("custom-reason").value.trim() || "自定义加分";
+      await scoreFromModal(pid, pts, reason, "自定义", 0);
     };
   }
 
@@ -2283,6 +2451,10 @@ input:focus, select:focus, textarea:focus {
       if (p.intro == null) p.intro = "";
       if (p.captain_name == null) p.captain_name = "";
       if (p.logo_url == null) p.logo_url = "";
+      if (p.element == null) p.element = "光";
+      if (p.style == null) p.style = "剑";
+      if (p.win_quote == null) p.win_quote = "此局，我方胜！";
+      if (p.badge == null) p.badge = "新锐";
       if (p.sort_order == null) p.sort_order = p.id;
     });
     getDisciplesArray().forEach((d) => {
@@ -2412,8 +2584,8 @@ input:focus, select:focus, textarea:focus {
       if (m === "memories") { /* loader */ } else renderAll();
       if (demoMode) {
         const tip = document.createElement("div");
-        tip.style.cssText = "position:fixed;top:8px;left:8px;z-index:99;font-size:12px;color:#1f6f68;background:rgba(232,246,244,.9);padding:4px 10px;border:1px solid rgba(58,168,154,.45);border-radius:999px";
-        tip.textContent = "DEMO · 本地对战场";
+        tip.style.cssText = "position:fixed;top:8px;left:8px;z-index:99;font-size:12px;color:#f0c14b;background:rgba(7,9,15,.9);padding:4px 10px;border:2px solid rgba(240,193,75,.5);letter-spacing:.08em";
+        tip.textContent = "DEMO · ARENA";
         document.body.appendChild(tip);
       }
     } catch (err) { console.error(err); showBootError(err); try { showScreen("teacher"); bootDemo(); renderTeacherMain(); } catch(e2){} }
