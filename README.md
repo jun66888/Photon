@@ -1,110 +1,86 @@
+# 光影盟 · 联盟积分体系
 
-<h1 align="center">
-  <br>
-  <a href="https://github.com/s0md3v/Photon"><img src="https://image.ibb.co/h5OZAK/photonsmall.png" alt="Photon"></a>
-  <br>
-  Photon
-  <br>
-</h1>
+纯前端单页应用：老师投屏看板、学生投票、课堂签到、毕业回忆。数据通过 **Firebase Realtime Database** 实时同步，可一键部署到 **Vercel**。
 
-<h4 align="center">Incredibly fast crawler designed for OSINT.</h4>
+未填写 Firebase 配置时，会自动进入 **本地 DEMO 模式**（`localStorage`），便于先预览界面与交互。
 
-<p align="center">
-  <a href="https://github.com/s0md3v/Photon/releases">
-    <img src="https://img.shields.io/github/release/s0md3v/Photon.svg">
-  </a>
-  <a href="https://pypi.org/project/photon/">
-    <img src="https://img.shields.io/badge/pypi-@photon-red.svg?style=style=flat-square"
-         alt="pypi">
-  </a>
-  <a href="https://github.com/s0md3v/Photon/issues?q=is%3Aissue+is%3Aclosed">
-      <img src="https://img.shields.io/github/issues-closed-raw/s0md3v/Photon.svg">
-  </a>
-  <a href="https://travis-ci.com/s0md3v/Photon">
-    <img src="https://img.shields.io/travis/com/s0md3v/Photon.svg">
-  </a>
-</p>
+## 文件
 
-Met a CAPTCHA? Try [CapSolver](https://www.capsolver.com/?utm_source=github&utm_medium=repo&utm_campaign=scraping&utm_term=photon) solving solution.
+| 文件 | 说明 |
+|------|------|
+| `index.html` | 全部 UI + 业务逻辑（内嵌 CSS/JS） |
+| `vercel.json` | Vercel 静态路由，保证 `?mode=` 可用 |
 
-![demo](https://image.ibb.co/kQSUcz/demo.png)
+## 四种模式
 
-<p align="center">
-  <a href="https://github.com/s0md3v/Photon/wiki">Photon Wiki</a> •
-  <a href="https://github.com/s0md3v/Photon/wiki/Usage">How To Use</a> •
-  <a href="https://github.com/s0md3v/Photon/wiki/Compatibility-&-Dependencies">Compatibility</a> •
-  <a href="https://github.com/s0md3v/Photon/wiki/Photon-Library">Photon Library</a> •
-  <a href="#contribution--license">Contribution</a> •
-  <a href="https://github.com/s0md3v/Photon/projects/1">Roadmap</a>
-</p>
+| URL | 用途 |
+|-----|------|
+| `/?mode=teacher`（默认） | 老师端：积分榜、加分、签到投屏、投票、设置 |
+| `/?mode=student` | 学生端：投票与排行榜 |
+| `/?mode=checkin&code=XXXXXX` | 签到端（扫老师二维码） |
+| `/?mode=memories` | 毕业回忆（Day ≥ 20 从老师端进入） |
 
-### Key Features
+## Firebase 配置
 
-#### Data Extraction
-Photon can extract the following data while crawling:
+1. 打开 [Firebase Console](https://console.firebase.google.com/) 创建项目  
+2. 添加 Web 应用，复制配置  
+3. 创建 **Realtime Database**，先用测试规则（开发用）：
 
-- URLs (in-scope & out-of-scope)
-- URLs with parameters (`example.com/gallery.php?id=2`)
-- Intel (emails, social media accounts, amazon buckets etc.)
-- Files (pdf, png, xml etc.)
-- Secret keys (auth/API keys & hashes)
-- JavaScript files & Endpoints present in them
-- Strings matching custom regex pattern
-- Subdomains & DNS related data
-
-The extracted information is saved in an organized manner or can be [exported as json](https://github.com/s0md3v/Photon/wiki/Usage#export-formatted-result).
-
-![save demo](https://image.ibb.co/dS1BqK/carbon_2.png)
-
-#### Flexible
-Control timeout, delay, add seeds, exclude URLs matching a regex pattern and other cool stuff.
-The extensive range of [options](https://github.com/s0md3v/Photon/wiki/Usage) provided by Photon lets you crawl the web exactly the way you want.
-
-#### Genius
-Photon's smart thread management & refined logic gives you top notch performance.
-
-Still, crawling can be resource intensive but Photon has some tricks up it's sleeves. You can fetch URLs archived by [archive.org](https://archive.org/) to be used as seeds by using `--wayback` option.
-
-#### Plugins
-- **[wayback](https://github.com/s0md3v/Photon/wiki/Usage#use-urls-from-archiveorg-as-seeds)**
-- **[dnsdumpster](https://github.com/s0md3v/Photon/wiki/Usage#dumping-dns-data)**
-- **[Exporter](https://github.com/s0md3v/Photon/wiki/Usage#export-formatted-result)**
-
-#### Docker
-
-Photon can be launched using a lightweight Python-Alpine (103 MB) Docker image.
-
-```bash
-$ git clone https://github.com/s0md3v/Photon.git
-$ cd Photon
-$ docker build -t photon .
-$ docker run -it --name photon photon:latest -u google.com
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
 ```
 
-To view results, you can either head over to the local docker volume, which you can find by running `docker inspect photon` or by mounting the target loot folder:
+4. 编辑 `index.html` 顶部的 `FIREBASE_CONFIG`：
 
-```bash
-$ docker run -it --name photon -v "$PWD:/Photon/google.com" photon:latest -u google.com
+```js
+const FIREBASE_CONFIG = {
+  apiKey: "...",
+  authDomain: "...",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "...",
+  storageBucket: "...",
+  messagingSenderId: "...",
+  appId: "..."
+};
 ```
 
-#### Frequent & Seamless Updates
-Photon is under heavy development and updates for fixing bugs. optimizing performance & new features are being rolled regularly.
+首次打开老师端时，若 `/arena` 为空会自动写入种子数据（5 座山峰、25 名弟子、13 个加分预设、3 条任务）。
 
-If you would like to see features and issues that are being worked on, you can do that on [Development](https://github.com/s0md3v/Photon/projects/1) project board.
+> 前端配置本身会暴露，请勿在库里存放敏感业务密钥；上线前请收紧 RTDB 规则。
 
-Updates can be installed & checked for with the `--update` option. Photon has seamless update capabilities which means you can update Photon without losing any of your saved data.
+## 本地预览
 
-### Contribution & License
-You can contribute in following ways:
+```bash
+npx --yes serve -l 3000 .
+# 浏览器打开 http://localhost:3000/?mode=teacher
+```
 
-- Report bugs
-- Develop plugins
-- Add more "APIs" for ninja mode
-- Give suggestions to make it better
-- Fix issues & submit a pull request
+## 部署到 Vercel
 
-Please read the [guidelines](https://github.com/s0md3v/Photon/wiki/Guidelines) before submitting a pull request or issue.
+1. 将本仓库导入 [Vercel](https://vercel.com)  
+2. Framework Preset 选 Other，输出目录为仓库根目录  
+3. 部署后把线上域名填进老师端投屏场景即可生成签到/投票二维码  
 
-Do you want to have a conversation in private? Hit me up on my [twitter](https://twitter.com/s0md3v/), inbox is open :)
+也可使用 CLI：
 
-**Photon** is licensed under [GPL v3.0 license](https://www.gnu.org/licenses/gpl-3.0.en.html)
+```bash
+npx vercel --prod
+```
+
+## 核心规则摘要
+
+- **山峰段位**：入门 0–500 → 筑基 → 金丹 → 元婴 → 化神 5000+  
+- **个人等级**：Lv1–10 每级 300exp，11–20 每级 500，21–30 每级 800  
+- **加分同步**：山峰加分时，该峰弟子 `exp += points × 10`，`contributed += points`  
+- **擂台额外经验**：金/银/铜 +300 / +200 / +100  
+- **天数切换**：不重置积分，仅重置票数与签到/投票状态  
+- **段位结算**：设置面板手动触发，阵营内按 `contributed` 排名  
+
+## 操作员
+
+加分日志默认 `operator: "李红星"`，可在 `index.html` 中修改常量 `OPERATOR`。
