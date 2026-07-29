@@ -195,7 +195,7 @@ input:focus, select:focus, textarea:focus {
   background: linear-gradient(180deg, #3a4668, #1c2438);
   color: #ffe39a;
 }
-body.has-brand-nav #sfx-toggle { top: 4.8rem; }
+body.has-brand-nav #sfx-bar { top: 4.8rem; }
 body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 .day-input {
   width: 4.2rem; text-align: center; font-weight: 800; font-family: var(--font-num);
@@ -1042,14 +1042,18 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   40% { transform: scale(.92); }
   100% { transform: scale(1); filter: blur(0); }
 }
-.sfx-toggle {
+.sfx-bar {
   position: fixed; top: 8px; right: 8px; z-index: 99;
+  display: flex; gap: 6px; align-items: center;
+}
+.sfx-toggle, .sfx-import {
   font-size: 12px; padding: 4px 10px; letter-spacing: .06em;
   border: 2px solid rgba(240,193,75,.55);
   background: rgba(7,9,15,.9); color: var(--gold);
   font-family: var(--font-num); cursor: pointer;
 }
-.sfx-toggle:hover { border-color: var(--gold); }
+.sfx-toggle:hover, .sfx-import:hover { border-color: var(--gold); }
+.sfx-import { opacity: .88; font-size: 11px; padding: 4px 8px; }
 .wuxia-mist {
   position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background:
@@ -1694,10 +1698,13 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
     return ref.key;
   }
 
-  /* -------- FX + SFX：拳皇风合成音（拳脚/大招随机变体，非正版采样） -------- */
+  /* -------- FX + SFX：仙剑奇侠传3 气质音效（合成还原气质；可导入本地音效包） -------- */
   let sfxEnabled = localStorage.getItem("gy_arena_sfx") !== "0";
   let audioCtx = null;
   let masterBus = null;
+  /** 用户导入的仙剑音效采样（非仓库附带正版资源） */
+  const pal3Samples = { light: null, mid: null, heavy: null, ultimate: null, levelup: null };
+  let pal3PackReady = localStorage.getItem("gy_arena_pal3_pack") === "1";
 
   function ensureAudio() {
     if (!audioCtx) {
@@ -1705,7 +1712,7 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
       if (!AC) return null;
       audioCtx = new AC();
       masterBus = audioCtx.createGain();
-      masterBus.gain.value = 0.85;
+      masterBus.gain.value = 0.78;
       masterBus.connect(audioCtx.destination);
     }
     if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
@@ -1716,20 +1723,21 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
     return ctx ? masterBus : null;
   }
 
-  function tone(freq, t0, dur, type, vol, slideTo) {
+  function tone(freq, t0, dur, type, vol, slideTo, attack) {
     const ctx = ensureAudio();
     const out = bus();
     if (!ctx || !out || !sfxEnabled) return;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
-    o.type = type || "square";
+    o.type = type || "sine";
     o.frequency.setValueAtTime(freq, t0);
     if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t0 + dur);
+    const atk = attack == null ? 0.02 : attack;
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + atk);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     o.connect(g); g.connect(out);
-    o.start(t0); o.stop(t0 + dur + 0.02);
+    o.start(t0); o.stop(t0 + dur + 0.03);
   }
 
   function noiseBurst(t0, dur, vol, opts = {}) {
@@ -1739,7 +1747,7 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
     const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, opts.decay || 1);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, opts.decay || 1.4);
     const src = ctx.createBufferSource();
     src.buffer = buf;
     const g = ctx.createGain();
@@ -1747,7 +1755,7 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
     f.type = opts.type || "bandpass";
     f.frequency.setValueAtTime(opts.freq || 1800, t0);
     if (opts.freqTo) f.frequency.exponentialRampToValueAtTime(Math.max(40, opts.freqTo), t0 + dur);
-    f.Q.value = opts.q || 0.8;
+    f.Q.value = opts.q || 0.9;
     g.gain.setValueAtTime(vol, t0);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     src.connect(f); f.connect(g); g.connect(out);
@@ -1756,104 +1764,228 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  /** 仙剑常用五声音阶：宫商角徵羽 */
+  const PEN = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 783.99, 880.0];
 
-  /** 拳皇风：拳脚挥空 / 破风 */
-  function kofWhoosh(t0, kind) {
-    const kick = kind === "kick";
-    noiseBurst(t0, kick ? 0.14 : 0.09, kick ? 0.14 : 0.1, {
-      type: "bandpass", freq: kick ? 900 : 2600, freqTo: kick ? 220 : 500, q: 1.4, decay: 1.5
-    });
-    tone(kick ? rand(180, 260) : rand(380, 520), t0, kick ? 0.11 : 0.08, "sawtooth", 0.05, kick ? 70 : 140);
+  function playBuffer(buf, vol = 0.85) {
+    const ctx = ensureAudio();
+    const out = bus();
+    if (!ctx || !out || !buf || !sfxEnabled) return false;
+    const src = ctx.createBufferSource();
+    const g = ctx.createGain();
+    src.buffer = buf;
+    g.gain.value = vol;
+    src.connect(g); g.connect(out);
+    src.start();
+    return true;
   }
 
-  /** 拳皇风：拳/脚命中（随机变体） */
-  function kofStrike(t0, kind) {
-    const variants = kind === "kick"
-      ? [
-          () => { noiseBurst(t0, 0.1, 0.22, { type: "lowpass", freq: 1100, freqTo: 90 }); tone(95, t0, 0.14, "triangle", 0.18, 35); tone(240, t0, 0.05, "square", 0.08, 80); },
-          () => { noiseBurst(t0, 0.08, 0.2, { type: "bandpass", freq: 700, freqTo: 120, q: 1 }); tone(70, t0, 0.16, "sine", 0.2, 28); tone(320, t0 + 0.01, 0.06, "square", 0.07, 90); },
-          () => { noiseBurst(t0, 0.12, 0.24, { type: "lowpass", freq: 800, freqTo: 60 }); tone(110, t0, 0.1, "triangle", 0.16, 40); tone(55, t0 + 0.02, 0.18, "sine", 0.14, 25); }
-        ]
-      : [
-          () => { noiseBurst(t0, 0.055, 0.18, { type: "highpass", freq: 1800, freqTo: 600 }); tone(160, t0, 0.08, "triangle", 0.14, 50); tone(620, t0, 0.04, "square", 0.07, 200); },
-          () => { noiseBurst(t0, 0.07, 0.2, { type: "bandpass", freq: 1400, freqTo: 300, q: 1.2 }); tone(200, t0, 0.07, "square", 0.1, 70); tone(900, t0 + 0.01, 0.05, "triangle", 0.06, 400); },
-          () => { noiseBurst(t0, 0.06, 0.16, { type: "lowpass", freq: 1600, freqTo: 120 }); tone(140, t0, 0.09, "triangle", 0.15, 45); tone(480, t0, 0.05, "sine", 0.06, 180); }
-        ];
-    pick(variants)();
-  }
-
-  /** 拳皇风：连段确认叮 */
-  function kofComboTick(t0, n) {
-    for (let i = 0; i < n; i++) {
-      const f = 700 + i * 90 + rand(-30, 40);
-      tone(f, t0 + i * 0.04, 0.06, "square", 0.065, f * 0.65);
-      noiseBurst(t0 + i * 0.04, 0.03, 0.07, { type: "highpass", freq: 2200, freqTo: 900 });
-    }
-  }
-
-  /** 拳皇风：MAX/超必杀充能 */
-  function kofCharge(t0) {
-    tone(60, t0, 0.4, "sawtooth", 0.09, 380);
-    tone(90, t0 + 0.04, 0.42, "square", 0.07, 720);
-    noiseBurst(t0 + 0.08, 0.38, 0.13, { type: "bandpass", freq: 500, freqTo: 3600, q: 2.2, decay: 0.55 });
-    kofWhoosh(t0 + 0.12, "kick");
-  }
-
-  /** 武侠风：剑气 / 琴音（大分时与拳脚音融合） */
-  function wuxiaSword(t0) {
-    noiseBurst(t0, 0.16, 0.14, { type: "bandpass", freq: 3200, freqTo: 500, q: 2.4, decay: 1.2 });
-    tone(880, t0, 0.18, "triangle", 0.08, 220);
-    tone(1320, t0 + 0.04, 0.22, "sine", 0.07, 440);
-    tone(520, t0 + 0.02, 0.12, "sawtooth", 0.05, 160);
-  }
-  function wuxiaQin(t0) {
-    [392, 494, 587, 784].forEach((f, i) => {
-      tone(f, t0 + i * 0.05, 0.28, "triangle", 0.06, f * 1.01);
-      tone(f * 2, t0 + i * 0.05, 0.18, "sine", 0.03, f * 2.02);
+  function openPal3Idb() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open("gy_arena_pal3_sfx", 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains("samples")) db.createObjectStore("samples");
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
     });
   }
-  function wuxiaFusion(t0, heavy) {
-    wuxiaSword(t0);
-    if (heavy) {
-      wuxiaQin(t0 + 0.08);
-      noiseBurst(t0 + 0.12, 0.28, 0.12, { type: "lowpass", freq: 700, freqTo: 80, decay: 0.7 });
-      tone(110, t0 + 0.1, 0.4, "sine", 0.1, 55);
-    }
+
+  async function savePal3Sample(key, arrayBuffer) {
+    const db = await openPal3Idb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("samples", "readwrite");
+      tx.objectStore("samples").put(arrayBuffer, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   }
 
-  /** 拳皇风：大招爆发（随机一套） */
-  function kofSuper(t0) {
-    const style = pick(["fireball", "slash", "meteor", "blast"]);
-    kofCharge(t0);
-    const hit = t0 + 0.2;
-    if (style === "fireball") {
-      noiseBurst(hit, 0.28, 0.26, { type: "lowpass", freq: 1400, freqTo: 70, decay: 0.7 });
-      tone(180, hit, 0.22, "sawtooth", 0.14, 50);
-      [0, 0.08, 0.16].forEach((d) => kofStrike(hit + d, "punch"));
-      tone(980, hit + 0.18, 0.35, "triangle", 0.09, 1600);
-    } else if (style === "slash") {
-      kofWhoosh(hit, "kick");
-      noiseBurst(hit + 0.03, 0.18, 0.24, { type: "bandpass", freq: 2200, freqTo: 200, q: 1.5 });
-      tone(240, hit, 0.12, "square", 0.12, 60);
-      kofStrike(hit + 0.06, "kick");
-      tone(1200, hit + 0.1, 0.28, "sine", 0.08, 400);
-    } else if (style === "meteor") {
-      [0, 0.06, 0.12, 0.18, 0.26].forEach((d, i) => {
-        kofStrike(hit + d, i % 2 ? "kick" : "punch");
-        tone(300 + i * 140, hit + d, 0.09, "square", 0.08, 80);
+  async function loadPal3SamplesFromIdb() {
+    try {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const db = await openPal3Idb();
+      const keys = Object.keys(pal3Samples);
+      await Promise.all(keys.map((key) => new Promise((resolve) => {
+        const tx = db.transaction("samples", "readonly");
+        const req = tx.objectStore("samples").get(key);
+        req.onsuccess = async () => {
+          const ab = req.result;
+          if (ab) {
+            try { pal3Samples[key] = await ctx.decodeAudioData(ab.slice(0)); } catch (_) {}
+          }
+          resolve();
+        };
+        req.onerror = () => resolve();
+      })));
+      pal3PackReady = keys.some((k) => !!pal3Samples[k]);
+      localStorage.setItem("gy_arena_pal3_pack", pal3PackReady ? "1" : "0");
+      updateSfxToggleLabel();
+    } catch (_) {}
+  }
+
+  function guessSampleKey(name) {
+    const n = String(name || "").toLowerCase();
+    if (/level|升级|升阶|突破|lvup/.test(n)) return "levelup";
+    if (/ultim|超必|大招|绝招|必杀|ultimate|boss|终/.test(n)) return "ultimate";
+    if (/heavy|重|强|技能|magic|法术|仙术/.test(n)) return "heavy";
+    if (/mid|中|连|combo|任务/.test(n)) return "mid";
+    if (/light|轻|小|hit|击|sword|剑/.test(n)) return "light";
+    return null;
+  }
+
+  async function importPal3SoundPack(fileList) {
+    const ctx = ensureAudio();
+    if (!ctx) { alert("当前浏览器不支持音频"); return; }
+    const files = Array.from(fileList || []).filter((f) => /\.(mp3|wav|ogg|m4a|aac)$/i.test(f.name));
+    if (!files.length) {
+      alert("请选择 mp3 / wav / ogg 等音效文件。\n建议命名：light / mid / heavy / ultimate / levelup\n（也可含：轻、中、重、大招、升级）");
+      return;
+    }
+    let mapped = 0;
+    for (const file of files) {
+      const key = guessSampleKey(file.name);
+      if (!key) continue;
+      const ab = await file.arrayBuffer();
+      try {
+        pal3Samples[key] = await ctx.decodeAudioData(ab.slice(0));
+        await savePal3Sample(key, ab);
+        mapped++;
+      } catch (_) {}
+    }
+    if (!mapped && files[0]) {
+      const order = ["light", "mid", "heavy", "ultimate", "levelup"];
+      for (let i = 0; i < Math.min(files.length, order.length); i++) {
+        const ab = await files[i].arrayBuffer();
+        try {
+          pal3Samples[order[i]] = await ctx.decodeAudioData(ab.slice(0));
+          await savePal3Sample(order[i], ab);
+          mapped++;
+        } catch (_) {}
+      }
+    }
+    pal3PackReady = Object.values(pal3Samples).some(Boolean);
+    localStorage.setItem("gy_arena_pal3_pack", pal3PackReady ? "1" : "0");
+    updateSfxToggleLabel();
+    alert(pal3PackReady
+      ? `已导入仙剑音效包（${mapped} 个采样）。加分时优先播放导入音效。`
+      : "未能识别音效文件，请按 light/mid/heavy/ultimate/levelup 命名后重试。");
+    if (pal3PackReady) playHitSfx(5, "任务");
+  }
+
+  /** 剑气破空 —— 仙剑战斗中常见的轻剑音 */
+  function pal3SwordWhoosh(t0, bright) {
+    noiseBurst(t0, bright ? 0.14 : 0.11, bright ? 0.11 : 0.08, {
+      type: "bandpass", freq: bright ? 3400 : 2400, freqTo: bright ? 480 : 360, q: 2.6, decay: 1.8
+    });
+    tone(bright ? 980 : 720, t0, 0.16, "triangle", 0.055, bright ? 280 : 200, 0.01);
+    tone(bright ? 1560 : 1180, t0 + 0.015, 0.2, "sine", 0.045, bright ? 520 : 400, 0.015);
+  }
+
+  /** 灵力叮 —— 柔和的仙气确认音 */
+  function pal3SpiritChime(t0, noteIdx) {
+    const f = PEN[Math.max(0, Math.min(PEN.length - 1, noteIdx))];
+    tone(f, t0, 0.42, "sine", 0.09, f * 1.002, 0.01);
+    tone(f * 2, t0, 0.32, "triangle", 0.04, f * 2.01, 0.02);
+    tone(f * 3, t0 + 0.01, 0.18, "sine", 0.02, f * 3.02, 0.03);
+  }
+
+  /** 古琴拨弦感 */
+  function pal3QinPluck(t0, f) {
+    tone(f, t0, 0.55, "triangle", 0.07, f * 0.995, 0.004);
+    tone(f * 2.01, t0, 0.35, "sine", 0.035, f * 2, 0.008);
+    tone(f * 0.5, t0, 0.4, "sine", 0.03, f * 0.5, 0.02);
+    noiseBurst(t0, 0.04, 0.05, { type: "highpass", freq: 2800, freqTo: 1200, q: 1.2, decay: 2 });
+  }
+
+  /** 笛韵短句（大招氛围） */
+  function pal3FlutePhrase(t0) {
+    const phrase = pick([
+      [392, 440, 523, 587],
+      [330, 392, 440, 523],
+      [440, 523, 587, 659],
+      [294, 392, 440, 523]
+    ]);
+    phrase.forEach((f, i) => {
+      tone(f, t0 + i * 0.09, 0.28, "sine", 0.055, f * 1.01, 0.04);
+      tone(f * 2, t0 + i * 0.09, 0.2, "triangle", 0.02, f * 2.02, 0.05);
+    });
+  }
+
+  /** 聚灵充能 */
+  function pal3Gather(t0) {
+    tone(90, t0, 0.45, "sine", 0.07, 320, 0.08);
+    tone(180, t0 + 0.05, 0.4, "triangle", 0.05, 640, 0.1);
+    noiseBurst(t0 + 0.06, 0.4, 0.09, { type: "bandpass", freq: 400, freqTo: 2800, q: 1.8, decay: 0.6 });
+    [4, 5, 6, 7].forEach((idx, i) => pal3SpiritChime(t0 + 0.08 + i * 0.07, idx));
+  }
+
+  /** 轻击：剑气 + 灵力 */
+  function pal3Light(t0) {
+    pal3SwordWhoosh(t0, false);
+    pal3SpiritChime(t0 + 0.04, pick([4, 5, 6]));
+    tone(220, t0 + 0.03, 0.12, "sine", 0.05, 110, 0.01);
+  }
+
+  /** 中击：连剑 + 琴音 */
+  function pal3Mid(t0) {
+    pal3SwordWhoosh(t0, true);
+    pal3SpiritChime(t0 + 0.03, 5);
+    pal3QinPluck(t0 + 0.1, pick([392, 440, 523]));
+    pal3SwordWhoosh(t0 + 0.16, false);
+    pal3SpiritChime(t0 + 0.2, 7);
+  }
+
+  /** 重击：仙术施放 */
+  function pal3Heavy(t0) {
+    pal3Gather(t0);
+    const hit = t0 + 0.22;
+    pal3SwordWhoosh(hit, true);
+    noiseBurst(hit + 0.02, 0.22, 0.14, { type: "bandpass", freq: 1800, freqTo: 280, q: 1.4, decay: 1.1 });
+    tone(160, hit, 0.35, "sine", 0.1, 70, 0.02);
+    [523, 659, 784].forEach((f, i) => tone(f, hit + 0.04 + i * 0.06, 0.4, "triangle", 0.07, f * 1.02, 0.02));
+    pal3QinPluck(hit + 0.18, 587);
+  }
+
+  /** 绝招：御剑 / 天书感 */
+  function pal3Ultimate(t0) {
+    const style = pick(["jade", "swordrain", "seal", "spirit"]);
+    pal3Gather(t0);
+    pal3FlutePhrase(t0 + 0.1);
+    const hit = t0 + 0.28;
+    if (style === "jade") {
+      noiseBurst(hit, 0.4, 0.16, { type: "lowpass", freq: 1200, freqTo: 90, decay: 0.75 });
+      [523, 659, 784, 1046].forEach((f, i) => {
+        tone(f, hit + i * 0.07, 0.55, "sine", 0.08, f * 1.01, 0.03);
+        tone(f * 2, hit + i * 0.07, 0.35, "triangle", 0.03, f * 2.02, 0.04);
       });
-      noiseBurst(hit + 0.28, 0.32, 0.28, { type: "lowpass", freq: 1000, freqTo: 45 });
-      tone(70, hit + 0.28, 0.35, "triangle", 0.2, 30);
+      pal3SwordWhoosh(hit + 0.15, true);
+    } else if (style === "swordrain") {
+      [0, 0.07, 0.14, 0.21, 0.3].forEach((d, i) => {
+        pal3SwordWhoosh(hit + d, i % 2 === 0);
+        pal3SpiritChime(hit + d + 0.02, 5 + (i % 4));
+      });
+      tone(110, hit + 0.32, 0.45, "sine", 0.12, 45, 0.03);
+      noiseBurst(hit + 0.3, 0.35, 0.14, { type: "lowpass", freq: 900, freqTo: 60, decay: 0.8 });
+    } else if (style === "seal") {
+      pal3QinPluck(hit, 330);
+      pal3QinPluck(hit + 0.1, 392);
+      pal3QinPluck(hit + 0.2, 523);
+      noiseBurst(hit + 0.12, 0.3, 0.12, { type: "bandpass", freq: 700, freqTo: 2200, q: 2, decay: 0.7 });
+      tone(880, hit + 0.25, 0.6, "sine", 0.09, 1320, 0.05);
+      tone(1760, hit + 0.35, 0.5, "triangle", 0.05, 2200, 0.06);
     } else {
-      noiseBurst(hit, 0.35, 0.3, { type: "lowpass", freq: 900, freqTo: 50, decay: 0.8 });
-      tone(50, hit, 0.4, "sine", 0.22, 25);
-      tone(400, hit + 0.05, 0.2, "sawtooth", 0.1, 90);
-      kofComboTick(hit + 0.1, 4);
-      tone(1400, hit + 0.25, 0.4, "triangle", 0.1, 700);
+      tone(70, hit, 0.5, "sine", 0.14, 40, 0.04);
+      noiseBurst(hit, 0.42, 0.18, { type: "lowpass", freq: 800, freqTo: 55, decay: 0.85 });
+      pal3FlutePhrase(hit + 0.05);
+      [440, 523, 659, 880].forEach((f, i) => tone(f, hit + 0.2 + i * 0.08, 0.45, "sine", 0.07, f * 1.03, 0.03));
+      pal3SwordWhoosh(hit + 0.4, true);
     }
   }
 
-  /** 1=拳脚 2=连段 3=必杀 4=超必杀 */
+  /** 1=轻剑 2=连招 3=仙术 4=绝招 */
   function powerLevel(points, category) {
     const p = Number(points) || 0;
     if (category === "擂台" || p >= 20) return 4;
@@ -1865,57 +1997,36 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
   function playHitSfx(points, category) {
     const ctx = ensureAudio();
     if (!ctx || !sfxEnabled) return;
-    const now = ctx.currentTime;
     const lv = powerLevel(points, category);
-    if (lv === 1) {
-      const kind = pick(["punch", "kick", "punch", "kick", "punch"]);
-      kofWhoosh(now, kind);
-      kofStrike(now + 0.025, kind);
-      return;
-    }
-    if (lv === 2) {
-      const a = pick(["punch", "kick"]);
-      const b = a === "punch" ? "kick" : "punch";
-      kofWhoosh(now, a);
-      kofStrike(now + 0.02, a);
-      kofComboTick(now + 0.07, pick([2, 3]));
-      kofWhoosh(now + 0.14, b);
-      kofStrike(now + 0.16, b);
-      if (Math.random() > 0.45) wuxiaSword(now + 0.1);
-      return;
-    }
-    if (lv === 3) {
-      kofCharge(now);
-      wuxiaFusion(now + 0.05, false);
-      kofStrike(now + 0.18, pick(["punch", "kick"]));
-      kofComboTick(now + 0.22, 3);
-      noiseBurst(now + 0.28, 0.22, 0.2, { type: "lowpass", freq: 1200, freqTo: 60 });
-      tone(rand(140, 200), now + 0.18, 0.28, "sawtooth", 0.11, 40);
-      wuxiaSword(now + 0.3);
-      return;
-    }
-    // 大分：拳皇大招 + 武侠剑气琴音融合
-    kofSuper(now);
-    wuxiaFusion(now + 0.12, true);
-    setTimeout(() => {
-      const c = ensureAudio();
-      if (!c || !sfxEnabled) return;
-      kofStrike(c.currentTime, pick(["punch", "kick"]));
-      wuxiaSword(c.currentTime);
-      noiseBurst(c.currentTime, 0.2, 0.16, { type: "lowpass", freq: 800, freqTo: 50 });
-    }, 360);
+    const sampleKey = lv === 1 ? "light" : lv === 2 ? "mid" : lv === 3 ? "heavy" : "ultimate";
+    if (pal3Samples[sampleKey] && playBuffer(pal3Samples[sampleKey], lv >= 3 ? 0.9 : 0.82)) return;
+    const now = ctx.currentTime;
+    if (lv === 1) return pal3Light(now);
+    if (lv === 2) return pal3Mid(now);
+    if (lv === 3) return pal3Heavy(now);
+    pal3Ultimate(now);
   }
 
   function playLevelUpSfx() {
     const ctx = ensureAudio();
     if (!ctx || !sfxEnabled) return;
+    if (pal3Samples.levelup && playBuffer(pal3Samples.levelup, 0.9)) return;
     const now = ctx.currentTime;
-    kofCharge(now);
-    [523, 659, 784, 1046, 1318].forEach((f, i) => {
-      tone(f, now + 0.12 + i * 0.08, 0.26, i % 2 ? "square" : "triangle", 0.1, f * 1.04);
+    pal3Gather(now);
+    [392, 440, 523, 659, 784, 1046].forEach((f, i) => {
+      tone(f, now + 0.1 + i * 0.09, 0.4, "sine", 0.09, f * 1.02, 0.025);
+      tone(f * 2, now + 0.1 + i * 0.09, 0.28, "triangle", 0.035, f * 2.02, 0.04);
     });
-    kofStrike(now + 0.55, "kick");
-    tone(1760, now + 0.58, 0.55, "sine", 0.12, 2200);
+    pal3QinPluck(now + 0.55, 523);
+    tone(1318, now + 0.62, 0.7, "sine", 0.1, 1760, 0.05);
+    noiseBurst(now + 0.5, 0.35, 0.1, { type: "bandpass", freq: 2000, freqTo: 600, q: 1.2, decay: 1 });
+  }
+
+  function updateSfxToggleLabel() {
+    const btn = document.getElementById("sfx-toggle");
+    if (!btn) return;
+    if (!sfxEnabled) btn.textContent = "🔇 音效关";
+    else btn.textContent = pal3PackReady ? "🔊 仙剑音效·包" : "🔊 仙剑音效";
   }
 
   function clearFxOverlays() {
@@ -2151,20 +2262,44 @@ body.has-brand-nav .demo-tip { top: 4.8rem !important; }
 
   function ensureSfxToggle() {
     if (document.getElementById("sfx-toggle")) return;
+    const bar = document.createElement("div");
+    bar.className = "sfx-bar";
+    bar.id = "sfx-bar";
     const btn = document.createElement("button");
     btn.id = "sfx-toggle";
     btn.type = "button";
     btn.className = "sfx-toggle";
-    btn.textContent = sfxEnabled ? "🔊 武侠音效" : "🔇 音效关";
+    btn.title = "仙剑奇侠传3 气质音效（合成）；可导入本地采样";
+    btn.textContent = !sfxEnabled ? "🔇 音效关" : (pal3PackReady ? "🔊 仙剑音效·包" : "🔊 仙剑音效");
     btn.onclick = () => {
       sfxEnabled = !sfxEnabled;
       localStorage.setItem("gy_arena_sfx", sfxEnabled ? "1" : "0");
-      btn.textContent = sfxEnabled ? "🔊 武侠音效" : "🔇 音效关";
+      updateSfxToggleLabel();
       if (sfxEnabled) { ensureAudio(); playHitSfx(pick([2, 5, 12, 25]), pick(["日常", "任务", "擂台"])); }
     };
-    document.body.appendChild(btn);
-    const unlock = () => { ensureAudio(); document.removeEventListener("pointerdown", unlock); };
+    const imp = document.createElement("button");
+    imp.id = "sfx-import";
+    imp.type = "button";
+    imp.className = "sfx-import";
+    imp.textContent = "导入音效包";
+    imp.title = "导入本地仙剑3音效（light/mid/heavy/ultimate/levelup）";
+    const file = document.createElement("input");
+    file.type = "file";
+    file.accept = "audio/*,.mp3,.wav,.ogg,.m4a";
+    file.multiple = true;
+    file.hidden = true;
+    imp.onclick = () => file.click();
+    file.onchange = () => { if (file.files?.length) importPal3SoundPack(file.files); file.value = ""; };
+    bar.appendChild(btn);
+    bar.appendChild(imp);
+    bar.appendChild(file);
+    document.body.appendChild(bar);
+    const unlock = () => { ensureAudio(); loadPal3SamplesFromIdb(); document.removeEventListener("pointerdown", unlock); };
     document.addEventListener("pointerdown", unlock, { once: true });
+    if (localStorage.getItem("gy_arena_pal3_pack") === "1") {
+      // 延迟到用户手势后再解码；先标好 UI
+      updateSfxToggleLabel();
+    }
   }
 
   function ensureSwordCursorTrail() {
