@@ -144,12 +144,16 @@ input:focus, select:focus, textarea:focus {
 }
 
 .header-bar { justify-content: space-between; margin-bottom: .25rem; flex: 0 0 auto; }
-.screen.compact-arena { padding: 3.05rem .55rem 2.4rem; }
+.screen.compact-arena { padding: 3.05rem .55rem 1rem; }
+body.has-ticker .screen.compact-arena { padding-top: 6.5rem; }
 .app-title.compact { font-size: clamp(1rem, 2vw, 1.25rem); letter-spacing: .08em; margin: 0; }
 #teacher-main.subview {
   display: flex; flex-direction: column;
-  min-height: calc(100vh - 3.05rem - 2.2rem);
+  min-height: calc(100vh - 3.05rem - 1rem);
   gap: .28rem;
+}
+body.has-ticker #teacher-main.subview {
+  min-height: calc(100vh - 6.5rem - 1rem);
 }
 
 /* 中上部徽标 + 导航：横排，少占高度 */
@@ -200,7 +204,9 @@ input:focus, select:focus, textarea:focus {
   font-size: .85rem !important; letter-spacing: .04em; padding: .35rem .75rem !important;
 }
 body.has-brand-nav #sfx-bar { top: 3.35rem; }
+body.has-ticker.has-brand-nav #sfx-bar { top: 6.7rem; }
 body.has-brand-nav .demo-tip { top: 3.35rem !important; }
+body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 
 /* 工具条：标题 + 天数/排序下拉 + 操作按钮一排 */
 .arena-toolbar {
@@ -663,13 +669,63 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 
 .func-bar { margin-bottom: .8rem; }
 .func-bar button { min-width: 6.4rem; }
+/* 顶部战报广告牌（宽跑马灯） */
 .ticker {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-  background: rgba(5,7,12,.94); color: #ffe39a;
-  border-top: 2px solid var(--gold); padding: .5rem 0; overflow: hidden; white-space: nowrap;
+  position: fixed; left: 0; right: 0; top: 3.05rem; z-index: 48;
+  height: 3.25rem;
+  display: flex; align-items: stretch;
+  background:
+    linear-gradient(180deg, rgba(255,227,154,.2), transparent 42%),
+    linear-gradient(90deg, #4a2c0a 0%, #1a1006 16%, #100a04 84%, #4a2c0a 100%);
+  color: #ffe39a;
+  border-top: 2px solid #ffe39a;
+  border-bottom: 4px solid var(--gold);
+  box-shadow:
+    0 12px 32px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -10px 20px rgba(240,193,75,.1);
+  overflow: hidden; white-space: nowrap;
+  padding: 0;
 }
-.ticker-inner { display: inline-block; padding-left: 100%; animation: ticker 28s linear infinite; font-family: var(--font-ui); }
+.ticker-badge {
+  position: relative; z-index: 2;
+  flex: 0 0 auto;
+  min-width: 5.2rem;
+  display: grid; place-items: center;
+  padding: 0 1rem;
+  font-family: var(--font-brush);
+  font-size: 1.4rem;
+  letter-spacing: .14em;
+  color: #1a1205;
+  background: linear-gradient(180deg, #ffe39a, var(--gold) 55%, #a67c14);
+  border-right: 2px solid #fff3c4;
+  box-shadow: 8px 0 20px rgba(0,0,0,.4);
+  text-shadow: 0 1px 0 rgba(255,255,255,.35);
+}
+.ticker-track {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden;
+  display: flex; align-items: center;
+  mask-image: linear-gradient(90deg, transparent, #000 1.5%, #000 97%, transparent);
+}
+.ticker-inner {
+  display: inline-block;
+  padding-left: 100%;
+  animation: ticker 32s linear infinite;
+  font-family: var(--font-ui);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(240,193,75,.5), 0 2px 0 #1a1205;
+}
 @keyframes ticker { to { transform: translateX(-100%); } }
+@media (max-width: 720px) {
+  .ticker { height: 2.7rem; top: 3.35rem; }
+  .ticker-badge { font-size: 1.1rem; min-width: 4rem; padding: 0 .55rem; }
+  .ticker-inner { font-size: 1.08rem; }
+  body.has-ticker .screen.compact-arena { padding-top: 6.2rem; }
+}
 
 .modal-mask {
   position: fixed; inset: 0; z-index: 60;
@@ -1253,6 +1309,14 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     </nav>
   </header>
 
+  <!-- 顶部战报广告牌 -->
+  <div class="ticker" id="arena-ticker" hidden>
+    <div class="ticker-badge">战报</div>
+    <div class="ticker-track">
+      <div class="ticker-inner" id="ticker-text">山河战报：静候出招……</div>
+    </div>
+  </div>
+
   <!-- TEACHER -->
   <div id="teacher-screen" class="screen compact-arena">
     <div id="teacher-main" class="subview">
@@ -1401,7 +1465,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
       </div>
     </div>
 
-    <div class="ticker"><div class="ticker-inner" id="ticker-text">COMBO FEED：等待出招……</div></div>
   </div>
 
   <div class="drawer-mask" id="drawer-mask"></div>
@@ -2648,7 +2711,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     }
     if (main && teacherView === "main") {
       const top = board.getBoundingClientRect().top;
-      const bottomPad = 36;
+      const bottomPad = 12;
       const h = Math.max(220, window.innerHeight - top - bottomPad);
       board.style.height = h + "px";
     }
@@ -2693,9 +2756,17 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     requestAnimationFrame(() => applyArenaDensity(redList.length, blueList.length));
 
     const logs = getLogsArray().filter((l) => l.day === day).slice(0, 30);
-    document.getElementById("ticker-text").textContent = logs.length
+    const feed = logs.length
       ? "山河战报：" + logs.map((l) => `${l.peak_name}+${l.points}（${l.reason}）`).join(" ｜ ")
       : "山河战报：静候出招……";
+    const tickerEl = document.getElementById("ticker-text");
+    if (tickerEl) {
+      // 双段拼接，广告牌更密
+      tickerEl.textContent = feed + "　　◆　　" + feed + "　　◆　　";
+      tickerEl.style.animation = "none";
+      void tickerEl.offsetWidth;
+      tickerEl.style.animation = "";
+    }
   }
 
   function openModal(html) {
@@ -2919,8 +2990,13 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
       const el = document.getElementById(id);
       if (el) el.classList.toggle("hidden", v !== view);
     });
-    const ticker = document.querySelector(".ticker");
-    if (ticker) ticker.style.display = view === "main" ? "" : "none";
+    const showTicker = view === "main";
+    const ticker = document.getElementById("arena-ticker") || document.querySelector(".ticker");
+    if (ticker) {
+      ticker.hidden = !showTicker;
+      ticker.style.display = showTicker ? "flex" : "none";
+    }
+    document.body.classList.toggle("has-ticker", showTicker);
     document.querySelectorAll("#teacher-nav-links [data-nav]").forEach((b) => {
       b.classList.toggle("active-nav", b.dataset.nav === view);
     });
