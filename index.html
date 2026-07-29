@@ -407,23 +407,24 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   font-size: .85rem !important; padding: .38rem .75rem !important;
   min-height: 2.15rem; white-space: nowrap;
 }
+/* 每边组卡：自上而下单列，每组横向占满半屏 */
 .peak-list {
-  --peak-cols: 1;
   flex: 1 1 auto;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(var(--peak-cols), minmax(0, 1fr));
-  grid-auto-rows: min-content;
-  align-content: start;
-  gap: .4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .38rem;
   overflow: auto;
   padding-right: 2px;
+  width: 100%;
 }
 .sort-hint { display: none; }
 
-/* 山峰组卡 — 横向紧凑，吃满列宽 */
+/* 组卡 = 半屏宽横向条：logo | 信息+经验条 | 分数 | 出招+组员 */
 .sect-card {
   position: relative;
+  width: 100%;
+  flex: 0 0 auto;
   border: none;
   border-radius: 8px;
   padding: 0;
@@ -433,16 +434,15 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   transition: filter .15s ease, border-color .15s ease;
   user-select: none;
   overflow: hidden;
-  min-height: 0;
-  display: flex; flex-direction: column;
   font-size: .9rem;
 }
 .sect-card::before { content: none; }
 .sect-card .mount-shape { display: none; }
 .sect-card .mount-body {
   position: relative; z-index: 1;
+  width: 100%;
   margin: 0;
-  padding: .45rem .55rem .4rem 1.55rem;
+  padding: .42rem .7rem .42rem 1.55rem;
   border: 1px solid rgba(255,255,255,.14);
   border-radius: 8px;
   background:
@@ -450,13 +450,12 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     linear-gradient(180deg, rgba(22,30,42,.98), rgba(10,14,22,.99));
   box-shadow: 0 3px 12px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   grid-template-areas:
-    "logo info actions"
-    "bar bar bar"
-    "tog tog tog"
-    "mem mem mem";
-  gap: .28rem .5rem;
+    "logo info score actions"
+    "mem mem mem mem";
+  column-gap: .65rem;
+  row-gap: .35rem;
   align-items: center;
   overflow: hidden;
 }
@@ -477,63 +476,68 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
 .sect-card:hover .mount-body { filter: brightness(1.06); }
 .sect-card.dragging { opacity: .4; }
 .sect-card .seal-rank {
-  position: absolute; top: .28rem; right: .3rem; z-index: 2;
-  min-width: 1.35rem; height: 1.35rem;
-  padding: 0 .2rem; border-radius: 4px;
+  position: absolute; top: .35rem; left: 1.45rem; z-index: 2;
+  min-width: 1.25rem; height: 1.25rem;
+  padding: 0 .18rem; border-radius: 4px;
   border: 1px solid var(--gold); color: #1a1205;
-  font-family: var(--font-num); font-size: .72rem; font-weight: 800;
+  font-family: var(--font-num); font-size: .68rem; font-weight: 800;
   display: grid; place-items: center;
   background: linear-gradient(180deg, #ffe39a, var(--gold));
   box-shadow: 0 0 8px rgba(240,193,75,.35);
 }
 .sect-logo {
   grid-area: logo;
-  width: 46px; height: 46px;
+  width: 52px; height: 52px;
   border: 2px solid var(--gold);
   border-radius: 50% 50% 42% 42%;
   background: radial-gradient(circle at 30% 25%, #2a3350, #0c101c);
   display: grid; place-items: center;
-  font-size: 1.25rem; overflow: hidden;
+  font-size: 1.35rem; overflow: hidden;
   box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 0 10px rgba(240,193,75,.22);
 }
 .sect-card.red .sect-logo { border-color: #ff6b84; }
 .sect-card.blue .sect-logo { border-color: #2ee6ff; }
 .sect-logo img { width: 100%; height: 100%; object-fit: cover; }
-.sect-info { grid-area: info; min-width: 0; padding-right: .2rem; }
+.sect-info {
+  grid-area: info; min-width: 0;
+  display: flex; flex-direction: column; gap: .18rem; justify-content: center;
+}
+.sect-name-row {
+  display: flex; align-items: baseline; gap: .45rem; min-width: 0; flex-wrap: nowrap;
+}
 .sect-name {
-  font-family: var(--font-brush); font-size: 1.28rem; line-height: 1.1; color: #fff;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-brush); font-size: 1.35rem; line-height: 1.1; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto;
+}
+.sect-tags {
+  display: flex; gap: .25rem; flex-wrap: nowrap; flex: 1 1 auto; min-width: 0;
+  overflow: hidden;
 }
 .sect-meta {
-  font-size: .78rem; color: #c5d0e2; margin-top: .12rem;
+  font-size: .8rem; color: #c5d0e2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sect-tags { display: flex; gap: .25rem; flex-wrap: wrap; margin-top: .18rem; }
 .sect-slogan { display: none; }
-.sect-actions {
-  grid-area: actions;
-  display: flex; flex-direction: column; align-items: flex-end; gap: .28rem;
-  padding-right: 1.35rem; /* room for rank seal */
-}
-.sect-score {
-  font-family: var(--font-num); font-size: 1.45rem; font-weight: 800; line-height: 1;
-  color: var(--gold); text-shadow: 0 0 12px rgba(240,193,75,.45);
-}
 .sect-bar-row {
-  grid-area: bar;
-  display: flex; align-items: center; gap: .45rem; min-width: 0;
+  display: flex; align-items: center; gap: .4rem; min-width: 0; width: 100%;
 }
 .sect-bar-row .exp-track { flex: 1 1 auto; margin: 0; min-width: 0; }
 .sect-bar-row .need-next { flex: 0 0 auto; white-space: nowrap; }
 .sect-bar-row .hp-pct {
-  flex: 0 0 auto; font-family: var(--font-num); font-size: .72rem; color: var(--ink-soft);
+  flex: 0 0 auto; font-family: var(--font-num); font-size: .74rem; color: #c5d0e2; font-weight: 700;
+  min-width: 2.4rem;
 }
-.peak-list[style*="--peak-cols: 3"] .sect-name,
-.peak-list[data-cols="3"] .sect-name { font-size: 1.1rem; }
-.peak-list[data-cols="3"] .sect-score { font-size: 1.25rem; }
-.peak-list[data-cols="1"] .sect-name { font-size: 1.4rem; }
-.peak-list[data-cols="1"] .sect-score { font-size: 1.65rem; }
-.peak-list[data-cols="1"] .sect-logo { width: 54px; height: 54px; font-size: 1.45rem; }
+.sect-score {
+  grid-area: score;
+  font-family: var(--font-num); font-size: 1.7rem; font-weight: 800; line-height: 1;
+  color: var(--gold); text-shadow: 0 0 12px rgba(240,193,75,.45);
+  min-width: 3.2rem; text-align: right; padding: 0 .15rem;
+}
+.sect-actions {
+  grid-area: actions;
+  display: flex; flex-direction: row; align-items: center; gap: .4rem;
+  flex: 0 0 auto;
+}
 .sect-score.flash-green { animation: scoreBoomGreen .5s ease forwards; }
 .sect-score.flash-blue { animation: scoreBoomBlue .6s ease forwards; }
 .sect-score.flash-gold { animation: scoreBoomGold .75s ease forwards; }
@@ -589,36 +593,44 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
   font-family: var(--font-num); letter-spacing: .02em;
 }
 .fight-btn {
-  grid-area: actions;
   background: linear-gradient(180deg, #ffd76a, #c49216) !important;
   color: #1a1205 !important; border-color: #ffe39a !important;
   font-size: .92rem !important; font-weight: 800 !important;
-  padding: .4rem .85rem !important;
-  min-height: 2.25rem; min-width: 3.8rem;
+  padding: .42rem .9rem !important;
+  min-height: 2.3rem; min-width: 3.8rem;
   white-space: nowrap; box-shadow: 0 3px 0 #6a5010 !important;
 }
-.sect-actions .fight-btn { grid-area: unset; }
 .member-toggle {
-  grid-area: tog;
-  margin-top: 0; width: 100%;
-  font-size: .88rem !important; font-weight: 800 !important;
-  padding: .38rem .6rem !important;
-  min-height: 2.15rem;
+  margin: 0; width: auto;
+  font-size: .86rem !important; font-weight: 800 !important;
+  padding: .42rem .7rem !important;
+  min-height: 2.3rem; min-width: 5.2rem;
   background: linear-gradient(180deg, rgba(240,193,75,.22), rgba(0,0,0,.35)) !important;
   box-shadow: none !important;
   border: 1px solid rgba(240,193,75,.55) !important; color: #ffe39a !important;
-  letter-spacing: .06em;
+  letter-spacing: .04em; white-space: nowrap;
 }
 .member-toggle:hover { border-color: var(--gold) !important; filter: brightness(1.12); }
-.member-bars { grid-area: mem; }
 .member-bars {
-  margin-top: 0; padding-top: .2rem;
+  grid-area: mem;
+  margin-top: 0; padding-top: .25rem;
   border-top: 1px dashed rgba(255,255,255,.12);
   display: none; flex-direction: column; gap: .14rem;
-  max-height: min(36vh, 9rem); overflow: auto;
+  max-height: min(32vh, 8.5rem); overflow: auto;
   min-height: 0;
 }
 .member-bars.open { display: flex; }
+@media (max-width: 1100px) {
+  .sect-card .mount-body {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo info actions"
+      "score score actions"
+      "mem mem mem";
+  }
+  .sect-score { text-align: left; font-size: 1.45rem; }
+  .sect-actions { flex-direction: column; align-items: stretch; }
+}
 .drag-handle {
   position: absolute; left: .15rem; top: 50%; z-index: 3;
   transform: translateY(-50%);
@@ -2539,6 +2551,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     }).join("") || '<div class="muted" style="font-size:.65rem">暂无组员</div>';
 
     const isOpen = expandedPeaks.has(String(p.id));
+    const toggleLabel = isOpen ? `组员 ${members.length} ▴` : `组员 ${members.length} ▾`;
     return `
       <article class="sect-card ${p.camp}" data-peak-id="${p.id}">
         <div class="mount-body">
@@ -2546,23 +2559,25 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
           <div class="seal-rank">${medals[rankIdx] || (rankIdx + 1)}</div>
           <div class="sect-logo">${logo}</div>
           <div class="sect-info">
-            <div class="sect-name">${esc(p.name)}</div>
+            <div class="sect-name-row">
+              <div class="sect-name">${esc(p.name)}</div>
+              <div class="sect-tags">
+                <span class="tag">${esc(p.element || "光")}·${esc(p.style || "剑")}</span>
+                <span class="tag">EXP ${peakExpTotal(p.id)}</span>
+              </div>
+            </div>
             <div class="sect-meta">${esc(captain)} · ${esc(p.peak_level_name || "")} · ${members.length}人</div>
-            <div class="sect-tags">
-              <span class="tag">${esc(p.element || "光")}·${esc(p.style || "剑")}</span>
-              <span class="tag">EXP ${peakExpTotal(p.id)}</span>
+            <div class="sect-bar-row">
+              <span class="hp-pct">${Math.round(p.progress || 0)}%</span>
+              <div class="exp-track group-long"><div class="exp-fill ${blink ? "blink" : ""}" style="width:${p.progress || 0}%"></div></div>
+              <div class="need-next ${urgent ? "urgent" : ""}">${p.peak_level >= 5 ? "已登顶" : `下境 -${remain}`}</div>
             </div>
           </div>
+          <div class="sect-score">${p.score || 0}</div>
           <div class="sect-actions">
-            <div class="sect-score">${p.score || 0}</div>
             <button type="button" class="fight-btn" data-open-sect="${p.id}">出招</button>
+            <button type="button" class="member-toggle" data-toggle-members="${p.id}">${toggleLabel}</button>
           </div>
-          <div class="sect-bar-row">
-            <span class="hp-pct">${Math.round(p.progress || 0)}%</span>
-            <div class="exp-track group-long"><div class="exp-fill ${blink ? "blink" : ""}" style="width:${p.progress || 0}%"></div></div>
-            <div class="need-next ${urgent ? "urgent" : ""}">${p.peak_level >= 5 ? "已登顶" : `下境 -${remain}`}</div>
-          </div>
-          <button type="button" class="member-toggle" data-toggle-members="${p.id}">${isOpen ? `组员 ${members.length} ▴ 收起` : `组员 ${members.length} ▾ 展开`}</button>
           <div class="member-bars ${isOpen ? "open" : ""}" data-members-of="${p.id}">${memberBars}</div>
         </div>
       </article>`;
@@ -2605,7 +2620,7 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
           box.classList.toggle("open", open);
           if (open) expandedPeaks.add(peakId); else expandedPeaks.delete(peakId);
           const n = box.querySelectorAll("[data-member-row]").length;
-          tog.textContent = open ? `组员 ${n} ▴ 收起` : `组员 ${n} ▾ 展开`;
+          tog.textContent = open ? `组员 ${n} ▴` : `组员 ${n} ▾`;
         });
       }
       card.querySelectorAll("[data-member-row]").forEach((row) => {
@@ -2670,17 +2685,6 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     spawnParticles(innerWidth/2, 180, camp === "red" ? "#e8a0a8" : "#7ed9cb", 22, 6);
   }
 
-  function peakColsFor(count) {
-    const n = Math.max(count || 0, 0);
-    const w = window.innerWidth;
-    if (n <= 1) return 1;
-    // 阵营已是两列：组卡再按数量横向铺开，避免竖着挤扁
-    if (w < 820) return 1;
-    if (n <= 2) return w >= 1180 ? 2 : 1;
-    if (n <= 4) return 2;
-    return w >= 1480 ? 3 : 2;
-  }
-
   function applyArenaDensity(redCount, blueCount) {
     const board = document.querySelector(".camps-board");
     const hud = document.getElementById("pk-bar");
@@ -2688,26 +2692,14 @@ body.has-ticker.has-brand-nav .demo-tip { top: 6.7rem !important; }
     if (!board) return;
     const maxCamp = Math.max(redCount, blueCount, 1);
     const total = Math.max(redCount + blueCount, 1);
-    const scale = Math.max(0.9, Math.min(1.2, 1.25 / Math.sqrt(Math.max(maxCamp / 2, 1))));
-    const hudScale = Math.max(0.85, Math.min(1.1, 1.1 / Math.sqrt(Math.max(total / 2, 1))));
-    board.style.setProperty("--arena-scale", String(Number(scale.toFixed(3))));
+    // 左右对峙 + 组内单列横条，不再拆多列
+    board.style.setProperty("--arena-scale", "1");
     board.dataset.density = String(Math.min(8, maxCamp));
     board.style.setProperty("--camp-count", String(maxCamp));
     if (hud) {
+      const hudScale = Math.max(0.85, Math.min(1.1, 1.1 / Math.sqrt(Math.max(total / 2, 1))));
       hud.style.setProperty("--hud-scale", String(Number(hudScale.toFixed(3))));
       hud.dataset.teams = String(Math.min(8, maxCamp));
-    }
-    const listRed = document.getElementById("list-red");
-    const listBlue = document.getElementById("list-blue");
-    const redCols = peakColsFor(redCount);
-    const blueCols = peakColsFor(blueCount);
-    if (listRed) {
-      listRed.style.setProperty("--peak-cols", String(redCols));
-      listRed.dataset.cols = String(redCols);
-    }
-    if (listBlue) {
-      listBlue.style.setProperty("--peak-cols", String(blueCols));
-      listBlue.dataset.cols = String(blueCols);
     }
     if (main && teacherView === "main") {
       const top = board.getBoundingClientRect().top;
