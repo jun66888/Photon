@@ -433,6 +433,13 @@ body.has-ticker.has-brand-nav .demo-tip { top: 5.55rem !important; }
 }
 .camp-col.red .camp-head h2 { color: #ff8aa0; }
 .camp-col.blue .camp-head h2 { color: #7ef0ff; }
+.camp-title-btn {
+  border: 0 !important; background: transparent !important; box-shadow: none !important;
+  padding: 0 !important; min-height: 0 !important; color: inherit !important;
+  font: inherit; letter-spacing: inherit; cursor: pointer;
+  text-decoration: underline dotted rgba(255,255,255,.22); text-underline-offset: .18em;
+}
+.camp-title-btn:hover { filter: brightness(1.12); }
 .camp-tools button {
   font-size: .85rem !important; padding: .38rem .75rem !important;
   min-height: 2.15rem; white-space: nowrap;
@@ -1875,6 +1882,143 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   content: ""; width: 8px; height: 8px; border-radius: 50%;
   background: var(--gold); box-shadow: 0 0 8px rgba(240,193,75,.7);
 }
+/* 设置页：紧凑横排归类 */
+#teacher-settings .course-hero { margin-bottom: .55rem; padding: .55rem .8rem; }
+#teacher-settings .course-hero .ch-title { font-size: clamp(1.25rem, 2.2vw, 1.65rem); }
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem .65rem;
+  align-items: start;
+}
+.settings-card {
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 9px;
+  background: linear-gradient(160deg, rgba(22,28,46,.94), rgba(10,14,24,.92));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+  padding: .55rem .65rem .6rem;
+  min-width: 0;
+}
+.settings-card.span-2 { grid-column: 1 / -1; }
+.settings-card > header {
+  display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap;
+  margin-bottom: .4rem; padding-bottom: .3rem;
+  border-bottom: 1px solid rgba(240,193,75,.16);
+}
+.settings-card > header h4 {
+  margin: 0; font-family: var(--font-brush); font-size: 1.05rem; color: var(--seal);
+  letter-spacing: .06em; display: flex; align-items: center; gap: .35rem;
+}
+.settings-card > header h4::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 6px rgba(240,193,75,.65);
+}
+.settings-card > header .card-actions { display: flex; flex-wrap: wrap; gap: .3rem; }
+.settings-card > header button {
+  min-height: 1.85rem !important; padding: .22rem .5rem !important; font-size: .72rem !important;
+}
+.settings-inline {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .45rem;
+}
+.settings-inline .meta-pill {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .22rem .5rem; border-radius: 5px; font-size: .75rem;
+  border: 1px solid rgba(240,193,75,.3); color: #ffe39a;
+  background: rgba(240,193,75,.08); white-space: nowrap;
+}
+.settings-inline button {
+  min-height: 1.9rem !important; padding: .25rem .55rem !important; font-size: .74rem !important;
+}
+.settings-chips {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  max-height: 168px; overflow: auto; padding: .1rem 0;
+}
+.settings-chip {
+  display: inline-flex; align-items: center; gap: .28rem;
+  padding: .28rem .55rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(7,9,15,.45); color: #e8eef8;
+  font-size: .78rem; line-height: 1.2;
+  transition: border-color .15s ease, transform .12s ease, background .15s ease;
+}
+.settings-chip:hover {
+  border-color: rgba(240,193,75,.55); transform: translateY(-1px);
+  background: rgba(240,193,75,.1);
+}
+.settings-chip.red { border-color: rgba(255,59,92,.4); }
+.settings-chip.blue { border-color: rgba(46,230,255,.4); }
+.settings-chip.hall { border-color: rgba(255,176,189,.45); color: #ffb0bd; }
+.settings-chip .chip-sub { opacity: .72; font-size: .68rem; }
+.settings-chip .chip-x {
+  margin-left: .1rem; opacity: .55; border: 0; background: transparent;
+  color: inherit; cursor: pointer; padding: 0 .15rem; font-size: .85rem; line-height: 1;
+}
+.settings-chip .chip-x:hover { opacity: 1; color: #ff8aa0; }
+.settings-tiles {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+  max-height: 200px; overflow: auto;
+}
+.settings-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .12rem;
+  min-width: 7.6rem; max-width: 11rem; flex: 1 1 7.6rem;
+  padding: .4rem .5rem; border-radius: 8px; cursor: pointer; text-align: left;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(7,9,15,.5); color: inherit; font-family: inherit;
+  transition: border-color .15s ease, transform .12s ease;
+}
+.settings-tile:hover {
+  border-color: rgba(240,193,75,.55); transform: translateY(-1px);
+}
+.settings-tile.red { border-color: rgba(255,59,92,.35); }
+.settings-tile.blue { border-color: rgba(46,230,255,.35); }
+.settings-tile .tile-title {
+  font-family: var(--font-brush); font-size: .98rem; letter-spacing: .04em; line-height: 1.1;
+}
+.settings-tile .tile-meta { font-size: .68rem; color: var(--ink-soft); line-height: 1.25; }
+.settings-tile .tile-del {
+  align-self: flex-end; margin-top: .15rem;
+  font-size: .68rem; padding: .1rem .35rem !important; min-height: 1.4rem !important;
+}
+.settings-faction-pair {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .4rem;
+}
+.settings-faction-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .15rem;
+  padding: .5rem .6rem; border-radius: 8px; cursor: pointer; text-align: left;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(7,9,15,.5); color: inherit; font-family: inherit; width: 100%;
+}
+.settings-faction-btn.red {
+  border-color: rgba(255,59,92,.45);
+  background: linear-gradient(165deg, rgba(255,59,92,.16), rgba(7,9,15,.55));
+}
+.settings-faction-btn.blue {
+  border-color: rgba(46,230,255,.45);
+  background: linear-gradient(165deg, rgba(46,230,255,.14), rgba(7,9,15,.55));
+}
+.settings-faction-btn strong {
+  font-family: var(--font-brush); font-size: 1.15rem; letter-spacing: .05em;
+}
+.settings-faction-btn.red strong { color: #ff8aa0; }
+.settings-faction-btn.blue strong { color: #7ef0ff; }
+.settings-faction-btn span { font-size: .72rem; color: var(--ink-soft); }
+.settings-mission-btn {
+  width: 100%; text-align: left; padding: .45rem .55rem; border-radius: 8px;
+  border: 1px dashed rgba(240,193,75,.4); cursor: pointer;
+  background: rgba(240,193,75,.06); color: inherit; font-family: inherit;
+}
+.settings-mission-btn:hover { border-style: solid; border-color: var(--gold); }
+.settings-mission-btn .sm-title {
+  font-family: var(--font-brush); font-size: 1.05rem; color: #fff5e8; margin-bottom: .15rem;
+}
+.settings-mission-btn .sm-desc { font-size: .75rem; color: var(--ink-soft); line-height: 1.3; }
+.settings-empty { font-size: .78rem; color: var(--ink-soft); padding: .2rem 0; }
+@media (max-width: 820px) {
+  .settings-grid { grid-template-columns: 1fr; }
+  .settings-card.span-2 { grid-column: auto; }
+  .settings-faction-pair { grid-template-columns: 1fr; }
+}
+
 .pager-bar {
   display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap;
   margin-top: .85rem; padding-top: .65rem;
@@ -2049,7 +2193,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="camps-board">
         <section class="camp-col red" data-camp="red" id="camp-red">
           <div class="camp-head">
-            <h2>光影 · 山峰群</h2>
+            <h2><button type="button" class="camp-title-btn" data-action="camp-attrs" data-camp="red" title="点击查看派系属性">光影 · 山峰群</button></h2>
             <div class="camp-tools row">
               <button type="button" data-action="add-peak-red">＋山峰</button>
             </div>
@@ -2058,7 +2202,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </section>
         <section class="camp-col blue" data-camp="blue" id="camp-blue">
           <div class="camp-head">
-            <h2>声浪 · 山峰群</h2>
+            <h2><button type="button" class="camp-title-btn" data-action="camp-attrs" data-camp="blue" title="点击查看派系属性">声浪 · 山峰群</button></h2>
             <div class="camp-tools row">
               <button type="button" data-action="add-peak-blue">＋山峰</button>
             </div>
@@ -2165,38 +2309,75 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ch-seal">设</div>
         <div class="ch-text">
           <div class="ch-kicker">COURSE · SETTINGS</div>
-          <div class="ch-title">对战设置 · 名册与招式</div>
-          <div class="ch-sub">DEMO / 音效 / 导出 / 段位 · 大厅入峰与名册</div>
-        </div>
-        <div class="ch-actions">
-          <button type="button" class="seal" data-action="settle-ranks">段位结算</button>
-          <button type="button" data-action="export-data">导出</button>
-          <button type="button" data-action="insert-edit-box" title="插入可拖拽改大小的编辑框">插入编辑框</button>
-          <button type="button" id="btn-memories" data-action="goto-memories" disabled>回忆</button>
+          <div class="ch-title">对战设置</div>
+          <div class="ch-sub">点击派系 / 小组 / 弟子即可弹出对应属性</div>
         </div>
       </div>
-      <div class="course-panel">
-        <div class="course-section-title">运行 · DEMO · 音效</div>
-        <div id="settings-demo-box" style="margin-bottom:1rem"></div>
-        <div class="course-section-title">工具箱</div>
-        <div class="row" style="margin-bottom:1rem;flex-wrap:wrap;gap:.4rem">
-          <button type="button" data-action="export-csv">导出 CSV</button>
-          <button type="button" data-action="export-json">导出 JSON</button>
-          <button type="button" data-action="insert-edit-box">插入编辑框</button>
-          <button type="button" class="seal" data-action="settle-ranks">段位结算</button>
-        </div>
-        <div class="course-section-title">大厅 · 未入峰</div>
-        <div id="settings-hall" style="margin-bottom:1rem"></div>
-        <div class="course-section-title">小组名册</div>
-        <div id="settings-peaks"></div>
-        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-peak">＋添加小组</button></div>
-        <div class="course-section-title">弟子名册</div>
-        <div id="settings-disciples" style="max-height:260px;overflow:auto"></div>
-        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-disciple">＋添加弟子</button></div>
-        <div class="course-section-title">加分招式</div>
-        <div id="settings-presets"></div>
-        <div class="row" style="margin:.5rem 0 1rem"><button type="button" data-action="add-preset">＋添加预设</button></div>
-        <div id="settings-tasks"></div>
+      <div class="settings-grid">
+        <section class="settings-card span-2">
+          <header>
+            <h4>运行 · 音效 · 工具</h4>
+          </header>
+          <div id="settings-runtime" class="settings-inline"></div>
+        </section>
+        <section class="settings-card">
+          <header>
+            <h4>派系</h4>
+            <div class="card-actions">
+              <button type="button" data-action="edit-camp-mission">编辑任务</button>
+            </div>
+          </header>
+          <div id="settings-factions" class="settings-faction-pair"></div>
+        </section>
+        <section class="settings-card">
+          <header>
+            <h4>门派任务</h4>
+          </header>
+          <div id="settings-mission"></div>
+        </section>
+        <section class="settings-card span-2">
+          <header>
+            <h4>大厅 · 未入峰</h4>
+            <div class="card-actions">
+              <button type="button" data-action="add-disciple">＋弟子</button>
+            </div>
+          </header>
+          <div id="settings-hall" class="settings-chips"></div>
+        </section>
+        <section class="settings-card span-2">
+          <header>
+            <h4>小组名册</h4>
+            <div class="card-actions">
+              <button type="button" data-action="add-peak-red">＋光影小组</button>
+              <button type="button" data-action="add-peak-blue">＋声浪小组</button>
+            </div>
+          </header>
+          <div id="settings-peaks" class="settings-tiles"></div>
+        </section>
+        <section class="settings-card span-2">
+          <header>
+            <h4>弟子名册</h4>
+            <div class="card-actions">
+              <button type="button" data-action="add-disciple">＋添加弟子</button>
+            </div>
+          </header>
+          <div id="settings-disciples" class="settings-chips"></div>
+        </section>
+        <section class="settings-card">
+          <header>
+            <h4>加分招式</h4>
+            <div class="card-actions">
+              <button type="button" data-action="add-preset">＋预设</button>
+            </div>
+          </header>
+          <div id="settings-presets" class="settings-chips"></div>
+        </section>
+        <section class="settings-card">
+          <header>
+            <h4>课程任务模板</h4>
+          </header>
+          <div id="settings-tasks" class="settings-chips"></div>
+        </section>
       </div>
     </div>
 
@@ -3729,8 +3910,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const prog = personalProgress(d);
       const isCap = d.role === "队长" || d.name === captain;
       const ok = discipleCheckedIn(d);
-      return `<div class="member-bar-row ${ok ? "check-in" : "check-out"}" data-member-row="${d.id}">
-        <div class="mname ${isCap ? "cap" : ""} ${ok ? "in" : "out"}">${esc(d.name)}${isCap ? "★" : ""}</div>
+      return `<div class="member-bar-row ${ok ? "check-in" : "check-out"}" data-member-row="${d.id}" title="点击查看弟子属性">
+        <div class="mname ${isCap ? "cap" : ""} ${ok ? "in" : "out"}" data-edit-member="${d.id}">${esc(d.name)}${isCap ? "★" : ""}</div>
         <div class="member-track"><i style="width:${prog.pct}%"></i></div>
         <div class="mlv">Lv${prog.level}</div>
         <div class="member-status ${ok ? "cultivating" : "absent"}">${ok ? "✦ 持续修炼中 · 真气汇入" : "未签到"}</div>
@@ -3800,8 +3981,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         });
       }
       card.addEventListener("click", (e) => {
-        if (e.target.closest("button") || e.target.closest("[data-member-row]") || e.target.closest(".drag-handle")) return;
-        openSectModal(Number(peakId), "bonus");
+        const mem = e.target.closest("[data-edit-member], [data-member-row]");
+        if (mem) {
+          e.stopPropagation();
+          const mid = mem.dataset.editMember || mem.dataset.memberRow;
+          if (mid) editDiscipleModal(mid, Number(peakId));
+          return;
+        }
+        if (e.target.closest("button") || e.target.closest(".drag-handle")) return;
+        openSectModal(Number(peakId), "attr");
       });
       const btn = card.querySelector("[data-open-sect]");
       if (btn) btn.addEventListener("click", (e) => {
@@ -5129,89 +5317,261 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (next) next.disabled = logsPage >= totalPages;
   }
 
-  function renderSettings() {
-    const hall = getHallDisciples();
-    const hallHost = document.getElementById("settings-hall");
-    if (hallHost) {
-      hallHost.innerHTML = hall.length
-        ? hall.map((d) => `<span class="name-chip miss">${esc(d.student_id || "---")} ${esc(d.name)}</span>`).join("")
-        : '<span class="muted">大厅空闲 · 签到新学员会进入这里</span>';
-    }
-    const demoBox = document.getElementById("settings-demo-box");
-    if (demoBox) {
-      demoBox.innerHTML = `
-        <div class="list-item"><span>运行模式</span><span>${demoMode ? "DEMO · ARENA（本地）" : "Firebase 云端"}</span></div>
-        <div class="row" style="margin-top:.4rem;flex-wrap:wrap;gap:.35rem">
-          <button type="button" id="settings-sfx-toggle">${sfxEnabled ? (pal3PackReady ? "🔊 音效开 · 已导入包" : "🔊 音效开") : "🔇 音效关"}</button>
-          <button type="button" id="settings-sfx-import">导入音效包</button>
-          ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO 数据</button>' : ""}
+  async function deletePeakFromSettings(pid) {
+    if (!confirm("删除小组？弟子回大厅")) return;
+    const updates = { [`peaks/${peakKey(pid)}`]: null };
+    disciplesOfPeak(pid).forEach((d) => {
+      updates[`disciples/${d.id}/peak`] = -1;
+      updates[`disciples/${d.id}/role`] = "弟子";
+    });
+    if (demoMode) {
+      delete state.peaks[peakKey(pid)];
+      Object.keys(updates).forEach((k) => { if (!k.startsWith("peaks/")) applyLocalPath(k, updates[k]); });
+      saveDemo(); renderAll();
+    } else await arenaRef.update(updates);
+    renderSettings();
+  }
+
+  function openCampAttrsModal(camp) {
+    const isBlue = camp === "blue";
+    const live = getCampLiveStats(isBlue ? "blue" : "red");
+    const m = getCampMission();
+    const label = isBlue ? "声浪" : "光影";
+    const allianceKey = isBlue ? "alliance_blue_name" : "alliance_red_name";
+    const allianceVal = isBlue
+      ? (state.config?.alliance_blue_name || "声浪联盟")
+      : (state.config?.alliance_red_name || "光影联盟");
+    const focus = isBlue ? m.blue_focus : m.red_focus;
+    const element = isBlue ? m.blue_element : m.red_element;
+    const note = isBlue ? m.blue_note : m.red_note;
+    const peakRows = live.peaks.slice(0, 8).map((p) =>
+      `<button type="button" class="settings-chip ${camp}" data-open-peak="${p.id}">${esc(p.icon || "")} ${esc(p.name)}<span class="chip-sub">${p.score || 0}</span></button>`
+    ).join("") || '<span class="settings-empty">暂无小组</span>';
+    openModal(`
+      <h3>${esc(label)} · 派系属性</h3>
+      <p class="muted" style="text-align:center;margin-bottom:.55rem">点击下方小组也可弹出小组属性</p>
+      <div class="mission-faction-pane ${camp}" style="animation:none;margin-bottom:.7rem">
+        <div class="fa-row"><span>联盟名</span><span>${esc(allianceVal)}</span></div>
+        <div class="fa-row"><span>总真气</span><span>${live.score}</span></div>
+        <div class="fa-row"><span>山峰数</span><span>${live.peakCount}</span></div>
+        <div class="fa-row"><span>弟子数</span><span>${live.memberCount}</span></div>
+        <div class="fa-row"><span>先锋</span><span>${esc(live.topName)} · ${live.topScore}</span></div>
+        <div class="fa-row"><span>主流属性</span><span>${esc(live.dominantElement)}</span></div>
+      </div>
+      <div class="stack">
+        <label><span>联盟名称</span><input id="ca-alliance" type="text" maxlength="16" value="${esc(allianceVal)}" /></label>
+        <label><span>本场任务侧重</span><input id="ca-focus" type="text" maxlength="24" value="${esc(focus || "")}" /></label>
+        <label><span>本场属性</span>
+          <select id="ca-element">${ELEMENT_PRESETS.map((e) => `<option ${e === (element || "") ? "selected" : ""}>${e}</option>`).join("")}</select>
+        </label>
+        <label><span>派系备注</span><textarea id="ca-note" rows="2" maxlength="80">${esc(note || "")}</textarea></label>
+        <div class="field-name" style="margin-top:.2rem;color:#ffe39a;font-size:.82rem">旗下小组（点击查看属性）</div>
+        <div class="settings-chips">${peakRows}</div>
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem">
+          <button type="button" data-jump-mission="${camp}">打开门派任务编辑</button>
+          <span class="row">
+            <button type="button" class="ghost" id="modal-cancel">取消</button>
+            <button type="button" class="primary" id="ca-save">保存</button>
+          </span>
         </div>
-        <p class="muted" style="margin-top:.45rem;font-size:.75rem">DEMO 标识与音效开关已收入设置，不再浮在页面上遮挡内容。导出、段位、编辑框、回忆也在本页。</p>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.querySelectorAll("[data-open-peak]").forEach((b) => {
+      b.onclick = () => openSectModal(Number(b.dataset.openPeak), "attr");
+    });
+    const jump = document.querySelector("[data-jump-mission]");
+    if (jump) jump.onclick = () => openCampMissionModal(camp);
+    document.getElementById("ca-save").onclick = async () => {
+      const nextMission = {
+        ...m,
+        ...(isBlue ? {
+          blue_focus: (document.getElementById("ca-focus").value || "").trim(),
+          blue_element: document.getElementById("ca-element").value,
+          blue_note: (document.getElementById("ca-note").value || "").trim()
+        } : {
+          red_focus: (document.getElementById("ca-focus").value || "").trim(),
+          red_element: document.getElementById("ca-element").value,
+          red_note: (document.getElementById("ca-note").value || "").trim()
+        })
+      };
+      await updatePaths({
+        [`config/${allianceKey}`]: (document.getElementById("ca-alliance").value || "").trim() || allianceVal,
+        "config/camp_mission": nextMission
+      });
+      closeModal();
+      renderSettings();
+      if (teacherView === "main") renderTeacherMain();
+    };
+  }
+
+  function renderSettings() {
+    const day = state.config?.day || 1;
+    const m = getCampMission();
+    const redLive = getCampLiveStats("red");
+    const blueLive = getCampLiveStats("blue");
+
+    const runtime = document.getElementById("settings-runtime");
+    if (runtime) {
+      runtime.innerHTML = `
+        <span class="meta-pill">模式 · ${demoMode ? "DEMO 本地" : "Firebase"}</span>
+        <span class="meta-pill">DAY ${day}</span>
+        <span class="meta-pill">任务 · ${esc(m.status === "draft" ? "草稿" : "已发布")}</span>
+        <button type="button" id="settings-sfx-toggle">${sfxEnabled ? (pal3PackReady ? "🔊 音效开·包" : "🔊 音效开") : "🔇 音效关"}</button>
+        <button type="button" id="settings-sfx-import">导入音效包</button>
+        <button type="button" data-action="export-data">导出</button>
+        <button type="button" data-action="export-csv">CSV</button>
+        <button type="button" data-action="export-json">JSON</button>
+        <button type="button" class="seal" data-action="settle-ranks">段位结算</button>
+        <button type="button" data-action="insert-edit-box">插入编辑框</button>
+        <button type="button" data-action="edit-camp-mission">门派任务</button>
+        <button type="button" id="btn-memories" data-action="goto-memories" ${day < 20 ? "disabled" : ""}>回忆${day < 20 ? "·D20" : ""}</button>
+        ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}
         <input type="file" id="settings-sfx-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
-      document.getElementById("settings-sfx-toggle").onclick = () => {
+      const sfxToggle = document.getElementById("settings-sfx-toggle");
+      if (sfxToggle) sfxToggle.onclick = () => {
         sfxEnabled = !sfxEnabled;
         localStorage.setItem("gy_arena_sfx", sfxEnabled ? "1" : "0");
         updateSfxToggleLabel();
         if (sfxEnabled) { ensureAudio(); playHitSfx(pick([2, 5, 12, 25]), pick(["日常", "任务", "擂台"])); }
         renderSettings();
       };
-      document.getElementById("settings-sfx-import").onclick = () => document.getElementById("settings-sfx-file").click();
-      document.getElementById("settings-sfx-file").onchange = (e) => {
+      const sfxImp = document.getElementById("settings-sfx-import");
+      if (sfxImp) sfxImp.onclick = () => document.getElementById("settings-sfx-file").click();
+      const sfxFile = document.getElementById("settings-sfx-file");
+      if (sfxFile) sfxFile.onchange = (e) => {
         if (e.target.files?.length) importPal3SoundPack(e.target.files);
         e.target.value = "";
         renderSettings();
       };
       const clearBtn = document.getElementById("settings-clear-demo");
-      if (clearBtn) {
-        clearBtn.onclick = () => {
-          if (!confirm("确认清空本地 DEMO 数据并刷新？")) return;
-          localStorage.removeItem(DEMO_DB_KEY);
-          location.reload();
-        };
+      if (clearBtn) clearBtn.onclick = () => {
+        if (!confirm("确认清空本地 DEMO 数据并刷新？")) return;
+        localStorage.removeItem(DEMO_DB_KEY);
+        location.reload();
+      };
+      const memBtn = document.getElementById("btn-memories");
+      if (memBtn) {
+        memBtn.style.opacity = day < 20 ? .45 : 1;
+        memBtn.title = day < 20 ? "第 20 天解锁回忆" : "打开回忆";
       }
     }
-    const memBtn = document.getElementById("btn-memories");
-    if (memBtn) {
-      const day = state.config?.day || 1;
-      memBtn.disabled = day < 20;
-      memBtn.style.opacity = day < 20 ? .45 : 1;
-      memBtn.title = day < 20 ? "第 20 天解锁回忆" : "打开回忆";
-    }
-    document.getElementById("settings-peaks").innerHTML = getPeaksArray().map((p) => `
-      <div class="list-item"><span>${p.icon} ${p.name} · ${p.camp} · 音效${(KOF_SFX_PACKS.find(k=>k.id===p.sfx_pack)||{}).name||"默认"}</span>
-        <span class="row"><button type="button" data-sp="${p.id}">改</button><button type="button" class="danger" data-dp="${p.id}">删</button></span></div>`).join("");
-    document.querySelectorAll("[data-sp]").forEach((b) => b.onclick = () => openSectModal(Number(b.dataset.sp), "attr"));
-    document.querySelectorAll("[data-dp]").forEach((b) => b.onclick = async () => {
-      if (!confirm("删除小组？弟子回大厅")) return;
-      const pid = Number(b.dataset.dp);
-      const updates = { [`peaks/${peakKey(pid)}`]: null };
-      disciplesOfPeak(pid).forEach((d) => {
-        updates[`disciples/${d.id}/peak`] = -1;
-        updates[`disciples/${d.id}/role`] = "弟子";
+
+    const factions = document.getElementById("settings-factions");
+    if (factions) {
+      factions.innerHTML = `
+        <button type="button" class="settings-faction-btn red" data-camp-attr="red">
+          <strong>${esc(state.config?.alliance_red_name || "光影联盟")}</strong>
+          <span>真气 ${redLive.score} · 小组 ${redLive.peakCount} · 弟子 ${redLive.memberCount}</span>
+          <span>侧重 ${esc(m.red_focus || "—")} · 属性 ${esc(m.red_element || "光")}</span>
+        </button>
+        <button type="button" class="settings-faction-btn blue" data-camp-attr="blue">
+          <strong>${esc(state.config?.alliance_blue_name || "声浪联盟")}</strong>
+          <span>真气 ${blueLive.score} · 小组 ${blueLive.peakCount} · 弟子 ${blueLive.memberCount}</span>
+          <span>侧重 ${esc(m.blue_focus || "—")} · 属性 ${esc(m.blue_element || "水")}</span>
+        </button>`;
+      factions.querySelectorAll("[data-camp-attr]").forEach((b) => {
+        b.onclick = () => openCampAttrsModal(b.dataset.campAttr);
       });
-      if (demoMode) {
-        delete state.peaks[peakKey(pid)];
-        Object.keys(updates).forEach((k) => { if (!k.startsWith("peaks/")) applyLocalPath(k, updates[k]); });
-        saveDemo(); renderAll();
-      } else await arenaRef.update(updates);
-      renderSettings();
-    });
-    document.getElementById("settings-disciples").innerHTML = sortDisciples(getDisciplesArray(), "name").map((d) => {
-      const peak = findPeak(d.peak);
-      const place = peak ? peak.name : "大厅·未入峰";
-      return `<div class="list-item"><span>${esc(d.name)}${d.role==="队长"?"·队长":""} · ${esc(place)} · ${esc(d.trait||d.title||"")} · 经验${d.exp||0}</span>
-        <span class="row"><button type="button" data-ed="${d.id}">改</button><button type="button" class="danger" data-dd="${d.id}">删</button></span></div>`;
-    }).join("");
-    document.querySelectorAll("[data-ed]").forEach((b) => b.onclick = () => editDiscipleModal(b.dataset.ed));
-    document.querySelectorAll("[data-dd]").forEach((b) => b.onclick = async () => { if (confirm("删除？")) await setPath("disciples/"+b.dataset.dd, null); });
-    document.getElementById("settings-presets").innerHTML = getPresetsArray().map((p) => `
-      <div class="list-item"><span>${p.label}</span>
-        <span class="row"><button type="button" data-epr="${p.id}">改</button><button type="button" class="danger" data-dpr="${p.id}">删</button></span></div>`).join("");
-    document.querySelectorAll("[data-epr]").forEach((b) => b.onclick = () => editPresetModal(b.dataset.epr));
-    document.querySelectorAll("[data-dpr]").forEach((b) => b.onclick = async () => await setPath("bonus_presets/"+b.dataset.dpr, null));
-    document.getElementById("settings-tasks").innerHTML = Object.values(state.tasks||{}).map((t) => `
-      <div class="list-item"><span>${t.title} +${t.points}</span><button type="button" data-et="${t.id}">编辑</button></div>`).join("");
-    document.querySelectorAll("[data-et]").forEach((b) => b.onclick = () => editTaskModal(b.dataset.et));
+    }
+
+    const missionHost = document.getElementById("settings-mission");
+    if (missionHost) {
+      missionHost.innerHTML = `
+        <button type="button" class="settings-mission-btn" data-action="edit-camp-mission">
+          <div class="sm-title">${esc(m.title || "门派任务")}</div>
+          <div class="sm-desc">${esc(m.desc || "点击编辑任务与两派属性")} · ${esc(m.difficulty || "进阶")} · +${m.points || 0} · ${m.status === "draft" ? "草稿" : "已发布"}</div>
+        </button>`;
+    }
+
+    const hall = getHallDisciples();
+    const hallHost = document.getElementById("settings-hall");
+    if (hallHost) {
+      hallHost.innerHTML = hall.length
+        ? hall.map((d) => `<button type="button" class="settings-chip hall" data-ed="${d.id}" title="点击编辑弟子属性">${esc(d.name)}<span class="chip-sub">${esc(d.student_id || "无学号")}</span></button>`).join("")
+        : '<span class="settings-empty">大厅空闲 · 签到新学员会进入这里 · 点击人名可改属性</span>';
+      hallHost.querySelectorAll("[data-ed]").forEach((b) => b.onclick = () => editDiscipleModal(b.dataset.ed));
+    }
+
+    const peaksHost = document.getElementById("settings-peaks");
+    if (peaksHost) {
+      const peaks = getPeaksArray();
+      peaksHost.innerHTML = peaks.length
+        ? peaks.map((p) => {
+            const pack = (KOF_SFX_PACKS.find((k) => k.id === p.sfx_pack) || {}).name || "默认";
+            const n = disciplesOfPeak(p.id).length;
+            return `<div class="settings-tile ${p.camp === "blue" ? "blue" : "red"}" data-sp="${p.id}" title="点击编辑小组属性">
+              <div class="tile-title">${esc(p.icon || "")} ${esc(p.name)}</div>
+              <div class="tile-meta">${p.camp === "blue" ? "声浪" : "光影"} · ${esc(p.element || "—")} · ${n}人 · ${p.score || 0}分</div>
+              <div class="tile-meta">${esc(p.slogan || p.intro || pack)}</div>
+              <button type="button" class="danger tile-del" data-dp="${p.id}">删</button>
+            </div>`;
+          }).join("")
+        : '<span class="settings-empty">暂无小组 · 用上方按钮添加</span>';
+      peaksHost.querySelectorAll("[data-sp]").forEach((b) => {
+        b.onclick = (e) => {
+          if (e.target.closest("[data-dp]")) return;
+          openSectModal(Number(b.dataset.sp), "attr");
+        };
+      });
+      peaksHost.querySelectorAll("[data-dp]").forEach((b) => {
+        b.onclick = (e) => { e.stopPropagation(); deletePeakFromSettings(Number(b.dataset.dp)); };
+      });
+    }
+
+    const discHost = document.getElementById("settings-disciples");
+    if (discHost) {
+      const list = sortDisciples(getDisciplesArray(), "name");
+      discHost.innerHTML = list.length
+        ? list.map((d) => {
+            const peak = findPeak(d.peak);
+            const place = peak ? peak.name : "大厅";
+            const camp = peak ? (peak.camp === "blue" ? "blue" : "red") : "hall";
+            return `<button type="button" class="settings-chip ${camp}" data-ed="${d.id}" title="点击编辑弟子属性">
+              ${esc(d.name)}${d.role === "队长" ? "·队" : ""}
+              <span class="chip-sub">${esc(place)} · Lv${d.level || 1}</span>
+              <span class="chip-x" data-dd="${d.id}" title="删除">×</span>
+            </button>`;
+          }).join("")
+        : '<span class="settings-empty">暂无弟子</span>';
+      discHost.querySelectorAll("[data-ed]").forEach((b) => {
+        b.onclick = (e) => {
+          if (e.target.closest("[data-dd]")) return;
+          editDiscipleModal(b.dataset.ed);
+        };
+      });
+      discHost.querySelectorAll("[data-dd]").forEach((b) => {
+        b.onclick = async (e) => {
+          e.stopPropagation();
+          if (confirm("删除该弟子？")) await setPath("disciples/" + b.dataset.dd, null);
+        };
+      });
+    }
+
+    const presetsHost = document.getElementById("settings-presets");
+    if (presetsHost) {
+      const presets = getPresetsArray();
+      presetsHost.innerHTML = presets.length
+        ? presets.map((p) => `<button type="button" class="settings-chip" data-epr="${p.id}" title="点击编辑招式">${esc(p.label)}<span class="chip-sub">+${p.points || 0}</span><span class="chip-x" data-dpr="${p.id}">×</span></button>`).join("")
+        : '<span class="settings-empty">暂无预设</span>';
+      presetsHost.querySelectorAll("[data-epr]").forEach((b) => {
+        b.onclick = (e) => {
+          if (e.target.closest("[data-dpr]")) return;
+          editPresetModal(b.dataset.epr);
+        };
+      });
+      presetsHost.querySelectorAll("[data-dpr]").forEach((b) => {
+        b.onclick = async (e) => { e.stopPropagation(); await setPath("bonus_presets/" + b.dataset.dpr, null); };
+      });
+    }
+
+    const tasksHost = document.getElementById("settings-tasks");
+    if (tasksHost) {
+      const tasks = Object.values(state.tasks || {});
+      tasksHost.innerHTML = tasks.length
+        ? tasks.map((t) => `<button type="button" class="settings-chip" data-et="${t.id}" title="点击编辑任务模板">${esc(t.title)}<span class="chip-sub">+${t.points || 0}</span></button>`).join("")
+        : '<span class="settings-empty">暂无任务模板</span>';
+      tasksHost.querySelectorAll("[data-et]").forEach((b) => b.onclick = () => editTaskModal(b.dataset.et));
+    }
   }
 
   function editDiscipleModal(id, returnPeakId) {
@@ -5964,6 +6324,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
     if (act === "custom-score") { openCustomScoreModal(); return; }
     if (act === "edit-camp-mission") { openCampMissionModal(btn?.dataset?.focusCamp || ""); return; }
+    if (act === "camp-attrs") { openCampAttrsModal(btn?.dataset?.camp || "red"); return; }
     if (act === "insert-edit-box") { insertEditBox(); return; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
     if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); return; }
