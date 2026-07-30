@@ -65,7 +65,11 @@ body::after {
   position: fixed; inset: 0; pointer-events: none; z-index: 0;
   box-shadow: inset 0 0 120px rgba(0,0,0,.65);
 }
-.screen, .modal-mask, .drawer, #fx-host { position: relative; z-index: 1; }
+.screen, .modal-mask, .drawer { position: relative; z-index: 1; }
+#fx-host {
+  position: fixed; inset: 0; z-index: 140;
+  pointer-events: none;
+}
 button, input, select, textarea { font: inherit; color: inherit; }
 button, a, [role="button"], label, select, summary { cursor: inherit; }
 input, textarea { cursor: text; }
@@ -309,6 +313,8 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 .mission-publish-top {
   min-height: 5.4rem;
+  max-height: min(42vh, 22rem);
+  overflow: auto;
   padding: .7rem 1rem;
   border-style: solid;
   border-width: 2px;
@@ -363,12 +369,12 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   color: #fff5e8;
   letter-spacing: .05em;
   line-height: 1.2;
-  font-size: clamp(1.05rem, 1.8vw, 1.35rem) !important;
+  font-size: var(--mw-title-size, clamp(1.05rem, 1.8vw, 1.35rem));
 }
 .mission-weight-item .mw-desc {
   color: var(--ink-soft);
   line-height: 1.35;
-  font-size: .78rem !important;
+  font-size: var(--mw-desc-size, .78rem);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   min-height: 2.1em;
 }
@@ -383,14 +389,16 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   min-height: 1.6rem;
 }
 .mission-weight-item .mw-top3 .md-label {
-  font-size: .68rem; color: var(--ink-soft); letter-spacing: .06em; width: 100%;
+  font-size: .68rem; color: var(--ink-soft); letter-spacing: .06em;
+  flex: 0 0 auto;
 }
+.mission-weight-item .mw-top3.is-empty .md-label { width: 100%; }
 .mission-weight-item .mw-actions {
   display: flex; flex-direction: row; flex-wrap: wrap;
   gap: .35rem; align-items: center; margin-top: .15rem;
 }
 .mission-weight-item .mw-actions button {
-  font-size: .78rem !important; padding: .35rem .65rem !important; min-height: 2rem;
+  font-size: .78rem !important; padding: .35rem .75rem !important; min-height: 2rem;
 }
 .mission-done-row {
   display: flex; flex-direction: row; flex-wrap: wrap;
@@ -465,7 +473,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 .combo-card .combo-prop .cp-ico { font-size: 1.25em; }
 .disciple-reward-toast {
   position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%);
-  z-index: 90;
+  z-index: 150;
   display: flex; align-items: center; gap: .55rem;
   padding: .65rem 1rem;
   border-radius: 12px;
@@ -550,8 +558,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   padding: .65rem;
   background: rgba(8,12,20,.72);
 }
-.mission-pool .dz-list,
-.mission-drop-zone .dz-list,
 #mission-done-list,
 #mission-pool-list {
   display: flex;
@@ -560,8 +566,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   gap: .3rem;
   align-items: center;
 }
-.score-hub-quick,
-.bonus-grid,
 .settings-chips,
 .settings-tiles,
 .vote-candidates-bar,
@@ -573,8 +577,6 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
 }
 .settings-tiles { gap: .4rem; }
 .settings-tile { flex: 1 1 160px; min-width: min(160px, 100%); }
-.score-hub-quick button,
-.bonus-grid button { flex: 1 1 7rem; min-width: min(7rem, 100%); }
 .mission-member-chip {
   display: inline-flex; align-items: center; gap: .25rem;
   margin: .15rem;
@@ -584,9 +586,11 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   background: rgba(0,0,0,.35);
   color: #e8eef8;
   font-size: .78rem;
-  cursor: grab;
+  cursor: pointer;
   user-select: none;
 }
+.mission-member-chip[draggable="true"] { cursor: grab; }
+.mission-member-chip[draggable="true"]:active { cursor: grabbing; }
 .mission-member-chip:active { cursor: grabbing; }
 .mission-member-chip.done {
   cursor: default;
@@ -1353,8 +1357,8 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 .vote-toast {
-  position: fixed; left: 50%; top: 18%; transform: translateX(-50%);
-  z-index: 40; pointer-events: none;
+  position: fixed; left: 50%; top: 12%; transform: translateX(-50%);
+  z-index: 50; pointer-events: none;
   padding: .55rem 1.1rem; border-radius: 8px;
   font-family: var(--font-brush); font-size: 1.45rem; letter-spacing: .1em;
   border: 2px solid rgba(240,193,75,.55);
@@ -1575,6 +1579,12 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   font-family: var(--font-num); color: var(--gold); font-size: 1.05rem;
 }
 .score-hub-quick button .sq-lab { font-size: .78rem; }
+.score-hub-quick button.on {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(240,193,75,.35), inset 0 1px 0 rgba(255,255,255,.12);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
 .score-target-row {
   display: flex; flex-wrap: wrap; gap: .35rem; align-items: center;
 }
@@ -4849,6 +4859,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return px.toFixed(2) + "rem";
   }
 
+  function sortMissionCompletions(list) {
+    return (list || []).slice().sort((a, b) => {
+      const da = (state.disciples || {})[a.disciple_id] || {};
+      const db = (state.disciples || {})[b.disciple_id] || {};
+      const ds = (Number(db.score) || 0) - (Number(da.score) || 0);
+      if (ds) return ds;
+      const dc = (Number(db.contributed) || 0) - (Number(da.contributed) || 0);
+      if (dc) return dc;
+      const dp = (Number(b.points) || 0) - (Number(a.points) || 0);
+      if (dp) return dp;
+      return (Number(a.at) || 0) - (Number(b.at) || 0);
+    });
+  }
+
   function getCampLiveStats(camp) {
     const peaks = sortPeaks(getPeaksArray().filter((p) => (camp === "blue" ? p.camp === "blue" : p.camp !== "blue")));
     const disciples = getDisciplesArray().filter((d) => {
@@ -4914,43 +4938,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         list.innerHTML = `<div class="mission-weight-empty">暂无显示中的任务 · 点「管理」添加</div>`;
       } else {
         list.innerHTML = visible.map((it) => {
-          const done = (it.completions || []).slice();
-          // 前三名：弟子积分高靠前，同分看贡献与完成时间
-          const ranked = done.slice().sort((a, b) => {
-            const da = (state.disciples || {})[a.disciple_id] || {};
-            const db = (state.disciples || {})[b.disciple_id] || {};
-            const ds = (Number(db.score) || 0) - (Number(da.score) || 0);
-            if (ds) return ds;
-            const dc = (Number(db.contributed) || 0) - (Number(da.contributed) || 0);
-            if (dc) return dc;
-            const dp = (Number(b.points) || 0) - (Number(a.points) || 0);
-            if (dp) return dp;
-            return (Number(a.at) || 0) - (Number(b.at) || 0);
-          }).slice(0, 3);
-          const top3 = ranked.length
-            ? ranked.map((c, i) => {
+          const ranked = sortMissionCompletions(it.completions).slice(0, 3);
+          const top3Html = ranked.length
+            ? `<div class="mw-top3"><span class="md-label">获赏前三</span>${ranked.map((c, i) => {
                 const cp = rewardPropForPoints(c.points != null ? c.points : it.points);
                 const dScore = Number(((state.disciples || {})[c.disciple_id] || {}).score) || 0;
                 return `<span class="mission-done-chip rank${i + 1}" title="第${i + 1}名 · 积分 ${dScore} · ${esc(cp.tip || "")}">
                   <span class="md-rank">${i + 1}</span>${esc(c.name || "弟子")} ${cp.icon} <b>+${cp.points}</b>
                 </span>`;
-              }).join("")
-            : `<span class="md-label">尚无弟子完成</span>`;
+              }).join("")}</div>`
+            : `<div class="mw-top3 is-empty"><span class="md-label">尚无弟子完成</span></div>`;
           const intro = String(it.desc || "暂无说明").trim();
           return `
-          <div class="mission-weight-item" data-weight="${it.weight}">
-            <div class="mw-title" style="font-size:${missionFontSize(it.weight)}">${esc(it.title || "未命名任务")}</div>
+          <div class="mission-weight-item" data-weight="${it.weight}" style="--mw-title-size:${missionFontSize(it.weight)};--mw-desc-size:${missionDescSize(it.weight)}">
+            <div class="mw-title">${esc(it.title || "未命名任务")}</div>
             <div class="mw-desc" title="${esc(intro)}">${esc(intro)}</div>
             <div class="mw-meta">
               ${it.points ? rewardPropBadgeHtml(it.points, { compact: false }) : `<span class="mb-tag">无奖励积分</span>`}
               ${it.difficulty ? `<span class="mb-tag">${esc(it.difficulty)}</span>` : ""}
             </div>
-            <div class="mw-top3">
-              <span class="md-label">获赏前三</span>
-              ${top3}
-            </div>
+            ${top3Html}
             <div class="mw-actions">
-              <button type="button" class="ghost" data-open-mission="${esc(String(it.id))}">任务详情</button>
+              <button type="button" class="primary" data-open-mission="${esc(String(it.id))}">任务详情</button>
             </div>
           </div>`;
         }).join("");
@@ -5036,15 +5045,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const doneIds = new Set((mission.completions || []).map((c) => String(c.disciple_id)));
     const allDisc = sortDisciples(getDisciplesArray(), "name");
     const pending = allDisc.filter((d) => !doneIds.has(String(d.id)));
-    const done = (mission.completions || []).slice().sort((a, b) => {
-      const da = (state.disciples || {})[a.disciple_id] || {};
-      const db = (state.disciples || {})[b.disciple_id] || {};
-      const ds = (Number(db.score) || 0) - (Number(da.score) || 0);
-      if (ds) return ds;
-      const dc = (Number(db.contributed) || 0) - (Number(da.contributed) || 0);
-      if (dc) return dc;
-      return (Number(a.at) || 0) - (Number(b.at) || 0);
-    });
+    const done = sortMissionCompletions(mission.completions);
     const rewardProp = rewardPropForPoints(mission.points);
 
     root.innerHTML = `
@@ -5086,7 +5087,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <div id="mission-pool-list">
               ${pending.length ? pending.map((d) => {
                 const pk = findPeak(d.peak);
-                return `<span class="mission-member-chip" draggable="true" data-pool-id="${d.id}" title="拖到完成栏，或点击记入">
+                return `<span class="mission-member-chip" draggable="true" data-pool-id="${d.id}" title="拖到完成栏，或点击整卡记入获赏">
                   ${esc(d.name)}${d.role === "队长" ? "★" : ""}
                   <span class="muted" style="font-size:.68rem">${esc(pk ? pk.name : "大厅")}</span>
                   <button type="button" data-mark-done="${d.id}" style="font-size:.68rem;padding:.15rem .35rem;min-height:1.5rem">记入获赏</button>
@@ -5119,6 +5120,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         e.dataTransfer.effectAllowed = "copy";
       });
       chip.addEventListener("dragend", () => { dragMissionMemberId = ""; });
+      chip.addEventListener("click", async (e) => {
+        if (e.target.closest("button")) return;
+        await completeMissionForDisciple(activeMissionId, chip.dataset.poolId);
+      });
     };
     root.querySelectorAll("[data-pool-id]").forEach(bindDrag);
     root.querySelectorAll("[data-mark-done]").forEach((btn) => {
@@ -5140,7 +5145,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         e.preventDefault();
         zone.classList.add("drag-over");
       };
-      zone.ondragleave = () => zone.classList.remove("drag-over");
+      zone.ondragleave = (e) => {
+        if (!zone.contains(e.relatedTarget)) zone.classList.remove("drag-over");
+      };
       zone.ondrop = async (e) => {
         e.preventDefault();
         zone.classList.remove("drag-over");
@@ -6381,7 +6388,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (typeof renderAll === "function") renderAll();
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
     const name = camp === "blue" ? (state.config?.alliance_blue_name || "声浪") : (state.config?.alliance_red_name || "光影");
-    showVoteToast(`${name} 全体 +${points} · ${peaks.length} 组`);
     const peak = findPeak(peaks[0].id) || peaks[0];
     if (peak) {
       showComboAnnounce(peak, Number(points) || 0, reason || "派系加分", category || "日常", peak.score || 0, {
@@ -6390,6 +6396,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         glowPeakIds: peaks.map((p) => p.id)
       });
     }
+    setTimeout(() => showVoteToast(`${name} 全体 +${points} · ${peaks.length} 组`), 1550);
     leveled.slice(0, 4).forEach((item, i) => {
       setTimeout(() => {
         const pk = findPeak(item.peakId);
@@ -6410,7 +6417,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (typeof renderAll === "function") renderAll();
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
-    showVoteToast(`全体小组 +${points} · ${peaks.length} 组`);
     const peak = findPeak(peaks[0].id) || peaks[0];
     if (peak) {
       showComboAnnounce(peak, Number(points) || 0, reason || "全体加分", category || "日常", peak.score || 0, {
@@ -6419,6 +6425,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         glowPeakIds: peaks.map((p) => p.id)
       });
     }
+    setTimeout(() => showVoteToast(`全体小组 +${points} · ${peaks.length} 组`), 1550);
     leveled.slice(0, 4).forEach((item, i) => {
       setTimeout(() => {
         const pk = findPeak(item.peakId);
@@ -6550,8 +6557,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             else if (targetMode === "camp-red") await addScoreToCamp("red", opt.points, opt.reason, opt.category);
             else if (targetMode === "camp-blue") await addScoreToCamp("blue", opt.points, opt.reason, opt.category);
             else {
-              const pid = Number((document.getElementById("sh-peak") || {}).value || selectedPeakId);
-              if (!pid && pid !== 0) { alert("请选择小组"); return; }
+              const raw = (document.getElementById("sh-peak") || {}).value || selectedPeakId;
+              const pid = Number(raw);
+              if (!Number.isFinite(pid) || !findPeak(pid)) { alert("请选择小组"); return; }
               await scoreFromModal(pid, opt.points, opt.reason, opt.category, 0);
             }
           };
@@ -6595,7 +6603,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         });
         pane.querySelector("#sh-peak-go").onclick = async () => {
           const pid = Number(sel.value);
+          if (!Number.isFinite(pid) || !findPeak(pid)) { alert("请选择小组"); return; }
           const pts = Number(document.getElementById("sh-peak-pts").value);
+          if (!Number.isFinite(pts) || !pts) { alert("请填写有效分数"); return; }
           const reason = (document.getElementById("sh-peak-reason").value || "").trim() || "小组加分";
           await scoreFromModal(pid, pts, reason, "自定义", 0);
         };
@@ -6613,6 +6623,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <label style="flex:1"><span>分数</span><input id="sh-camp-pts" type="number" value="5" /></label>
             <label style="flex:2"><span>理由</span><input id="sh-camp-reason" type="text" value="派系加分" /></label>
           </div>
+          <p class="muted" style="font-size:.75rem;margin:.2rem 0 0">点快捷项填入分数与理由，再点确认出招</p>
           <div class="score-hub-quick" style="margin-top:.35rem">
             ${getScoreQuickOptions().slice(0, 6).map((o) => {
               const prop = rewardPropForPoints(o.points);
@@ -6623,6 +6634,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <button type="button" class="primary" id="sh-camp-go">确认派系加分</button>
           </div>`;
         let camp = "red";
+        let campCategory = "派系";
         const redB = pane.querySelector("#sh-camp-red");
         const blueB = pane.querySelector("#sh-camp-blue");
         const syncCamp = () => {
@@ -6633,14 +6645,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         blueB.onclick = () => { camp = "blue"; syncCamp(); };
         pane.querySelector("#sh-camp-go").onclick = async () => {
           const pts = Number(document.getElementById("sh-camp-pts").value);
+          if (!Number.isFinite(pts) || !pts) { alert("请填写有效分数"); return; }
           const reason = (document.getElementById("sh-camp-reason").value || "").trim() || "派系加分";
-          await addScoreToCamp(camp, pts, reason, "派系");
+          await addScoreToCamp(camp, pts, reason, campCategory || "派系");
         };
         pane.querySelectorAll("[data-camp-sq]").forEach((b) => {
-          b.onclick = async () => {
+          b.onclick = () => {
             const opt = getScoreQuickOptions().find((x) => String(x.id) === String(b.dataset.campSq));
             if (!opt) return;
-            await addScoreToCamp(camp, opt.points, opt.reason, opt.category);
+            const ptsEl = document.getElementById("sh-camp-pts");
+            const reasonEl = document.getElementById("sh-camp-reason");
+            if (ptsEl) ptsEl.value = String(opt.points);
+            if (reasonEl) reasonEl.value = opt.reason || opt.label || "派系加分";
+            campCategory = opt.category || "派系";
+            pane.querySelectorAll("[data-camp-sq]").forEach((x) => x.classList.toggle("on", x === b));
           };
         });
         return;
@@ -6679,9 +6697,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           await runMem(Number(document.getElementById("sh-mem-pts").value), document.getElementById("sh-mem-reason").value.trim());
         };
         pane.querySelectorAll("[data-mem-pts]").forEach((b) => {
-          b.onclick = async () => {
-            const reason = (document.getElementById("sh-mem-reason").value || "").trim() || "队员加分";
-            await runMem(Number(b.dataset.memPts), reason);
+          b.onclick = () => {
+            const ptsEl = document.getElementById("sh-mem-pts");
+            if (ptsEl) ptsEl.value = String(b.dataset.memPts);
+            pane.querySelectorAll("[data-mem-pts]").forEach((x) => x.classList.toggle("on", x === b));
           };
         });
         return;
