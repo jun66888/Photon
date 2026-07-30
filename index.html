@@ -704,13 +704,13 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   background: rgba(240,193,75,.08); letter-spacing: .06em;
 }
 .modal.mission-edit-modal {
-  width: min(960px, 96vw);
+  width: min(640px, 96vw);
 }
 .mission-edit-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr 1fr;
-  gap: .75rem;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  align-items: stretch;
 }
 .mission-faction-pane {
   border-radius: 10px; padding: .7rem .75rem;
@@ -2738,7 +2738,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="mission-publish-top" id="mission-publish-bar" aria-label="今日门派任务榜">
           <div class="mission-board-head">
             <div class="mb-kicker">今日门派任务</div>
-            <button type="button" class="mb-manage" data-action="edit-camp-mission" title="管理任务权重与显隐">管理</button>
+            <button type="button" class="mb-manage" data-action="edit-camp-mission" title="管理门派任务内容">管理</button>
           </div>
           <div class="mission-weight-list" id="mission-board-list">
             <div class="mission-weight-empty">点击管理添加门派任务</div>
@@ -5173,41 +5173,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
   }
 
-  function renderFactionPane(camp, m, live) {
-    const isBlue = camp === "blue";
-    const focusId = isBlue ? "cm-blue-focus" : "cm-red-focus";
-    const elemId = isBlue ? "cm-blue-element" : "cm-red-element";
-    const noteId = isBlue ? "cm-blue-note" : "cm-red-note";
-    const focus = isBlue ? m.blue_focus : m.red_focus;
-    const element = isBlue ? m.blue_element : m.red_element;
-    const note = isBlue ? m.blue_note : m.red_note;
-    const label = isBlue ? "声浪" : "光影";
-    const opts = ELEMENT_PRESETS.map((e) => `<option value="${e}" ${e === (element || "") ? "selected" : ""}>${e}</option>`).join("");
-    return `<aside class="mission-faction-pane ${camp}">
-      <h4>${esc(label)} · 派系属性</h4>
-      <div class="fa-row"><span>联盟</span><span>${esc(live.alliance)}</span></div>
-      <div class="fa-row"><span>总真气</span><span>${live.score}</span></div>
-      <div class="fa-row"><span>山峰数</span><span>${live.peakCount}</span></div>
-      <div class="fa-row"><span>弟子数</span><span>${live.memberCount}</span></div>
-      <div class="fa-row"><span>先锋</span><span>${esc(live.topName)} · ${live.topScore}</span></div>
-      <div class="fa-row"><span>主流属性</span><span>${esc(live.dominantElement)}</span></div>
-      <label><span>本场任务侧重</span><input id="${focusId}" type="text" maxlength="24" value="${esc(focus || "")}" placeholder="例如：叙事特训" /></label>
-      <label><span>本场属性</span><select id="${elemId}">${opts}</select></label>
-      <label><span>派系备注</span><textarea id="${noteId}" rows="2" maxlength="80" placeholder="本派本场注意点">${esc(note || "")}</textarea></label>
-    </aside>`;
-  }
-
-  function openCampMissionModal(focusCamp) {
+  function openCampMissionModal() {
     const m = getCampMission();
-    const redLive = getCampLiveStats("red");
-    const blueLive = getCampLiveStats("blue");
     let draftItems = (m.items || []).map((it) => ({
       ...it,
       completions: Array.isArray(it.completions) ? it.completions.slice() : []
     }));
 
     function sortDraft() {
-      draftItems.sort((a, b) => (b.weight || 0) - (a.weight || 0) || String(a.title).localeCompare(String(b.title), "zh-CN"));
+      draftItems.sort((a, b) =>
+        (b.weight || 0) - (a.weight || 0) ||
+        (Number(b.points) || 0) - (Number(a.points) || 0) ||
+        String(a.title).localeCompare(String(b.title), "zh-CN")
+      );
     }
 
     function renderItemsEditor() {
@@ -5282,34 +5260,25 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     openModal(`
       <div class="mission-edit-modal-root">
-        <h3>今日门派任务</h3>
-        <p class="muted" style="text-align:center;margin-bottom:.55rem">可添加多条 · 权重越高字号越大、排越前 · 可单独隐藏</p>
+        <h3>门派任务管理</h3>
+        <p class="muted" style="text-align:center;margin-bottom:.55rem">只管理任务内容：标题、说明、权重、显隐、奖励与难度 · 派系属性请点对阵区派系卡片</p>
         <div class="mission-edit-layout">
-          ${renderFactionPane("red", m, redLive)}
           <div class="mission-center-pane stack">
             <div class="row" style="justify-content:space-between;align-items:center">
               <strong style="color:var(--gold)">任务列表</strong>
               <button type="button" class="primary" id="cm-add-item">＋添加任务</button>
             </div>
             <div class="mission-items-editor" id="cm-items-editor"></div>
-            <label><span>截止（可选，全局）</span><input id="cm-deadline" type="text" maxlength="24" value="${esc(m.deadline || "")}" placeholder="例如：今日下课前" /></label>
+            <label><span>截止（可选）</span><input id="cm-deadline" type="text" maxlength="24" value="${esc(m.deadline || "")}" placeholder="例如：今日下课前" /></label>
             <div class="row" style="justify-content:flex-end;margin-top:.35rem">
               <button type="button" class="ghost" id="modal-cancel">取消</button>
               <button type="button" class="primary" id="cm-save">保存</button>
             </div>
           </div>
-          ${renderFactionPane("blue", m, blueLive)}
         </div>
       </div>`);
     const modal = document.querySelector("#modal-host .modal");
     if (modal) modal.classList.add("mission-edit-modal");
-    if (focusCamp === "red" || focusCamp === "blue") {
-      const pane = document.querySelector(`.mission-faction-pane.${focusCamp}`);
-      if (pane) {
-        pane.style.outline = "2px solid var(--gold)";
-        pane.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      }
-    }
     renderItemsEditor();
     document.getElementById("cm-add-item").onclick = () => {
       draftItems.push(newMissionItem({ title: "新门派任务", desc: "", weight: 50, visible: true, points: 10, difficulty: "普通" }));
@@ -5328,6 +5297,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       });
       const top = items.find((it) => it.visible !== false) || items[0] || newMissionItem({ title: "今日门派任务" });
       const next = {
+        ...m,
         title: top.title,
         desc: top.desc,
         points: top.points,
@@ -5335,12 +5305,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         category: top.category || "任务",
         status: items.some((it) => it.visible !== false) ? "published" : "draft",
         deadline: (document.getElementById("cm-deadline").value || "").trim(),
-        red_focus: (document.getElementById("cm-red-focus").value || "").trim(),
-        red_element: document.getElementById("cm-red-element").value,
-        red_note: (document.getElementById("cm-red-note").value || "").trim(),
-        blue_focus: (document.getElementById("cm-blue-focus").value || "").trim(),
-        blue_element: document.getElementById("cm-blue-element").value,
-        blue_note: (document.getElementById("cm-blue-note").value || "").trim(),
         items
       };
       await updatePaths({ "config/camp_mission": next });
@@ -7400,7 +7364,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="field-name" style="margin-top:.2rem;color:#ffe39a;font-size:.82rem">旗下小组（点击查看属性）</div>
         <div class="settings-chips">${peakRows}</div>
         <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem">
-          <button type="button" data-jump-mission="${camp}">打开门派任务编辑</button>
+          <button type="button" data-jump-mission="${camp}">管理门派任务内容</button>
           <span class="row">
             <button type="button" class="ghost" id="modal-cancel">取消</button>
             <button type="button" class="primary" id="ca-save">保存</button>
@@ -7412,7 +7376,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       b.onclick = () => openSectModal(Number(b.dataset.openPeak), "attr");
     });
     const jump = document.querySelector("[data-jump-mission]");
-    if (jump) jump.onclick = () => openCampMissionModal(camp);
+    if (jump) jump.onclick = () => openCampMissionModal();
     document.getElementById("ca-save").onclick = async () => {
       const nextMission = {
         ...m,
@@ -8398,7 +8362,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "edit-score-quick") { openScoreQuickEditor(); return; }
     if (act === "edit-brand") { openBrandModal(); return; }
     if (act === "toggle-fullscreen") { toggleFullscreen(); return; }
-    if (act === "edit-camp-mission") { openCampMissionModal(btn?.dataset?.focusCamp || ""); return; }
+    if (act === "edit-camp-mission") { openCampMissionModal(); return; }
     if (act === "camp-attrs") { openCampAttrsModal(btn?.dataset?.camp || "red"); return; }
     if (act === "insert-edit-box") { insertEditBox(); return; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
