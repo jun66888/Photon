@@ -1064,9 +1064,7 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   min-height: 0;
 }
 .member-bars.open { display: grid; }
-@media (max-width: 720px) {
-  .member-bars { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .1rem .12rem; }
-}
+.member-bars > .muted { grid-column: 1 / -1; }
 @media (max-width: 1100px) {
   .sect-card .mount-body {
     grid-template-columns: auto minmax(0, 1fr) auto;
