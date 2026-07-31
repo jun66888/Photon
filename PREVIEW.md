@@ -2,9 +2,9 @@
 
 ## 云端预览（当前可用）
 
-**老师端：** https://src-cases-davidson-rendered.trycloudflare.com/?mode=teacher
+**老师端：** https://postcards-school-seem-specializing.trycloudflare.com/?mode=teacher
 
-**学生端：** https://src-cases-davidson-rendered.trycloudflare.com/?mode=student
+**学生端：** https://postcards-school-seem-specializing.trycloudflare.com/?mode=student
 
 > 隧道由云端 Agent 临时拉起；关掉 Agent 或隧道后会失效。失效时在本仓库执行下面「重开隧道」。
 
@@ -31,8 +31,8 @@
 
 ```bash
 npm start
-# 另开一个终端
-cloudflared tunnel --url http://127.0.0.1:3000 --no-autoupdate
+# 另开一个终端（建议 http2，QUIC 在部分环境会断连）
+cloudflared tunnel --url http://127.0.0.1:3000 --no-autoupdate --protocol http2
 ```
 
 终端里会出现新的 `https://xxxx.trycloudflare.com` 链接。
