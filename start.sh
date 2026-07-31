@@ -5,25 +5,24 @@ cd "$(dirname "$0")"
 echo ""
 echo "  ========================================"
 echo "   光影盟 · 本机离线课堂"
-echo "   无需外网 · 学生现场局域网即可"
+echo "   地址永久固定 · 无需外网"
 echo "  ========================================"
 echo ""
 
 if ! command -v node >/dev/null 2>&1; then
   echo "  [错误] 未检测到 Node.js"
   echo "  请先在有网时安装一次：https://nodejs.org （选 LTS）"
-  echo "  装好后可完全断网上课。"
   exit 1
 fi
 
-echo "  电脑打开: http://localhost:3000/?mode=teacher"
-echo "  扫码请看终端「固定扫码」局域网地址"
-echo "  本窗口保持打开；异常退出会自动重启"
+echo "  【请收藏老师端 · 永远不变】"
+echo "    http://127.0.0.1:3000/?mode=teacher"
+echo "  手机扫码地址见「固定访问地址.txt」（锁定后不自动换）"
 echo ""
 
 (
   sleep 2
-  url="http://localhost:3000/?mode=teacher"
+  url="http://127.0.0.1:3000/?mode=teacher"
   if command -v xdg-open >/dev/null 2>&1; then xdg-open "$url" >/dev/null 2>&1 || true
   elif command -v open >/dev/null 2>&1; then open "$url" >/dev/null 2>&1 || true
   fi

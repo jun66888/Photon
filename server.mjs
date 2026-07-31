@@ -11,10 +11,15 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
-const PORT = Number(process.env.PORT || 3000);
+/** 端口写死 3000，老师收藏地址才不会变（勿随意改 PORT） */
+const PORT = Number(process.env.PORT || 3000) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const DEMO_DB_FILE = path.join(ROOT, "gy-demo-db.json");
 const CLASSROOM_FILE = path.join(ROOT, "gy-classroom.json");
+const ACCESS_FILE = path.join(ROOT, "固定访问地址.txt");
+/** 老师端永久收藏地址（本机环回，永远不变） */
+const TEACHER_BOOKMARK = `http://127.0.0.1:${PORT}/?mode=teacher`;
+const STUDENT_BOOKMARK_PATH = `/?mode=student`;
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -90,18 +95,59 @@ function loadClassroomConfig() {
 function saveClassroomConfig(cfg) {
   const payload = {
     version: 1,
-    port: Number(cfg.port) || PORT,
+    port: PORT,
+    teacher_bookmark: TEACHER_BOOKMARK,
     fixed_origin: normalizeOrigin(cfg.fixed_origin),
     locked: cfg.locked !== false,
     updated_at: new Date().toISOString(),
-    note: cfg.note || "本机课堂固定扫码地址。手机与电脑同一 Wi-Fi；建议给电脑设置静态 IP，地址长期不变。"
+    note: cfg.note || "扫码地址已永久锁定。除非点「重新绑定」，否则不会自动更换。"
   };
   fs.writeFileSync(CLASSROOM_FILE, JSON.stringify(payload, null, 2), "utf8");
   return payload;
 }
 
-/** 解析并持久化课堂固定地址：优先本机局域网，不依赖公网隧道 */
-function resolveClassroomOrigin(classroomOrigins) {
+function writeAccessCard(fixedOrigin, warn) {
+  const phone = fixedOrigin || "(尚未绑定：请连教室 Wi-Fi 后双击「绑定课堂扫码地址.bat」一次)";
+  const text = [
+    "光影盟 · 固定访问地址（本机离线，请收藏）",
+    "================================================",
+    "",
+    "【老师端 · 请收藏这一条，永远不变】",
+    TEACHER_BOOKMARK,
+    "",
+    "【学生端（本机浏览器）】",
+    `http://127.0.0.1:${PORT}${STUDENT_BOOKMARK_PATH}`,
+    "",
+    "【手机扫码 / 学生手机 · 已锁定，不会自动更换】",
+    phone,
+    phone.startsWith("http") ? `${phone}/?mode=checkin` : "",
+    "",
+    "说明：",
+    "1. 老师只要收藏上面的 127.0.0.1 地址，下次 start.bat 打开后即可继续用。",
+    "2. 手机扫码地址写入 gy-classroom.json 后永久锁定；DHCP 换 IP 也不会自动改。",
+    "3. 若手机突然扫不开：给电脑设静态 IP 为锁定的那个地址，或运行「绑定课堂扫码地址.bat」手动重绑一次。",
+    "4. 不要使用任何临时公网链接。",
+    warn ? "" : "",
+    warn ? ("注意：" + warn) : "",
+    "",
+    "生成时间：" + new Date().toISOString(),
+    ""
+  ].filter((line, i, arr) => !(line === "" && arr[i - 1] === "")).join("\n");
+  try {
+    fs.writeFileSync(ACCESS_FILE, text, "utf8");
+  } catch (e) {
+    /* ignore */
+  }
+  return text;
+}
+
+/**
+ * 解析课堂扫码地址：
+ * - 已锁定 → 永远返回锁定值，绝不因网卡变化自动更换
+ * - 未锁定 → 仅首次自动绑定当前局域网，然后永久锁定
+ */
+function resolveClassroomOrigin(classroomOrigins, opts = {}) {
+  const forceRebind = opts.forceRebind === true;
   const envFixed = normalizeOrigin(process.env.GY_FIXED_ORIGIN || "");
   let cfg = loadClassroomConfig();
   const liveHosts = new Set(
@@ -110,18 +156,20 @@ function resolveClassroomOrigin(classroomOrigins) {
     }).filter(Boolean)
   );
 
-  // 环境变量最高优先级（运维手动指定本机局域网，禁止公网域名）
+  // 环境变量：仅在尚未锁定，或显式要求重绑时写入
   if (envFixed && /^http:\/\//i.test(envFixed)) {
     let envHost = "";
     try { envHost = new URL(envFixed).hostname; } catch (e) { envHost = ""; }
     if (envHost && isClassroomLanHost(envHost) && !isPhoneUnfriendlyIp(envHost)) {
-      cfg = saveClassroomConfig({
-        port: PORT,
-        fixed_origin: envFixed,
-        locked: true,
-        note: "由 GY_FIXED_ORIGIN 指定（本机局域网）"
-      });
-      return { fixed_origin: envFixed, locked: true, cfg, changed: true, reason: "env" };
+      const saved0 = cfg ? normalizeOrigin(cfg.fixed_origin) : "";
+      if (forceRebind || !saved0 || cfg.locked === false) {
+        cfg = saveClassroomConfig({
+          fixed_origin: envFixed,
+          locked: true,
+          note: "由 GY_FIXED_ORIGIN 指定并永久锁定"
+        });
+        return { fixed_origin: envFixed, locked: true, cfg, changed: true, reason: "env", warn: "" };
+      }
     }
   }
 
@@ -129,46 +177,70 @@ function resolveClassroomOrigin(classroomOrigins) {
   let savedHost = "";
   try { savedHost = saved ? new URL(saved).hostname : ""; } catch (e) { savedHost = ""; }
 
-  // 已锁定且该网卡 IP 仍在：地址固定，二维码不换
-  if (saved && cfg && cfg.locked !== false && savedHost && liveHosts.has(savedHost)
-    && !isPhoneUnfriendlyIp(savedHost)) {
-    return { fixed_origin: saved, locked: true, cfg, changed: false, reason: "locked" };
+  // 已永久锁定：绝不自动更换（这是「收藏后继续用」的关键）
+  if (!forceRebind && saved && cfg && cfg.locked !== false && savedHost
+    && isClassroomLanHost(savedHost) && !isPhoneUnfriendlyIp(savedHost)) {
+    const live = liveHosts.has(savedHost);
+    return {
+      fixed_origin: saved,
+      locked: true,
+      cfg,
+      changed: false,
+      reason: live ? "locked" : "locked-stale",
+      warn: live
+        ? ""
+        : `已锁定扫码地址 ${saved}，但当前网卡没有该 IP。请连回教室网，或把电脑静态 IP 设为 ${savedHost}；不要改收藏的老师端地址。`
+    };
   }
 
-  // 有可用教室局域网：写入/更新固定地址
+  // 首次绑定 / 手动重绑：写入后永久锁定
   if (classroomOrigins[0]) {
     const next = classroomOrigins[0];
-    const nextHost = new URL(next).hostname;
-    const changed = !saved || savedHost !== nextHost;
     cfg = saveClassroomConfig({
-      port: PORT,
       fixed_origin: next,
       locked: true,
-      note: changed && saved
-        ? "检测到网卡 IP 变化，已自动更新固定扫码地址。若经常变化，请给电脑设置静态 IP / DHCP 保留。"
-        : "本机课堂固定扫码地址。手机与电脑同一 Wi-Fi；建议给电脑设置静态 IP。"
+      note: forceRebind
+        ? "教师手动重新绑定的扫码地址（已永久锁定）"
+        : "首次自动绑定的扫码地址（已永久锁定，不会自动更换）"
     });
     return {
       fixed_origin: next,
       locked: true,
       cfg,
-      changed,
-      reason: changed && saved ? "ip-changed" : "auto-bind"
+      changed: true,
+      reason: forceRebind ? "rebind" : "first-bind",
+      warn: ""
     };
   }
 
-  // 无局域网时：若曾锁定过教室地址仍返回（电脑暂时没连上 Wi-Fi）
-  if (saved && savedHost && isClassroomLanHost(savedHost)) {
-    return { fixed_origin: saved, locked: !!(cfg && cfg.locked !== false), cfg, changed: false, reason: "offline-keep" };
+  if (forceRebind) {
+    return {
+      fixed_origin: saved && isClassroomLanHost(savedHost) ? saved : "",
+      locked: !!(cfg && cfg.locked !== false),
+      cfg,
+      changed: false,
+      reason: "rebind-failed",
+      warn: "未检测到教室局域网（192.168/10），无法重绑。请先连接教室 Wi-Fi。"
+    };
   }
 
-  return { fixed_origin: "", locked: false, cfg, changed: false, reason: "none" };
+  if (saved && savedHost && isClassroomLanHost(savedHost)) {
+    return {
+      fixed_origin: saved,
+      locked: !!(cfg && cfg.locked !== false),
+      cfg,
+      changed: false,
+      reason: "locked-stale",
+      warn: "当前未检测到局域网，仍使用已锁定的扫码地址。"
+    };
+  }
+
+  return { fixed_origin: "", locked: false, cfg, changed: false, reason: "none", warn: "尚未绑定手机扫码地址。" };
 }
 
-function writeOriginHint() {
+function writeOriginHint(opts = {}) {
   const lans = lanIPv4List();
   const origins = lans.map((x) => `http://${x.address}:${PORT}`);
-  // 纯本机课堂：只用局域网，不读公网隧道环境变量
   const classroomOrigins = origins.filter((o) => {
     try {
       const host = new URL(o).hostname;
@@ -177,9 +249,11 @@ function writeOriginHint() {
       return false;
     }
   });
-  const resolved = resolveClassroomOrigin(classroomOrigins);
+  const resolved = resolveClassroomOrigin(classroomOrigins, opts);
   const fixed = resolved.fixed_origin;
-  const preferred = fixed || classroomOrigins[0] || `http://127.0.0.1:${PORT}`;
+  // 老师收藏永远用环回地址；手机扫码才用 fixed_origin
+  const preferred = `http://127.0.0.1:${PORT}`;
+  writeAccessCard(fixed, resolved.warn || "");
   const payload = {
     port: PORT,
     generated_at: new Date().toISOString(),
@@ -187,14 +261,17 @@ function writeOriginHint() {
     origins,
     classroom_mode: true,
     offline_local: true,
+    teacher_bookmark: TEACHER_BOOKMARK,
+    student_bookmark: `http://127.0.0.1:${PORT}${STUDENT_BOOKMARK_PATH}`,
     fixed_origin: fixed,
     fixed_locked: !!resolved.locked,
     fixed_reason: resolved.reason,
+    fixed_warn: resolved.warn || "",
     preferred,
-    teacher: `${preferred}/?mode=teacher`,
-    checkin: `${preferred}/?mode=checkin`,
+    teacher: TEACHER_BOOKMARK,
+    checkin: fixed ? `${fixed}/?mode=checkin` : `${preferred}/?mode=checkin`,
     demo_sync: true,
-    note: "纯本机离线课堂：手机与电脑同一 Wi-Fi/局域网即可，无需外网。"
+    note: "老师收藏 teacher_bookmark（永远不变）。手机扫码用 fixed_origin（锁定后不自动更换）。"
   };
   try {
     fs.writeFileSync(path.join(ROOT, "gy-public-origin.json"), JSON.stringify(payload, null, 2));
@@ -351,6 +428,19 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "PUT" || req.method === "POST") {
       try {
         const body = await readJson(req);
+        // rebind=true：用当前网卡重新绑定一次（唯一允许换扫码地址的方式）
+        if (body.rebind === true && !body.fixed_origin && !body.origin) {
+          const hint = writeOriginHint({ forceRebind: true });
+          if (hint.fixed_reason !== "rebind" && hint.fixed_reason !== "first-bind") {
+            sendJson(res, 400, {
+              ok: false,
+              error: hint.fixed_warn || "未检测到教室局域网，请先连接教室 Wi-Fi 再重绑"
+            });
+            return;
+          }
+          sendJson(res, 200, { ok: true, rebound: true, config: loadClassroomConfig(), hint });
+          return;
+        }
         const origin = normalizeOrigin(body.fixed_origin || body.origin || "");
         if (!origin || !/^http:\/\//i.test(origin)) {
           sendJson(res, 400, { ok: false, error: "请提供本机局域网地址，例如 http://192.168.1.8:3000（仅 http，不要公网域名）" });
@@ -370,10 +460,9 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         const cfg = saveClassroomConfig({
-          port: PORT,
           fixed_origin: origin,
           locked: body.locked !== false,
-          note: body.note || "教师手动锁定的本机课堂扫码地址"
+          note: body.note || "教师手动锁定的本机扫码地址（永久，不自动更换）"
         });
         sendJson(res, 200, { ok: true, config: cfg, hint: writeOriginHint() });
       } catch (e) {
@@ -480,22 +569,27 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   const fresh = writeOriginHint();
-  const local = `http://127.0.0.1:${PORT}/?mode=teacher`;
   const fixed = fresh.fixed_origin || "";
   console.log("");
   console.log("  ========================================");
-  console.log("  光影盟 · 本机离线课堂（无需外网）");
+  console.log("  光影盟 · 本机离线课堂（地址永久固定）");
   console.log("  ========================================");
-  console.log("  电脑打开:    " + local);
+  console.log("  ★ 老师收藏（永远不变）:");
+  console.log("    " + TEACHER_BOOKMARK);
   if (fixed) {
-    console.log("  ★ 固定扫码:  " + fixed + "/?mode=checkin");
-    console.log("  ★ 手机同网:  " + fixed + "/?mode=teacher");
-    console.log("  学生手机连同一 Wi-Fi/局域网即可，完全不需要外网");
+    console.log("  ★ 手机扫码（已锁定，不自动更换）:");
+    console.log("    " + fixed + "/?mode=checkin");
+    if (fresh.fixed_reason === "first-bind") {
+      console.log("  （首次已自动绑定扫码地址，已写入 gy-classroom.json）");
+    }
+    if (fresh.fixed_warn) {
+      console.log("  ! " + fresh.fixed_warn);
+    }
   } else {
-    console.log("  ! 未检测到教室局域网（192.168/10）。");
-    console.log("  ! 请连接教室 Wi-Fi（可无外网），然后重启本程序。");
+    console.log("  ! 尚未绑定手机扫码地址。请连教室 Wi-Fi 后：");
+    console.log("    双击「绑定课堂扫码地址.bat」，或重启本程序自动首次绑定");
   }
-  console.log("  健康检查:    http://127.0.0.1:" + PORT + "/__gy/health");
+  console.log("  详情已写入: 固定访问地址.txt");
   console.log("  按 Ctrl+C 停止；关闭窗口即下课");
   console.log("");
 });

@@ -7,7 +7,17 @@
 - 数据经本机 `/__gy/demo-db` 同步（`gy-demo-db.json`）  
 - 扫码地址锁定在 `gy-classroom.json`（局域网，非公网隧道）  
 
-**请先读：[课堂稳定使用.md](./课堂稳定使用.md)**
+**请先读：[课堂稳定使用.md](./课堂稳定使用.md)** · **[固定访问地址.md](./固定访问地址.md)**
+
+---
+
+## 老师请收藏（永远不变）
+
+```
+http://127.0.0.1:3000/?mode=teacher
+```
+
+也可双击 `打开老师端.bat` / `打开老师端.url`。
 
 ---
 
@@ -18,13 +28,8 @@
 - **Windows**：双击 `start.bat`（建议先跑一次 `开放防火墙.bat`）  
 - **Mac / Linux**：`./start.sh` 或 `npm start`
 
-| 端 | 地址 |
-|----|------|
-| 老师端 | http://localhost:3000/?mode=teacher |
-| 学生端 | http://localhost:3000/?mode=student |
-| 签到 | 用窗口打印的 **固定扫码** 局域网地址 |
-
-手机不要扫 `localhost`，不要用任何 trycloudflare / 公网链接。
+手机扫码地址首次绑定后写入 `gy-classroom.json`，**不会自动更换**。  
+详见 `固定访问地址.txt`（每次启动生成）。
 
 ---
 
