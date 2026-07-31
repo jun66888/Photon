@@ -4396,6 +4396,35 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       gender: "", contact: "", motto: "", avatar: ""
     };
   }
+  /** 兑换目录种子；升级 REDEEM_SEED_REV 时会把缺失 id 的卡并入已有存档 */
+  const REDEEM_SEED_REV = 2;
+  function getRedeemCatalogSeed() {
+    return [
+      // —— 派系道具 ——
+      { id: "rc_camp_1", name: "派系战鼓卡", rule: "本派下次全体加分时额外 +2；课堂展示后收回。", cost: 80, tier: "camp", owner_peak_id: "", icon: "🥁", visible: true },
+      { id: "rc_camp_2", name: "山河令", rule: "可指定本派一题免答一次，改由派系代表回答。", cost: 120, tier: "camp", owner_peak_id: "", icon: "📜", visible: true },
+      { id: "rc_camp_3", name: "联盟号角", rule: "本派全员齐答一轮；答对的各小组各 +2。", cost: 100, tier: "camp", owner_peak_id: "", icon: "📯", visible: true },
+      { id: "rc_camp_4", name: "破阵旗", rule: "本派可发起一次挑战题；胜则本派全体再 +3。", cost: 110, tier: "camp", owner_peak_id: "", icon: "🚩", visible: true },
+      { id: "rc_camp_5", name: "镇派玉玺", rule: "本派本场可免疫一次「全体减分/惩罚」效果。", cost: 130, tier: "camp", owner_peak_id: "", icon: "🏯", visible: true },
+      { id: "rc_camp_6", name: "观星台", rule: "本派可获得一道题的提示（选项缩小或关键词）。", cost: 90, tier: "camp", owner_peak_id: "", icon: "🔭", visible: true },
+      { id: "rc_camp_7", name: "连营火", rule: "本派连续两次获赏时，第二次额外再 +1（各小组均享）。", cost: 95, tier: "camp", owner_peak_id: "", icon: "🔥", visible: true },
+      { id: "rc_camp_8", name: "移花接木令", rule: "本派内两小组可互换一次任务名额或发言顺序。", cost: 85, tier: "camp", owner_peak_id: "", icon: "🌸", visible: true },
+      // —— 小组道具 ——
+      { id: "rc_peak_1", name: "帮派护盾", rule: "本小组一次答错不扣氛围分；仅本帮可用。", cost: 40, tier: "peak", owner_peak_id: "", icon: "🛡️", visible: true },
+      { id: "rc_peak_2", name: "双倍真气符", rule: "本小组下一次获赏双倍计入小组分。", cost: 60, tier: "peak", owner_peak_id: "", icon: "⚡", visible: true },
+      { id: "rc_peak_3", name: "替身傀儡", rule: "本小组可指定一人代答；得分计入本小组。", cost: 45, tier: "peak", owner_peak_id: "", icon: "🎭", visible: true },
+      { id: "rc_peak_4", name: "灵感锦囊", rule: "本小组创作/讨论时间额外延长 2 分钟。", cost: 35, tier: "peak", owner_peak_id: "", icon: "🎒", visible: true },
+      { id: "rc_peak_5", name: "锋芒一击", rule: "本小组下一次擂台或挑战分额外 +5。", cost: 55, tier: "peak", owner_peak_id: "", icon: "🗡️", visible: true },
+      { id: "rc_peak_6", name: "和气丹", rule: "本小组可申请撤回一次误操作（需老师确认）。", cost: 30, tier: "peak", owner_peak_id: "", icon: "💊", visible: true },
+      { id: "rc_peak_7", name: "探囊取物", rule: "本小组可借用对方一小组的一次发言权。", cost: 50, tier: "peak", owner_peak_id: "", icon: "🖐️", visible: true },
+      { id: "rc_peak_8", name: "聚灵阵", rule: "本小组本场签到全员到齐时，额外 +3 小组分。", cost: 40, tier: "peak", owner_peak_id: "", icon: "✳️", visible: true },
+      { id: "rc_peak_9", name: "影分身符", rule: "本小组可将一次任务拆给两名队员各完成一半。", cost: 48, tier: "peak", owner_peak_id: "", icon: "👥", visible: true },
+      { id: "rc_peak_10", name: "定魂香", rule: "本小组展示作品时，可要求全班安静聆听一轮。", cost: 28, tier: "peak", owner_peak_id: "", icon: "🕊️", visible: true },
+      // —— 学员奖品 ——
+      { id: "rc_disc_1", name: "慧心签", rule: "持有者可请求提示一次；答对仍按原分发放。", cost: 15, tier: "disciple", owner_peak_id: "", icon: "🎋", visible: true },
+      { id: "rc_disc_2", name: "传功帖", rule: "可将自己一次答题机会转让给同帮同学。", cost: 25, tier: "disciple", owner_peak_id: "", icon: "✉️", visible: true }
+    ];
+  }
   function buildSeedArena() {
     const peaks = {};
     PEAK_SEED.forEach((p, idx) => { peaks["peak_" + p.id] = makePeak({ ...p, sort_order: idx }); });
@@ -4416,14 +4445,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           { id: "sq4", label: "互助协作", points: 4, reason: "互助协作", category: "日常" },
           { id: "sq5", label: "全员激励", points: 3, reason: "全员激励", category: "日常" }
         ],
-        redeem_catalog: [
-          { id: "rc_camp_1", name: "派系战鼓卡", rule: "本派下次全体加分时额外 +2；课堂展示后收回。", cost: 80, tier: "camp", owner_peak_id: "", icon: "🥁", visible: true },
-          { id: "rc_camp_2", name: "山河令", rule: "可指定本派一题免答一次，改由派系代表回答。", cost: 120, tier: "camp", owner_peak_id: "", icon: "📜", visible: true },
-          { id: "rc_peak_1", name: "帮派护盾", rule: "本小组一次答错不扣氛围分；仅本帮可用。", cost: 40, tier: "peak", owner_peak_id: "", icon: "🛡️", visible: true },
-          { id: "rc_peak_2", name: "双倍真气符", rule: "本小组下一次获赏双倍计入小组分。", cost: 60, tier: "peak", owner_peak_id: "", icon: "⚡", visible: true },
-          { id: "rc_disc_1", name: "慧心签", rule: "持有者可请求提示一次；答对仍按原分发放。", cost: 15, tier: "disciple", owner_peak_id: "", icon: "🎋", visible: true },
-          { id: "rc_disc_2", name: "传功帖", rule: "可将自己一次答题机会转让给同帮同学。", cost: 25, tier: "disciple", owner_peak_id: "", icon: "✉️", visible: true }
-        ],
+        redeem_catalog: getRedeemCatalogSeed().map((c) => ({ ...c })),
+        redeem_seed_rev: REDEEM_SEED_REV,
         redeem_logs: {},
         brand: {
           name: "光影盟",
@@ -8244,8 +8267,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function ensureRedeemConfig() {
     if (!state.config) state.config = {};
+    const seed = getRedeemCatalogSeed();
     if (!Array.isArray(state.config.redeem_catalog)) {
-      state.config.redeem_catalog = (buildSeedArena().config.redeem_catalog || []).map((c) => ({ ...c }));
+      state.config.redeem_catalog = seed.map((c) => ({ ...c }));
+      state.config.redeem_seed_rev = REDEEM_SEED_REV;
+    } else {
+      const rev = Number(state.config.redeem_seed_rev) || 0;
+      if (rev < REDEEM_SEED_REV) {
+        const have = new Set(
+          state.config.redeem_catalog.map((c) => c && c.id).filter(Boolean).map(String)
+        );
+        const missing = seed.filter((c) => c && c.id && !have.has(String(c.id)));
+        if (missing.length) {
+          state.config.redeem_catalog = state.config.redeem_catalog
+            .concat(missing.map((c) => ({ ...c })));
+        }
+        state.config.redeem_seed_rev = REDEEM_SEED_REV;
+        try {
+          if (typeof demoMode !== "undefined" && demoMode && typeof saveDemoLocal === "function") {
+            saveDemoLocal();
+          }
+        } catch (e) { /* ignore */ }
+      }
     }
     if (!state.config.redeem_logs || typeof state.config.redeem_logs !== "object") {
       state.config.redeem_logs = {};
