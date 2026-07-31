@@ -3625,7 +3625,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" data-action="goto-games" data-nav="games">抽人</button>
       <button type="button" data-action="goto-redeem" data-nav="redeem">兑换</button>
       <button type="button" data-action="goto-logs" data-nav="logs">日志</button>
-      <button type="button" data-action="edit-camp-mission">任务</button>
+      <button type="button" data-action="goto-mission" data-nav="mission">任务</button>
       <button type="button" data-action="goto-settings" data-nav="settings">设置</button>
     </nav>
   </header>
@@ -6366,51 +6366,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span>侧重 <b>${esc(m.blue_focus || "—")}</b></span>
         <span>山峰 <b>${blueLive.peakCount}</b> · 弟子 <b>${blueLive.memberCount}</b></span>`;
     }
-    bindMissionBoardToggle();
-    applyMissionBoardCollapse();
-    const list = document.getElementById("mission-board-list");
-    if (list) {
-      const visible = (m.items || []).filter((it) => it.visible !== false);
-      if (!visible.length) {
-        list.innerHTML = `<div class="mission-weight-empty">暂无显示中的任务 · 点「管理」添加</div>`;
-      } else {
-        list.innerHTML = visible.map((it) => {
-          const ranked = sortMissionCompletions(it.completions).slice(0, 3);
-          const top3Html = ranked.length
-            ? `<div class="mw-top3"><span class="md-label">获赏前三</span>${ranked.map((c, i) => {
-                const cp = rewardPropForPoints(c.points != null ? c.points : it.points);
-                const dScore = Number(((state.disciples || {})[c.disciple_id] || {}).score) || 0;
-                return `<span class="mission-done-chip rank${i + 1}" title="第${i + 1}名 · 积分 ${dScore} · ${esc(cp.tip || "")}">
-                  <span class="md-rank">${i + 1}</span>${esc(c.name || "弟子")} ${cp.icon} <b>+${cp.points}</b>
-                </span>`;
-              }).join("")}</div>`
-            : `<div class="mw-top3 is-empty"><span class="md-label">尚无弟子完成</span></div>`;
-          const intro = String(it.desc || "暂无说明").trim();
-          const doneN = (it.completions || []).length;
-          return `
-          <button type="button" class="mission-weight-item" data-open-mission="${esc(String(it.id))}" data-weight="${it.weight}" style="--mw-title-size:${missionFontSize(it.weight)};--mw-desc-size:${missionDescSize(it.weight)}" title="点击查看任务详情">
-            <div class="mw-title">${esc(it.title || "未命名任务")}</div>
-            <div class="mw-desc" title="${esc(intro)}">${esc(intro)}</div>
-            <div class="mw-meta">
-              ${it.points ? rewardPropBadgeHtml(it.points, { compact: true }) : `<span class="mb-tag">无奖励</span>`}
-              ${it.difficulty ? `<span class="mb-tag">${esc(it.difficulty)}</span>` : ""}
-              <span class="mb-tag">完成 ${doneN}</span>
-            </div>
-            ${top3Html}
-            <div class="mw-actions">
-              <span class="mb-tag" style="border-color:rgba(46,230,255,.4);color:#9fe9ff">进入详情</span>
-            </div>
-          </button>`;
-        }).join("");
-        list.querySelectorAll("[data-open-mission]").forEach((btn) => {
-          btn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openMissionDetail(btn.getAttribute("data-open-mission"));
-          };
-        });
-      }
-    }
+    // 主页顶部任务条已移除；任务入口改走左侧「任务」→ 详情页
   }
 
   async function completeMissionForDisciple(missionId, discipleId) {
@@ -12018,6 +11974,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
     if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); startVoteLiveLoop(); return; }
     if (act === "goto-games") { showScreen("teacher"); setTeacherView("games"); return; }
+    if (act === "goto-mission") { openMissionDetail(activeMissionId || ""); return; }
     if (act === "game-spin") { startGameDraw(); return; }
     if (act === "game-refresh") { renderGames(); return; }
     if (act === "goto-redeem") { showScreen("teacher"); redeemTab = "shop"; setTeacherView("redeem"); return; }
