@@ -58,7 +58,8 @@ function writeOriginHint() {
   const lans = lanIPv4List();
   const origins = lans.map((x) => `http://${x.address}:${PORT}`);
   const envPublic = String(process.env.GY_PUBLIC_ORIGIN || "").trim().replace(/\/$/, "");
-  const preferred = envPublic || origins[0] || `http://127.0.0.1:${PORT}`;
+  // 课堂默认优先局域网，公网隧道仅作可选补充（断网也能用）
+  const preferred = origins[0] || envPublic || `http://127.0.0.1:${PORT}`;
   const payload = {
     port: PORT,
     generated_at: new Date().toISOString(),
@@ -68,7 +69,7 @@ function writeOriginHint() {
     preferred,
     teacher: `${preferred}/?mode=teacher`,
     demo_sync: true,
-    note: "手机与电脑同一 Wi-Fi 时用局域网 preferred；扫码签到经 /__gy/demo-db 与老师端实时同步"
+    note: "默认使用局域网 preferred；公网隧道需外网且可选。扫码签到经 /__gy/demo-db 本机同步"
   };
   try {
     fs.writeFileSync(path.join(ROOT, "gy-public-origin.json"), JSON.stringify(payload, null, 2));

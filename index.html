@@ -4,38 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>光影盟 · 武侠对战榜</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet" />
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <!-- 本地二维码库（CDN 的 qrcode@1.5.4/build 已 404，必须本地化才能稳定投屏扫码） -->
+  <!-- 全部本地资源：字体 / 二维码；Firebase 仅在已配置时按需加载，默认 DEMO 断网可用 -->
+  <link rel="stylesheet" href="./vendor/fonts.css" />
   <script src="./vendor/qrcode.min.js"></script>
-  <script>
-    (function () {
-      function hasToCanvas() {
-        return !!(window.QRCode && typeof window.QRCode.toCanvas === "function");
-      }
-      function hasQrcodeJs() {
-        return typeof window.QRCode === "function" && !!(window.QRCode.CorrectLevel);
-      }
-      if (hasToCanvas() || hasQrcodeJs()) return;
-      var sources = [
-        "./vendor/qrcodejs.min.js",
-        "https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
-      ];
-      function loadNext(i) {
-        if (i >= sources.length || hasToCanvas() || hasQrcodeJs()) return;
-        var s = document.createElement("script");
-        s.src = sources[i];
-        s.onload = function () { if (!hasToCanvas() && !hasQrcodeJs()) loadNext(i + 1); };
-        s.onerror = function () { loadNext(i + 1); };
-        document.head.appendChild(s);
-      }
-      loadNext(0);
-    })();
-  </script>
+  <script src="./vendor/qrcodejs.min.js"></script>
   <style>
 :root {
   --bg0: #07090f;
@@ -54,9 +26,9 @@
   --ok: #3dff9a;
   --danger: #ff3b5c;
   --shadow: 0 12px 40px rgba(0,0,0,.55);
-  --font-brush: "Ma Shan Zheng", "Noto Sans SC", cursive;
-  --font-ui: "Noto Sans SC", "PingFang SC", sans-serif;
-  --font-num: "Orbitron", "Noto Sans SC", monospace;
+  --font-brush: "Ma Shan Zheng", "STKaiti", "KaiTi", "华文楷体", cursive;
+  --font-ui: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-num: "Orbitron", "DIN Alternate", "Tabular Numbers", ui-monospace, monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -9558,19 +9530,45 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     return null;
   }
+  function isPublicTunnelHost(host) {
+    const h = String(host || "").toLowerCase();
+    return h.includes("trycloudflare.com") || h.includes("ngrok") || h.includes("loca.lt")
+      || h.includes("cloudflared") || h.endsWith(".ts.net");
+  }
   function pickPhoneOriginFromHint(hint) {
     if (!hint) return "";
-    const tunnel = String(hint.public_tunnel || "").trim().replace(/\/$/, "");
-    if (tunnel && /^https?:\/\//i.test(tunnel) && !isLocalOrigin(tunnel)) return tunnel;
-    const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
-    if (preferred && !isLocalOrigin(preferred)) return preferred;
+    // 课堂优先局域网 IP，避免依赖公网隧道（断网仍可用）
     const list = Array.isArray(hint.origins) ? hint.origins : [];
+    const lanPreferred = [];
     for (const o of list) {
       const v = String(o || "").trim().replace(/\/$/, "");
       if (!v || isLocalOrigin(v)) continue;
       try {
         const host = new URL(v).hostname;
         // 跳过典型容器网桥，优先 192.168/10
+        if (host.startsWith("172.17.") || host.startsWith("172.18.") || host.startsWith("172.30.")) continue;
+        if (isPublicTunnelHost(host)) continue;
+        // 真正教室局域网优先
+        if (host.startsWith("192.168.") || host.startsWith("10.")) lanPreferred.unshift(v);
+        else lanPreferred.push(v);
+      } catch (e) { /* ignore */ }
+    }
+    if (lanPreferred.length) return lanPreferred[0];
+    const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
+    if (preferred && !isLocalOrigin(preferred)) {
+      try {
+        const host = new URL(preferred).hostname;
+        if (!isPublicTunnelHost(host)) return preferred;
+      } catch (e) { /* ignore */ }
+    }
+    // 最后才回退公网隧道（需外网，仅可选）
+    const tunnel = String(hint.public_tunnel || "").trim().replace(/\/$/, "");
+    if (tunnel && /^https?:\/\//i.test(tunnel) && !isLocalOrigin(tunnel)) return tunnel;
+    for (const o of list) {
+      const v = String(o || "").trim().replace(/\/$/, "");
+      if (!v || isLocalOrigin(v)) continue;
+      try {
+        const host = new URL(v).hostname;
         if (host.startsWith("172.17.") || host.startsWith("172.18.") || host.startsWith("172.30.")) continue;
         return v;
       } catch (e) { /* skip */ }
@@ -9678,24 +9676,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         return Promise.resolve(false);
       }
     }
-    // 最后回退：在线图（国内网络可能不可用，仅兜底）
-    try {
-      const img = document.createElement("img");
-      img.alt = "二维码";
-      img.width = drawPx;
-      img.height = drawPx;
-      img.decoding = "async";
-      img.referrerPolicy = "no-referrer";
-      img.src = "https://api.qrserver.com/v1/create-qr-code/?size=" + drawPx + "x" + drawPx +
-        "&margin=16&ecc=M&data=" + encodeURIComponent(url);
-      canvasHost.appendChild(img);
-      return new Promise((resolve) => {
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-      });
-    } catch (err) {
-      return Promise.resolve(false);
-    }
+    // 本地库均失败时：不请求外网，提示手输 6 位码
+    canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#333;line-height:1.5">
+      本地二维码库未能绘制<br>请学生手输投屏上的 <b>6 位签到码</b>
+    </div>`;
+    return Promise.resolve(false);
   }
 
   function renderQr(host, url, sizeOrKey) {
@@ -9712,17 +9697,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const localNow = isLocalOrigin(url);
     const overrideNow = getPublicOriginOverride();
     pubBar.innerHTML = `
-      <label>手机扫码地址（勿用 localhost；同一 Wi‑Fi 填局域网 IP，或填当天有效的公网隧道）</label>
+      <label>手机扫码地址（推荐同一 Wi‑Fi 的局域网 IP，如 http://192.168.x.x:3000；勿用 localhost）</label>
       <div class="qr-public-row">
-        <input type="url" id="qr-public-origin-input" placeholder="例如 http://192.168.1.8:3000 或 https://xxxx.trycloudflare.com" value="${esc(overrideNow || (localNow ? "" : location.origin))}" />
+        <input type="url" id="qr-public-origin-input" placeholder="例如 http://192.168.1.8:3000" value="${esc(overrideNow || (localNow ? "" : location.origin))}" />
         <button type="button" class="primary" id="qr-public-origin-save">应用到二维码</button>
         <button type="button" id="qr-public-origin-clear">用当前页</button>
         <button type="button" id="qr-download-png">下载二维码图</button>
       </div>
       <div class="qr-public-hint ${localNow ? "" : "ok"}" id="qr-public-origin-hint">${
         localNow
-          ? "当前仍是本机地址，手机微信扫不开。正在尝试自动填写局域网/隧道地址…"
-          : "请确认下方完整链接用手机浏览器能打开，再投屏扫码。临时隧道地址隔天常会失效，需重新生成。"
+          ? "当前仍是本机地址，手机微信扫不开。正在尝试自动填写局域网地址…"
+          : "请用手机同一 Wi‑Fi 打开该地址验证；课堂优先局域网，不依赖外网。"
       }</div>`;
     host.appendChild(pubBar);
 
@@ -12209,12 +12194,41 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     updateDemoSyncBadge();
   }
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[data-src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.dataset.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("脚本加载失败: " + src));
+      document.head.appendChild(s);
+    });
+  }
+  /** Firebase 仅在已配置时按需从本地 vendor 加载；默认不访问外网 */
+  async function ensureFirebaseSdk() {
+    if (!FIREBASE_READY) return false;
+    if (typeof firebase !== "undefined" && firebase.database) return true;
+    try {
+      await loadScriptOnce("./vendor/firebase-app-compat.js");
+      await loadScriptOnce("./vendor/firebase-database-compat.js");
+      return typeof firebase !== "undefined" && !!firebase.database;
+    } catch (err) {
+      console.warn("本地 Firebase SDK 未就绪，回退 DEMO", err);
+      return false;
+    }
+  }
   async function init() {
     try {
       const { mode } = getMode();
       const m = ["teacher","student","checkin","memories"].includes(mode) ? mode : "teacher";
       showScreen(m);
-      if (FIREBASE_READY && typeof firebase !== "undefined") {
+      const fbOk = await ensureFirebaseSdk();
+      if (fbOk) {
         try {
           firebase.initializeApp(FIREBASE_CONFIG);
           db = firebase.database(); arenaRef = db.ref("arena");

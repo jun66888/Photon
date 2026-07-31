@@ -1,16 +1,14 @@
 # 光影盟 · 联盟积分体系
 
-纯前端单页应用，**优先在本地运行**：老师投屏看板、学生投票、课堂签到、毕业回忆。
+纯前端单页应用，**默认完全本地运行、不依赖外网**：老师投屏看板、学生投票、课堂签到、毕业回忆。
 
-未填写 Firebase 时自动进入 **DEMO 本地模式**（数据存在浏览器 `localStorage`），本机即可完整体验。配置 Firebase 后，同一局域网内多设备可实时同步。
+- 字体 / 二维码库已放在 `vendor/`，断网也能开页
+- 未填写 Firebase 时进入 **DEMO 本地模式**（`localStorage` + 本机 `server.mjs` 的 `/__gy/demo-db` 同步）
+- 手机与电脑连**同一 Wi‑Fi**，用局域网 IP 扫码即可，不必开公网隧道
 
 ---
 
-## 马上预览
-
-云端已装好依赖并启动服务时，请看 [`PREVIEW.md`](PREVIEW.md) 里的公网链接（`*.trycloudflare.com`）。
-
-## 本地部署（你自己的电脑）
+## 本地部署（推荐）
 
 ### 1. 拉取并安装依赖（一次性）
 
@@ -31,7 +29,7 @@ npm start
 
 或 Windows 双击 `start.bat` / macOS·Linux 执行 `./start.sh`。
 
-无 Node 时可用：`python -m http.server 3000`
+无 Node 时可用：`python -m http.server 3000`（此时无跨设备 DEMO 同步接口）。
 
 ### 3. 浏览器打开
 
@@ -42,9 +40,9 @@ npm start
 | 签到端 | http://localhost:3000/?mode=checkin&code=老师生成的码 |
 | 毕业回忆 | http://localhost:3000/?mode=memories |
 
-左上角 **DEMO · 本地模式** = 未接 Firebase，数据在本机浏览器，界面可完整体验。
+左上角 **DEMO · 本地模式** = 未接 Firebase。手机同 Wi-Fi 访问终端打印的局域网地址，例如 `http://192.168.1.8:3000/?mode=teacher`。
 
-手机同 Wi-Fi 访问电脑局域网 IP，例如 `http://192.168.1.8:3000/?mode=student`。
+可选云端预览见 [`PREVIEW.md`](PREVIEW.md)（临时隧道，需外网，非课堂必需）。
 
 ---
 
@@ -53,6 +51,7 @@ npm start
 | 文件 | 说明 |
 |------|------|
 | `index.html` | 全部 UI + 业务逻辑（内嵌 CSS/JS） |
+| `vendor/` | 本地字体、二维码、可选 Firebase SDK |
 | `package.json` | `npm start` 本地静态服务 |
 | `start.bat` / `start.sh` | Windows / Unix 一键启动 |
 | `vercel.json` | 可选：以后要上 Vercel 时用 |
