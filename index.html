@@ -9,21 +9,31 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet" />
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <!-- 本地二维码库（CDN 的 qrcode@1.5.4/build 已 404，必须本地化才能稳定投屏扫码） -->
+  <script src="./vendor/qrcode.min.js"></script>
   <script>
     (function () {
-      function ready() {
+      function hasToCanvas() {
         return !!(window.QRCode && typeof window.QRCode.toCanvas === "function");
       }
-      if (ready()) return;
-      var s = document.createElement("script");
-      s.src = "https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js";
-      s.onerror = function () {
-        var s2 = document.createElement("script");
-        s2.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-        document.head.appendChild(s2);
-      };
-      document.head.appendChild(s);
+      function hasQrcodeJs() {
+        return typeof window.QRCode === "function" && !!(window.QRCode.CorrectLevel);
+      }
+      if (hasToCanvas() || hasQrcodeJs()) return;
+      var sources = [
+        "./vendor/qrcodejs.min.js",
+        "https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+      ];
+      function loadNext(i) {
+        if (i >= sources.length || hasToCanvas() || hasQrcodeJs()) return;
+        var s = document.createElement("script");
+        s.src = sources[i];
+        s.onload = function () { if (!hasToCanvas() && !hasQrcodeJs()) loadNext(i + 1); };
+        s.onerror = function () { loadNext(i + 1); };
+        document.head.appendChild(s);
+      }
+      loadNext(0);
     })();
   </script>
   <style>
@@ -2109,7 +2119,7 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   padding: .5rem .15rem; border-bottom: 1px solid rgba(255,255,255,.08); font-size: .9rem;
 }
 .qr-box {
-  background: #fff; padding: 14px; display: inline-block;
+  background: #fff; padding: 16px; display: inline-block;
   border: 3px solid var(--gold); border-radius: 10px;
   position: relative;
   max-width: 100%;
@@ -2118,13 +2128,51 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   display: flex; flex-direction: column; align-items: center; gap: .45rem;
   width: 100%;
 }
+.qr-public-bar {
+  width: 100%;
+  max-width: min(92vw, 720px);
+  display: grid;
+  gap: .35rem;
+  margin: .35rem 0 .15rem;
+  padding: .65rem .75rem;
+  border: 1px dashed rgba(240, 193, 75, .45);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .28);
+}
+.qr-public-bar label {
+  font-size: .78rem;
+  color: var(--ink-soft);
+}
+.qr-public-bar .qr-public-row {
+  display: flex; gap: .4rem; flex-wrap: wrap; align-items: center;
+}
+.qr-public-bar input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: .45rem .55rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #0d1220;
+  color: var(--ink);
+  font-size: .85rem;
+}
+.qr-public-bar button {
+  padding: .4rem .7rem;
+  font-size: .8rem;
+}
+.qr-public-bar .qr-public-hint {
+  font-size: .72rem;
+  color: #ffb0bd;
+  line-height: 1.35;
+}
+.qr-public-bar .qr-public-hint.ok { color: #9dffc0; }
 .qr-resizable {
   position: relative;
   display: inline-block;
   background: #fff;
   border: 3px solid var(--gold);
   border-radius: 12px;
-  padding: 14px;
+  padding: 18px;
   box-shadow: 0 12px 28px rgba(0,0,0,.28);
   max-width: min(92vw, 720px);
 }
@@ -2134,7 +2182,7 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   display: grid; place-items: center;
   overflow: hidden;
   background: #fff;
-  padding: 10px;
+  padding: 12px;
 }
 .qr-resizable .qr-canvas-host canvas,
 .qr-resizable .qr-canvas-host img {
@@ -2142,7 +2190,8 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   height: auto !important;
   max-width: 100%;
   max-height: 100%;
-  image-rendering: pixelated;
+  /* 勿 pixelated：缩小时易糊，微信扫一扫识别率下降 */
+  image-rendering: auto;
   background: #fff;
 }
 .qr-resizable .qr-resize-handle {
@@ -7908,12 +7957,36 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function randCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+  function getPublicOriginOverride() {
+    return String(localStorage.getItem("gy_arena_public_origin") || "").trim().replace(/\/$/, "");
+  }
+  function setPublicOriginOverride(raw) {
+    const v = String(raw || "").trim().replace(/\/$/, "");
+    if (!v) localStorage.removeItem("gy_arena_public_origin");
+    else localStorage.setItem("gy_arena_public_origin", v);
+    return getPublicOriginOverride();
+  }
+  /** 单页根路径：去掉 /index.html、/index，避免 serve 重定向丢查询参数 */
+  function publicPagePath() {
+    let path = location.pathname || "/";
+    path = path.replace(/\/index\.html?$/i, "/").replace(/\/index$/i, "/");
+    if (!path || path === "/") return "/";
+    if (!path.endsWith("/")) {
+      const last = path.split("/").pop() || "";
+      if (!/\.[a-z0-9]+$/i.test(last)) path += "/";
+      else path = path.replace(/\/[^/]+$/, "/") || "/";
+    }
+    return path;
+  }
+  /** 可设置手机可达地址：localStorage gy_arena_public_origin = http://IP:3000 或 https://xxx.trycloudflare.com */
   function publicPageUrl(query) {
-    // 可在控制台设置局域网地址：localStorage.setItem('gy_arena_public_origin','http://192.168.x.x:3000')
-    const override = String(localStorage.getItem("gy_arena_public_origin") || "").trim().replace(/\/$/, "");
-    const origin = override || location.origin;
-    const path = location.pathname || "/";
-    return `${origin}${path}${query.startsWith("?") ? query : "?" + query}`;
+    const override = getPublicOriginOverride();
+    const origin = (override || location.origin || "").replace(/\/$/, "");
+    const path = override ? "/" : publicPagePath();
+    const pathPart = path === "/" ? "/" : (path.endsWith("/") ? path : path + "/");
+    let search = String(query || "").trim();
+    if (search && search.charAt(0) !== "?") search = "?" + search;
+    return origin + pathPart.replace(/\/{2,}/g, "/") + search;
   }
   function isLocalOrigin(url) {
     try {
@@ -7923,7 +7996,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function defaultQrSize() {
     const half = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.48);
-    return Math.max(220, Math.min(560, half));
+    return Math.max(240, Math.min(560, half));
   }
   function loadQrSizes() {
     try { return JSON.parse(localStorage.getItem(LS_QR_SIZE_KEY) || "{}"); } catch (e) { return {}; }
@@ -7940,21 +8013,51 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function paintQrInto(canvasHost, url, px) {
     canvasHost.innerHTML = "";
-    const drawPx = Math.max(128, Math.floor(px * 0.88)); // 留白静区，利于微信扫码
-    // 优先 npm qrcode（模块边缘干净）；回退 qrcodejs
+    const drawPx = Math.max(180, Math.floor(Number(px) || 280));
+    const opts = {
+      width: drawPx,
+      margin: 4, // 静区：微信扫一扫更稳
+      errorCorrectionLevel: "M",
+      color: { dark: "#000000", light: "#ffffff" }
+    };
+    // 优先本地 npm qrcode UMD
     if (window.QRCode && typeof window.QRCode.toCanvas === "function") {
       const canvas = document.createElement("canvas");
+      canvas.width = drawPx;
+      canvas.height = drawPx;
       canvasHost.appendChild(canvas);
-      return window.QRCode.toCanvas(canvas, url, {
-        width: drawPx,
-        margin: 2,
-        errorCorrectionLevel: "H",
-        color: { dark: "#000000", light: "#ffffff" }
-      }).then(() => true).catch((err) => {
+      return window.QRCode.toCanvas(canvas, url, opts).then(() => true).catch((err) => {
         console.warn("QR toCanvas failed", err);
+        canvas.remove();
+        if (typeof window.QRCode.toDataURL === "function") {
+          return window.QRCode.toDataURL(url, opts).then((dataUrl) => {
+            const img = document.createElement("img");
+            img.alt = "二维码";
+            img.width = drawPx;
+            img.height = drawPx;
+            img.src = dataUrl;
+            canvasHost.appendChild(img);
+            return true;
+          }).catch(() => false);
+        }
         return false;
       });
     }
+    if (window.QRCode && typeof window.QRCode.toDataURL === "function") {
+      return window.QRCode.toDataURL(url, opts).then((dataUrl) => {
+        const img = document.createElement("img");
+        img.alt = "二维码";
+        img.width = drawPx;
+        img.height = drawPx;
+        img.src = dataUrl;
+        canvasHost.appendChild(img);
+        return true;
+      }).catch((err) => {
+        console.warn("QR toDataURL failed", err);
+        return false;
+      });
+    }
+    // 回退 davidshimjs/qrcodejs
     if (typeof window.QRCode === "function" && window.QRCode.CorrectLevel) {
       try {
         // eslint-disable-next-line no-new
@@ -7964,9 +8067,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           height: drawPx,
           colorDark: "#000000",
           colorLight: "#ffffff",
-          correctLevel: window.QRCode.CorrectLevel.H
+          correctLevel: window.QRCode.CorrectLevel.M
         });
-        // 去掉 qrcodejs canvas 描边残影：若有 img 则隐藏 canvas
         const img = canvasHost.querySelector("img");
         const cvs = canvasHost.querySelector("canvas");
         if (img && cvs) { cvs.style.display = "none"; img.style.display = "block"; }
@@ -7976,17 +8078,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         return Promise.resolve(false);
       }
     }
-    // 最后回退：在线二维码图（需外网）
+    // 最后回退：在线图（国内网络可能不可用，仅兜底）
     try {
       const img = document.createElement("img");
       img.alt = "二维码";
       img.width = drawPx;
       img.height = drawPx;
       img.decoding = "async";
+      img.referrerPolicy = "no-referrer";
       img.src = "https://api.qrserver.com/v1/create-qr-code/?size=" + drawPx + "x" + drawPx +
-        "&margin=12&ecc=H&data=" + encodeURIComponent(url);
+        "&margin=16&ecc=M&data=" + encodeURIComponent(url);
       canvasHost.appendChild(img);
-      return Promise.resolve(true);
+      return new Promise((resolve) => {
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+      });
     } catch (err) {
       return Promise.resolve(false);
     }
@@ -8000,6 +8106,24 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     host.classList.add("qr-stage");
     host.innerHTML = "";
+
+    const pubBar = document.createElement("div");
+    pubBar.className = "qr-public-bar";
+    const localNow = isLocalOrigin(url);
+    const overrideNow = getPublicOriginOverride();
+    pubBar.innerHTML = `
+      <label>手机扫码地址（电脑 localhost 时必填局域网 IP 或公网隧道）</label>
+      <div class="qr-public-row">
+        <input type="url" id="qr-public-origin-input" placeholder="例如 http://192.168.1.8:3000 或 https://xxxx.trycloudflare.com" value="${esc(overrideNow || (localNow ? "" : location.origin))}" />
+        <button type="button" class="primary" id="qr-public-origin-save">应用到二维码</button>
+        <button type="button" id="qr-public-origin-clear">用当前页</button>
+      </div>
+      <div class="qr-public-hint ${localNow ? "" : "ok"}" id="qr-public-origin-hint">${
+        localNow
+          ? "当前二维码指向本机地址，手机微信扫不开。请填入手机能打开的地址后点「应用到二维码」。"
+          : "地址可达手机网络时，再投屏扫码。"
+      }</div>`;
+    host.appendChild(pubBar);
 
     const frame = document.createElement("div");
     frame.className = "qr-resizable";
@@ -8026,29 +8150,71 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     link.href = url;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = "扫码或点此打开（可拖角缩放）";
+    link.textContent = url;
     host.appendChild(link);
 
-    if (demoMode || isLocalOrigin(url)) {
+    if (demoMode) {
       const warn = document.createElement("div");
       warn.className = "demo-qr-warn";
-      warn.innerHTML = isLocalOrigin(url)
-        ? "当前是本机地址，手机扫不开。请用电脑局域网 IP 启动服务，或在控制台执行：<br><code style=\"color:#ffe39a\">localStorage.setItem('gy_arena_public_origin','http://你的IP:3000')</code> 后刷新再生成二维码。"
-        : ("DEMO 模式：多设备实时同步需配置 Firebase。当前链接：" + url);
+      warn.textContent = "DEMO 本地模式：签到可在手机完成；实时同步到老师端需配置 Firebase。";
       host.appendChild(warn);
     }
 
     const fail = document.createElement("div");
     fail.style.cssText = "margin-top:6px;font-size:12px;color:#a33;text-align:center;display:none";
-    fail.textContent = "二维码生成失败，请点上方链接打开，或检查网络后刷新";
+    fail.textContent = "二维码生成失败，请点上方链接打开，或刷新页面（需能加载本地 vendor/qrcode）";
     host.appendChild(fail);
 
-    const paint = (px) => paintQrInto(canvasHost, url, px).then((ok) => {
+    let currentUrl = url;
+    const paint = (px) => paintQrInto(canvasHost, currentUrl, px).then((ok) => {
       fail.style.display = ok ? "none" : "block";
-      link.textContent = ok ? "扫码或点此打开（可拖角缩放）" : url;
+      link.href = currentUrl;
+      link.textContent = currentUrl;
       return ok;
     });
     paint(size);
+
+    const input = pubBar.querySelector("#qr-public-origin-input");
+    const hintEl = pubBar.querySelector("#qr-public-origin-hint");
+    const rebuildFromOrigin = () => {
+      // 用当前 URL 的 search，换 origin 重绘
+      let search = "";
+      try { search = new URL(currentUrl, location.href).search || ""; } catch (e) {
+        const i = String(currentUrl).indexOf("?");
+        search = i >= 0 ? String(currentUrl).slice(i) : "";
+      }
+      currentUrl = publicPageUrl(search || "?");
+      link.href = currentUrl;
+      link.textContent = currentUrl;
+      const bad = isLocalOrigin(currentUrl);
+      if (hintEl) {
+        hintEl.className = "qr-public-hint " + (bad ? "" : "ok");
+        hintEl.textContent = bad
+          ? "当前二维码指向本机地址，手机微信扫不开。请填入手机能打开的地址后点「应用到二维码」。"
+          : "已更新二维码，请用微信扫一扫投屏上的码。";
+      }
+      paint(size);
+    };
+    pubBar.querySelector("#qr-public-origin-save")?.addEventListener("click", () => {
+      const v = String(input?.value || "").trim();
+      if (v && !/^https?:\/\//i.test(v)) {
+        alert("请填写完整地址，以 http:// 或 https:// 开头");
+        return;
+      }
+      setPublicOriginOverride(v);
+      rebuildFromOrigin();
+    });
+    pubBar.querySelector("#qr-public-origin-clear")?.addEventListener("click", () => {
+      setPublicOriginOverride("");
+      if (input) input.value = isLocalOrigin(location.href) ? "" : location.origin;
+      rebuildFromOrigin();
+    });
+    input?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        pubBar.querySelector("#qr-public-origin-save")?.click();
+      }
+    });
 
     let resizing = false;
     const beginResize = (e) => {
