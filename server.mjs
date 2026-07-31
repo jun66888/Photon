@@ -110,16 +110,16 @@ function resolveClassroomOrigin(classroomOrigins) {
     }).filter(Boolean)
   );
 
-  // 环境变量最高优先级（运维手动指定）
-  if (envFixed && /^https?:\/\//i.test(envFixed)) {
+  // 环境变量最高优先级（运维手动指定本机局域网，禁止公网域名）
+  if (envFixed && /^http:\/\//i.test(envFixed)) {
     let envHost = "";
     try { envHost = new URL(envFixed).hostname; } catch (e) { envHost = ""; }
-    if (envHost && !isPhoneUnfriendlyIp(envHost)) {
+    if (envHost && isClassroomLanHost(envHost) && !isPhoneUnfriendlyIp(envHost)) {
       cfg = saveClassroomConfig({
         port: PORT,
         fixed_origin: envFixed,
         locked: true,
-        note: "由 GY_FIXED_ORIGIN 指定"
+        note: "由 GY_FIXED_ORIGIN 指定（本机局域网）"
       });
       return { fixed_origin: envFixed, locked: true, cfg, changed: true, reason: "env" };
     }
@@ -168,8 +168,7 @@ function resolveClassroomOrigin(classroomOrigins) {
 function writeOriginHint() {
   const lans = lanIPv4List();
   const origins = lans.map((x) => `http://${x.address}:${PORT}`);
-  const envPublic = normalizeOrigin(process.env.GY_PUBLIC_ORIGIN || "");
-  // 课堂优先真实局域网；公网隧道不参与课堂固定地址
+  // 纯本机课堂：只用局域网，不读公网隧道环境变量
   const classroomOrigins = origins.filter((o) => {
     try {
       const host = new URL(o).hostname;
@@ -180,7 +179,6 @@ function writeOriginHint() {
   });
   const resolved = resolveClassroomOrigin(classroomOrigins);
   const fixed = resolved.fixed_origin;
-  // preferred：固定局域网 > 当前教室网卡 > localhost（课堂不用临时隧道当首选）
   const preferred = fixed || classroomOrigins[0] || `http://127.0.0.1:${PORT}`;
   const payload = {
     port: PORT,
@@ -188,15 +186,15 @@ function writeOriginHint() {
     lan: lans,
     origins,
     classroom_mode: true,
+    offline_local: true,
     fixed_origin: fixed,
     fixed_locked: !!resolved.locked,
     fixed_reason: resolved.reason,
-    public_tunnel: envPublic || "",
     preferred,
     teacher: `${preferred}/?mode=teacher`,
-    checkin: `${preferred}/?view=checkin`,
+    checkin: `${preferred}/?mode=checkin`,
     demo_sync: true,
-    note: "课堂请用 fixed_origin（本机局域网）。临时公网隧道仅开发预览，不稳定、不应用于正式上课。"
+    note: "纯本机离线课堂：手机与电脑同一 Wi-Fi/局域网即可，无需外网。"
   };
   try {
     fs.writeFileSync(path.join(ROOT, "gy-public-origin.json"), JSON.stringify(payload, null, 2));
@@ -328,6 +326,7 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 200, {
       ok: true,
       service: "guangyingmeng",
+      mode: "offline-local",
       port: PORT,
       time: new Date().toISOString()
     });
@@ -353,28 +352,28 @@ const server = http.createServer(async (req, res) => {
       try {
         const body = await readJson(req);
         const origin = normalizeOrigin(body.fixed_origin || body.origin || "");
-        if (!origin || !/^https?:\/\//i.test(origin)) {
-          sendJson(res, 400, { ok: false, error: "请提供 fixed_origin，例如 http://192.168.1.8:3000" });
+        if (!origin || !/^http:\/\//i.test(origin)) {
+          sendJson(res, 400, { ok: false, error: "请提供本机局域网地址，例如 http://192.168.1.8:3000（仅 http，不要公网域名）" });
           return;
         }
-        let host = "";
-        try { host = new URL(origin).hostname; } catch (e) {
+        let hostName = "";
+        try { hostName = new URL(origin).hostname; } catch (e) {
           sendJson(res, 400, { ok: false, error: "地址无效" });
           return;
         }
-        if (isPhoneUnfriendlyIp(host)) {
+        if (isPhoneUnfriendlyIp(hostName)) {
           sendJson(res, 400, { ok: false, error: "不能锁定 localhost / 云内网地址" });
           return;
         }
-        if (!isClassroomLanHost(host) && body.force !== true) {
-          sendJson(res, 400, { ok: false, error: "请锁定教室局域网地址（192.168.x.x / 10.x.x.x）" });
+        if (!isClassroomLanHost(hostName)) {
+          sendJson(res, 400, { ok: false, error: "只能锁定教室局域网（192.168.x.x / 10.x.x.x）" });
           return;
         }
         const cfg = saveClassroomConfig({
           port: PORT,
           fixed_origin: origin,
           locked: body.locked !== false,
-          note: body.note || "教师手动锁定的课堂扫码地址"
+          note: body.note || "教师手动锁定的本机课堂扫码地址"
         });
         sendJson(res, 200, { ok: true, config: cfg, hint: writeOriginHint() });
       } catch (e) {
@@ -485,21 +484,16 @@ server.listen(PORT, HOST, () => {
   const fixed = fresh.fixed_origin || "";
   console.log("");
   console.log("  ========================================");
-  console.log("  光影盟 · 本机课堂服务已启动（稳定模式）");
+  console.log("  光影盟 · 本机离线课堂（无需外网）");
   console.log("  ========================================");
   console.log("  电脑打开:    " + local);
   if (fixed) {
     console.log("  ★ 固定扫码:  " + fixed + "/?mode=checkin");
     console.log("  ★ 手机同网:  " + fixed + "/?mode=teacher");
-    console.log("  二维码请用「固定扫码」地址（不要扫 localhost）");
-    if (fresh.fixed_reason === "ip-changed") {
-      console.log("  ! 网卡 IP 已变化，固定地址已自动更新。建议设置静态 IP 保持长期不变。");
-    }
+    console.log("  学生手机连同一 Wi-Fi/局域网即可，完全不需要外网");
   } else {
-    console.log("  ! 未检测到教室局域网（192.168/10）。请连接教室 Wi-Fi 后重启本程序。");
-  }
-  if (fresh.public_tunnel) {
-    console.log("  （检测到临时公网隧道环境变量；正式上课请忽略，只用本机固定地址）");
+    console.log("  ! 未检测到教室局域网（192.168/10）。");
+    console.log("  ! 请连接教室 Wi-Fi（可无外网），然后重启本程序。");
   }
   console.log("  健康检查:    http://127.0.0.1:" + PORT + "/__gy/health");
   console.log("  按 Ctrl+C 停止；关闭窗口即下课");

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>光影盟 · 武侠对战榜</title>
-  <!-- 全部本地资源：字体 / 二维码；Firebase 仅在已配置时按需加载，默认 DEMO 断网可用 -->
+  <!-- 全部本地资源：字体 / 二维码；默认纯本机离线课堂，不访问外网 -->
   <link rel="stylesheet" href="./vendor/fonts.css" />
   <!-- qrcodejs 先加载作回退；npm qrcode 后加载覆盖同名全局，保留 toCanvas -->
   <script src="./vendor/qrcodejs.min.js"></script>
@@ -4108,6 +4108,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   <script>
 
+  /** 纯本机离线课堂：强制 DEMO + 本机同步，不连 Firebase / 不使用公网隧道 */
+  const LOCAL_OFFLINE = true;
   const FIREBASE_CONFIG = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -4117,7 +4119,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     messagingSenderId: "YOUR_SENDER_ID",
     appId: "YOUR_APP_ID"
   };
-  const FIREBASE_READY = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY"
+  const FIREBASE_READY = !LOCAL_OFFLINE
+    && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY"
     && FIREBASE_CONFIG.databaseURL.indexOf("YOUR_PROJECT") === -1;
   const OPERATOR = "李红星";
   const LS_STUDENT_KEY = "gy_arena_student";
@@ -4793,7 +4796,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.querySelectorAll(".demo-sync-badge").forEach((el) => {
       if (!demoMode) { el.hidden = true; return; }
       el.hidden = false;
-      el.textContent = demoSyncEnabled ? "DEMO · 跨设备同步中" : "DEMO · 仅本机（未连同步服务）";
+      el.textContent = demoSyncEnabled ? "本机离线 · 局域网同步中" : "本机离线 · 未连同步服务";
       el.classList.toggle("ok", !!demoSyncEnabled);
     });
   }
@@ -10225,7 +10228,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function clearBadPublicOriginOverride() {
     const cur = getPublicOriginOverride();
-    if (cur && isPhoneUnfriendlyOrigin(cur)) setPublicOriginOverride("");
+    if (!cur) return;
+    if (isPhoneUnfriendlyOrigin(cur) || isPublicTunnelHost(originHostname(cur)) || !/^http:\/\//i.test(cur)) {
+      setPublicOriginOverride("");
+    }
   }
   function originHostname(url) {
     try { return new URL(String(url || ""), location.href).hostname.toLowerCase(); } catch (e) { return ""; }
@@ -10247,7 +10253,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     return path;
   }
-  /** 可设置手机可达地址：localStorage gy_arena_public_origin = http://IP:3000 或 https://xxx.trycloudflare.com */
+  /** 可设置手机可达地址：localStorage gy_arena_public_origin = http://192.168.x.x:3000（仅本机局域网） */
   function publicPageUrl(query) {
     const override = getPublicOriginOverride();
     const origin = (override || location.origin || "").replace(/\/$/, "");
@@ -10276,74 +10282,65 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function isPublicTunnelHost(host) {
     const h = String(host || "").toLowerCase();
     return h.includes("trycloudflare.com") || h.includes("ngrok") || h.includes("loca.lt")
-      || h.includes("cloudflared") || h.endsWith(".ts.net");
+      || h.includes("cloudflared") || h.endsWith(".ts.net")
+      || h.includes("vercel.app") || h.includes("netlify.app") || h.includes("github.io");
+  }
+  function isLanHttpOrigin(url) {
+    try {
+      const u = new URL(String(url || ""), location.href);
+      if (u.protocol !== "http:") return false;
+      const host = u.hostname.toLowerCase();
+      if (isPhoneUnfriendlyHost(host) || isPublicTunnelHost(host)) return false;
+      return host.startsWith("192.168.") || host.startsWith("10.")
+        || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+    } catch (e) {
+      return false;
+    }
   }
   function pickPhoneOriginFromHint(hint) {
     if (!hint) return "";
-    // 1) 本机课堂固定地址（最稳，不依赖公网隧道）
+    // 纯本机：只用固定局域网 / 当前教室网卡，绝不使用公网隧道
     const fixed = String(hint.fixed_origin || "").trim().replace(/\/$/, "");
-    if (fixed && /^https?:\/\//i.test(fixed) && !isPhoneUnfriendlyOrigin(fixed) && !isPublicTunnelHost(originHostname(fixed))) {
-      return fixed;
-    }
-    // 2) 真实局域网（192.168 / 10），绝不自动写入容器/云内网
+    if (fixed && isLanHttpOrigin(fixed)) return fixed;
     const list = Array.isArray(hint.origins) ? hint.origins : [];
     const lanPreferred = [];
     for (const o of list) {
       const v = String(o || "").trim().replace(/\/$/, "");
-      if (!v || isPhoneUnfriendlyOrigin(v)) continue;
-      try {
-        const host = new URL(v).hostname;
-        if (isPublicTunnelHost(host)) continue;
-        if (host.startsWith("192.168.") || host.startsWith("10.")) lanPreferred.unshift(v);
-        else lanPreferred.push(v);
-      } catch (e) { /* ignore */ }
+      if (!v || !isLanHttpOrigin(v)) continue;
+      const host = originHostname(v);
+      if (host.startsWith("192.168.") || host.startsWith("10.")) lanPreferred.unshift(v);
+      else lanPreferred.push(v);
     }
     if (lanPreferred.length) return lanPreferred[0];
     const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
-    if (preferred && !isPhoneUnfriendlyOrigin(preferred) && !isPublicTunnelHost(originHostname(preferred))) return preferred;
-    // 3) 仅无本机局域网时才考虑临时隧道（非正式课堂）
-    const tunnel = String(hint.public_tunnel || "").trim().replace(/\/$/, "");
-    if (tunnel && /^https?:\/\//i.test(tunnel) && !isPhoneUnfriendlyOrigin(tunnel)) return tunnel;
-    for (const o of list) {
-      const v = String(o || "").trim().replace(/\/$/, "");
-      if (v && !isPhoneUnfriendlyOrigin(v)) return v;
-    }
+    if (preferred && isLanHttpOrigin(preferred)) return preferred;
     return "";
   }
-  /** 自动选用手机可达地址：课堂固定局域网优先；绝不写 172.x 云内网 */
+  /** 自动选用手机可达地址：仅本机局域网；拒绝公网隧道 */
   async function ensurePhoneFriendlyOrigin() {
     clearBadPublicOriginOverride();
     _netHintCache = null;
+    let existing = getPublicOriginOverride();
+    // 清掉历史残留的公网隧道 / 不可达地址
+    if (existing && (isPhoneUnfriendlyOrigin(existing) || isPublicTunnelHost(originHostname(existing)) || !/^http:\/\//i.test(existing))) {
+      setPublicOriginOverride("");
+      existing = "";
+    }
     const hint = await fetchNetOriginHint();
     const fixed = String(hint && hint.fixed_origin || "").trim().replace(/\/$/, "");
-    let existing = getPublicOriginOverride();
-    if (existing && (isPhoneUnfriendlyOrigin(existing) || isPublicTunnelHost(originHostname(existing)))) {
-      // 课堂模式下清掉旧隧道覆盖，避免扫到失效公网域名
-      if (fixed || isPublicTunnelHost(originHostname(existing))) setPublicOriginOverride("");
-      existing = getPublicOriginOverride();
-      if (existing && isPhoneUnfriendlyOrigin(existing)) {
-        setPublicOriginOverride("");
-        existing = "";
-      }
-    }
-    // 有本机固定地址：强制二维码走局域网（正式课堂唯一推荐）
-    if (fixed && !isPhoneUnfriendlyOrigin(fixed) && !isPublicTunnelHost(originHostname(fixed))) {
+    if (fixed && isLanHttpOrigin(fixed)) {
       if (existing !== fixed) setPublicOriginOverride(fixed);
       return fixed;
     }
     const picked = pickPhoneOriginFromHint(hint);
-    if (picked) {
-      if (!isPublicTunnelHost(originHostname(picked)) || isPhoneUnfriendlyHost(location.hostname)) {
-        setPublicOriginOverride(picked);
-        return picked;
-      }
+    if (picked && isLanHttpOrigin(picked)) {
+      setPublicOriginOverride(picked);
+      return picked;
     }
-    if (!isPhoneUnfriendlyHost(location.hostname) && !isPublicTunnelHost(location.hostname)) {
-      if (existing && !isPhoneUnfriendlyOrigin(existing) && !isPublicTunnelHost(originHostname(existing))) return existing;
-      return location.origin.replace(/\/$/, "");
-    }
-    if (existing && !isPhoneUnfriendlyOrigin(existing)) return existing;
-    return picked || existing || "";
+    if (existing && isLanHttpOrigin(existing)) return existing;
+    // 老师已用局域网 IP 打开页面时，直接用当前页
+    if (isLanHttpOrigin(location.origin)) return location.origin.replace(/\/$/, "");
+    return "";
   }
   function defaultQrSize() {
     const half = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.48);
@@ -10501,8 +10498,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const warn = document.createElement("div");
       warn.className = "demo-qr-warn";
       warn.textContent = demoSyncEnabled
-        ? "DEMO 跨设备同步已开启：手机签到会实时出现在老师端签到列表与抽人池。"
-        : "DEMO 未连上同步服务（请用 npm start / 当前隧道打开老师端与扫码页）。仅本机 localStorage 时，手机签到老师端看不到。";
+        ? "DEMO 跨设备同步已开启：手机签到会实时出现在老师端签到列表与抽人池（本机局域网，无需外网）。"
+        : "DEMO 未连上同步服务。请用本机 start.bat / npm start 打开老师端与扫码页（同一局域网）。";
       host.appendChild(warn);
     }
 
@@ -10519,8 +10516,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!hintEl) return;
       hintEl.className = "qr-public-hint " + (bad ? "" : "ok");
       hintEl.textContent = bad
-        ? "当前地址手机扫不开（localhost/云内网）。请填同一 Wi‑Fi 的 http://192.168.x.x:3000，或可用的公网隧道后点「应用到二维码」。"
-        : "链接已指向手机可达地址。课堂优先局域网；隧道隔天可能失效时请改回局域网。";
+        ? "当前地址手机扫不开（localhost）。请填同一 Wi‑Fi 的 http://192.168.x.x:3000，再点「锁定并应用」。"
+        : "已指向本机局域网。无外网也可签到；请保持 start.bat 窗口打开。";
     };
     const paint = (px) => paintQrInto(canvasHost, currentUrl, px).then((ok) => {
       fail.style.display = ok ? "none" : "block";
@@ -10554,31 +10551,33 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }).catch(() => {});
 
     pubBar.querySelector("#qr-public-origin-save")?.addEventListener("click", () => {
-      const v = String(input?.value || "").trim();
-      if (v && !/^https?:\/\//i.test(v)) {
-        alert("请填写完整地址，以 http:// 或 https:// 开头");
+      const v = String(input?.value || "").trim().replace(/\/$/, "");
+      if (!v || !/^http:\/\//i.test(v)) {
+        alert("请填写本机局域网地址，例如 http://192.168.1.8:3000（不要用 https 公网域名）");
+        return;
+      }
+      if (!isLanHttpOrigin(v)) {
+        alert("只能使用教室局域网地址（192.168.x.x / 10.x.x.x），不支持公网隧道");
         return;
       }
       setPublicOriginOverride(v);
       rebuildFromOrigin();
       // 同步锁定到本机 gy-classroom.json，下次启动二维码仍用同一地址
-      if (v) {
-        fetch("/__gy/classroom", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fixed_origin: v, locked: true })
-        }).then((r) => r.json()).then((data) => {
-          _netHintCache = null;
-          if (hintEl) {
-            hintEl.className = "qr-public-hint " + (data && data.ok ? "ok" : "");
-            hintEl.textContent = data && data.ok
-              ? "已锁定课堂地址：" + v + "（写入本机配置，下次启动继续用）"
-              : ("锁定失败：" + (data && data.error || "请确认本机 npm start 已运行"));
-          }
-        }).catch(() => {
-          if (hintEl) hintEl.textContent = "已应用到二维码；锁定到本机配置失败（请用 start.bat 启动）";
-        });
-      }
+      fetch("/__gy/classroom", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fixed_origin: v, locked: true })
+      }).then((r) => r.json()).then((data) => {
+        _netHintCache = null;
+        if (hintEl) {
+          hintEl.className = "qr-public-hint " + (data && data.ok ? "ok" : "");
+          hintEl.textContent = data && data.ok
+            ? "已锁定本机课堂地址：" + v + "（无外网可用，下次启动继续用）"
+            : ("锁定失败：" + (data && data.error || "请确认本机 start.bat 已运行"));
+        }
+      }).catch(() => {
+        if (hintEl) hintEl.textContent = "已应用到二维码；锁定到本机配置失败（请用 start.bat 启动）";
+      });
     });
     pubBar.querySelector("#qr-public-origin-clear")?.addEventListener("click", () => {
       setPublicOriginOverride("");
@@ -11243,8 +11242,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const runtime = document.getElementById("settings-runtime");
     if (runtime) {
       runtime.innerHTML = `
-        <span class="meta-pill">模式 · ${demoMode ? (demoSyncEnabled ? "DEMO · 跨设备同步" : "DEMO · 仅本机") : "Firebase"}</span>
-        <span class="demo-sync-badge ${demoSyncEnabled ? "ok" : ""}" ${demoMode ? "" : "hidden"}>${demoMode ? (demoSyncEnabled ? "DEMO · 跨设备同步中" : "DEMO · 仅本机（未连同步服务）") : ""}</span>
+        <span class="meta-pill">模式 · ${demoMode ? (demoSyncEnabled ? "本机离线 · 跨设备同步" : "本机离线 · 仅本页") : "Firebase"}</span>
+        <span class="demo-sync-badge ${demoSyncEnabled ? "ok" : ""}" ${demoMode ? "" : "hidden"}>${demoMode ? (demoSyncEnabled ? "本机离线 · 局域网同步中" : "本机离线 · 未连同步服务") : ""}</span>
         <label class="tool-inline" style="margin:0"><span>天数</span>
           <span class="day-stepper">
             <button type="button" class="day-step-btn" id="day-dec" title="天数 -1">−</button>
@@ -13051,9 +13050,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       document.head.appendChild(s);
     });
   }
-  /** Firebase 仅在已配置时按需从本地 vendor 加载；默认不访问外网 */
+  /** 本机离线课堂：不加载 Firebase，不访问外网 */
   async function ensureFirebaseSdk() {
-    if (!FIREBASE_READY) return false;
+    if (LOCAL_OFFLINE || !FIREBASE_READY) return false;
     if (typeof firebase !== "undefined" && firebase.database) return true;
     try {
       await loadScriptOnce("./vendor/firebase-app-compat.js");
@@ -13066,10 +13065,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   async function init() {
     try {
+      // 清掉历史公网隧道覆盖，避免二维码指向外网
+      try {
+        const old = getPublicOriginOverride();
+        if (old && (isPublicTunnelHost(originHostname(old)) || !/^http:\/\//i.test(old))) {
+          setPublicOriginOverride("");
+        }
+      } catch (e) { /* ignore */ }
       const { mode } = getMode();
       const m = ["teacher","student","checkin","memories"].includes(mode) ? mode : "teacher";
       showScreen(m);
-      const fbOk = await ensureFirebaseSdk();
+      const fbOk = LOCAL_OFFLINE ? false : await ensureFirebaseSdk();
       if (fbOk) {
         try {
           firebase.initializeApp(FIREBASE_CONFIG);
