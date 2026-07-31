@@ -10280,7 +10280,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function pickPhoneOriginFromHint(hint) {
     if (!hint) return "";
-    // 课堂优先真实局域网（192.168 / 10），绝不自动写入容器/云内网
+    // 1) 本机课堂固定地址（最稳，不依赖公网隧道）
+    const fixed = String(hint.fixed_origin || "").trim().replace(/\/$/, "");
+    if (fixed && /^https?:\/\//i.test(fixed) && !isPhoneUnfriendlyOrigin(fixed) && !isPublicTunnelHost(originHostname(fixed))) {
+      return fixed;
+    }
+    // 2) 真实局域网（192.168 / 10），绝不自动写入容器/云内网
     const list = Array.isArray(hint.origins) ? hint.origins : [];
     const lanPreferred = [];
     for (const o of list) {
@@ -10294,53 +10299,51 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       } catch (e) { /* ignore */ }
     }
     if (lanPreferred.length) return lanPreferred[0];
-    // 公网隧道作备用（Cloud Agent / 无教室局域网时）
+    const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
+    if (preferred && !isPhoneUnfriendlyOrigin(preferred) && !isPublicTunnelHost(originHostname(preferred))) return preferred;
+    // 3) 仅无本机局域网时才考虑临时隧道（非正式课堂）
     const tunnel = String(hint.public_tunnel || "").trim().replace(/\/$/, "");
     if (tunnel && /^https?:\/\//i.test(tunnel) && !isPhoneUnfriendlyOrigin(tunnel)) return tunnel;
-    const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
-    if (preferred && !isPhoneUnfriendlyOrigin(preferred)) return preferred;
     for (const o of list) {
       const v = String(o || "").trim().replace(/\/$/, "");
       if (v && !isPhoneUnfriendlyOrigin(v)) return v;
     }
     return "";
   }
-  /** 自动选用手机可达地址：真实局域网 > 服务端最新公网隧道 > 当前页；绝不写 172.x 云内网 */
+  /** 自动选用手机可达地址：课堂固定局域网优先；绝不写 172.x 云内网 */
   async function ensurePhoneFriendlyOrigin() {
     clearBadPublicOriginOverride();
     _netHintCache = null;
     const hint = await fetchNetOriginHint();
-    const tunnel = String(hint && hint.public_tunnel || "").trim().replace(/\/$/, "");
-    const tunnelHost = tunnel ? originHostname(tunnel) : "";
+    const fixed = String(hint && hint.fixed_origin || "").trim().replace(/\/$/, "");
     let existing = getPublicOriginOverride();
-    if (existing && isPhoneUnfriendlyOrigin(existing)) {
-      setPublicOriginOverride("");
-      existing = "";
+    if (existing && (isPhoneUnfriendlyOrigin(existing) || isPublicTunnelHost(originHostname(existing)))) {
+      // 课堂模式下清掉旧隧道覆盖，避免扫到失效公网域名
+      if (fixed || isPublicTunnelHost(originHostname(existing))) setPublicOriginOverride("");
+      existing = getPublicOriginOverride();
+      if (existing && isPhoneUnfriendlyOrigin(existing)) {
+        setPublicOriginOverride("");
+        existing = "";
+      }
     }
-    // 临时隧道换了域名时：丢掉旧 trycloudflare 覆盖，避免二维码仍指向已失效链接
-    if (tunnel && tunnelHost && existing && isPublicTunnelHost(originHostname(existing))
-      && originHostname(existing) !== tunnelHost && !isPhoneUnfriendlyOrigin(tunnel)) {
-      setPublicOriginOverride(tunnel);
-      existing = tunnel;
+    // 有本机固定地址：强制二维码走局域网（正式课堂唯一推荐）
+    if (fixed && !isPhoneUnfriendlyOrigin(fixed) && !isPublicTunnelHost(originHostname(fixed))) {
+      if (existing !== fixed) setPublicOriginOverride(fixed);
+      return fixed;
     }
-    if (tunnel && tunnelHost && isPublicTunnelHost(location.hostname)
-      && location.hostname.toLowerCase() !== tunnelHost && !isPhoneUnfriendlyOrigin(tunnel)) {
-      // 老师仍停留在过期预览域名时，二维码改跟服务端最新隧道走
-      setPublicOriginOverride(tunnel);
-      return tunnel;
+    const picked = pickPhoneOriginFromHint(hint);
+    if (picked) {
+      if (!isPublicTunnelHost(originHostname(picked)) || isPhoneUnfriendlyHost(location.hostname)) {
+        setPublicOriginOverride(picked);
+        return picked;
+      }
     }
-    // 老师端已在公网隧道 / 真实局域网打开时，优先用当前页（或已校正的覆盖）
-    if (!isPhoneUnfriendlyHost(location.hostname)) {
-      if (existing && !isPhoneUnfriendlyOrigin(existing)) return existing;
+    if (!isPhoneUnfriendlyHost(location.hostname) && !isPublicTunnelHost(location.hostname)) {
+      if (existing && !isPhoneUnfriendlyOrigin(existing) && !isPublicTunnelHost(originHostname(existing))) return existing;
       return location.origin.replace(/\/$/, "");
     }
     if (existing && !isPhoneUnfriendlyOrigin(existing)) return existing;
-    const picked = pickPhoneOriginFromHint(hint);
-    if (picked) {
-      setPublicOriginOverride(picked);
-      return picked;
-    }
-    return existing || "";
+    return picked || existing || "";
   }
   function defaultQrSize() {
     const half = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.48);
@@ -10452,17 +10455,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const localNow = isLocalOrigin(url);
     const overrideNow = getPublicOriginOverride();
     pubBar.innerHTML = `
-      <label>手机扫码地址（推荐同一 Wi‑Fi 的局域网 IP，如 http://192.168.x.x:3000；勿用 localhost）</label>
+      <label>课堂扫码地址（本机局域网，固定写入 gy-classroom.json；勿用 localhost / 临时隧道）</label>
       <div class="qr-public-row">
         <input type="url" id="qr-public-origin-input" placeholder="例如 http://192.168.1.8:3000" value="${esc(overrideNow || (localNow ? "" : location.origin))}" />
-        <button type="button" class="primary" id="qr-public-origin-save">应用到二维码</button>
-        <button type="button" id="qr-public-origin-clear">用当前页</button>
+        <button type="button" class="primary" id="qr-public-origin-save">锁定并应用</button>
+        <button type="button" id="qr-public-origin-clear">重新检测</button>
         <button type="button" id="qr-download-png">下载二维码图</button>
       </div>
       <div class="qr-public-hint ${localNow ? "" : "ok"}" id="qr-public-origin-hint">${
         localNow
-          ? "当前仍是本机地址，手机微信扫不开。正在尝试自动填写局域网地址…"
-          : "请用手机同一 Wi‑Fi 打开该地址验证；课堂优先局域网，不依赖外网。"
+          ? "当前仍是本机地址，手机微信扫不开。正在自动改用课堂固定局域网地址…"
+          : "正式上课只用本机局域网。地址固定后二维码不随临时隧道失效。"
       }</div>`;
     host.appendChild(pubBar);
 
@@ -10558,13 +10561,34 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       }
       setPublicOriginOverride(v);
       rebuildFromOrigin();
+      // 同步锁定到本机 gy-classroom.json，下次启动二维码仍用同一地址
+      if (v) {
+        fetch("/__gy/classroom", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fixed_origin: v, locked: true })
+        }).then((r) => r.json()).then((data) => {
+          _netHintCache = null;
+          if (hintEl) {
+            hintEl.className = "qr-public-hint " + (data && data.ok ? "ok" : "");
+            hintEl.textContent = data && data.ok
+              ? "已锁定课堂地址：" + v + "（写入本机配置，下次启动继续用）"
+              : ("锁定失败：" + (data && data.error || "请确认本机 npm start 已运行"));
+          }
+        }).catch(() => {
+          if (hintEl) hintEl.textContent = "已应用到二维码；锁定到本机配置失败（请用 start.bat 启动）";
+        });
+      }
     });
     pubBar.querySelector("#qr-public-origin-clear")?.addEventListener("click", () => {
       setPublicOriginOverride("");
       _netHintCache = null;
       if (input) input.value = isLocalHostname(location.hostname) ? "" : location.origin;
       rebuildFromOrigin();
-      ensurePhoneFriendlyOrigin().then(() => rebuildFromOrigin());
+      ensurePhoneFriendlyOrigin().then((origin) => {
+        if (input && origin) input.value = origin;
+        rebuildFromOrigin();
+      });
     });
     pubBar.querySelector("#qr-download-png")?.addEventListener("click", () => {
       const canvas = canvasHost.querySelector("canvas");

@@ -1,22 +1,19 @@
-# 预览地址
+# 预览说明
 
-## 推荐：本机打开（课堂主用）
+## 正式课堂：只用本机（稳定）
 
-在仓库目录执行：
+请看 **[课堂稳定使用.md](./课堂稳定使用.md)**。
 
-```bash
-npm start
-```
+在**你自己的电脑**上双击 `start.bat`：
 
-Windows 也可双击 `start.bat`。浏览器打开提示的本机地址（一般是 `http://127.0.0.1:3000/`）。
+- 老师端：http://localhost:3000/?mode=teacher  
+- 扫码：用启动窗口打印的 **固定扫码** 局域网地址（`http://192.168.x.x:3000`）
 
-同 Wi‑Fi 下手机签到：用终端打印的局域网地址生成二维码（不要用 Cloud Agent 里的 `localhost`）。
+不要依赖 Cloud Agent 或 `*.trycloudflare.com` 临时链接。
 
-## 备用：临时公网隧道（本机无法同网时）
+---
 
-当前 Cloud Agent 临时公网（会失效，需重新开隧道）：
+## 开发临时预览（不稳定，仅调试）
 
-- 教师端：[https://lower-decor-breathing-rocks.trycloudflare.com/](https://lower-decor-breathing-rocks.trycloudflare.com/)
-- 签到页：[https://lower-decor-breathing-rocks.trycloudflare.com/?view=checkin](https://lower-decor-breathing-rocks.trycloudflare.com/?view=checkin)
-
-说明：临时隧道经常过期；课堂请优先本机 `npm start`，隧道只作备用。
+Cloud Agent / Quick Tunnel 会掉线、会换域名，**不能用于上课**。  
+若仅需远程看一眼 UI，可临时开隧道，但二维码与签到请仍以本机方案为准。

@@ -4,20 +4,20 @@ cd "$(dirname "$0")"
 
 echo ""
 echo "  ========================================"
-echo "   光影盟 · 本机启动（主用，不依赖公网）"
+echo "   光影盟 · 本机课堂启动（稳定模式）"
+echo "   不依赖公网隧道 · 地址固定 · 断网可用"
 echo "  ========================================"
 echo ""
 
 if ! command -v node >/dev/null 2>&1; then
   echo "  [错误] 未检测到 Node.js"
   echo "  请先安装一次：https://nodejs.org （选 LTS）"
-  echo "  安装后重新运行。无需每次联网。"
   exit 1
 fi
 
-echo "  老师端: http://localhost:3000/?mode=teacher"
-echo "  手机同 Wi-Fi：看终端打印的「手机同网」地址"
-echo "  公网隧道仅作备用；按 Ctrl+C 停止"
+echo "  电脑打开: http://localhost:3000/?mode=teacher"
+echo "  扫码请看终端打印的「固定扫码」地址（局域网）"
+echo "  本窗口保持打开；异常退出会自动重启"
 echo ""
 
 (
@@ -28,4 +28,10 @@ echo ""
   fi
 ) &
 
-exec node server.mjs
+while true; do
+  node server.mjs && break
+  code=$?
+  echo ""
+  echo "  [提示] 服务退出（代码 $code），3 秒后自动重启…"
+  sleep 3
+done

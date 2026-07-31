@@ -7,8 +7,7 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs",
-    "preview": "PORT=4173 node server.mjs",
-    "tunnel": "cloudflared tunnel --url http://127.0.0.1:3000 --no-autoupdate --protocol http2"
+    "preview": "PORT=4173 node server.mjs"
   },
   "engines": {
     "node": ">=18"
