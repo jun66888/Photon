@@ -3621,7 +3621,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { label: "湖青", color: "#00acc1" },
     { label: "玄金", color: "#c9a227" }
   ];
-  /** 拳皇风格角色音效包（合成还原气质；可再导入本地采样） */
+  /** 拳皇风格角色音效包（合成还原气质；加分时按所选角色播对应音色） */
   const KOF_SFX_PACKS = [
     { id: "kyo", name: "草薙京", tag: "炎", hue: "#ff3b5c" },
     { id: "iori", name: "八神庵", tag: "暗炎", hue: "#ab47bc" },
@@ -3630,10 +3630,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { id: "k", name: "K'", tag: "冷焰", hue: "#90a4ae" },
     { id: "athena", name: "雅典娜", tag: "超能", hue: "#b388ff" },
     { id: "joe", name: "乔·东", tag: "台风", hue: "#f0c14b" },
-    { id: "ryo", name: "罗伯特", tag: "极虎", hue: "#ff7043" },
+    { id: "ryo", name: "坂崎良", tag: "极虎", hue: "#ff7043" },
+    { id: "robert", name: "罗伯特", tag: "龙虎", hue: "#ffca28" },
     { id: "king", name: "金", tag: "腿技", hue: "#5c6bc0" },
     { id: "chang", name: "陈国汉", tag: "刚猛", hue: "#26a69a" }
   ];
+  /** 旧存档里 ryo 曾误标为罗伯特，播放时兼容映射 */
+  const KOF_SFX_ALIAS = { robert_old: "robert" };
   const PEAK_BGM_PRESETS = [
     { id: "none", name: "无 BGM" },
     { id: "battle", name: "对擂鼓点" },
@@ -4406,35 +4409,290 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     noiseBurst(now + 0.05, 0.32, 0.08, { type: "lowpass", freq: 900, freqTo: 180, q: 0.8, decay: 1.1 });
   }
 
-  /** 拳皇风格角色包：按角色调不同音色轮廓 */
-  function playKofPackSfx(packId, points) {
+  /** 拳皇角色包：每人独立音色 + 按分值分档（轻/连/必杀/超必） */
+  function resolveKofPackId(packId) {
+    const id = String(packId || "kyo");
+    if (KOF_SFX_PACKS.some((x) => x.id === id)) return id;
+    return KOF_SFX_ALIAS[id] || "kyo";
+  }
+  function kofFlame(t0, bright) {
+    noiseBurst(t0, bright ? 0.16 : 0.11, bright ? 0.14 : 0.09, {
+      type: "bandpass", freq: bright ? 2200 : 1400, freqTo: bright ? 420 : 280, q: 1.6, decay: 1.3
+    });
+    tone(bright ? 320 : 240, t0, 0.14, "sawtooth", 0.07, bright ? 680 : 420, 0.01);
+  }
+  function kofPunch(t0, low) {
+    tone(low || 90, t0, 0.16, "sine", 0.12, 45, 0.008);
+    noiseBurst(t0, 0.1, 0.1, { type: "lowpass", freq: 500, freqTo: 90, q: 0.7, decay: 1.8 });
+  }
+  function kofWhoosh(t0, high) {
+    noiseBurst(t0, 0.14, 0.1, {
+      type: "bandpass", freq: high ? 2800 : 1600, freqTo: high ? 600 : 350, q: 2.2, decay: 1.6
+    });
+  }
+  function playKofPackSfx(packId, points, category) {
     const ctx = ensureAudio();
     if (!ctx || !sfxEnabled) return;
     const now = ctx.currentTime;
-    const p = Math.max(1, Number(points) || 5);
-    const profiles = {
-      kyo: { base: 220, type: "sawtooth", rise: 1.8, noise: 1800 },
-      iori: { base: 180, type: "square", rise: 1.5, noise: 900 },
-      terry: { base: 260, type: "sawtooth", rise: 2.2, noise: 1400 },
-      mai: { base: 440, type: "triangle", rise: 1.3, noise: 2600 },
-      k: { base: 200, type: "square", rise: 1.6, noise: 700 },
-      athena: { base: 520, type: "sine", rise: 1.9, noise: 3200 },
-      joe: { base: 300, type: "sawtooth", rise: 2.4, noise: 1600 },
-      ryo: { base: 240, type: "triangle", rise: 1.7, noise: 1200 },
-      king: { base: 280, type: "square", rise: 1.4, noise: 1100 },
-      chang: { base: 140, type: "sawtooth", rise: 1.2, noise: 500 }
+    const lv = powerLevel(points, category);
+    const id = resolveKofPackId(packId);
+
+    const kits = {
+      // 草薙京：炎击 / 连炎 / 大蛇气息 / 八稚女连打
+      kyo: {
+        1() { kofFlame(now, false); kofPunch(now + 0.04, 100); },
+        2() { kofFlame(now, true); kofFlame(now + 0.12, false); kofPunch(now + 0.18, 85); tone(480, now + 0.1, 0.2, "sawtooth", 0.05, 900, 0.02); },
+        3() {
+          tone(120, now, 0.35, "sawtooth", 0.08, 360, 0.06);
+          noiseBurst(now, 0.4, 0.1, { type: "bandpass", freq: 600, freqTo: 2400, q: 1.4, decay: 0.7 });
+          kofFlame(now + 0.28, true); kofPunch(now + 0.32, 70);
+          tone(660, now + 0.34, 0.35, "sawtooth", 0.07, 220, 0.02);
+        },
+        4() {
+          [0, 0.08, 0.16, 0.24, 0.34].forEach((d, i) => {
+            kofFlame(now + d, i % 2 === 0);
+            tone(280 + i * 40, now + d, 0.12, "sawtooth", 0.06, 700 + i * 80, 0.01);
+          });
+          kofPunch(now + 0.42, 60);
+          noiseBurst(now + 0.4, 0.4, 0.16, { type: "lowpass", freq: 900, freqTo: 70, decay: 0.8 });
+          tone(880, now + 0.45, 0.5, "sawtooth", 0.08, 160, 0.03);
+        }
+      },
+      // 八神庵：暗炎，偏低、刺耳、不协和
+      iori: {
+        1() { tone(160, now, 0.12, "square", 0.07, 90, 0.01); noiseBurst(now, 0.12, 0.1, { type: "bandpass", freq: 700, freqTo: 220, q: 2.4, decay: 1.5 }); },
+        2() {
+          tone(150, now, 0.14, "square", 0.07, 100, 0.01);
+          tone(190, now + 0.1, 0.16, "square", 0.06, 120, 0.01);
+          noiseBurst(now + 0.05, 0.22, 0.11, { type: "bandpass", freq: 900, freqTo: 200, q: 2, decay: 1.2 });
+        },
+        3() {
+          tone(90, now, 0.4, "square", 0.08, 200, 0.08);
+          tone(110, now + 0.05, 0.35, "sawtooth", 0.05, 80, 0.08);
+          noiseBurst(now + 0.2, 0.28, 0.14, { type: "bandpass", freq: 500, freqTo: 1600, q: 1.8, decay: 0.9 });
+          kofPunch(now + 0.3, 55);
+        },
+        4() {
+          [0, 0.09, 0.18, 0.27].forEach((d, i) => {
+            tone(140 + i * 18, now + d, 0.14, "square", 0.07, 70, 0.01);
+            noiseBurst(now + d, 0.12, 0.1, { type: "bandpass", freq: 800 - i * 40, freqTo: 180, q: 2.2, decay: 1.4 });
+          });
+          tone(60, now + 0.4, 0.55, "sawtooth", 0.12, 40, 0.04);
+          noiseBurst(now + 0.38, 0.45, 0.17, { type: "lowpass", freq: 700, freqTo: 50, decay: 0.75 });
+        }
+      },
+      // 特瑞：气波蓄力 + 重拳落地
+      terry: {
+        1() { kofWhoosh(now, false); kofPunch(now + 0.08, 110); },
+        2() {
+          noiseBurst(now, 0.22, 0.1, { type: "bandpass", freq: 400, freqTo: 2200, q: 1.2, decay: 0.8 });
+          tone(180, now, 0.22, "sawtooth", 0.06, 520, 0.05);
+          kofPunch(now + 0.2, 95);
+        },
+        3() {
+          noiseBurst(now, 0.35, 0.12, { type: "bandpass", freq: 300, freqTo: 2600, q: 1.1, decay: 0.65 });
+          tone(140, now, 0.35, "sawtooth", 0.07, 640, 0.08);
+          kofPunch(now + 0.3, 70);
+          tone(220, now + 0.32, 0.25, "triangle", 0.06, 110, 0.02);
+        },
+        4() {
+          noiseBurst(now, 0.45, 0.14, { type: "bandpass", freq: 250, freqTo: 3200, q: 1, decay: 0.55 });
+          tone(100, now, 0.45, "sawtooth", 0.09, 800, 0.1);
+          [0.4, 0.5, 0.6].forEach((d) => kofPunch(now + d, 65));
+          noiseBurst(now + 0.55, 0.4, 0.16, { type: "lowpass", freq: 1000, freqTo: 60, decay: 0.8 });
+          tone(980, now + 0.58, 0.45, "sine", 0.07, 400, 0.03);
+        }
+      },
+      // 不知火舞：扇风高频 + 铃感
+      mai: {
+        1() { kofWhoosh(now, true); tone(880, now + 0.03, 0.16, "triangle", 0.07, 1320, 0.01); },
+        2() {
+          kofWhoosh(now, true); kofWhoosh(now + 0.1, true);
+          tone(740, now, 0.18, "triangle", 0.06, 1100, 0.015);
+          tone(990, now + 0.12, 0.2, "sine", 0.05, 1480, 0.02);
+        },
+        3() {
+          [0, 0.08, 0.16].forEach((d, i) => {
+            kofWhoosh(now + d, true);
+            tone(660 + i * 120, now + d, 0.22, "triangle", 0.055, 1200 + i * 100, 0.02);
+          });
+          tone(1568, now + 0.28, 0.4, "sine", 0.07, 2093, 0.04);
+        },
+        4() {
+          [0, 0.07, 0.14, 0.21, 0.3].forEach((d, i) => {
+            kofWhoosh(now + d, i % 2 === 0);
+            tone(700 + i * 90, now + d, 0.18, "triangle", 0.05, 1400, 0.015);
+          });
+          tone(2093, now + 0.4, 0.55, "sine", 0.08, 2637, 0.05);
+          noiseBurst(now + 0.38, 0.35, 0.1, { type: "highpass", freq: 2400, freqTo: 4200, q: 0.8, decay: 1 });
+        }
+      },
+      // K'：冷焰，短促金属感
+      k: {
+        1() { tone(240, now, 0.08, "square", 0.07, 180, 0.005); noiseBurst(now, 0.08, 0.09, { type: "highpass", freq: 1800, freqTo: 900, q: 1.5, decay: 2 }); },
+        2() {
+          tone(220, now, 0.09, "square", 0.07, 160, 0.005);
+          tone(320, now + 0.09, 0.1, "square", 0.06, 200, 0.005);
+          noiseBurst(now + 0.05, 0.16, 0.1, { type: "bandpass", freq: 1600, freqTo: 500, q: 1.8, decay: 1.4 });
+        },
+        3() {
+          tone(100, now, 0.3, "square", 0.07, 280, 0.06);
+          noiseBurst(now + 0.15, 0.25, 0.13, { type: "bandpass", freq: 1200, freqTo: 300, q: 2, decay: 1 });
+          kofPunch(now + 0.25, 70);
+        },
+        4() {
+          [0, 0.1, 0.2].forEach((d) => {
+            tone(200, now + d, 0.1, "square", 0.07, 120, 0.005);
+            noiseBurst(now + d, 0.12, 0.11, { type: "highpass", freq: 2000, freqTo: 600, q: 1.6, decay: 1.5 });
+          });
+          tone(80, now + 0.35, 0.5, "sawtooth", 0.11, 40, 0.03);
+          noiseBurst(now + 0.35, 0.42, 0.15, { type: "lowpass", freq: 700, freqTo: 50, decay: 0.85 });
+        }
+      },
+      // 雅典娜：超能铃音琶音
+      athena: {
+        1() { tone(660, now, 0.2, "sine", 0.08, 880, 0.02); tone(1320, now, 0.14, "triangle", 0.04, 1760, 0.02); },
+        2() {
+          [523, 659, 784].forEach((f, i) => tone(f, now + i * 0.07, 0.22, "sine", 0.07, f * 1.03, 0.02));
+          noiseBurst(now + 0.1, 0.18, 0.06, { type: "highpass", freq: 3000, freqTo: 5000, q: 0.6, decay: 1.5 });
+        },
+        3() {
+          [440, 554, 659, 880].forEach((f, i) => {
+            tone(f, now + i * 0.08, 0.3, "sine", 0.07, f * 1.02, 0.03);
+            tone(f * 2, now + i * 0.08, 0.2, "triangle", 0.03, f * 2.02, 0.04);
+          });
+        },
+        4() {
+          [523, 659, 784, 988, 1175, 1397].forEach((f, i) => {
+            tone(f, now + i * 0.07, 0.35, "sine", 0.075, f * 1.02, 0.03);
+          });
+          noiseBurst(now + 0.35, 0.4, 0.12, { type: "bandpass", freq: 2000, freqTo: 800, q: 1, decay: 0.9 });
+          tone(1760, now + 0.45, 0.6, "sine", 0.09, 2349, 0.05);
+        }
+      },
+      // 乔·东：台风踢，急速上行连击
+      joe: {
+        1() { kofWhoosh(now, true); tone(300, now, 0.1, "sawtooth", 0.06, 600, 0.01); kofPunch(now + 0.06, 120); },
+        2() {
+          [0, 0.08, 0.16].forEach((d, i) => {
+            tone(280 + i * 60, now + d, 0.1, "sawtooth", 0.055, 700 + i * 80, 0.01);
+            kofWhoosh(now + d, true);
+          });
+          kofPunch(now + 0.22, 90);
+        },
+        3() {
+          [0, 0.06, 0.12, 0.18, 0.26].forEach((d, i) => {
+            tone(260 + i * 50, now + d, 0.09, "sawtooth", 0.05, 800, 0.01);
+            noiseBurst(now + d, 0.08, 0.08, { type: "bandpass", freq: 1800, freqTo: 500, q: 1.5, decay: 1.6 });
+          });
+          kofPunch(now + 0.32, 70);
+        },
+        4() {
+          for (let i = 0; i < 8; i++) {
+            tone(240 + i * 55, now + i * 0.05, 0.08, "sawtooth", 0.05, 900, 0.008);
+            kofWhoosh(now + i * 0.05, i % 2 === 0);
+          }
+          kofPunch(now + 0.45, 55);
+          noiseBurst(now + 0.42, 0.4, 0.15, { type: "lowpass", freq: 1100, freqTo: 60, decay: 0.8 });
+        }
+      },
+      // 坂崎良：极虎，中频扎实拳劲
+      ryo: {
+        1() { kofPunch(now, 130); tone(240, now, 0.12, "triangle", 0.06, 180, 0.01); },
+        2() { kofPunch(now, 120); kofWhoosh(now + 0.05, false); kofPunch(now + 0.14, 100); tone(300, now + 0.14, 0.16, "triangle", 0.05, 200, 0.015); },
+        3() {
+          tone(100, now, 0.3, "triangle", 0.07, 260, 0.06);
+          kofPunch(now + 0.22, 75);
+          noiseBurst(now + 0.2, 0.25, 0.12, { type: "bandpass", freq: 900, freqTo: 250, q: 1.3, decay: 1.1 });
+          tone(400, now + 0.28, 0.3, "triangle", 0.06, 160, 0.02);
+        },
+        4() {
+          [0, 0.12, 0.24].forEach((d) => { kofWhoosh(now + d, false); kofPunch(now + d + 0.05, 80); });
+          tone(90, now + 0.35, 0.5, "triangle", 0.1, 50, 0.03);
+          noiseBurst(now + 0.35, 0.42, 0.15, { type: "lowpass", freq: 800, freqTo: 55, decay: 0.85 });
+          tone(520, now + 0.4, 0.4, "sawtooth", 0.06, 200, 0.03);
+        }
+      },
+      // 罗伯特：龙虎，比极虎更亮、甩腿感
+      robert: {
+        1() { kofWhoosh(now, true); kofPunch(now + 0.05, 125); tone(360, now, 0.12, "triangle", 0.06, 220, 0.01); },
+        2() {
+          kofWhoosh(now, true);
+          tone(400, now, 0.14, "triangle", 0.06, 700, 0.02);
+          kofPunch(now + 0.12, 105);
+          tone(520, now + 0.14, 0.18, "sine", 0.05, 260, 0.02);
+        },
+        3() {
+          [0, 0.1, 0.2].forEach((d, i) => {
+            kofWhoosh(now + d, true);
+            tone(320 + i * 80, now + d, 0.14, "triangle", 0.055, 600, 0.015);
+          });
+          kofPunch(now + 0.28, 70);
+        },
+        4() {
+          noiseBurst(now, 0.35, 0.1, { type: "bandpass", freq: 500, freqTo: 2800, q: 1.2, decay: 0.7 });
+          [0.2, 0.3, 0.4, 0.5].forEach((d, i) => {
+            tone(300 + i * 70, now + d, 0.12, "triangle", 0.06, 800, 0.01);
+            kofPunch(now + d + 0.03, 75);
+          });
+          tone(1100, now + 0.55, 0.5, "sine", 0.08, 1600, 0.04);
+        }
+      },
+      // 金：腿技，干脆短踢
+      king: {
+        1() { tone(320, now, 0.07, "square", 0.07, 200, 0.005); noiseBurst(now, 0.07, 0.09, { type: "bandpass", freq: 1400, freqTo: 600, q: 2, decay: 2 }); },
+        2() {
+          tone(300, now, 0.07, "square", 0.065, 180, 0.005);
+          tone(380, now + 0.09, 0.08, "square", 0.06, 220, 0.005);
+          noiseBurst(now + 0.05, 0.14, 0.1, { type: "bandpass", freq: 1600, freqTo: 500, q: 1.8, decay: 1.5 });
+        },
+        3() {
+          [0, 0.08, 0.16, 0.26].forEach((d, i) => {
+            tone(280 + i * 40, now + d, 0.07, "square", 0.06, 160, 0.005);
+            noiseBurst(now + d, 0.08, 0.09, { type: "bandpass", freq: 1500, freqTo: 450, q: 1.8, decay: 1.7 });
+          });
+          kofPunch(now + 0.3, 85);
+        },
+        4() {
+          for (let i = 0; i < 6; i++) {
+            tone(300 + (i % 3) * 50, now + i * 0.07, 0.06, "square", 0.055, 150, 0.004);
+            noiseBurst(now + i * 0.07, 0.07, 0.085, { type: "bandpass", freq: 1700, freqTo: 500, q: 2, decay: 1.8 });
+          }
+          kofPunch(now + 0.45, 60);
+          noiseBurst(now + 0.42, 0.38, 0.14, { type: "lowpass", freq: 900, freqTo: 70, decay: 0.85 });
+        }
+      },
+      // 陈国汉：铁球刚猛，超低轰鸣
+      chang: {
+        1() { tone(70, now, 0.18, "sine", 0.14, 40, 0.01); noiseBurst(now, 0.16, 0.12, { type: "lowpass", freq: 280, freqTo: 60, q: 0.6, decay: 1.5 }); },
+        2() {
+          tone(65, now, 0.2, "sine", 0.13, 35, 0.015);
+          tone(90, now + 0.12, 0.22, "sawtooth", 0.08, 45, 0.02);
+          noiseBurst(now + 0.08, 0.25, 0.13, { type: "lowpass", freq: 350, freqTo: 55, decay: 1.2 });
+        },
+        3() {
+          tone(55, now, 0.4, "sine", 0.15, 30, 0.05);
+          noiseBurst(now + 0.15, 0.35, 0.16, { type: "lowpass", freq: 400, freqTo: 45, decay: 0.9 });
+          tone(120, now + 0.3, 0.3, "sawtooth", 0.07, 50, 0.03);
+        },
+        4() {
+          tone(45, now, 0.55, "sine", 0.17, 28, 0.06);
+          noiseBurst(now, 0.5, 0.18, { type: "lowpass", freq: 500, freqTo: 40, decay: 0.7 });
+          [0.35, 0.5].forEach((d) => {
+            tone(60, now + d, 0.25, "sawtooth", 0.1, 35, 0.02);
+            noiseBurst(now + d, 0.28, 0.14, { type: "lowpass", freq: 320, freqTo: 50, decay: 1 });
+          });
+        }
+      }
     };
-    const pf = profiles[packId] || profiles.kyo;
-    tone(pf.base, now, 0.12, pf.type, 0.08, pf.base * pf.rise, 0.01);
-    tone(pf.base * 1.5, now + 0.08, 0.18, "triangle", 0.05, pf.base * pf.rise * 1.2, 0.02);
-    noiseBurst(now + 0.05, 0.2 + p * 0.008, 0.07 + Math.min(0.08, p * 0.004), {
-      type: "bandpass", freq: pf.noise, freqTo: pf.noise * 0.4, q: 1.1, decay: 1.2
-    });
-    if (p >= 10) tone(pf.base * 2, now + 0.2, 0.35, "sine", 0.07, pf.base * 2.4, 0.03);
+
+    const kit = kits[id] || kits.kyo;
+    const fn = kit[lv] || kit[1];
+    fn();
   }
-  function playPeakSfx(peakId, points) {
+  function playPeakSfx(peakId, points, category) {
     const peak = findPeak(peakId);
-    playKofPackSfx(peak?.sfx_pack || "kyo", points);
+    playKofPackSfx(peak?.sfx_pack || "kyo", points, category);
   }
 
   let peakBgmAudio = null;
@@ -4684,19 +4942,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const tier = tierOf(category, pts);
     const prop = rewardPropForPoints(pts);
     const discipleName = (opts && opts.discipleName) || "";
+    const packMeta = KOF_SFX_PACKS.find((x) => x.id === resolveKofPackId(peak && peak.sfx_pack)) || KOF_SFX_PACKS[0];
     const tags = {
-      1: pick(["轻拳", "飞脚", "点穴"]),
-      2: pick(["连招", "追击", "破招"]),
-      3: pick(["必杀", "剑气", "绝学"]),
-      4: pick(["超必杀", "万剑归宗", "巅峰一击"])
+      1: pick([`${packMeta.tag}·轻击`, "轻拳", "飞脚"]),
+      2: pick([`${packMeta.tag}·连招`, "追击", "破招"]),
+      3: pick([`${packMeta.tag}·必杀`, "SPECIAL!", "绝学"]),
+      4: pick([`${packMeta.name}·超必杀`, "MAX SUPER!", "巅峰一击"])
     };
     const banners = {
       2: pick(["连击！", "好招！", "中！"]),
-      3: pick(["绝学发动！", "剑气纵横！", "SPECIAL!"]),
-      4: pick(["☆ 万剑归宗 ☆", "MAX SUPER!", "山河变色！"])
+      3: pick([`${packMeta.name}！`, "SPECIAL!", "绝学发动！"]),
+      4: pick([`☆ ${packMeta.name} ☆`, "MAX SUPER!", "山河变色！"])
     };
 
-    playHitSfx(pts, category);
+    // 有拳皇角色包时播对应音色；否则回退仙剑合成/导入包
+    if (peak && peak.sfx_pack) playKofPackSfx(peak.sfx_pack, pts, category);
+    else playHitSfx(pts, category);
 
     const ringCount = Math.min(2 + lv, 5);
     let rings = "";
@@ -6135,7 +6396,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="field-name">简介（可自定义）</div>
           <textarea id="a-intro" rows="2" maxlength="80" placeholder="介绍本组风格">${esc(peak.intro || "")}</textarea>
         </div>
-        ${renderChoiceField("sfx", "专属音效包（拳皇风）", KOF_SFX_PACKS.map((k) => ({ value: k.id, label: k.name, html: `${k.name}<small style="opacity:.7"> · ${k.tag}</small>` })), peak.sfx_pack || "kyo", "wide")}
+        ${renderChoiceField("sfx", "专属音效包（拳皇风 · 加分时播放）", KOF_SFX_PACKS.map((k) => ({ value: k.id, label: k.name, html: `${k.name}<small style="opacity:.7"> · ${k.tag}</small>` })), peak.sfx_pack || "kyo", "wide")}
         ${renderChoiceField("bgm", "专属 BGM", PEAK_BGM_PRESETS.map((b) => ({ value: b.id, label: b.name, html: b.name })), peak.bgm_id || "none")}
         <div class="choice-field span-2 custom-text-field">
           <div class="field-name">自定义 BGM 文件（选「自定义上传」后生效）</div>
@@ -6214,7 +6475,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           else if ((preset.reason || "").includes("银牌")) bonus = 200;
           else if ((preset.reason || "").includes("铜牌")) bonus = 100;
           await scoreFromModal(peakId, preset.points, preset.reason, preset.category, bonus);
-          playPeakSfx(peakId, preset.points);
+          // 音效由 showComboAnnounce 按该峰 sfx_pack 播放，避免叠两套
         };
       });
       document.querySelectorAll("[data-custom-pts]").forEach((btn) => {
@@ -6233,7 +6494,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         const pts = Number(document.getElementById("sect-custom-pts").value);
         const reason = document.getElementById("sect-custom-reason").value.trim() || "出招加分";
         await scoreFromModal(peakId, pts, reason, "自定义", 0);
-        playPeakSfx(peakId, pts);
       };
     }
     if (sectModalTab === "attr") {
@@ -6280,7 +6540,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       }
       document.getElementById("a-preview-sfx").onclick = () => {
         const pack = document.getElementById("a-sfx")?.value || peak.sfx_pack || "kyo";
-        playKofPackSfx(pack, 12);
+        // 试听用「任务」档（必杀感），便于分辨角色差异
+        playKofPackSfx(pack, 12, "任务");
       };
       document.getElementById("a-save").onclick = async () => {
         const camp = document.getElementById("a-camp").value;
@@ -10062,7 +10323,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   async function handleTeacherAction(act, btn) {
     if (act === "back-main" || act === "goto-main" || act === "go-home") { goHome(); return; }
-    if (act === "custom-score") { openScoreHubModal("quick"); return; }
+    if (act === "custom-score") { openScoreHubModal("play"); return; }
     if (act === "score-hub") { openScoreHubModal(btn?.dataset?.tab || "quick"); return; }
     if (act === "edit-score-quick") { openScoreQuickEditor(); return; }
     if (act === "edit-brand") { openBrandModal(); return; }
