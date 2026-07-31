@@ -2596,12 +2596,77 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
   flex-direction: column;
   gap: .3rem;
 }
-.prop-rail-foot button {
+.prop-rail-plays {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .25rem;
+}
+.prop-rail-plays button {
+  width: 100%;
+  font-size: .58rem !important;
+  min-height: 1.85rem !important;
+  padding: .2rem .1rem !important;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+.prop-rail-foot > button {
   width: 100%;
   font-size: .68rem !important;
   min-height: 2rem !important;
   padding: .25rem .2rem !important;
 }
+.prop-mini-card.prop-drawn {
+  border-color: #ffe39a !important;
+  box-shadow: 0 0 16px rgba(240,193,75,.55), 0 0 28px rgba(46,230,255,.25);
+  animation: propCardPulse .7s ease 2;
+}
+@keyframes propCardPulse {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-3px) scale(1.04); }
+}
+.prop-cast-layer {
+  position: absolute; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  animation: propCastIn .35s ease-out;
+}
+.prop-cast-layer .pc-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(20,28,48,.55), rgba(0,0,0,.72));
+}
+.prop-cast-layer .pc-card {
+  position: relative;
+  min-width: min(420px, 86vw);
+  padding: 1.4rem 1.6rem 1.2rem;
+  text-align: center;
+  border-radius: 16px;
+  border: 2px solid rgba(240,193,75,.55);
+  background: linear-gradient(165deg, rgba(36,44,68,.96), rgba(12,16,28,.96));
+  box-shadow: 0 20px 60px rgba(0,0,0,.45), 0 0 40px rgba(46,230,255,.2);
+  animation: propCastPop .45s cubic-bezier(.2,.9,.25,1.2);
+}
+.prop-cast-layer .pc-tag {
+  font-size: .8rem; letter-spacing: .2em; color: #9fe9ff; margin-bottom: .35rem;
+}
+.prop-cast-layer .pc-ico { font-size: 3.2rem; line-height: 1; filter: drop-shadow(0 4px 12px rgba(0,0,0,.4)); }
+.prop-cast-layer .pc-name {
+  font-family: var(--font-brush); font-size: 2.2rem; color: var(--gold); margin: .25rem 0 .1rem;
+}
+.prop-cast-layer .pc-owner { color: var(--ink-soft); font-size: .9rem; }
+.prop-cast-layer .pc-rule {
+  margin-top: .65rem; padding: .65rem .75rem; border-radius: 10px;
+  background: rgba(255,255,255,.04); color: #f3e7c8; line-height: 1.5; font-size: .95rem;
+}
+.prop-cast-layer .pc-flavor {
+  margin-top: .55rem; font-family: var(--font-brush); font-size: 1.35rem; color: #ff8a9a;
+}
+@keyframes propCastIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes propCastPop {
+  from { transform: scale(.72) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.prop-duel-pick .prop-mini-card.duel-a { outline: 2px solid #ff6b84; }
+.prop-duel-pick .prop-mini-card.duel-b { outline: 2px solid #2ee6ff; }
 .course-rail .rail-brand {
   display: flex; flex-direction: column; align-items: center; gap: .25rem;
   margin-bottom: .3rem; padding-bottom: .4rem;
@@ -3275,6 +3340,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="prop-rail-empty">暂无道具卡<br>去「兑换」领取</div>
     </div>
     <div class="prop-rail-foot">
+      <div class="prop-rail-plays" aria-label="道具玩法">
+        <button type="button" data-action="prop-lot" title="从未使用道具中随机抽取一张">灵签</button>
+        <button type="button" data-action="prop-cast" title="随机抽取并当众施法展示">施法</button>
+        <button type="button" data-action="prop-duel" title="两张未用道具对决，败者标记已用">对决</button>
+        <button type="button" data-action="prop-oracle" title="掷骰决定本回合道具用法提示">神谕</button>
+      </div>
       <button type="button" class="primary" data-action="goto-redeem" title="打开兑换中心">去兑换</button>
     </div>
   </aside>
@@ -7957,11 +8028,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <button type="button" data-action="goto-redeem" id="prop-goto-redeem">兑换中心</button>
         ${item.used
           ? '<button type="button" class="ghost" id="prop-restore">恢复未用</button>'
-          : '<button type="button" class="primary" id="prop-use">使用道具</button>'}
+          : '<button type="button" id="prop-cast-one">当众施法</button><button type="button" class="primary" id="prop-use">使用道具</button>'}
       </div>`);
     document.getElementById("modal-cancel").onclick = closeModal;
     const go = document.getElementById("prop-goto-redeem");
     if (go) go.onclick = () => { closeModal(); setTeacherView("redeem"); };
+    const castOne = document.getElementById("prop-cast-one");
+    if (castOne) castOne.onclick = async () => {
+      closeModal();
+      highlightPropCard(item.uid);
+      showPropCastFx(item, pick(["仙气贯顶！", "符纸燃起金光！", "当众显圣！"]));
+      if (!confirm(`施法后将标记「${item.name}」为已使用，确认？`)) return;
+      await markHeldPropUsed(item, true);
+      showVoteToast(`${item.ownerLabel} 施法「${item.name}」`);
+    };
     const useBtn = document.getElementById("prop-use");
     if (useBtn) useBtn.onclick = async () => {
       if (!confirm(`确认使用「${item.name}」？\n持有者：${item.ownerLabel}`)) return;
@@ -8003,6 +8083,191 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     };
     await updatePaths({ [path]: list });
     renderPropRail();
+  }
+
+  function unusedHeldProps() {
+    return collectHeldProps().filter((p) => !p.used);
+  }
+
+  function pickRandomProp(list) {
+    const arr = list && list.length ? list : unusedHeldProps();
+    if (!arr.length) return null;
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function highlightPropCard(uid) {
+    const listEl = document.getElementById("prop-rail-list");
+    if (!listEl) return;
+    let target = null;
+    listEl.querySelectorAll(".prop-mini-card").forEach((el) => {
+      el.classList.remove("prop-drawn");
+      if (el.dataset.propUid === uid) target = el;
+    });
+    if (target) {
+      target.classList.add("prop-drawn");
+      target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  function showPropCastFx(item, flavor) {
+    const host = document.getElementById("fx-host");
+    if (!host || !item) return;
+    clearFxOverlays();
+    try { playHitSfx(8, "任务"); } catch (e) { /* ignore */ }
+    const layer = document.createElement("div");
+    layer.className = "prop-cast-layer";
+    layer.innerHTML = `
+      <div class="pc-bg"></div>
+      <div class="pc-card">
+        <div class="pc-tag">道具施法 · CAST</div>
+        <div class="pc-ico">${item.icon || "🎴"}</div>
+        <div class="pc-name">${esc(item.name)}</div>
+        <div class="pc-owner">${esc(item.ownerLabel)}</div>
+        <div class="pc-rule">${esc(item.rule || "当众宣读规则后生效")}</div>
+        <div class="pc-flavor">${esc(flavor || "法力涌现！")}</div>
+      </div>`;
+    host.appendChild(layer);
+    screenShake(2);
+    setTimeout(() => layer.remove(), 3200);
+  }
+
+  const PROP_ORACLE_LINES = [
+    "本回合：持有者起立朗读规则，全班鼓掌后生效",
+    "本回合：可指定一位同学接力回答，答对双方各记彩",
+    "本回合：道具翻倍——效果描述里的数字临时 +1",
+    "本回合：必须在 10 秒内说出使用理由，超时作废重抽",
+    "本回合：对面派系可喊「破」一次，被破则改抽另一张",
+    "本回合：持有者闭眼，邻座同学代为宣布规则",
+    "本回合：全员齐喊道具名三遍，气氛到位才生效",
+    "本回合：可与另一张未用道具合体，合成一条新规则"
+  ];
+
+  async function runPropLottery() {
+    const pool = unusedHeldProps();
+    if (!pool.length) {
+      showVoteToast("没有未使用的道具卡，先去兑换");
+      return;
+    }
+    propRailFilter = "all";
+    renderPropRail();
+    const listEl = document.getElementById("prop-rail-list");
+    const cards = listEl ? Array.from(listEl.querySelectorAll(".prop-mini-card:not(.used)")) : [];
+    let spins = 0;
+    const total = 14 + Math.floor(Math.random() * 8);
+    const winner = pickRandomProp(pool);
+    if (!winner) return;
+    const tick = () => {
+      spins += 1;
+      const preview = cards.length
+        ? pool[Math.floor(Math.random() * pool.length)]
+        : winner;
+      highlightPropCard(preview.uid);
+      if (spins < total) {
+        setTimeout(tick, 55 + spins * 12);
+      } else {
+        highlightPropCard(winner.uid);
+        showVoteToast(`灵签指向「${winner.name}」· ${winner.ownerLabel}`);
+        openHeldPropModal(winner);
+      }
+    };
+    tick();
+  }
+
+  async function runPropCastShow() {
+    const winner = pickRandomProp();
+    if (!winner) {
+      showVoteToast("没有未使用的道具可施法");
+      return;
+    }
+    propRailFilter = "all";
+    renderPropRail();
+    highlightPropCard(winner.uid);
+    const flavor = pick([
+      "仙气贯顶！", "符纸燃起金光！", "门派瞩目这一击！",
+      "真气外放！", "山河令动！", "当众显圣！"
+    ]);
+    showPropCastFx(winner, flavor);
+    if (confirm(`当众施法「${winner.name}」？\n持有者：${winner.ownerLabel}\n确认后标记为已使用`)) {
+      await markHeldPropUsed(winner, true);
+      showVoteToast(`${winner.ownerLabel} 施法「${winner.name}」`);
+    }
+  }
+
+  let propDuelMode = null; // { a: item|null }
+
+  function runPropDuelStart() {
+    const pool = unusedHeldProps();
+    if (pool.length < 2) {
+      showVoteToast("对决至少需要 2 张未使用道具");
+      return;
+    }
+    propDuelMode = { a: null };
+    propRailFilter = "all";
+    renderPropRail();
+    const host = document.getElementById("rail-props");
+    if (host) host.classList.add("prop-duel-pick");
+    showVoteToast("对决：先点第一张道具卡，再点第二张");
+    const listEl = document.getElementById("prop-rail-list");
+    if (!listEl) return;
+    listEl.querySelectorAll("[data-prop-uid]").forEach((btn) => {
+      btn.onclick = async () => {
+        const item = collectHeldProps().find((x) => x.uid === btn.dataset.propUid);
+        if (!item || item.used) return;
+        if (!propDuelMode || !propDuelMode.a) {
+          propDuelMode = { a: item };
+          btn.classList.add("duel-a");
+          showVoteToast(`红方：${item.name} · 再选蓝方`);
+          return;
+        }
+        if (propDuelMode.a.uid === item.uid) return;
+        btn.classList.add("duel-b");
+        const a = propDuelMode.a;
+        const b = item;
+        propDuelMode = null;
+        document.getElementById("rail-props")?.classList.remove("prop-duel-pick");
+        const aWins = Math.random() < 0.5;
+        const winner = aWins ? a : b;
+        const loser = aWins ? b : a;
+        showPropCastFx(winner, `${winner.name} 胜过 ${loser.name}！`);
+        await markHeldPropUsed(loser, true);
+        highlightPropCard(winner.uid);
+        showVoteToast(`对决结束：${winner.name} 胜 · ${loser.name} 已耗尽`);
+        openHeldPropModal(winner);
+      };
+    });
+  }
+
+  function runPropOracle() {
+    const winner = pickRandomProp();
+    if (!winner) {
+      showVoteToast("没有未使用的道具，神谕无处落笔");
+      return;
+    }
+    const line = PROP_ORACLE_LINES[Math.floor(Math.random() * PROP_ORACLE_LINES.length)];
+    const die = 1 + Math.floor(Math.random() * 6);
+    propRailFilter = "all";
+    renderPropRail();
+    highlightPropCard(winner.uid);
+    showPropCastFx(winner, `骰点 ${die} · ${line}`);
+    openModal(`
+      <div style="text-align:center;padding:.2rem 0">
+        <div style="font-size:2.4rem">🎲</div>
+        <h3 style="font-family:var(--font-brush);color:var(--seal);margin:.3rem 0">道具神谕 · ${die} 点</h3>
+        <div class="muted">${esc(winner.icon || "🎴")} ${esc(winner.name)} · ${esc(winner.ownerLabel)}</div>
+      </div>
+      <div class="paper" style="padding:.8rem;margin:.5rem 0;line-height:1.55;color:#1a1205">${esc(line)}</div>
+      <div class="muted" style="font-size:.8rem;margin-bottom:.6rem">原规则：${esc(winner.rule || "（无）")}</div>
+      <div class="row" style="justify-content:flex-end;gap:.4rem">
+        <button type="button" class="ghost" id="modal-cancel">收下神谕</button>
+        <button type="button" class="primary" id="oracle-cast">按此施法</button>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("oracle-cast").onclick = async () => {
+      closeModal();
+      if (!confirm(`确认施法「${winner.name}」并标记已用？`)) return;
+      await markHeldPropUsed(winner, true);
+      showVoteToast(`神谕生效 · ${winner.name}`);
+    };
   }
 
   function newRedeemCard(raw) {
@@ -9319,18 +9584,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.getElementById("checkin-session-label").textContent = session === "pm" ? "下午" : "上午";
     const flag = session === "pm" ? "checked_in_pm" : "checked_in_am";
     const timeFlag = session === "pm" ? "checked_in_pm_at" : "checked_in_am_at";
-    const disciples = sortDisciples(getDisciplesArray(), "name");
+    // 签到榜只统计已登记学号的真实学员（排除无学号的演示种子占位）
+    const registered = sortDisciples(getDisciplesArray().filter((d) => !!d.student_id), "name");
+    const extrasChecked = getDisciplesArray().filter((d) => !d.student_id && d[flag]);
+    const disciples = registered.concat(extrasChecked);
     const checked = disciples.filter((d) => d[flag]);
-    const unchecked = disciples.filter((d) => !d[flag]);
+    const unchecked = registered.filter((d) => !d[flag]);
     document.getElementById("checkin-count").textContent = checked.length;
-    document.getElementById("checkin-total").textContent = disciples.length;
-    document.getElementById("checkin-progress").style.width = (disciples.length ? checked.length / disciples.length * 100 : 0) + "%";
+    document.getElementById("checkin-total").textContent = Math.max(registered.length, checked.length);
+    document.getElementById("checkin-progress").style.width = (registered.length ? checked.length / registered.length * 100 : (checked.length ? 100 : 0)) + "%";
     document.getElementById("checked-list").innerHTML = checked.map((d) =>
-      `<span class="name-chip ok" style="color:#ffe39a;border-color:rgba(240,193,75,.7);text-shadow:0 0 8px rgba(240,193,75,.8)">${d.student_id || "---"} ${d.name}${d[timeFlag] ? " · " + fmtTime(d[timeFlag]) : ""} · 修炼中</span>`
+      `<span class="name-chip ok" style="color:#ffe39a;border-color:rgba(240,193,75,.7);text-shadow:0 0 8px rgba(240,193,75,.8)">${esc(d.student_id || "---")} ${esc(d.name)}${d[timeFlag] ? " · " + fmtTime(d[timeFlag]) : ""} · 修炼中</span>`
     ).join("") || '<span class="muted">暂无</span>';
     document.getElementById("unchecked-list").innerHTML = unchecked.map((d) =>
-      `<span class="name-chip miss">${d.student_id || "未注册"} ${d.name}${isInHall(d) ? " · 大厅" : ""}</span>`
-    ).join("") || '<span class="muted">全员已签</span>';
+      `<span class="name-chip miss">${esc(d.student_id || "未注册")} ${esc(d.name)}${isInHall(d) ? " · 大厅" : ""}</span>`
+    ).join("") || '<span class="muted">全员已签（或尚无登记学员）</span>';
     const code = state.config?.checkin_code || "------";
     const codeEl = document.getElementById("checkin-code-text");
     if (codeEl) {
@@ -10128,13 +10396,27 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function findDiscipleByLocal() {
     const local = getLocalStudent();
     if (!local) return null;
+    // 仅按 disciple_id / student_id 绑定，禁止用姓名模糊对上演示种子或重名者
     if (local.disciple_id && state.disciples && state.disciples[local.disciple_id]) {
       return { id: local.disciple_id, ...state.disciples[local.disciple_id] };
     }
-    return getDisciplesArray().find((d) =>
-      (local.student_id && d.student_id === local.student_id) ||
-      (local.name && d.name === local.name)
-    ) || null;
+    if (local.student_id) {
+      const hit = getDisciplesArray().find((d) => d.student_id && String(d.student_id) === String(local.student_id));
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  /** 用库里的真实姓名回写本机绑定，避免手机显示名与后台不一致 */
+  function syncLocalStudentFromDisciple(d) {
+    if (!d || !d.id) return null;
+    const next = {
+      student_id: d.student_id || "",
+      name: d.name || "",
+      disciple_id: d.id
+    };
+    setLocalStudent(next);
+    return next;
   }
   function renderStudent() {
     const me = findDiscipleByLocal();
@@ -10363,14 +10645,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const hint = document.getElementById("checkin-session-hint");
     if (hint) hint.textContent = `${sessionLabel}签到 · 点上次姓名 → 签到 → 确认`;
 
+    // 展示与写入一律以后台弟子记录为准
+    const showName = (me && me.name) || (local && local.name) || "";
+    const showSid = (me && me.student_id) || (local && local.student_id) || "";
+
     const scanRec = getScanRecord(code);
-    if (scanRec && scanRec.student_id && String(scanRec.student_id) === String(local.student_id)) {
-      renderCheckinSuccess(local.name, local.student_id, scanRec.at, true);
+    if (scanRec && scanRec.student_id && String(scanRec.student_id) === String(showSid)) {
+      renderCheckinSuccess(scanRec.name || showName, showSid, scanRec.at, true);
       return;
     }
     if (me && me[flag]) {
-      markScanDone(code, { name: local.name, student_id: local.student_id, at: me[timeFlag] || Date.now() });
-      renderCheckinSuccess(local.name, local.student_id, me[timeFlag], true);
+      markScanDone(code, { name: showName, student_id: showSid, at: me[timeFlag] || Date.now() });
+      renderCheckinSuccess(showName, showSid, me[timeFlag], true);
       return;
     }
 
@@ -10379,8 +10665,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="stack">
         <p class="muted" style="text-align:center">本机微信已绑定，请点姓名确认后签到</p>
         <button type="button" class="ci-name-card ${selected ? "selected" : ""}" id="ci-name-card">
-          <div style="font-family:var(--font-brush);font-size:1.9rem;color:var(--seal)">${esc(local.name)}</div>
-          <div class="muted">学号 ${esc(local.student_id)} · ${selected ? "已选择，请点签到" : "点击选择我"}</div>
+          <div style="font-family:var(--font-brush);font-size:1.9rem;color:var(--seal)">${esc(showName)}</div>
+          <div class="muted">学号 ${esc(showSid)} · ${selected ? "已选择，请点签到" : "点击选择我"}</div>
         </button>
         <button type="button" class="primary ci-big" id="ci-do" ${selected ? "" : "disabled"}>签到</button>
         <button type="button" class="ghost" id="ci-who" style="width:100%">不是我？换一个名字</button>
@@ -10388,7 +10674,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     document.getElementById("ci-name-card").onclick = () => {
       checkinNameSelected = true;
-      renderCheckinIdentityStep(code, local, me);
+      if (me) syncLocalStudentFromDisciple(me);
+      renderCheckinIdentityStep(code, getLocalStudent() || local, me);
     };
     document.getElementById("ci-do").onclick = async () => {
       if (checkinSubmitting) return;
@@ -10396,17 +10683,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!codeOk(code)) { alert("签到已结束或二维码已失效，请重新扫老师投屏码"); renderCheckin(); return; }
       if (getScanRecord(code)) {
         const rec = getScanRecord(code);
-        renderCheckinSuccess(rec.name || local.name, rec.student_id || local.student_id, rec.at, true);
+        renderCheckinSuccess(rec.name || showName, rec.student_id || showSid, rec.at, true);
         return;
       }
-      if (!confirm(`确认以「${local.name}」完成${sessionLabel}签到？\n（本次扫码只能签到一次）`)) return;
-      const disciple = findDiscipleByLocal();
+      if (!confirm(`确认以「${showName}」完成${sessionLabel}签到？\n（本次扫码只能签到一次）`)) return;
+      const disciple = findDiscipleByLocal() || me;
       if (!disciple) { localStorage.removeItem(LS_STUDENT_KEY); checkinNameSelected = false; renderCheckin(); return; }
+      const bound = syncLocalStudentFromDisciple(disciple);
       checkinSubmitting = true;
       try {
         const res = await applyCheckin(disciple.id, { silent: true });
-        markScanDone(code, { name: local.name, student_id: local.student_id, at: res.at || Date.now() });
-        renderCheckinSuccess(local.name, local.student_id, res.at || Date.now(), !!res.already);
+        const okName = bound?.name || disciple.name || showName;
+        const okSid = bound?.student_id || disciple.student_id || showSid;
+        markScanDone(code, { name: okName, student_id: okSid, at: res.at || Date.now() });
+        renderCheckinSuccess(okName, okSid, res.at || Date.now(), !!res.already);
         checkinNameSelected = false;
       } finally {
         checkinSubmitting = false;
@@ -10500,11 +10790,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     const local = getLocalStudent();
     let me = findDiscipleByLocal();
-    if (local && local.student_id && !me) {
-      // 本机绑定在当前库找不到（换设备 DEMO 种子等）：清空后重新登记
+    if (local && (local.student_id || local.disciple_id) && !me) {
+      // 本机绑定在当前库找不到（换设备 / DEMO 重置等）：清空后重新登记
       localStorage.removeItem(LS_STUDENT_KEY);
-    } else if (local && local.student_id && me) {
-      renderCheckinIdentityStep(code, { name: me.name || local.name, student_id: me.student_id || local.student_id }, me);
+    } else if (me) {
+      const synced = syncLocalStudentFromDisciple(me);
+      renderCheckinIdentityStep(code, synced || { name: me.name, student_id: me.student_id }, me);
       return;
     }
 
@@ -10535,28 +10826,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const btn = document.getElementById("ci-confirm");
     if (btn) { btn.disabled = true; btn.textContent = "签到中…"; }
     try {
-      let existing = getDisciplesArray().find((d) => d.name === name && !d.student_id);
-      let discipleId, student_id;
-      if (existing) {
-        discipleId = existing.id;
-        student_id = await nextStudentId();
-        await updatePaths({
-          [`disciples/${discipleId}/student_id`]: student_id,
-          [`disciples/${discipleId}/first_seen`]: new Date().toISOString(),
-          [`disciples/${discipleId}/name`]: name
-        }, { silent: true });
-      } else {
-        student_id = await nextStudentId();
-        discipleId = "disciple_" + Date.now();
-        const lv = calcPersonalLevel(0);
-        await setPath("disciples/" + discipleId, {
-          name, student_id, peak: -1, camp: "red",
-          exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子",
-          voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false,
-          checked_in_am_at: 0, checked_in_pm_at: 0, trait: "新晋侠客",
-          first_seen: new Date().toISOString(), voted_for: "", weapon: ""
-        }, { silent: true });
-      }
+      // 首次签到一律新建弟子，绝不按姓名吞掉演示种子（否则后台会变成峰内假名/队长身份）
+      const student_id = await nextStudentId();
+      const discipleId = "disciple_" + Date.now();
+      const lv = calcPersonalLevel(0);
+      await setPath("disciples/" + discipleId, {
+        name, student_id, peak: -1, camp: "red",
+        exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子",
+        voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false,
+        checked_in_am_at: 0, checked_in_pm_at: 0, trait: "新晋侠客",
+        first_seen: new Date().toISOString(), voted_for: "", weapon: ""
+      }, { silent: true });
 
       setLocalStudent({ student_id, name, disciple_id: discipleId });
       const res = await applyCheckin(discipleId, { silent: true });
@@ -10812,6 +11092,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "game-spin") { startGameDraw(); return; }
     if (act === "game-refresh") { renderGames(); return; }
     if (act === "goto-redeem") { showScreen("teacher"); redeemTab = "shop"; setTeacherView("redeem"); return; }
+    if (act === "prop-lot") { await runPropLottery(); return; }
+    if (act === "prop-cast") { await runPropCastShow(); return; }
+    if (act === "prop-duel") { runPropDuelStart(); return; }
+    if (act === "prop-oracle") { runPropOracle(); return; }
     if (act === "redeem-manage") { showScreen("teacher"); redeemTab = "manage"; setTeacherView("redeem"); return; }
     if (act === "goto-logs") { showScreen("teacher"); setTeacherView("logs"); return; }
     if (act === "goto-settings") { showScreen("teacher"); setTeacherView("settings"); return; }
