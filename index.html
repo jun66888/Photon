@@ -2937,6 +2937,12 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
   font-size: .65rem; color: var(--ink-soft); text-align: center;
   letter-spacing: .12em; margin: .1rem 0 .05rem;
 }
+.course-rail .rail-label-more {
+  margin-top: .35rem;
+  padding-top: .3rem;
+  border-top: 1px solid rgba(240,193,75,.16);
+  opacity: .85;
+}
 .course-rail button.rail-btn {
   width: 100%; min-height: 2.45rem; padding: .3rem .2rem !important;
   font-size: .72rem !important; letter-spacing: .04em;
@@ -2944,11 +2950,37 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
   box-shadow: 0 2px 0 #0a0d16;
 }
 .course-rail button.rail-btn .ico { font-size: 1.05rem; line-height: 1; }
-.course-rail button.rail-btn.active-nav {
+.course-rail button.rail-btn.rail-hot {
+  min-height: 3.05rem;
+  padding: .42rem .2rem .38rem !important;
+  font-size: .8rem !important;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #ffe9b0;
+  border-color: rgba(240,193,75,.55);
+  background:
+    linear-gradient(180deg, rgba(66,78,112,.98), rgba(24,30,48,.96));
+  box-shadow:
+    0 0 0 1px rgba(240,193,75,.12),
+    0 0 14px rgba(240,193,75,.18),
+    0 3px 0 #0a0d16;
+}
+.course-rail button.rail-btn.rail-hot .ico {
+  font-size: 1.35rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(240,193,75,.35));
+}
+.course-rail button.rail-btn.rail-hot:hover {
+  border-color: #f0c14b;
+  color: #fff3d0;
+  transform: translateY(-1px);
+}
+.course-rail button.rail-btn.active-nav,
+.course-rail button.rail-btn.rail-hot.active-nav {
   border-color: var(--gold);
-  background: linear-gradient(180deg, #3a4668, #1c2438);
+  background: linear-gradient(180deg, #4a5a82, #243048);
   color: #ffe39a;
-  box-shadow: 0 0 12px rgba(240,193,75,.25), 0 2px 0 #0a0d16;
+  box-shadow: 0 0 16px rgba(240,193,75,.35), 0 2px 0 #0a0d16;
 }
 .course-rail button.rail-btn.seal {
   font-family: var(--font-brush); font-size: .85rem !important;
@@ -3607,13 +3639,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div class="rail-label">常用</div>
     <nav id="rail-nav-links">
       <button type="button" class="rail-btn" data-action="goto-main" data-nav="main" title="返回首页"><span class="ico">⌂</span>首页</button>
-      <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
-      <button type="button" class="rail-btn" data-action="goto-checkin" data-nav="checkin"><span class="ico">签</span>签到</button>
-      <button type="button" class="rail-btn" data-action="goto-vote" data-nav="vote"><span class="ico">票</span>投票</button>
-      <button type="button" class="rail-btn" data-action="goto-games" data-nav="games" title="课堂抽人答题"><span class="ico">转</span>抽人</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-checkin" data-nav="checkin" title="课堂签到"><span class="ico">签</span>签到</button>
+      <button type="button" class="rail-btn rail-hot" data-action="custom-score" title="加分中心"><span class="ico">＋</span>加分</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-games" data-nav="games" title="课堂抽人答题"><span class="ico">转</span>抽人</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-vote" data-nav="vote" title="作品投票"><span class="ico">票</span>投票</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-mission" data-nav="mission" title="门派任务"><span class="ico">任</span>任务</button>
+      <div class="rail-label rail-label-more">更多</div>
       <button type="button" class="rail-btn" data-action="goto-redeem" data-nav="redeem" title="奖品兑换"><span class="ico">兑</span>兑换</button>
-      <button type="button" class="rail-btn" data-action="custom-score"><span class="ico">＋</span>加分</button>
-      <button type="button" class="rail-btn" data-action="edit-camp-mission" title="编辑今日门派任务"><span class="ico">任</span>任务</button>
+      <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
     </nav>
     <div class="rail-day" id="rail-day-box" aria-label="课堂天数">
@@ -3662,18 +3695,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div id="edit-box-layer" aria-label="编辑框层"></div>
     <div id="teacher-main" class="subview course-page">
       <div class="arena-duel-hero" id="arena-duel-hero">
-        <div class="mission-publish-top is-collapsed" id="mission-publish-bar" aria-label="今日门派任务榜">
-          <div class="mission-board-head">
-            <div class="mb-kicker">今日门派任务</div>
-            <div class="mb-tools">
-              <button type="button" class="mb-toggle ghost" id="mission-board-toggle" title="展开或折叠任务条">展开</button>
-              <button type="button" class="mb-manage" data-action="edit-camp-mission" title="管理门派任务内容">管理</button>
-            </div>
-          </div>
-          <div class="mission-weight-list" id="mission-board-list">
-            <div class="mission-weight-empty">点击管理添加门派任务</div>
-          </div>
-        </div>
         <div class="hall-banner" id="hall-home-banner" hidden></div>
         <div class="mission-board as-hero" id="mission-board" aria-label="两派对阵属性">
           <button type="button" class="mission-camp-chip red" data-action="camp-attrs" data-camp="red" title="点击设定光影派系属性">
