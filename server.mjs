@@ -33,6 +33,16 @@ const MIME = {
   ".sh": "text/plain; charset=utf-8"
 };
 
+function isPhoneUnfriendlyIp(ip) {
+  const h = String(ip || "").toLowerCase();
+  if (!h || h === "127.0.0.1" || h === "0.0.0.0") return true;
+  if (h.startsWith("169.254.")) return true;
+  // Docker 默认桥、常见 compose、Cloud Agent 内网——手机扫不开
+  if (h.startsWith("172.17.") || h.startsWith("172.18.") || h.startsWith("172.19.")) return true;
+  if (h.startsWith("172.30.") || h.startsWith("172.31.")) return true;
+  return false;
+}
+
 function lanIPv4List() {
   const nets = os.networkInterfaces();
   const out = [];
@@ -47,6 +57,7 @@ function lanIPv4List() {
   const score = (ip) => {
     if (ip.startsWith("192.168.")) return 0;
     if (ip.startsWith("10.")) return 1;
+    if (isPhoneUnfriendlyIp(ip)) return 8;
     if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return 2;
     return 9;
   };
@@ -58,8 +69,11 @@ function writeOriginHint() {
   const lans = lanIPv4List();
   const origins = lans.map((x) => `http://${x.address}:${PORT}`);
   const envPublic = String(process.env.GY_PUBLIC_ORIGIN || "").trim().replace(/\/$/, "");
-  // 课堂默认优先局域网，公网隧道仅作可选补充（断网也能用）
-  const preferred = origins[0] || envPublic || `http://127.0.0.1:${PORT}`;
+  // 课堂优先真实局域网；仅有云内网 172.x 时改用公网隧道，避免二维码扫到死地址
+  const classroomOrigins = origins.filter((o) => {
+    try { return !isPhoneUnfriendlyIp(new URL(o).hostname); } catch (e) { return false; }
+  });
+  const preferred = classroomOrigins[0] || envPublic || origins[0] || `http://127.0.0.1:${PORT}`;
   const payload = {
     port: PORT,
     generated_at: new Date().toISOString(),
@@ -69,7 +83,7 @@ function writeOriginHint() {
     preferred,
     teacher: `${preferred}/?mode=teacher`,
     demo_sync: true,
-    note: "默认使用局域网 preferred；公网隧道需外网且可选。扫码签到经 /__gy/demo-db 本机同步"
+    note: "默认使用局域网 preferred；无教室局域网时用 public_tunnel。扫码签到经 /__gy/demo-db 本机同步"
   };
   try {
     fs.writeFileSync(path.join(ROOT, "gy-public-origin.json"), JSON.stringify(payload, null, 2));

@@ -10227,6 +10227,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const cur = getPublicOriginOverride();
     if (cur && isPhoneUnfriendlyOrigin(cur)) setPublicOriginOverride("");
   }
+  function originHostname(url) {
+    try { return new URL(String(url || ""), location.href).hostname.toLowerCase(); } catch (e) { return ""; }
+  }
+  function sameOriginUrl(a, b) {
+    try {
+      return new URL(String(a || ""), location.href).origin === new URL(String(b || ""), location.href).origin;
+    } catch (e) { return false; }
+  }
   /** 单页根路径：去掉 /index.html、/index，避免错误重定向丢查询参数 */
   function publicPagePath() {
     let path = location.pathname || "/";
@@ -10297,22 +10305,36 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     return "";
   }
-  /** 自动选用手机可达地址：真实局域网 > 当前页（若已是隧道）> 公网隧道；绝不写 172.x 云内网 */
+  /** 自动选用手机可达地址：真实局域网 > 服务端最新公网隧道 > 当前页；绝不写 172.x 云内网 */
   async function ensurePhoneFriendlyOrigin() {
     clearBadPublicOriginOverride();
+    _netHintCache = null;
+    const hint = await fetchNetOriginHint();
+    const tunnel = String(hint && hint.public_tunnel || "").trim().replace(/\/$/, "");
+    const tunnelHost = tunnel ? originHostname(tunnel) : "";
     let existing = getPublicOriginOverride();
     if (existing && isPhoneUnfriendlyOrigin(existing)) {
       setPublicOriginOverride("");
       existing = "";
     }
-    // 老师端已在公网隧道 / 真实局域网打开时，优先用当前页
+    // 临时隧道换了域名时：丢掉旧 trycloudflare 覆盖，避免二维码仍指向已失效链接
+    if (tunnel && tunnelHost && existing && isPublicTunnelHost(originHostname(existing))
+      && originHostname(existing) !== tunnelHost && !isPhoneUnfriendlyOrigin(tunnel)) {
+      setPublicOriginOverride(tunnel);
+      existing = tunnel;
+    }
+    if (tunnel && tunnelHost && isPublicTunnelHost(location.hostname)
+      && location.hostname.toLowerCase() !== tunnelHost && !isPhoneUnfriendlyOrigin(tunnel)) {
+      // 老师仍停留在过期预览域名时，二维码改跟服务端最新隧道走
+      setPublicOriginOverride(tunnel);
+      return tunnel;
+    }
+    // 老师端已在公网隧道 / 真实局域网打开时，优先用当前页（或已校正的覆盖）
     if (!isPhoneUnfriendlyHost(location.hostname)) {
       if (existing && !isPhoneUnfriendlyOrigin(existing)) return existing;
       return location.origin.replace(/\/$/, "");
     }
     if (existing && !isPhoneUnfriendlyOrigin(existing)) return existing;
-    _netHintCache = null;
-    const hint = await fetchNetOriginHint();
     const picked = pickPhoneOriginFromHint(hint);
     if (picked) {
       setPublicOriginOverride(picked);
@@ -10517,10 +10539,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       paint(size);
     };
     paint(size);
-    // 自动换成手机可达地址，避免扫到 localhost / 云内网 172.x
+    // 自动换成手机可达地址，避免扫到 localhost / 云内网 / 过期隧道
     ensurePhoneFriendlyOrigin().then((origin) => {
       if (!origin) return;
-      if (!isPhoneUnfriendlyOrigin(currentUrl) && !isLocalOrigin(currentUrl)) return;
+      const urlOk = !isPhoneUnfriendlyOrigin(currentUrl) && !isLocalOrigin(currentUrl);
+      if (urlOk && sameOriginUrl(currentUrl, origin)) return;
       rebuildFromOrigin();
       if (hintEl && !isPhoneUnfriendlyOrigin(currentUrl)) {
         hintEl.textContent = "已自动改用手机可达地址：" + origin;
