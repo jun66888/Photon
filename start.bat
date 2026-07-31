@@ -23,12 +23,14 @@ if errorlevel 1 (
 echo  【请收藏老师端地址 · 永远不变】
 echo    http://127.0.0.1:3000/?mode=teacher
 echo.
+echo  start.bat 就在本文件夹：%~dp0
+echo  若还没放到桌面：先双击同目录「一键放到桌面.bat」一次
+echo.
 echo  上课：
 echo    1. 电脑连教室 Wi-Fi（可无外网）
 echo    2. 本窗口保持打开
 echo    3. 浏览器会打开上面的固定地址
-echo    4. 手机扫码地址见「固定访问地址.txt」（锁定后不自动换）
-echo    5. 首次建议双击「开放防火墙.bat」
+echo    4. 手机扫码见「固定访问地址.txt」
 echo.
 echo  按 Ctrl+C 停止；异常退出会自动重试
 echo.

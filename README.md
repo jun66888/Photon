@@ -25,7 +25,8 @@ http://127.0.0.1:3000/?mode=teacher
 
 需要一次（有网时）：[Node.js 18+](https://nodejs.org/)。之后可断网上课。
 
-- **Windows**：双击 `start.bat`（建议先跑一次 `开放防火墙.bat`）  
+- **Windows**：在项目文件夹双击一次 `一键放到桌面.bat`，之后用桌面「光影盟-开始上课」
+- 或直接双击项目里的 `start.bat`（建议先跑一次 `开放防火墙.bat`）  
 - **Mac / Linux**：`./start.sh` 或 `npm start`
 
 手机扫码地址首次绑定后写入 `gy-classroom.json`，**不会自动更换**。  
