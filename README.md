@@ -25,9 +25,11 @@ http://127.0.0.1:3000/?mode=teacher
 
 需要一次（有网时）：[Node.js 18+](https://nodejs.org/)。之后可断网上课。
 
-- **Windows**：在项目文件夹双击一次 `一键放到桌面.bat`，之后用桌面「光影盟-开始上课」
-- 或直接双击项目里的 `start.bat`（建议先跑一次 `开放防火墙.bat`）  
-- **Mac / Linux**：`./start.sh` 或 `npm start`
+- **Windows（推荐）**：本机项目文件夹双击 `一键放到桌面.bat` 或 `PUT-ON-DESKTOP.bat`，之后用桌面 `GY-Start` /「光影盟-开始上课」
+- 或直接双击项目里的 `start.bat`（建议先跑一次 `开放防火墙.bat`）
+- 说明：云端 Agent **不会**把图标写到你教室电脑桌面，必须在本机双击上述脚本  
+- **Mac**：双击 `一键放到桌面.command`，之后用桌面「光影盟-开始上课」；或直接 `./start.sh` / `npm start`
+- **Linux**：`./start.sh` 或 `npm start`
 
 手机扫码地址首次绑定后写入 `gy-classroom.json`，**不会自动更换**。  
 详见 `固定访问地址.txt`（每次启动生成）。
