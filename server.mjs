@@ -197,6 +197,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (u.pathname === "/__gy/health") {
+    sendJson(res, 200, {
+      ok: true,
+      service: "guangyingmeng",
+      port: PORT,
+      time: new Date().toISOString()
+    });
+    return;
+  }
+
   if (u.pathname === "/__gy/net.json" || u.pathname === "/gy-public-origin.json") {
     const fresh = writeOriginHint();
     sendJson(res, 200, fresh);
@@ -300,16 +310,32 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   const local = `http://127.0.0.1:${PORT}/?mode=teacher`;
+  const lanPhone = (netInfo.origins || []).find((o) => {
+    try {
+      const h = new URL(o).hostname;
+      return h.startsWith("192.168.") || h.startsWith("10.");
+    } catch {
+      return false;
+    }
+  });
   console.log("");
-  console.log("  光影盟 · 本地服务已启动（含 DEMO 跨设备同步）");
+  console.log("  ========================================");
+  console.log("  光影盟 · 本地服务已启动");
+  console.log("  ========================================");
   console.log("  电脑打开:  " + local);
-  if (netInfo.origins.length) {
-    console.log("  手机同网:  " + netInfo.preferred + "/?mode=teacher");
-    console.log("  扫码请用上述「手机同网」地址（不要用 localhost）");
+  if (lanPhone) {
+    console.log("  手机同网:  " + lanPhone + "/?mode=teacher");
+    console.log("  扫码请用「手机同网」（不要扫 localhost）");
+  } else if (netInfo.public_tunnel) {
+    console.log("  公网隧道:  " + netInfo.public_tunnel + "/?mode=teacher");
+    console.log("  （当前无教室局域网 IP；本机课堂请在自己电脑 npm start）");
+  } else if (netInfo.origins.length) {
+    console.log("  检测到 IP:  " + netInfo.preferred + "/?mode=teacher");
+    console.log("  若手机打不开，请确认与电脑同一 Wi-Fi");
   } else {
-    console.log("  未检测到局域网 IP，可用公网隧道；签到同步依赖本服务 /__gy/demo-db");
+    console.log("  未检测到局域网 IP；手机签到需同网或公网隧道");
   }
-  console.log("  同步接口: http://127.0.0.1:" + PORT + "/__gy/demo-db");
+  console.log("  健康检查:  http://127.0.0.1:" + PORT + "/__gy/health");
   console.log("  按 Ctrl+C 停止");
   console.log("");
 });
