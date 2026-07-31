@@ -6,8 +6,10 @@
   <title>光影盟 · 武侠对战榜</title>
   <!-- 全部本地资源：字体 / 二维码；Firebase 仅在已配置时按需加载，默认 DEMO 断网可用 -->
   <link rel="stylesheet" href="./vendor/fonts.css" />
-  <script src="./vendor/qrcode.min.js"></script>
+  <!-- qrcodejs 先加载作回退；npm qrcode 后加载覆盖同名全局，保留 toCanvas -->
   <script src="./vendor/qrcodejs.min.js"></script>
+  <script>window.QRCodeJS = typeof QRCode === "function" ? QRCode : null;</script>
+  <script src="./vendor/qrcode.min.js"></script>
   <style>
 :root {
   --bg0: #07090f;
@@ -3745,10 +3747,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="ch-sub">微信扫码入盟 · 已签弟子金光修炼 · 未签红色提示</div>
         </div>
         <div class="ch-actions">
-          <button type="button" class="primary" data-action="gen-checkin-code">生成签到码</button>
-          <button type="button" data-action="refresh-checkin-code">刷新码</button>
-          <button type="button" data-action="end-checkin">结束签到</button>
-          <button type="button" data-action="toggle-session">下午签到</button>
+          <div class="vote-toggle-bar" id="checkin-toggle-bar" role="group" aria-label="签到开关">
+            <button type="button" id="btn-checkin-open" class="primary" data-action="gen-checkin-code">开启签到</button>
+            <button type="button" id="btn-checkin-close" data-action="end-checkin" disabled>关闭签到</button>
+          </div>
+          <button type="button" id="btn-checkin-refresh" data-action="refresh-checkin-code" disabled>刷新二维码</button>
+          <button type="button" data-action="toggle-session" id="btn-checkin-session">下午签到</button>
         </div>
       </div>
       <div class="course-panel">
@@ -3757,10 +3761,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <span class="demo-sync-badge" hidden></span>
         </div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
-        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「结束签到」前一直有效 · 须与老师端同一服务地址</p>
+        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「关闭签到」前一直有效 · 须与老师端同一服务地址（优先同一 Wi‑Fi 局域网）</p>
         <div class="checkin-qr-layout">
           <div class="qr-stage">
-            <div class="muted">签到码 <span id="checkin-code-text">------</span> · <span id="checkin-countdown">进行中</span></div>
+            <div id="checkin-qr-state" class="vote-qr-state off">○ 签到未开启</div>
+            <div class="muted" style="margin-bottom:.35rem" id="checkin-qr-hint">先点「开启签到」，再让学生扫下方二维码；扫不开可手输 6 位码</div>
+            <div class="muted">签到码 <span id="checkin-code-text">------</span> · <span id="checkin-countdown">未开启</span></div>
             <div class="qr-box" id="checkin-qr"></div>
           </div>
           <div>
@@ -9519,6 +9525,27 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return isLocalHostname(u.hostname);
     } catch (e) { return false; }
   }
+  /** 手机微信扫不开的地址：本机环回、Docker/云容器网桥等（教室 192.168/10/部分 172.16 仍可用） */
+  function isPhoneUnfriendlyHost(host) {
+    const h = String(host || "").toLowerCase();
+    if (!h || isLocalHostname(h)) return true;
+    if (h.startsWith("169.254.")) return true;
+    // Docker 默认桥、常见 compose 网段、本云 Agent 内网
+    if (h.startsWith("172.17.") || h.startsWith("172.18.") || h.startsWith("172.19.")) return true;
+    if (h.startsWith("172.30.") || h.startsWith("172.31.")) return true;
+    return false;
+  }
+  function isPhoneUnfriendlyOrigin(url) {
+    try {
+      return isPhoneUnfriendlyHost(new URL(url, location.href).hostname);
+    } catch (e) {
+      return true;
+    }
+  }
+  function clearBadPublicOriginOverride() {
+    const cur = getPublicOriginOverride();
+    if (cur && isPhoneUnfriendlyOrigin(cur)) setPublicOriginOverride("");
+  }
   /** 单页根路径：去掉 /index.html、/index，避免错误重定向丢查询参数 */
   function publicPagePath() {
     let path = location.pathname || "/";
@@ -9564,53 +9591,46 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function pickPhoneOriginFromHint(hint) {
     if (!hint) return "";
-    // 课堂优先局域网 IP，避免依赖公网隧道（断网仍可用）
+    // 课堂优先真实局域网（192.168 / 10），绝不自动写入容器/云内网
     const list = Array.isArray(hint.origins) ? hint.origins : [];
     const lanPreferred = [];
     for (const o of list) {
       const v = String(o || "").trim().replace(/\/$/, "");
-      if (!v || isLocalOrigin(v)) continue;
+      if (!v || isPhoneUnfriendlyOrigin(v)) continue;
       try {
         const host = new URL(v).hostname;
-        // 跳过典型容器网桥，优先 192.168/10
-        if (host.startsWith("172.17.") || host.startsWith("172.18.") || host.startsWith("172.30.")) continue;
         if (isPublicTunnelHost(host)) continue;
-        // 真正教室局域网优先
         if (host.startsWith("192.168.") || host.startsWith("10.")) lanPreferred.unshift(v);
         else lanPreferred.push(v);
       } catch (e) { /* ignore */ }
     }
     if (lanPreferred.length) return lanPreferred[0];
-    const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
-    if (preferred && !isLocalOrigin(preferred)) {
-      try {
-        const host = new URL(preferred).hostname;
-        if (!isPublicTunnelHost(host)) return preferred;
-      } catch (e) { /* ignore */ }
-    }
-    // 最后才回退公网隧道（需外网，仅可选）
+    // 公网隧道作备用（Cloud Agent / 无教室局域网时）
     const tunnel = String(hint.public_tunnel || "").trim().replace(/\/$/, "");
-    if (tunnel && /^https?:\/\//i.test(tunnel) && !isLocalOrigin(tunnel)) return tunnel;
+    if (tunnel && /^https?:\/\//i.test(tunnel) && !isPhoneUnfriendlyOrigin(tunnel)) return tunnel;
+    const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
+    if (preferred && !isPhoneUnfriendlyOrigin(preferred)) return preferred;
     for (const o of list) {
       const v = String(o || "").trim().replace(/\/$/, "");
-      if (!v || isLocalOrigin(v)) continue;
-      try {
-        const host = new URL(v).hostname;
-        if (host.startsWith("172.17.") || host.startsWith("172.18.") || host.startsWith("172.30.")) continue;
-        return v;
-      } catch (e) { /* skip */ }
-    }
-    for (const o of list) {
-      const v = String(o || "").trim().replace(/\/$/, "");
-      if (v && !isLocalOrigin(v)) return v;
+      if (v && !isPhoneUnfriendlyOrigin(v)) return v;
     }
     return "";
   }
-  /** 本机打开时自动选用局域网/隧道地址，避免二维码写成 localhost */
+  /** 自动选用手机可达地址：真实局域网 > 当前页（若已是隧道）> 公网隧道；绝不写 172.x 云内网 */
   async function ensurePhoneFriendlyOrigin() {
-    if (!isLocalHostname(location.hostname)) return getPublicOriginOverride() || location.origin;
-    const existing = getPublicOriginOverride();
-    if (existing && !isLocalOrigin(existing)) return existing;
+    clearBadPublicOriginOverride();
+    let existing = getPublicOriginOverride();
+    if (existing && isPhoneUnfriendlyOrigin(existing)) {
+      setPublicOriginOverride("");
+      existing = "";
+    }
+    // 老师端已在公网隧道 / 真实局域网打开时，优先用当前页
+    if (!isPhoneUnfriendlyHost(location.hostname)) {
+      if (existing && !isPhoneUnfriendlyOrigin(existing)) return existing;
+      return location.origin.replace(/\/$/, "");
+    }
+    if (existing && !isPhoneUnfriendlyOrigin(existing)) return existing;
+    _netHintCache = null;
     const hint = await fetchNetOriginHint();
     const picked = pickPhoneOriginFromHint(hint);
     if (picked) {
@@ -9645,17 +9665,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       errorCorrectionLevel: "M",
       color: { dark: "#000000", light: "#ffffff" }
     };
-    // 优先本地 npm qrcode UMD
-    if (window.QRCode && typeof window.QRCode.toCanvas === "function") {
+    // 优先本地 npm qrcode UMD（toCanvas / toDataURL）
+    const qrNpm = (window.QRCode && typeof window.QRCode.toCanvas === "function")
+      ? window.QRCode
+      : null;
+    if (qrNpm) {
       const canvas = document.createElement("canvas");
       canvas.width = drawPx;
       canvas.height = drawPx;
       canvasHost.appendChild(canvas);
-      return window.QRCode.toCanvas(canvas, url, opts).then(() => true).catch((err) => {
+      return qrNpm.toCanvas(canvas, url, opts).then(() => true).catch((err) => {
         console.warn("QR toCanvas failed", err);
         canvas.remove();
-        if (typeof window.QRCode.toDataURL === "function") {
-          return window.QRCode.toDataURL(url, opts).then((dataUrl) => {
+        if (typeof qrNpm.toDataURL === "function") {
+          return qrNpm.toDataURL(url, opts).then((dataUrl) => {
             const img = document.createElement("img");
             img.alt = "二维码";
             img.width = drawPx;
@@ -9682,17 +9705,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         return false;
       });
     }
-    // 回退 davidshimjs/qrcodejs
-    if (typeof window.QRCode === "function" && window.QRCode.CorrectLevel) {
+    // 回退 davidshimjs/qrcodejs（加载时保存在 QRCodeJS）
+    const QRCodeCtor = window.QRCodeJS
+      || ((typeof window.QRCode === "function" && window.QRCode.CorrectLevel) ? window.QRCode : null);
+    if (QRCodeCtor && QRCodeCtor.CorrectLevel) {
       try {
         // eslint-disable-next-line no-new
-        new window.QRCode(canvasHost, {
+        new QRCodeCtor(canvasHost, {
           text: url,
           width: drawPx,
           height: drawPx,
           colorDark: "#000000",
           colorLight: "#ffffff",
-          correctLevel: window.QRCode.CorrectLevel.M
+          correctLevel: QRCodeCtor.CorrectLevel.M
         });
         const img = canvasHost.querySelector("img");
         const cvs = canvasHost.querySelector("canvas");
@@ -9784,12 +9809,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const input = pubBar.querySelector("#qr-public-origin-input");
     const hintEl = pubBar.querySelector("#qr-public-origin-hint");
     const syncHint = () => {
-      const bad = isLocalOrigin(currentUrl);
+      const bad = isPhoneUnfriendlyOrigin(currentUrl) || isLocalOrigin(currentUrl);
       if (!hintEl) return;
       hintEl.className = "qr-public-hint " + (bad ? "" : "ok");
       hintEl.textContent = bad
-        ? "当前仍是本机地址，手机微信扫不开。请填入手机能打开的地址后点「应用到二维码」。"
-        : "链接已指向手机可达地址。若昨天的隧道今天失效，请改用本机「npm start」打印的局域网地址，或新的公网隧道。";
+        ? "当前地址手机扫不开（localhost/云内网）。请填同一 Wi‑Fi 的 http://192.168.x.x:3000，或可用的公网隧道后点「应用到二维码」。"
+        : "链接已指向手机可达地址。课堂优先局域网；隧道隔天可能失效时请改回局域网。";
     };
     const paint = (px) => paintQrInto(canvasHost, currentUrl, px).then((ok) => {
       fail.style.display = ok ? "none" : "block";
@@ -9811,11 +9836,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       paint(size);
     };
     paint(size);
-    // 本机打开时自动换成局域网/隧道，避免扫到 127.0.0.1
+    // 自动换成手机可达地址，避免扫到 localhost / 云内网 172.x
     ensurePhoneFriendlyOrigin().then((origin) => {
-      if (!origin || !isLocalOrigin(currentUrl)) return;
+      if (!origin) return;
+      if (!isPhoneUnfriendlyOrigin(currentUrl) && !isLocalOrigin(currentUrl)) return;
       rebuildFromOrigin();
-      if (hintEl && !isLocalOrigin(currentUrl)) {
+      if (hintEl && !isPhoneUnfriendlyOrigin(currentUrl)) {
         hintEl.textContent = "已自动改用手机可达地址：" + origin;
       }
     }).catch(() => {});
@@ -9889,9 +9915,55 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (e.clientX > r.right - 40 && e.clientY > r.bottom - 40) beginResize(e);
     });
   }
-  /** 微信签到：结束签到前长期有效，可手动刷新换码 */
+  /** 微信签到：关闭前长期有效，可手动刷新换码 */
   const CHECKIN_TTL_MS = 12 * 60 * 60 * 1000;
+  function syncCheckinToggleButtons(open) {
+    const active = !!open;
+    const openBtn = document.getElementById("btn-checkin-open");
+    const closeBtn = document.getElementById("btn-checkin-close");
+    const refreshBtn = document.getElementById("btn-checkin-refresh");
+    if (openBtn) {
+      openBtn.disabled = active;
+      openBtn.classList.toggle("primary", !active);
+      openBtn.classList.toggle("is-active", !active);
+      openBtn.classList.toggle("is-dim", active);
+      openBtn.textContent = active ? "签到进行中" : "开启签到";
+      openBtn.title = active ? "签到已开启，可用「关闭签到」结束" : "开启后生成二维码与 6 位签到码";
+    }
+    if (closeBtn) {
+      closeBtn.disabled = !active;
+      closeBtn.classList.toggle("primary", active);
+      closeBtn.classList.toggle("seal", active);
+      closeBtn.classList.toggle("is-active", active);
+      closeBtn.classList.toggle("is-dim", !active);
+      closeBtn.textContent = "关闭签到";
+      closeBtn.title = active ? "关闭后二维码立即失效" : "请先开启签到";
+    }
+    if (refreshBtn) {
+      refreshBtn.disabled = !active;
+      refreshBtn.classList.toggle("is-dim", !active);
+      refreshBtn.title = active ? "更换 6 位码并重绘二维码（旧码作废）" : "请先开启签到";
+    }
+    const st = document.getElementById("checkin-qr-state");
+    if (st) {
+      st.className = "vote-qr-state " + (active ? "on" : "off");
+      st.textContent = active ? "● 签到进行中 · 可扫码" : "○ 签到未开启";
+    }
+    const hint = document.getElementById("checkin-qr-hint");
+    if (hint) {
+      hint.textContent = active
+        ? "学生用微信扫下方码；扫不开可手输上方 6 位码。点「刷新二维码」可换新码。"
+        : "先点「开启签到」，再让学生扫下方二维码；扫不开可手输 6 位码";
+    }
+    const sessionBtn = document.getElementById("btn-checkin-session");
+    if (sessionBtn) {
+      const session = state.config?.checkin_session || "am";
+      sessionBtn.textContent = session === "am" ? "下午签到" : "上午签到";
+    }
+  }
   async function generateCheckinCode() {
+    clearBadPublicOriginOverride();
+    await ensurePhoneFriendlyOrigin();
     await updatePaths({
       "config/checkin_code": randCode(),
       "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS,
@@ -9905,10 +9977,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       await generateCheckinCode();
       return;
     }
+    clearBadPublicOriginOverride();
+    await ensurePhoneFriendlyOrigin();
     await updatePaths({
       "config/checkin_code": randCode(),
       "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS
     });
+    renderTeacherCheckin();
+  }
+  async function endCheckinSession() {
+    if (!state.config?.checkin_active && !state.config?.checkin_code) {
+      syncCheckinToggleButtons(false);
+      renderTeacherCheckin();
+      return;
+    }
+    await updatePaths({ "config/checkin_active": false, "config/checkin_code": "" });
     renderTeacherCheckin();
   }
   function startCheckinRefreshLoop() {
@@ -9918,12 +10001,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const cd = document.getElementById("checkin-countdown");
       if (!cd) return;
       if (!state.config?.checkin_active) { cd.textContent = "未开启"; return; }
-      cd.textContent = "扫码签到中 · 点「结束签到」关闭";
+      cd.textContent = "扫码签到中 · 点「关闭签到」结束";
     }, 1000);
   }
   function renderTeacherCheckin() {
     const session = state.config?.checkin_session || "am";
-    document.getElementById("checkin-session-label").textContent = session === "pm" ? "下午" : "上午";
+    const active = !!state.config?.checkin_active;
+    const labelEl = document.getElementById("checkin-session-label");
+    if (labelEl) labelEl.textContent = session === "pm" ? "下午" : "上午";
+    syncCheckinToggleButtons(active);
     const flag = session === "pm" ? "checked_in_pm" : "checked_in_am";
     const timeFlag = session === "pm" ? "checked_in_pm_at" : "checked_in_am_at";
     // 签到榜只统计已登记学号的真实学员（排除无学号的演示种子占位）
@@ -9947,18 +10033,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       codeEl.textContent = code;
       codeEl.style.cssText = "font-size:1.8rem;font-weight:900;letter-spacing:.2em;color:#1a1205;background:#ffe39a;padding:.15rem .45rem;border-radius:6px";
     }
-    document.getElementById("checkin-countdown").textContent = state.config?.checkin_active
+    document.getElementById("checkin-countdown").textContent = active
       ? "扫码签到中 · 扫不开可让学生手输上方6位码"
       : "未开启";
     updateDemoSyncBadge();
     const qrHost = document.getElementById("checkin-qr");
-    if (state.config?.checkin_active && code !== "------") {
-      // 先尽量用手机可达 origin 再画码（async 在 renderQr 内也会再校正一次）
+    if (active && code !== "------") {
       ensurePhoneFriendlyOrigin().finally(() => {
         renderQr(qrHost, publicPageUrl(`?mode=checkin&code=${code}`), "checkin-qr");
       });
-    } else {
-      qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333">点击「生成微信签到码」投屏</div>';
+    } else if (qrHost) {
+      qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333;text-align:center">点击上方「开启签到」生成二维码</div>';
     }
   }
 
@@ -12009,14 +12094,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       location.href = location.pathname + "?mode=memories";
       return;
     }
-    if (act === "gen-checkin-code") await generateCheckinCode();
-    if (act === "refresh-checkin-code") await refreshCheckinCode();
-    if (act === "end-checkin") await updatePaths({ "config/checkin_active": false, "config/checkin_code": "" });
+    if (act === "gen-checkin-code") { await generateCheckinCode(); return; }
+    if (act === "refresh-checkin-code") { await refreshCheckinCode(); return; }
+    if (act === "end-checkin") { await endCheckinSession(); return; }
     if (act === "toggle-session") {
       const next = (state.config?.checkin_session || "am") === "am" ? "pm" : "am";
       await updatePaths({ "config/checkin_session": next });
-      const labelBtn = document.querySelector('[data-action="toggle-session"]');
-      if (labelBtn) labelBtn.textContent = next === "am" ? "下午签到" : "上午签到";
+      syncCheckinToggleButtons(!!state.config?.checkin_active);
+      return;
     }
     if (act === "open-vote") {
       if (state.config?.voting_open) { setTeacherView("vote"); syncVoteToggleButtons(true); return; }
