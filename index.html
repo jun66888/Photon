@@ -2465,6 +2465,106 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   background: rgba(255, 248, 231, .65);
   color: #1a1205;
 }
+#checkin-screen .ci-profile-toggle {
+  width: 100%;
+  min-height: 2.4rem;
+  font-size: .95rem;
+}
+#checkin-screen .ci-profile-panel {
+  display: none;
+  padding: .75rem .7rem;
+  border: 1px solid rgba(139, 90, 43, .35);
+  border-radius: 10px;
+  background: rgba(255, 248, 231, .72);
+  color: #1a1205;
+  text-align: left;
+}
+#checkin-screen .ci-profile-panel.open { display: block; }
+#checkin-screen .ci-profile-panel label {
+  display: block;
+  font-size: .82rem;
+  color: #5a4630;
+  margin: .45rem 0 .2rem;
+}
+#checkin-screen .ci-profile-panel input,
+#checkin-screen .ci-profile-panel select,
+#checkin-screen .ci-profile-panel textarea {
+  width: 100%;
+  padding: .55rem .65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(139, 90, 43, .35);
+  background: #fff;
+  color: #1a1205;
+  font-size: .95rem;
+}
+#checkin-screen .ci-profile-panel textarea {
+  min-height: 3.2rem;
+  resize: vertical;
+  line-height: 1.4;
+}
+#checkin-screen .ci-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin-top: .35rem;
+}
+#checkin-screen .ci-avatar-preview {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(163, 32, 32, .35);
+  background: #f0e6d4;
+  flex: 0 0 64px;
+}
+#checkin-screen .ci-avatar-preview.placeholder {
+  display: grid; place-items: center;
+  font-size: 1.4rem; color: #8b5a2b;
+}
+#checkin-screen .ci-avatar-actions {
+  display: flex; flex-direction: column; gap: .35rem; flex: 1;
+}
+#checkin-screen .ci-avatar-actions button {
+  width: 100%;
+  min-height: 2rem;
+  font-size: .85rem;
+}
+#checkin-screen .ci-profile-hint {
+  margin: .35rem 0 0;
+  font-size: .75rem;
+  color: #7a6248;
+  line-height: 1.4;
+}
+#checkin-screen .ci-profile-summary {
+  display: flex; align-items: center; gap: .55rem;
+  margin-top: .35rem;
+  font-size: .82rem;
+  color: #5a4630;
+}
+#checkin-screen .ci-profile-summary img {
+  width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+  border: 1px solid rgba(163, 32, 32, .3);
+}
+.disciple-avatar {
+  width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+  border: 1px solid rgba(240,193,75,.4);
+  vertical-align: middle; margin-right: .25rem;
+  background: rgba(0,0,0,.25);
+}
+.disciple-avatar.lg {
+  width: 56px; height: 56px;
+  border-width: 2px;
+}
+.ed-avatar-row {
+  display: flex; align-items: center; gap: .65rem; margin: .35rem 0 .55rem;
+}
+.ed-avatar-row img, .ed-avatar-row .ed-avatar-ph {
+  width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+  border: 2px solid rgba(240,193,75,.4); background: rgba(0,0,0,.25);
+  flex: 0 0 64px;
+}
+.ed-avatar-row .ed-avatar-ph {
+  display: grid; place-items: center; color: var(--ink-soft); font-size: 1.3rem;
+}
 .success-burst { font-size: 3.5rem; text-align: center; animation: scoreBoom .5s ease; }
 .badge-fly {
   display: inline-block; animation: badgeFly 1s ease forwards;
@@ -4293,7 +4393,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       name, student_id: "", peak, camp, exp: 0, level: lv.level, title: lv.title,
       rank: "青铜", role: isCaptain ? "队长" : "弟子", voted: false, contributed: 0,
       checked_in_am: false, checked_in_pm: false, first_seen: "", voted_for: "",
-      weapon: ["笔","镜","琴","鼓","剑"][i % 5]
+      weapon: ["笔","镜","琴","鼓","剑"][i % 5],
+      gender: "", contact: "", motto: "", avatar: ""
     };
   }
   function buildSeedArena() {
@@ -6678,11 +6779,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const prog = personalProgress(d);
       const isCap = d.role === "队长" || d.name === captain;
       const ok = discipleCheckedIn(d);
+      const av = d.avatar ? `<img class="disciple-avatar" src="${d.avatar}" alt="" />` : "";
+      const mottoBit = d.motto ? ` · 「${esc(d.motto)}」` : "";
+      const genderBit = d.gender ? ` · ${esc(d.gender)}` : "";
+      const contactBit = d.contact ? ` · ${esc(d.contact)}` : "";
       return `<div class="member-bar-row ${ok ? "check-in" : "check-out"}" data-member-row="${d.id}" title="${ok ? "已签到" : "未签到"} · 点击查看弟子属性">
-        <div class="mname ${isCap ? "cap" : ""} ${ok ? "in" : "out"}" data-edit-member="${d.id}">${esc(d.name)}${isCap ? "★" : ""}</div>
+        <div class="mname ${isCap ? "cap" : ""} ${ok ? "in" : "out"}" data-edit-member="${d.id}">${av}${esc(d.name)}${isCap ? "★" : ""}</div>
         <div class="member-track"><i style="width:${prog.pct}%"></i></div>
         <div class="mlv">Lv${prog.level}</div>
-        <div class="member-detail">称号 ${esc(prog.title)} · 经验 ${d.exp || 0} · 贡献 ${d.contributed || 0} · ${esc(d.rank || "")}</div>
+        <div class="member-detail">称号 ${esc(prog.title)} · 经验 ${d.exp || 0} · 贡献 ${d.contributed || 0} · ${esc(d.rank || "")}${genderBit}${contactBit}${mottoBit}</div>
       </div>`;
     }).join("") || '<div class="muted" style="font-size:.65rem">暂无组员 · 从大厅入峰</div>';
 
@@ -10534,11 +10639,31 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const d = state.disciples[id] || { name: "", student_id: "", peak: -1, camp: "red", role: "弟子", trait: "新晋侠客" };
     const peaks = getPeaksArray();
     const peakVal = isInHall(d) ? -1 : Number(d.peak);
+    const profile = profileFromDisciple(d);
     openModal(`
       <h3>弟子属性</h3>
       <div class="stack">
+        <div class="ed-avatar-row">
+          ${profile.avatar
+            ? `<img id="ed-avatar-preview" src="${profile.avatar}" alt="" />`
+            : `<div id="ed-avatar-preview" class="ed-avatar-ph">👤</div>`}
+          <div class="stack" style="gap:.35rem;flex:1">
+            <button type="button" id="ed-avatar-pick">上传头像</button>
+            <button type="button" class="ghost" id="ed-avatar-clear">清除头像</button>
+          </div>
+          <input type="file" id="ed-avatar-file" accept="image/*" hidden />
+          <input type="hidden" id="ed-avatar" value="" />
+        </div>
         <label>姓名<input id="ed-name" value="${esc(d.name||"")}" /></label>
         <label>学号<input id="ed-sid" value="${esc(d.student_id||"")}" /></label>
+        <label>性别<select id="ed-gender">
+          <option value="">不填</option>
+          <option value="男" ${profile.gender==="男"?"selected":""}>男</option>
+          <option value="女" ${profile.gender==="女"?"selected":""}>女</option>
+          <option value="保密" ${profile.gender==="保密"?"selected":""}>保密</option>
+        </select></label>
+        <label>联系方式<input id="ed-contact" maxlength="40" value="${esc(profile.contact)}" placeholder="手机 / 微信" /></label>
+        <label>个人口号<input id="ed-motto" maxlength="36" value="${esc(profile.motto)}" placeholder="一句话介绍" /></label>
         <label>所属<select id="ed-peak">
           <option value="-1" ${peakVal<0?"selected":""}>大厅 · 未入峰</option>
           ${peaks.map((p)=>`<option value="${p.id}" ${peakVal===p.id?"selected":""}>${p.icon} ${p.name}</option>`).join("")}
@@ -10550,6 +10675,35 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <button type="button" class="primary" id="ed-save">保存</button>
         </div>
       </div>`);
+    const avatarHidden = document.getElementById("ed-avatar");
+    if (avatarHidden) avatarHidden.value = profile.avatar || "";
+    const setEdAvatar = (avatar) => {
+      if (avatarHidden) avatarHidden.value = avatar || "";
+      const old = document.getElementById("ed-avatar-preview");
+      if (!old) return;
+      if (avatar) {
+        const img = document.createElement("img");
+        img.id = "ed-avatar-preview";
+        img.src = avatar;
+        img.alt = "";
+        old.replaceWith(img);
+      } else {
+        const ph = document.createElement("div");
+        ph.id = "ed-avatar-preview";
+        ph.className = "ed-avatar-ph";
+        ph.textContent = "👤";
+        old.replaceWith(ph);
+      }
+    };
+    document.getElementById("ed-avatar-pick").onclick = () => document.getElementById("ed-avatar-file").click();
+    document.getElementById("ed-avatar-file").onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      try { setEdAvatar(await compressAvatarFile(file)); }
+      catch (err) { alert(err?.message || "头像上传失败"); }
+    };
+    document.getElementById("ed-avatar-clear").onclick = () => setEdAvatar("");
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("ed-save").onclick = async () => {
       const peakId = Number(document.getElementById("ed-peak").value);
@@ -10557,6 +10711,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const name = document.getElementById("ed-name").value.trim();
       const role = document.getElementById("ed-role").value;
       const trait = document.getElementById("ed-trait").value.trim();
+      const profileNext = normalizeDiscipleProfile({
+        gender: document.getElementById("ed-gender").value,
+        contact: document.getElementById("ed-contact").value,
+        motto: document.getElementById("ed-motto").value,
+        avatar: document.getElementById("ed-avatar").value
+      });
       if (peak && !isInHall({ peak: d.peak }) && d.peak !== peakId) {
         const old = findPeak(d.peak);
         if (old && !confirm(`「${name||d.name}」将从「${old.name}」迁入「${peak.name}」，原组减员。确认？`)) return;
@@ -10567,7 +10727,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         [`disciples/${id}/peak`]: peakId,
         [`disciples/${id}/camp`]: peak ? peak.camp : "red",
         [`disciples/${id}/role`]: peakId < 0 ? "弟子" : role,
-        [`disciples/${id}/trait`]: trait
+        [`disciples/${id}/trait`]: trait,
+        [`disciples/${id}/gender`]: profileNext.gender,
+        [`disciples/${id}/contact`]: profileNext.contact,
+        [`disciples/${id}/motto`]: profileNext.motto,
+        [`disciples/${id}/avatar`]: profileNext.avatar
       };
       if (role === "队长" && peak) {
         updates[`peaks/${peakKey(peakId)}/captain_name`] = name;
@@ -10581,7 +10745,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         await setPath("disciples/" + id, {
           name, student_id: document.getElementById("ed-sid").value.trim(), peak: peakId, camp: peak?peak.camp:"red",
           exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: peakId<0?"弟子":role, voted: false, contributed: 0,
-          checked_in_am: false, checked_in_pm: false, first_seen: new Date().toISOString(), voted_for: "", trait, weapon: ""
+          checked_in_am: false, checked_in_pm: false, first_seen: new Date().toISOString(), voted_for: "", trait, weapon: "",
+          ...profileNext
         });
       } else await updatePaths(updates);
       closeModal();
@@ -10808,10 +10973,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const peak = findPeak(me.peak);
       const place = peak ? `${peak.icon || ""} ${peak.name}` : "大厅 · 待入峰";
       const ok = discipleCheckedIn(me);
-      idCard.innerHTML = `<div style="font-family:var(--font-brush);font-size:1.8rem;${ok?"color:#ffe39a;text-shadow:0 0 12px rgba(240,193,75,.7)":""}">${esc(me.name)}${me.role==="队长"?' <span class="captain-badge">队长</span>':""}</div>
-        <div class="muted">学号 ${esc(me.student_id||"未分配")} · ${esc(place)}</div>
+      const av = me.avatar ? `<img class="disciple-avatar lg" src="${me.avatar}" alt="" style="float:left;margin:0 .65rem .35rem 0" />` : "";
+      idCard.innerHTML = `${av}<div style="font-family:var(--font-brush);font-size:1.8rem;${ok?"color:#ffe39a;text-shadow:0 0 12px rgba(240,193,75,.7)":""}">${esc(me.name)}${me.role==="队长"?' <span class="captain-badge">队长</span>':""}</div>
+        <div class="muted">学号 ${esc(me.student_id||"未分配")} · ${esc(place)}${me.gender ? " · " + esc(me.gender) : ""}</div>
+        ${me.motto ? `<div style="margin-top:.25rem;color:#ffe39a">「${esc(me.motto)}」</div>` : ""}
         <div style="margin-top:.4rem">${esc(me.trait||me.title||"")} · Lv${me.level} · ${esc(me.rank||"")} · 经验 ${me.exp||0}</div>
-        <div class="muted" style="margin-top:.25rem">${ok ? "✦ 持续修炼中" : "今日尚未签到"}</div>`;
+        <div class="muted" style="margin-top:.25rem">${ok ? "✦ 持续修炼中" : "今日尚未签到"}${me.contact ? " · " + esc(me.contact) : ""}</div>
+        <div style="clear:both"></div>`;
     } else {
       idCard.innerHTML = `<div class="muted">尚未绑定身份</div><button type="button" id="student-pick-self" style="margin-top:.6rem;width:100%">选择我的身份</button>`;
       document.getElementById("student-pick-self").onclick = openStudentPickModal;
@@ -11005,19 +11173,317 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   let checkinNameSelected = false;
   let checkinSubmitting = false;
+  const LS_PROFILE_DRAFT_KEY = "gy_arena_profile_draft";
+  let checkinProfileDraft = (() => {
+    try { return JSON.parse(localStorage.getItem(LS_PROFILE_DRAFT_KEY) || "null"); } catch (e) { return null; }
+  })();
+  let checkinProfilePanelOpen = false;
 
-  function renderCheckinSuccess(name, student_id, at, already) {
+  function emptyDiscipleProfile() {
+    return { gender: "", contact: "", motto: "", avatar: "" };
+  }
+
+  function normalizeDiscipleProfile(raw) {
+    const r = raw || {};
+    const gender = ["男", "女", "保密"].includes(r.gender) ? r.gender : "";
+    const contact = String(r.contact || "").trim().slice(0, 40);
+    const motto = String(r.motto || "").trim().slice(0, 36);
+    const avatar = (typeof r.avatar === "string" && r.avatar.startsWith("data:image")) ? r.avatar : "";
+    return { gender, contact, motto, avatar };
+  }
+
+  function profileFromDisciple(d) {
+    return normalizeDiscipleProfile(d || {});
+  }
+
+  function saveCheckinProfileDraft(profile) {
+    checkinProfileDraft = normalizeDiscipleProfile(profile);
+    try { localStorage.setItem(LS_PROFILE_DRAFT_KEY, JSON.stringify(checkinProfileDraft)); } catch (e) { /* ignore quota */ }
+    return checkinProfileDraft;
+  }
+
+  function clearCheckinProfileDraft() {
+    checkinProfileDraft = null;
+    try { localStorage.removeItem(LS_PROFILE_DRAFT_KEY); } catch (e) { /* ignore */ }
+  }
+
+  function profileFilledCount(p) {
+    const n = normalizeDiscipleProfile(p);
+    return [n.gender, n.contact, n.motto, n.avatar].filter(Boolean).length;
+  }
+
+  function profileSummaryHtml(p) {
+    const n = normalizeDiscipleProfile(p);
+    if (!profileFilledCount(n)) return `<div class="ci-profile-hint">选填：头像、性别、联系方式、个人口号</div>`;
+    const bits = [];
+    if (n.gender) bits.push(n.gender);
+    if (n.contact) bits.push(n.contact);
+    if (n.motto) bits.push(`「${n.motto}」`);
+    return `<div class="ci-profile-summary">
+      ${n.avatar ? `<img src="${n.avatar}" alt="" />` : ""}
+      <span>已填 ${profileFilledCount(n)} 项${bits.length ? " · " + esc(bits.join(" · ")) : ""}</span>
+    </div>`;
+  }
+
+  function compressAvatarFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !String(file.type || "").startsWith("image/")) {
+        reject(new Error("请选择图片文件"));
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        reject(new Error("图片请小于 8MB"));
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const size = 160;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          const data = canvas.toDataURL("image/jpeg", 0.72);
+          URL.revokeObjectURL(url);
+          resolve(data);
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          reject(err);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("图片读取失败"));
+      };
+      img.src = url;
+    });
+  }
+
+  function readProfileForm(root) {
+    const host = root || document;
+    return normalizeDiscipleProfile({
+      gender: host.querySelector("#ci-gender")?.value || "",
+      contact: host.querySelector("#ci-contact")?.value || "",
+      motto: host.querySelector("#ci-motto")?.value || "",
+      avatar: host.querySelector("#ci-avatar-data")?.value || ""
+    });
+  }
+
+  function setAvatarPreview(host, avatar) {
+    const root = host || document;
+    const dataEl = root.querySelector("#ci-avatar-data");
+    const old = root.querySelector("#ci-avatar-preview");
+    if (dataEl) dataEl.value = avatar || "";
+    if (!old) return;
+    const next = document.createElement(avatar ? "img" : "div");
+    next.id = "ci-avatar-preview";
+    next.className = "ci-avatar-preview" + (avatar ? "" : " placeholder");
+    if (avatar) {
+      next.src = avatar;
+      next.alt = "头像";
+    } else {
+      next.textContent = "👤";
+    }
+    old.replaceWith(next);
+  }
+
+  function bindProfileForm(root) {
+    const host = root || document;
+    const dataEl = host.querySelector("#ci-avatar-data");
+    const fileEl = host.querySelector("#ci-avatar-file");
+    const pickBtn = host.querySelector("#ci-avatar-pick");
+    const clearBtn = host.querySelector("#ci-avatar-clear");
+    const preview = host.querySelector("#ci-avatar-preview");
+    if (dataEl && preview && preview.tagName === "IMG" && preview.getAttribute("src")) {
+      dataEl.value = preview.getAttribute("src");
+    }
+    if (pickBtn && fileEl) {
+      pickBtn.onclick = () => fileEl.click();
+      fileEl.onchange = async () => {
+        const file = fileEl.files && fileEl.files[0];
+        fileEl.value = "";
+        if (!file) return;
+        try {
+          const data = await compressAvatarFile(file);
+          setAvatarPreview(host, data);
+        } catch (err) {
+          alert(err?.message || "头像上传失败");
+        }
+      };
+    }
+    if (clearBtn) clearBtn.onclick = () => setAvatarPreview(host, "");
+  }
+
+  function profileFormHtml(profile, opts) {
+    const p = normalizeDiscipleProfile(profile);
+    const open = !!(opts && opts.open);
+    return `
+      <button type="button" class="ghost ci-profile-toggle" id="ci-profile-toggle">${open ? "收起个人信息" : "自定义个人信息（选填）"}</button>
+      <div class="ci-profile-panel ${open ? "open" : ""}" id="ci-profile-panel">
+        <div class="muted" style="font-size:.78rem;margin-bottom:.2rem">以下均为选填 · 保存后同步到课堂弟子资料</div>
+        <div class="ci-avatar-row">
+          ${p.avatar
+            ? `<img id="ci-avatar-preview" class="ci-avatar-preview" src="${p.avatar}" alt="头像" />`
+            : `<div id="ci-avatar-preview" class="ci-avatar-preview placeholder">👤</div>`}
+          <div class="ci-avatar-actions">
+            <button type="button" id="ci-avatar-pick">选择头像</button>
+            <button type="button" class="ghost" id="ci-avatar-clear">清除头像</button>
+          </div>
+          <input type="file" id="ci-avatar-file" accept="image/*" hidden />
+          <input type="hidden" id="ci-avatar-data" value="" />
+        </div>
+        <label for="ci-gender">性别</label>
+        <select id="ci-gender">
+          <option value="">不填</option>
+          <option value="男" ${p.gender === "男" ? "selected" : ""}>男</option>
+          <option value="女" ${p.gender === "女" ? "selected" : ""}>女</option>
+          <option value="保密" ${p.gender === "保密" ? "selected" : ""}>保密</option>
+        </select>
+        <label for="ci-contact">联系方式</label>
+        <input id="ci-contact" type="text" maxlength="40" placeholder="手机 / 微信（选填）" value="${esc(p.contact)}" autocomplete="tel" />
+        <label for="ci-motto">个人口号</label>
+        <textarea id="ci-motto" maxlength="36" placeholder="一句话介绍自己（选填）">${esc(p.motto)}</textarea>
+        <p class="ci-profile-hint">姓名仍是签到必填项；资料可随时再改。</p>
+        ${(opts && opts.showSave)
+          ? `<button type="button" class="primary" id="ci-profile-save" style="width:100%;margin-top:.55rem">保存到我的资料</button>`
+          : ""}
+      </div>
+      <div id="ci-profile-summary-host">${profileSummaryHtml(p)}</div>`;
+  }
+
+  function wireProfilePanel(opts) {
+    const toggle = document.getElementById("ci-profile-toggle");
+    const panel = document.getElementById("ci-profile-panel");
+    const summaryHost = document.getElementById("ci-profile-summary-host");
+    const dataEl = document.getElementById("ci-avatar-data");
+    if (dataEl) dataEl.value = normalizeDiscipleProfile(opts?.profile).avatar || "";
+    bindProfileForm(document.getElementById("checkin-body"), opts?.profile);
+    const refreshSummary = () => {
+      if (summaryHost) summaryHost.innerHTML = profileSummaryHtml(readProfileForm());
+    };
+    ["ci-gender", "ci-contact", "ci-motto"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("change", refreshSummary);
+      if (el) el.addEventListener("input", refreshSummary);
+    });
+    if (toggle && panel) {
+      toggle.onclick = () => {
+        checkinProfilePanelOpen = !panel.classList.contains("open");
+        panel.classList.toggle("open", checkinProfilePanelOpen);
+        toggle.textContent = checkinProfilePanelOpen ? "收起个人信息" : "自定义个人信息（选填）";
+      };
+    }
+    const saveBtn = document.getElementById("ci-profile-save");
+    if (saveBtn && opts?.onSave) {
+      saveBtn.onclick = async () => {
+        const profile = readProfileForm();
+        await opts.onSave(profile);
+        if (summaryHost) summaryHost.innerHTML = profileSummaryHtml(profile);
+      };
+    }
+    // avatar changes: observe via MutationObserver on preview parent after bind
+    const avatarRow = document.querySelector("#checkin-body .ci-avatar-row");
+    if (avatarRow) {
+      const mo = new MutationObserver(refreshSummary);
+      mo.observe(avatarRow, { childList: true, subtree: true, attributes: true });
+      const clearBtn = document.getElementById("ci-avatar-clear");
+      const fileEl = document.getElementById("ci-avatar-file");
+      if (clearBtn) clearBtn.addEventListener("click", () => setTimeout(refreshSummary, 0));
+      if (fileEl) fileEl.addEventListener("change", () => setTimeout(refreshSummary, 300));
+    }
+  }
+
+  async function persistDiscipleProfile(discipleId, profile, nameMaybe) {
+    if (!discipleId || !state.disciples?.[discipleId]) throw new Error("未找到弟子资料");
+    const p = normalizeDiscipleProfile(profile);
+    const updates = {
+      [`disciples/${discipleId}/gender`]: p.gender,
+      [`disciples/${discipleId}/contact`]: p.contact,
+      [`disciples/${discipleId}/motto`]: p.motto,
+      [`disciples/${discipleId}/avatar`]: p.avatar
+    };
+    if (nameMaybe && /^[\u4e00-\u9fa5]{2,4}$/.test(nameMaybe)) {
+      updates[`disciples/${discipleId}/name`] = nameMaybe;
+    }
+    await updatePaths(updates, { silent: true });
+    saveCheckinProfileDraft(p);
+    return p;
+  }
+
+  function renderCheckinSuccess(name, student_id, at, already, discipleId) {
     const body = document.getElementById("checkin-body");
     const hint = document.getElementById("checkin-session-hint");
     if (hint) hint.textContent = already ? "本时段已签到 · 本次扫码勿重复" : "签到完成 · 本次扫码仅一次";
+    const d = discipleId && state.disciples ? state.disciples[discipleId] : null;
+    const profile = d ? profileFromDisciple(d) : normalizeDiscipleProfile(checkinProfileDraft);
+    const avatarHtml = profile.avatar
+      ? `<img class="disciple-avatar lg" src="${profile.avatar}" alt="" style="display:block;margin:.2rem auto .35rem" />`
+      : "";
     body.innerHTML = `
       <div style="text-align:center" class="stack">
         <div class="success-burst">${already ? "✓" : "✅"}</div>
+        ${avatarHtml}
         <div style="font-family:var(--font-brush);font-size:1.8rem;color:var(--seal)">${esc(name)}</div>
         <div class="badge-fly">学号 ${esc(student_id)}</div>
+        ${profile.motto ? `<p style="margin:.2rem 0 0;color:#8b5a2b">「${esc(profile.motto)}」</p>` : ""}
         <p style="margin-top:.5rem;font-size:1.1rem">${already ? "本时段已签到" : "签到成功 · 门派 +2 分"}</p>
         <p class="muted">${at ? fmtTime(at) : ""} · 每次扫码只能签到一次</p>
+        ${discipleId ? `<button type="button" class="ghost" id="ci-edit-profile-after" style="width:100%">完善 / 修改个人信息</button>` : ""}
       </div>`;
+    const editBtn = document.getElementById("ci-edit-profile-after");
+    if (editBtn && discipleId) {
+      editBtn.onclick = () => {
+        checkinProfilePanelOpen = true;
+        renderCheckinProfileOnly(discipleId, () => {
+          const fresh = state.disciples[discipleId];
+          renderCheckinSuccess(fresh?.name || name, fresh?.student_id || student_id, at, already, discipleId);
+        });
+      };
+    }
+  }
+
+  function renderCheckinProfileOnly(discipleId, onDone) {
+    const d = state.disciples[discipleId];
+    if (!d) { onDone && onDone(); return; }
+    const body = document.getElementById("checkin-body");
+    const hint = document.getElementById("checkin-session-hint");
+    if (hint) hint.textContent = "编辑个人信息 · 保存后同步到课堂资料";
+    const profile = profileFromDisciple(d);
+    body.innerHTML = `
+      <div class="stack">
+        <h3 style="font-family:var(--font-brush);color:var(--seal);text-align:center;margin:0">个人信息</h3>
+        <p class="muted" style="text-align:center">姓名签到时已确认 · 其余选填</p>
+        <label style="color:#5a4630;font-size:.82rem">姓名（必填确认）</label>
+        <input id="ci-name" type="text" maxlength="4" value="${esc(d.name || "")}" style="font-size:1.1rem;padding:.75rem;text-align:center" />
+        ${profileFormHtml(profile, { open: true, showSave: true })}
+        <button type="button" class="ghost" id="ci-profile-back" style="width:100%">返回</button>
+      </div>`;
+    // force panel open without toggle hide
+    const panel = document.getElementById("ci-profile-panel");
+    const toggle = document.getElementById("ci-profile-toggle");
+    if (panel) panel.classList.add("open");
+    if (toggle) toggle.style.display = "none";
+    wireProfilePanel({
+      profile,
+      onSave: async (p) => {
+        const name = (document.getElementById("ci-name")?.value || "").trim();
+        if (!/^[\u4e00-\u9fa5]{2,4}$/.test(name)) { alert("姓名请填 2-4 个中文"); return; }
+        try {
+          await persistDiscipleProfile(discipleId, p, name);
+          syncLocalStudentFromDisciple({ id: discipleId, ...state.disciples[discipleId], name });
+          alert("已同步到课堂弟子资料");
+          if (onDone) onDone();
+        } catch (err) {
+          alert(err?.message || "保存失败");
+        }
+      }
+    });
+    document.getElementById("ci-profile-back").onclick = () => onDone && onDone();
   }
 
   function renderCheckinIdentityStep(code, local, me) {
@@ -11031,33 +11497,66 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     // 展示与写入一律以后台弟子记录为准
     const showName = (me && me.name) || (local && local.name) || "";
     const showSid = (me && me.student_id) || (local && local.student_id) || "";
+    const discipleId = me && me.id;
 
     const scanRec = getScanRecord(code);
     if (scanRec && scanRec.student_id && String(scanRec.student_id) === String(showSid)) {
-      renderCheckinSuccess(scanRec.name || showName, showSid, scanRec.at, true);
+      renderCheckinSuccess(scanRec.name || showName, showSid, scanRec.at, true, discipleId);
       return;
     }
     if (me && me[flag]) {
       markScanDone(code, { name: showName, student_id: showSid, at: me[timeFlag] || Date.now() });
-      renderCheckinSuccess(showName, showSid, me[timeFlag], true);
+      renderCheckinSuccess(showName, showSid, me[timeFlag], true, discipleId);
       return;
     }
 
     const selected = checkinNameSelected;
+    const profile = me ? profileFromDisciple(me) : normalizeDiscipleProfile(checkinProfileDraft);
+    const avatarTiny = profile.avatar
+      ? `<img class="disciple-avatar" src="${profile.avatar}" alt="" style="width:42px;height:42px" />`
+      : "";
     body.innerHTML = `
       <div class="stack">
         <p class="muted" style="text-align:center">本机微信已绑定，请点姓名确认后签到</p>
         <button type="button" class="ci-name-card ${selected ? "selected" : ""}" id="ci-name-card">
-          <div style="font-family:var(--font-brush);font-size:1.9rem;color:var(--seal)">${esc(showName)}</div>
-          <div class="muted">学号 ${esc(showSid)} · ${selected ? "已选择，请点签到" : "点击选择我"}</div>
+          <div style="display:flex;align-items:center;gap:.55rem">
+            ${avatarTiny}
+            <div style="flex:1;min-width:0">
+              <div style="font-family:var(--font-brush);font-size:1.9rem;color:var(--seal);line-height:1.1">${esc(showName)}</div>
+              <div class="muted">学号 ${esc(showSid)} · ${selected ? "已选择，请点签到" : "点击选择我"}</div>
+              ${profile.motto ? `<div class="muted" style="margin-top:.2rem">「${esc(profile.motto)}」</div>` : ""}
+            </div>
+          </div>
         </button>
+        ${profileFormHtml(profile, { open: checkinProfilePanelOpen, showSave: !!discipleId })}
         <button type="button" class="primary ci-big" id="ci-do" ${selected ? "" : "disabled"}>签到</button>
         <button type="button" class="ghost" id="ci-who" style="width:100%">不是我？换一个名字</button>
       </div>`;
 
+    wireProfilePanel({
+      profile,
+      onSave: async (p) => {
+        if (!discipleId) {
+          saveCheckinProfileDraft(p);
+          alert("已暂存，签到后写入资料");
+          return;
+        }
+        try {
+          await persistDiscipleProfile(discipleId, p);
+          syncLocalStudentFromDisciple({ id: discipleId, ...state.disciples[discipleId] });
+          alert("已同步到课堂弟子资料");
+          renderCheckinIdentityStep(code, getLocalStudent() || local, { id: discipleId, ...state.disciples[discipleId] });
+        } catch (err) {
+          alert(err?.message || "保存失败");
+        }
+      }
+    });
+
     document.getElementById("ci-name-card").onclick = () => {
       checkinNameSelected = true;
       if (me) syncLocalStudentFromDisciple(me);
+      // keep any open draft edits into memory
+      saveCheckinProfileDraft(readProfileForm());
       renderCheckinIdentityStep(code, getLocalStudent() || local, me);
     };
     document.getElementById("ci-do").onclick = async () => {
@@ -11066,7 +11565,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!codeOk(code)) { alert("签到已结束或二维码已失效，请重新扫老师投屏码"); renderCheckin(); return; }
       if (getScanRecord(code)) {
         const rec = getScanRecord(code);
-        renderCheckinSuccess(rec.name || showName, rec.student_id || showSid, rec.at, true);
+        renderCheckinSuccess(rec.name || showName, rec.student_id || showSid, rec.at, true, discipleId);
         return;
       }
       if (!confirm(`确认以「${showName}」完成${sessionLabel}签到？\n（本次扫码只能签到一次）`)) return;
@@ -11075,11 +11574,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const bound = syncLocalStudentFromDisciple(disciple);
       checkinSubmitting = true;
       try {
+        // 签到前把当前面板资料写入系统
+        const panelProfile = readProfileForm();
+        if (profileFilledCount(panelProfile) || profileFilledCount(profileFromDisciple(disciple))) {
+          await persistDiscipleProfile(disciple.id, panelProfile);
+        }
         const res = await applyCheckin(disciple.id, { silent: true });
         const okName = bound?.name || disciple.name || showName;
         const okSid = bound?.student_id || disciple.student_id || showSid;
         markScanDone(code, { name: okName, student_id: okSid, at: res.at || Date.now() });
-        renderCheckinSuccess(okName, okSid, res.at || Date.now(), !!res.already);
+        clearCheckinProfileDraft();
+        renderCheckinSuccess(okName, okSid, res.at || Date.now(), !!res.already, disciple.id);
         checkinNameSelected = false;
       } finally {
         checkinSubmitting = false;
@@ -11096,14 +11601,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const sid = peekNextStudentId();
     const sessionLabel = checkinSessionLabel();
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = `${sessionLabel}签到 · 输入姓名学号自动生成 · 点签到确认`;
+    if (hint) hint.textContent = `${sessionLabel}签到 · 姓名必填 · 个人信息选填`;
 
+    const draft = normalizeDiscipleProfile(checkinProfileDraft);
     body.innerHTML = `
       <div class="stack">
         <h3 style="font-family:var(--font-brush);color:var(--seal);font-size:1.7rem;text-align:center;margin:0">第一次签到</h3>
-        <p class="muted" style="text-align:center">输入姓名后自动生成学号，点「签到确认」完成本次签到；下次扫码将绑定本机微信</p>
+        <p class="muted" style="text-align:center">姓名必填；可点「自定义个人信息」完善头像等选填项，确认后同步到课堂资料</p>
         <input id="ci-name" type="text" maxlength="4" placeholder="请输入真实姓名（2-4个字）" autocomplete="name" style="font-size:1.15rem;padding:.8rem;text-align:center" />
         <div class="ci-sid" id="ci-sid-preview">学号将自动生成：<b>${esc(sid)}</b></div>
+        ${profileFormHtml(draft, { open: checkinProfilePanelOpen, showSave: false })}
         <button type="button" class="primary ci-big seal" id="ci-confirm">签到确认</button>
         <div style="height:1px;background:rgba(139,90,43,.3);margin:.2rem 0"></div>
         <p class="muted" style="text-align:center">换过手机？从名单找回自己</p>
@@ -11111,9 +11618,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>`;
     const nameInput = document.getElementById("ci-name");
     nameInput.focus();
+    wireProfilePanel({ profile: draft });
     const doConfirm = () => confirmFirstCheckin(code);
     document.getElementById("ci-confirm").onclick = doConfirm;
-    nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") doConfirm(); });
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !checkinProfilePanelOpen) doConfirm();
+    });
     document.getElementById("ci-who").onclick = () => showWhoList(code);
   }
 
@@ -11167,7 +11677,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     const scanRec = getScanRecord(code);
     if (scanRec && scanRec.student_id) {
-      renderCheckinSuccess(scanRec.name || "已签到", scanRec.student_id, scanRec.at, true);
+      const hit = getDisciplesArray().find((d) => d.student_id && String(d.student_id) === String(scanRec.student_id));
+      renderCheckinSuccess(scanRec.name || "已签到", scanRec.student_id, scanRec.at, true, hit?.id);
       return;
     }
 
@@ -11193,10 +11704,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!codeOk(code)) { alert("签到码无效，请重新扫码"); return; }
     if (getScanRecord(code)) {
       const rec = getScanRecord(code);
-      renderCheckinSuccess(rec.name || name, rec.student_id, rec.at, true);
+      const hit = getDisciplesArray().find((d) => d.student_id && String(d.student_id) === String(rec.student_id));
+      renderCheckinSuccess(rec.name || name, rec.student_id, rec.at, true, hit?.id);
       return;
     }
-    if (!confirm(`确认以「${name}」完成${checkinSessionLabel()}签到？\n学号将自动生成，本次扫码只能签到一次。`)) return;
+    const profile = saveCheckinProfileDraft(readProfileForm());
+    const profileTip = profileFilledCount(profile) ? `\n已附带 ${profileFilledCount(profile)} 项个人信息` : "";
+    if (!confirm(`确认以「${name}」完成${checkinSessionLabel()}签到？\n学号将自动生成，本次扫码只能签到一次。${profileTip}`)) return;
 
     const sameNameRegistered = getDisciplesArray().find((d) => d.name === name && d.student_id);
     if (sameNameRegistered) {
@@ -11218,14 +11732,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         exp: 0, level: lv.level, title: lv.title, rank: "青铜", role: "弟子",
         voted: false, contributed: 0, checked_in_am: false, checked_in_pm: false,
         checked_in_am_at: 0, checked_in_pm_at: 0, trait: "新晋侠客",
-        first_seen: new Date().toISOString(), voted_for: "", weapon: ""
+        first_seen: new Date().toISOString(), voted_for: "", weapon: "",
+        gender: profile.gender,
+        contact: profile.contact,
+        motto: profile.motto,
+        avatar: profile.avatar
       }, { silent: true });
 
       setLocalStudent({ student_id, name, disciple_id: discipleId });
       const res = await applyCheckin(discipleId, { silent: true });
       markScanDone(code, { name, student_id, at: res.at || Date.now() });
+      clearCheckinProfileDraft();
       checkinNameSelected = false;
-      renderCheckinSuccess(name, student_id, res.at || Date.now(), !!res.already);
+      checkinProfilePanelOpen = false;
+      renderCheckinSuccess(name, student_id, res.at || Date.now(), !!res.already, discipleId);
     } catch (err) {
       console.error(err);
       alert("签到失败，请重试");
@@ -11437,6 +11957,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (d.trait == null) d.trait = d.title || "新晋侠客";
       if (d.peak == null) d.peak = -1;
       if (!Array.isArray(d.inventory)) d.inventory = [];
+      if (d.gender == null) d.gender = "";
+      if (d.contact == null) d.contact = "";
+      if (d.motto == null) d.motto = "";
+      if (d.avatar == null) d.avatar = "";
     });
     getPeaksArray().forEach((p) => {
       if (!Array.isArray(p.inventory)) p.inventory = [];
