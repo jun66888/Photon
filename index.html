@@ -331,10 +331,10 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   margin-bottom: 0; flex: 0 0 auto;
 }
 .mission-publish-top {
-  min-height: 5.4rem;
+  min-height: 0;
   max-height: min(42vh, 22rem);
-  overflow: auto;
-  padding: .7rem 1rem;
+  overflow: hidden;
+  padding: .55rem .75rem .65rem;
   border-style: solid;
   border-width: 2px;
   border-color: rgba(240,193,75,.55);
@@ -347,10 +347,27 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   width: 100%;
   font-family: inherit;
   color: inherit;
+  transition: max-height .28s ease, padding .2s ease;
+}
+.mission-publish-top.is-expanded {
+  max-height: min(42vh, 22rem);
+  overflow: auto;
+}
+.mission-publish-top.is-collapsed {
+  max-height: none;
+  overflow: hidden;
+  padding: .45rem .65rem .5rem;
 }
 .mission-publish-top .mb-kicker {
   font-size: .72rem; letter-spacing: .2em; color: var(--gold); font-weight: 700;
-  margin-bottom: .35rem;
+  margin-bottom: 0;
+}
+.mission-board-head .mb-tools {
+  display: flex; align-items: center; gap: .35rem; flex-shrink: 0;
+}
+.mission-board-head .mb-toggle {
+  font-size: .72rem !important; padding: .3rem .55rem !important; min-height: 1.9rem;
+  letter-spacing: .04em;
 }
 .mission-weight-list {
   display: flex;
@@ -359,6 +376,23 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   align-items: stretch;
   gap: .55rem;
   width: 100%;
+}
+.mission-publish-top.is-collapsed .mission-weight-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: .45rem;
+  padding: .15rem 0 .2rem;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.mission-publish-top.is-collapsed .mission-weight-list::-webkit-scrollbar {
+  height: 4px;
+}
+.mission-publish-top.is-collapsed .mission-weight-list::-webkit-scrollbar-thumb {
+  background: rgba(240,193,75,.35);
+  border-radius: 99px;
 }
 .mission-weight-item {
   display: flex;
@@ -373,8 +407,35 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   background:
     radial-gradient(120% 90% at 20% 0%, rgba(240,193,75,.12), transparent 55%),
     rgba(8,12,20,.55);
-  cursor: default;
+  cursor: pointer;
   transition: border-color .18s ease, background .18s ease, transform .18s ease;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.mission-publish-top.is-collapsed .mission-weight-item {
+  flex: 0 0 auto;
+  width: min(240px, 72vw);
+  min-width: min(240px, 72vw);
+  max-width: none;
+  padding: .45rem .55rem .5rem;
+  scroll-snap-align: start;
+  gap: .18rem;
+}
+.mission-publish-top.is-collapsed .mission-weight-item .mw-desc {
+  -webkit-line-clamp: 1;
+  min-height: 0;
+  font-size: .72rem;
+}
+.mission-publish-top.is-collapsed .mission-weight-item .mw-top3,
+.mission-publish-top.is-collapsed .mission-weight-item .mw-actions {
+  display: none;
+}
+.mission-publish-top.is-collapsed .mission-weight-item .mw-title {
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mission-weight-item:hover {
   border-color: rgba(240,193,75,.5);
@@ -382,6 +443,15 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
     radial-gradient(120% 90% at 20% 0%, rgba(240,193,75,.18), transparent 55%),
     rgba(12,16,28,.72);
   transform: translateY(-1px);
+}
+.mission-weight-item:focus-visible {
+  outline: 2px solid rgba(46,230,255,.55);
+  outline-offset: 2px;
+}
+.mission-publish-top.is-collapsed .mission-weight-empty {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: .35rem .2rem;
 }
 .mission-weight-item .mw-title {
   font-family: var(--font-brush);
@@ -3356,10 +3426,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div id="edit-box-layer" aria-label="编辑框层"></div>
     <div id="teacher-main" class="subview course-page">
       <div class="arena-duel-hero" id="arena-duel-hero">
-        <div class="mission-publish-top" id="mission-publish-bar" aria-label="今日门派任务榜">
+        <div class="mission-publish-top is-collapsed" id="mission-publish-bar" aria-label="今日门派任务榜">
           <div class="mission-board-head">
             <div class="mb-kicker">今日门派任务</div>
-            <button type="button" class="mb-manage" data-action="edit-camp-mission" title="管理门派任务内容">管理</button>
+            <div class="mb-tools">
+              <button type="button" class="mb-toggle ghost" id="mission-board-toggle" title="展开或折叠任务条">展开</button>
+              <button type="button" class="mb-manage" data-action="edit-camp-mission" title="管理门派任务内容">管理</button>
+            </div>
           </div>
           <div class="mission-weight-list" id="mission-board-list">
             <div class="mission-weight-empty">点击管理添加门派任务</div>
@@ -4171,6 +4244,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const VIEW_ORDER = ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "settings"];
   let dragPeakId = null, sectModalTab = "bonus";
   let activeMissionId = "";
+  const LS_MISSION_COLLAPSE_KEY = "gy_arena_mission_collapsed";
+  let missionBoardCollapsed = (() => {
+    try {
+      const v = localStorage.getItem(LS_MISSION_COLLAPSE_KEY);
+      if (v === null) return true;
+      return v !== "0";
+    } catch (e) { return true; }
+  })();
   let dragMissionMemberId = "";
   let gameMode = "wheel";
   let gameSpinning = false;
@@ -5974,6 +6055,33 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     };
   }
 
+  function applyMissionBoardCollapse() {
+    const bar = document.getElementById("mission-publish-bar");
+    const toggle = document.getElementById("mission-board-toggle");
+    if (bar) {
+      bar.classList.toggle("is-collapsed", !!missionBoardCollapsed);
+      bar.classList.toggle("is-expanded", !missionBoardCollapsed);
+    }
+    if (toggle) {
+      toggle.textContent = missionBoardCollapsed ? "展开" : "折叠";
+      toggle.title = missionBoardCollapsed ? "展开任务列表" : "折叠为横向滚动条";
+      toggle.setAttribute("aria-expanded", missionBoardCollapsed ? "false" : "true");
+    }
+    try { localStorage.setItem(LS_MISSION_COLLAPSE_KEY, missionBoardCollapsed ? "1" : "0"); } catch (e) { /* ignore */ }
+  }
+
+  function bindMissionBoardToggle() {
+    const toggle = document.getElementById("mission-board-toggle");
+    if (!toggle || toggle.dataset.bound === "1") return;
+    toggle.dataset.bound = "1";
+    toggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      missionBoardCollapsed = !missionBoardCollapsed;
+      applyMissionBoardCollapse();
+    });
+  }
+
   function renderMissionBoard() {
     const m = getCampMission();
     const redLive = getCampLiveStats("red");
@@ -6000,6 +6108,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span>侧重 <b>${esc(m.blue_focus || "—")}</b></span>
         <span>山峰 <b>${blueLive.peakCount}</b> · 弟子 <b>${blueLive.memberCount}</b></span>`;
     }
+    bindMissionBoardToggle();
+    applyMissionBoardCollapse();
     const list = document.getElementById("mission-board-list");
     if (list) {
       const visible = (m.items || []).filter((it) => it.visible !== false);
@@ -6018,22 +6128,25 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
               }).join("")}</div>`
             : `<div class="mw-top3 is-empty"><span class="md-label">尚无弟子完成</span></div>`;
           const intro = String(it.desc || "暂无说明").trim();
+          const doneN = (it.completions || []).length;
           return `
-          <div class="mission-weight-item" data-weight="${it.weight}" style="--mw-title-size:${missionFontSize(it.weight)};--mw-desc-size:${missionDescSize(it.weight)}">
+          <button type="button" class="mission-weight-item" data-open-mission="${esc(String(it.id))}" data-weight="${it.weight}" style="--mw-title-size:${missionFontSize(it.weight)};--mw-desc-size:${missionDescSize(it.weight)}" title="点击查看任务详情">
             <div class="mw-title">${esc(it.title || "未命名任务")}</div>
             <div class="mw-desc" title="${esc(intro)}">${esc(intro)}</div>
             <div class="mw-meta">
-              ${it.points ? rewardPropBadgeHtml(it.points, { compact: false }) : `<span class="mb-tag">无奖励积分</span>`}
+              ${it.points ? rewardPropBadgeHtml(it.points, { compact: true }) : `<span class="mb-tag">无奖励</span>`}
               ${it.difficulty ? `<span class="mb-tag">${esc(it.difficulty)}</span>` : ""}
+              <span class="mb-tag">完成 ${doneN}</span>
             </div>
             ${top3Html}
             <div class="mw-actions">
-              <button type="button" class="primary" data-open-mission="${esc(String(it.id))}">任务详情</button>
+              <span class="mb-tag" style="border-color:rgba(46,230,255,.4);color:#9fe9ff">进入详情</span>
             </div>
-          </div>`;
+          </button>`;
         }).join("");
         list.querySelectorAll("[data-open-mission]").forEach((btn) => {
           btn.onclick = (e) => {
+            e.preventDefault();
             e.stopPropagation();
             openMissionDetail(btn.getAttribute("data-open-mission"));
           };
