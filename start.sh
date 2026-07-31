@@ -4,27 +4,22 @@ cd "$(dirname "$0")"
 
 echo ""
 echo "  ========================================"
-echo "   光影盟 · 本机启动（不依赖外网）"
+echo "   光影盟 · 本机启动（主用，不依赖公网）"
 echo "  ========================================"
 echo ""
 
 if ! command -v node >/dev/null 2>&1; then
   echo "  [错误] 未检测到 Node.js"
-  echo "  请先安装：https://nodejs.org （选 LTS）"
+  echo "  请先安装一次：https://nodejs.org （选 LTS）"
+  echo "  安装后重新运行。无需每次联网。"
   exit 1
 fi
 
-if [[ ! -d node_modules ]]; then
-  echo "  首次运行，正在 npm install …"
-  npm install
-fi
-
-echo "  电脑老师端: http://localhost:3000/?mode=teacher"
-echo "  手机请用终端打印的「手机同网」地址（不要扫 localhost）"
-echo "  按 Ctrl+C 可停止服务"
+echo "  老师端: http://localhost:3000/?mode=teacher"
+echo "  手机同 Wi-Fi：看终端打印的「手机同网」地址"
+echo "  公网隧道仅作备用；按 Ctrl+C 停止"
 echo ""
 
-# 延迟打开浏览器（有桌面环境时）
 (
   sleep 2
   url="http://localhost:3000/?mode=teacher"

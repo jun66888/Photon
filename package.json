@@ -10,7 +10,7 @@
     "preview": "PORT=4173 node server.mjs",
     "tunnel": "cloudflared tunnel --url http://127.0.0.1:3000 --no-autoupdate --protocol http2"
   },
-  "dependencies": {
-    "serve": "^14.2.6"
+  "engines": {
+    "node": ">=18"
   }
 }

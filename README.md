@@ -1,48 +1,39 @@
 # 光影盟 · 联盟积分体系
 
-纯前端单页应用，**默认完全本地运行、不依赖外网**：老师投屏看板、学生投票、课堂签到、毕业回忆。
+纯前端单页应用，**本机主用、断网可用**；公网隧道只作临时预览备用。
 
-- 字体 / 二维码库已放在 `vendor/`，断网也能开页
-- 未填写 Firebase 时进入 **DEMO 本地模式**（`localStorage` + 本机 `server.mjs` 的 `/__gy/demo-db` 同步）
-- 手机与电脑连**同一 Wi‑Fi**，用局域网 IP 扫码即可，不必开公网隧道
+- 字体 / 二维码在 `vendor/`，默认不请求外网
+- 未填 Firebase → **DEMO 本地模式**（`localStorage` + 本机 `/__gy/demo-db` 跨设备同步）
+- 手机与电脑同一 Wi‑Fi，用局域网 IP 扫码即可，不必开公网
 
 ---
 
-## 本地部署（推荐）
+## 本机启动（推荐，课堂用这个）
 
-### 1. 拉取并安装依赖（一次性）
+需要一次：[Node.js 18+](https://nodejs.org/)（`server.mjs` 只用 Node 内置模块，**不必**每次 `npm install`）。
 
 ```bash
 git clone https://github.com/jun66888/Photon.git
 cd Photon
 git checkout cursor/guangyingmeng-arena-f9c7
-npm install
+git pull
 ```
 
-需要：[Node.js 18+](https://nodejs.org/)（安装后自带 `npm`）。
+然后：
 
-### 2. 启动
-
-```bash
-npm start
-```
-
-或 Windows 双击 `start.bat` / macOS·Linux 执行 `./start.sh`。
-
-无 Node 时可用：`python -m http.server 3000`（此时无跨设备 DEMO 同步接口）。
-
-### 3. 浏览器打开
+- **Windows**：双击 `start.bat`（会自动打开浏览器）
+- **Mac / Linux**：`./start.sh` 或 `npm start`
 
 | 端 | 地址 |
 |----|------|
-| 老师端（默认） | http://localhost:3000/?mode=teacher |
+| 老师端 | http://localhost:3000/?mode=teacher |
 | 学生端 | http://localhost:3000/?mode=student |
 | 签到端 | http://localhost:3000/?mode=checkin&code=老师生成的码 |
 | 毕业回忆 | http://localhost:3000/?mode=memories |
 
-左上角 **DEMO · 本地模式** = 未接 Firebase。手机同 Wi-Fi 访问终端打印的局域网地址，例如 `http://192.168.1.8:3000/?mode=teacher`。
+左上角 **DEMO · 跨设备同步中** = 本机服务正常。手机用终端打印的 `http://192.168.x.x:3000`，不要扫 localhost。
 
-可选云端预览见 [`PREVIEW.md`](PREVIEW.md)（临时隧道，需外网，非课堂必需）。
+公网临时预览见 [`PREVIEW.md`](PREVIEW.md)（网络不稳时可能挂，正式上课请本机）。
 
 ---
 
