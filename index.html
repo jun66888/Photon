@@ -7974,15 +7974,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
-  function pickRandomRewardOption() {
-    const opts = [
-      { type: "score", points: 1, label: "答对 +1 分" },
-      { type: "score", points: 3, label: "答对 +3 分" },
-      { type: "score", points: 5, label: "答对 +5 分" },
-      { type: "proxy", label: "指定某人代为回答" }
-    ];
-    return opts[Math.floor(Math.random() * opts.length)];
-  }
+  /** 抽人答对默认加分；随机加分区间为 1～2×基本分 */
+  const DRAW_DEFAULT_POINTS = 5;
 
   async function startGameDraw() {
     if (gameSpinning) return;
@@ -8105,56 +8098,60 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function showDrawResultModal(winner) {
-    const reward = pickRandomRewardOption();
     const peak = findPeak(winner.peak);
     const place = peak ? `${peak.icon || ""} ${peak.name}` : "大厅";
+    const base = DRAW_DEFAULT_POINTS;
+    const range = randomScoreRange(base);
     openModal(`
       <div class="draw-reward-banner">
         <div class="muted" style="letter-spacing:.16em;color:var(--gold)">抽中答题</div>
         <div class="dr-who">${esc(winner.name || "弟子")}</div>
         <div class="muted" style="margin-top:.2rem">${esc(place)} · Lv${winner.level || 1}</div>
-        <div class="dr-opt" id="draw-reward-opt">${esc(reward.label)}</div>
+        <div class="dr-opt">默认奖励 +${base} 分</div>
       </div>
-      <p class="muted" style="text-align:center;margin-bottom:.55rem">请该同学回答问题 · 下方为本次随机奖励规则</p>
-      <div id="draw-reward-body"></div>
-      <div class="row" style="justify-content:flex-end;flex-wrap:wrap;gap:.4rem;margin-top:.5rem">
-        <button type="button" class="ghost" id="draw-reroll-reward">换个奖励</button>
+      <p class="muted" style="text-align:center;margin-bottom:.55rem">请该同学回答问题 · 答对后选下方发奖方式</p>
+      <div class="lucky-actions">
+        <button type="button" class="primary" id="draw-award-fixed">
+          <span class="la-title">答对发奖</span>
+          <span class="la-sub">+${base} 分</span>
+        </button>
+        <button type="button" class="lucky-random" id="draw-award-random">
+          <span class="la-title">随机加分</span>
+          <span class="la-sub">${range.min}–${range.max} 分</span>
+        </button>
+      </div>
+      <div class="row" style="justify-content:flex-end;flex-wrap:wrap;gap:.4rem;margin-top:.65rem">
+        <button type="button" class="ghost" id="draw-proxy">指定代答</button>
         <button type="button" class="ghost" id="draw-again">再抽一次</button>
         <button type="button" class="ghost" id="modal-cancel">关闭</button>
-        <button type="button" class="primary" id="draw-confirm">${reward.type === "proxy" ? "去指定代答" : "答对发奖"}</button>
       </div>`);
 
-    let current = reward;
-    const paintOpt = () => {
-      const el = document.getElementById("draw-reward-opt");
-      if (el) {
-        el.textContent = current.label;
-        el.style.animation = "none";
-        void el.offsetWidth;
-        el.style.animation = "";
-      }
-      const conf = document.getElementById("draw-confirm");
-      if (conf) conf.textContent = current.type === "proxy" ? "去指定代答" : "答对发奖";
-      const body = document.getElementById("draw-reward-body");
-      if (body) {
-        body.innerHTML = current.type === "proxy"
-          ? `<p class="muted" style="text-align:center">将从已签到名单中另选一人代为回答；答对后积分给代答者。</p>`
-          : `<p class="muted" style="text-align:center">确认答对后，给 <b style="color:var(--gold)">${esc(winner.name)}</b> 发放 <b style="color:var(--gold)">+${current.points}</b> 分。</p>`;
-      }
+    const setAwardBusy = (busy) => {
+      ["draw-award-fixed", "draw-award-random", "draw-proxy", "draw-again"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !!busy;
+      });
     };
-    paintOpt();
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("draw-again").onclick = () => { closeModal(); startGameDraw(); };
-    document.getElementById("draw-reroll-reward").onclick = () => {
-      current = pickRandomRewardOption();
-      paintOpt();
-    };
-    document.getElementById("draw-confirm").onclick = async () => {
-      if (current.type === "proxy") {
-        openProxyPickModal(winner);
-        return;
+    document.getElementById("draw-proxy").onclick = () => openProxyPickModal(winner);
+    document.getElementById("draw-award-fixed").onclick = async () => {
+      setAwardBusy(true);
+      try {
+        await addScoreToDisciple(winner.id, base, `抽中答题·${winner.name}`, "日常");
+      } finally {
+        setAwardBusy(false);
       }
-      await addScoreToDisciple(winner.id, current.points, `抽中答题·${winner.name}`, "日常");
+    };
+    document.getElementById("draw-award-random").onclick = async () => {
+      setAwardBusy(true);
+      try {
+        const rolled = rollRandomScore(base);
+        await playLuckyRollFx(base, rolled);
+        await addScoreToDisciple(winner.id, rolled, `抽中答题·随机·${winner.name}`, "日常");
+      } finally {
+        setAwardBusy(false);
+      }
     };
   }
 
@@ -8183,24 +8180,54 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       btn.onclick = () => {
         const proxy = (state.disciples || {})[btn.dataset.proxyId];
         if (!proxy) return;
-        // 代答也随机一个分数奖励
-        const pts = pick([1, 3, 5]);
+        const base = DRAW_DEFAULT_POINTS;
+        const range = randomScoreRange(base);
         openModal(`
           <div class="draw-reward-banner">
             <div class="muted" style="letter-spacing:.16em;color:var(--gold)">代为回答</div>
             <div class="dr-who">${esc(proxy.name)}</div>
             <div class="muted">代替 ${esc(original.name)} 答题</div>
-            <div class="dr-opt">答对 +${pts} 分</div>
+            <div class="dr-opt">默认奖励 +${base} 分</div>
           </div>
-          <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.6rem">
+          <div class="lucky-actions">
+            <button type="button" class="primary" id="proxy-award-fixed">
+              <span class="la-title">答对发奖</span>
+              <span class="la-sub">+${base} 分</span>
+            </button>
+            <button type="button" class="lucky-random" id="proxy-award-random">
+              <span class="la-title">随机加分</span>
+              <span class="la-sub">${range.min}–${range.max} 分</span>
+            </button>
+          </div>
+          <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.65rem">
             <button type="button" class="ghost" id="proxy-back2">重选</button>
             <button type="button" class="ghost" id="modal-cancel">关闭</button>
-            <button type="button" class="primary" id="proxy-award">答对发奖</button>
           </div>`);
+        const setBusy = (busy) => {
+          ["proxy-award-fixed", "proxy-award-random", "proxy-back2"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = !!busy;
+          });
+        };
         document.getElementById("modal-cancel").onclick = closeModal;
         document.getElementById("proxy-back2").onclick = () => openProxyPickModal(original);
-        document.getElementById("proxy-award").onclick = async () => {
-          await addScoreToDisciple(proxy.id, pts, `代答·替${original.name}`, "日常");
+        document.getElementById("proxy-award-fixed").onclick = async () => {
+          setBusy(true);
+          try {
+            await addScoreToDisciple(proxy.id, base, `代答·替${original.name}`, "日常");
+          } finally {
+            setBusy(false);
+          }
+        };
+        document.getElementById("proxy-award-random").onclick = async () => {
+          setBusy(true);
+          try {
+            const rolled = rollRandomScore(base);
+            await playLuckyRollFx(base, rolled);
+            await addScoreToDisciple(proxy.id, rolled, `代答·随机·替${original.name}`, "日常");
+          } finally {
+            setBusy(false);
+          }
         };
       };
     });
