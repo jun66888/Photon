@@ -711,6 +711,48 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   flex: 1 1 100%;
   font-size: .9rem; color: var(--ink-soft); padding: .35rem 0;
 }
+.mission-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: .65rem;
+}
+.mission-list-card {
+  text-align: left;
+  border: 1px solid rgba(240,193,75,.32);
+  border-radius: 10px;
+  padding: .75rem .8rem;
+  background: linear-gradient(180deg, rgba(28,36,56,.95), rgba(12,16,28,.92));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 6px 0 #0a0d16;
+  cursor: pointer;
+  transition: border-color .12s ease, transform .1s ease, filter .12s ease;
+  display: flex; flex-direction: column; gap: .35rem;
+  min-height: 8.5rem;
+}
+.mission-list-card:hover {
+  border-color: var(--gold);
+  filter: brightness(1.06);
+}
+.mission-list-card:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 2px 0 #0a0d16; }
+.mission-list-card.is-hidden-card {
+  opacity: .55;
+  border-style: dashed;
+}
+.mission-list-card .ml-kicker {
+  font-size: .68rem; letter-spacing: .14em; color: var(--gold);
+}
+.mission-list-card .ml-title {
+  font-family: var(--font-brush); font-size: 1.25rem; color: #fff5e8; letter-spacing: .04em;
+}
+.mission-list-card .ml-desc {
+  color: var(--ink-soft); font-size: .8rem; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.mission-list-card .ml-meta {
+  display: flex; flex-wrap: wrap; gap: .3rem; margin-top: auto;
+}
+.mission-list-empty {
+  padding: 1.2rem; text-align: center; color: var(--ink-soft);
+}
 .mission-items-editor {
   display: flex; flex-direction: row; flex-wrap: wrap; gap: .55rem;
   max-height: min(52vh, 420px); overflow: auto;
@@ -3753,6 +3795,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
         <div class="ch-actions">
           <button type="button" data-action="goto-main">返回主页</button>
+          <button type="button" id="mission-back-list" class="ghost" hidden>任务列表</button>
+          <button type="button" id="mission-edit-one" class="ghost" hidden>编辑任务</button>
           <button type="button" data-action="edit-camp-mission">管理任务</button>
         </div>
       </div>
@@ -6470,6 +6514,69 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else renderMissionBoard();
   }
 
+  function syncMissionChrome(mode, mission) {
+    const titleEl = document.getElementById("mission-detail-title");
+    const sub = document.querySelector("#teacher-mission .ch-sub");
+    const backBtn = document.getElementById("mission-back-list");
+    const editBtn = document.getElementById("mission-edit-one");
+    if (mode === "list") {
+      if (titleEl) titleEl.textContent = "门派任务";
+      if (sub) sub.textContent = "点击任务查看详情 · 管理任务可添加/编辑";
+      if (backBtn) backBtn.hidden = true;
+      if (editBtn) editBtn.hidden = true;
+    } else {
+      if (titleEl) titleEl.textContent = (mission && mission.title) || "门派任务详情";
+      if (sub) sub.textContent = "拖拽或点击组员到完成栏 · 自动发放任务奖励";
+      if (backBtn) {
+        backBtn.hidden = false;
+        backBtn.onclick = () => openMissionDetail("");
+      }
+      if (editBtn) {
+        editBtn.hidden = false;
+        editBtn.onclick = () => openEditSingleMissionModal(activeMissionId);
+      }
+    }
+  }
+
+  function renderMissionListPanel() {
+    const root = document.getElementById("mission-detail-root");
+    if (!root) return;
+    syncMissionChrome("list");
+    const items = getCampMission().items || [];
+    if (!items.length) {
+      root.innerHTML = `
+        <div class="mission-list-empty">
+          <p>还没有任务</p>
+          <button type="button" class="primary" data-action="edit-camp-mission" style="margin-top:.55rem">＋ 添加任务</button>
+        </div>`;
+      return;
+    }
+    root.innerHTML = `
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:.55rem;flex-wrap:wrap;gap:.4rem">
+        <div class="muted">共 ${items.length} 个任务 · 点卡片进入详情</div>
+        <button type="button" class="primary" data-action="edit-camp-mission">管理 / 添加</button>
+      </div>
+      <div class="mission-list-grid" id="mission-list-grid">
+        ${items.map((it) => {
+          const doneN = (it.completions || []).length;
+          const prop = rewardPropForPoints(it.points);
+          const hidden = it.visible === false;
+          return `<button type="button" class="mission-list-card ${hidden ? "is-hidden-card" : ""}" data-open-mission="${esc(String(it.id))}">
+            <div class="ml-kicker">${hidden ? "已隐藏 · " : ""}权重 ${it.weight || 50} · ${esc(it.difficulty || "普通")}</div>
+            <div class="ml-title">${esc(it.title || "未命名任务")}</div>
+            <div class="ml-desc">${esc(it.desc || "暂无说明")}</div>
+            <div class="ml-meta">
+              <span class="mb-tag">完成 ${doneN}</span>
+              <span class="mb-tag">${prop.icon} ${esc(prop.name)} +${prop.points}</span>
+            </div>
+          </button>`;
+        }).join("")}
+      </div>`;
+    root.querySelectorAll("[data-open-mission]").forEach((btn) => {
+      btn.onclick = () => openMissionDetail(btn.dataset.openMission);
+    });
+  }
+
   function openMissionDetail(missionId) {
     activeMissionId = String(missionId || "");
     showScreen("teacher");
@@ -6479,16 +6586,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function renderMissionDetail() {
     const root = document.getElementById("mission-detail-root");
-    const titleEl = document.getElementById("mission-detail-title");
     if (!root) return;
-    const mission = findMissionItem(activeMissionId) || getCampMission().items.find((it) => it.visible !== false) || getCampMission().items[0];
-    if (!mission) {
-      if (titleEl) titleEl.textContent = "门派任务详情";
-      root.innerHTML = `<div class="muted">暂无门派任务 · <button type="button" data-action="edit-camp-mission">去添加</button></div>`;
+    // 无选中任务时显示任务列表面板
+    if (!activeMissionId) {
+      renderMissionListPanel();
       return;
     }
+    const mission = findMissionItem(activeMissionId);
+    if (!mission) {
+      activeMissionId = "";
+      renderMissionListPanel();
+      showVoteToast("未找到该任务，已返回列表");
+      return;
+    }
+    syncMissionChrome("detail", mission);
     activeMissionId = String(mission.id);
-    if (titleEl) titleEl.textContent = mission.title || "门派任务详情";
     const doneIds = new Set((mission.completions || []).map((c) => String(c.disciple_id)));
     const allDisc = sortDisciples(getDisciplesArray(), "name");
     const pending = allDisc.filter((d) => !doneIds.has(String(d.id)));
@@ -6506,11 +6618,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <span class="mb-tag">${esc(mission.difficulty || "普通")}</span>
             <span class="mb-tag">${esc(mission.category || "任务")}</span>
             <span class="mb-tag">完成 ${done.length} 人</span>
+            ${mission.visible === false ? `<span class="mb-tag">已隐藏</span>` : ""}
           </div>
           <div class="mission-reward-banner">完成赏赐：${rewardPropBadgeHtml(mission.points)}
             <div class="muted" style="margin-top:.35rem;font-size:.75rem">${esc(rewardProp.tip)} · 记入完成栏后自动发放给弟子</div>
           </div>
           ${getCampMission().deadline ? `<p class="muted" style="margin-top:.55rem">截止：${esc(getCampMission().deadline)}</p>` : ""}
+          <div class="row" style="margin-top:.65rem;gap:.4rem;flex-wrap:wrap">
+            <button type="button" class="primary" id="mission-detail-edit">编辑任务</button>
+            <button type="button" class="ghost" id="mission-detail-back">返回列表</button>
+          </div>
         </section>
         <section class="stack">
           <div class="mission-drop-zone" id="mission-done-zone">
@@ -6559,6 +6676,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
       </div>`;
 
+    document.getElementById("mission-detail-edit").onclick = () => openEditSingleMissionModal(activeMissionId);
+    document.getElementById("mission-detail-back").onclick = () => openMissionDetail("");
+
     const zone = document.getElementById("mission-done-zone");
     const bindDrag = (chip) => {
       chip.addEventListener("dragstart", (e) => {
@@ -6604,6 +6724,64 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         await completeMissionForDisciple(activeMissionId, id);
       };
     }
+  }
+
+  function openEditSingleMissionModal(missionId) {
+    const mission = findMissionItem(missionId);
+    if (!mission) {
+      alert("未找到任务");
+      openCampMissionModal();
+      return;
+    }
+    openModal(`
+      <h3>编辑任务</h3>
+      <p class="muted" style="text-align:center;margin-bottom:.45rem">修改后保存即可在任务面板看到更新</p>
+      <label><span>任务标题</span><input id="em-title" type="text" maxlength="40" value="${esc(mission.title || "")}" /></label>
+      <label><span>任务说明</span><textarea id="em-desc" rows="3" maxlength="160">${esc(mission.desc || "")}</textarea></label>
+      <div class="row" style="gap:.45rem;flex-wrap:wrap">
+        <label style="flex:1;min-width:7rem"><span>权重 1–100</span><input id="em-weight" type="number" min="1" max="100" value="${mission.weight || 50}" /></label>
+        <label style="flex:1;min-width:7rem"><span>奖励分</span><input id="em-points" type="number" min="0" value="${Number(mission.points) || 0}" /></label>
+        <label style="flex:1;min-width:7rem"><span>难度</span>
+          <select id="em-difficulty">
+            ${["普通","进阶","挑战","传说"].map((d) => `<option ${d === (mission.difficulty || "普通") ? "selected" : ""}>${d}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <label style="margin-top:.35rem;display:flex;align-items:center;gap:.35rem">
+        <input id="em-visible" type="checkbox" ${mission.visible !== false ? "checked" : ""} /> 在任务面板显示
+      </label>
+      <div id="em-prop-preview" style="margin:.35rem 0">${rewardPropBadgeHtml(mission.points, { compact: true })}</div>
+      <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.55rem">
+        <button type="button" class="ghost" id="modal-cancel">取消</button>
+        <button type="button" class="primary" id="em-save">保存修改</button>
+      </div>`);
+    document.getElementById("em-points").oninput = (e) => {
+      const prev = document.getElementById("em-prop-preview");
+      if (prev) prev.innerHTML = rewardPropBadgeHtml(e.target.value, { compact: true });
+    };
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("em-save").onclick = async () => {
+      const title = (document.getElementById("em-title").value || "").trim() || "未命名任务";
+      const desc = (document.getElementById("em-desc").value || "").trim();
+      const weight = Math.max(1, Math.min(100, Number(document.getElementById("em-weight").value) || 50));
+      const points = Math.max(0, Number(document.getElementById("em-points").value) || 0);
+      const difficulty = document.getElementById("em-difficulty").value || "普通";
+      const visible = !!document.getElementById("em-visible").checked;
+      await saveCampMissionPatch((next) => {
+        const item = (next.items || []).find((it) => String(it.id) === String(missionId));
+        if (!item) return;
+        item.title = title;
+        item.desc = desc;
+        item.weight = weight;
+        item.points = points;
+        item.difficulty = difficulty;
+        item.visible = visible;
+      });
+      closeModal();
+      showVoteToast("任务已更新");
+      if (teacherView === "mission") renderMissionDetail();
+      renderMissionBoard();
+    };
   }
 
   function openCampMissionModal() {
@@ -6714,12 +6892,48 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (modal) modal.classList.add("mission-edit-modal");
     renderItemsEditor();
     document.getElementById("cm-add-item").onclick = () => {
-      draftItems.push(newMissionItem({ title: "新门派任务", desc: "", weight: 50, visible: true, points: 10, difficulty: "普通" }));
+      const created = newMissionItem({
+        title: "新门派任务",
+        desc: "请填写任务说明",
+        weight: 50,
+        visible: true,
+        points: 10,
+        difficulty: "普通"
+      });
+      draftItems.push(created);
       renderItemsEditor();
+      showVoteToast("已添加任务卡片，编辑后请点「保存」才会出现在任务面板");
+      requestAnimationFrame(() => {
+        const host = document.getElementById("cm-items-editor");
+        if (!host) return;
+        const cards = host.querySelectorAll(".mission-item-card");
+        const last = cards[cards.length - 1];
+        if (last) {
+          last.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          last.style.outline = "2px solid rgba(240,193,75,.85)";
+          const titleInput = last.querySelector('[data-f="title"]');
+          if (titleInput) {
+            titleInput.focus();
+            titleInput.select();
+          }
+        }
+      });
     };
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("cm-save").onclick = async () => {
       sortDraft();
+      // 先把当前表单值再同步一遍，避免未触发 change 丢失
+      document.querySelectorAll("#cm-items-editor .mission-item-card").forEach((card) => {
+        const idx = Number(card.dataset.idx);
+        if (!draftItems[idx]) return;
+        card.querySelectorAll("[data-f]").forEach((el) => {
+          const f = el.dataset.f;
+          if (f === "visible") draftItems[idx].visible = el.checked;
+          else if (f === "weight") draftItems[idx].weight = Math.max(1, Math.min(100, Number(el.value) || 50));
+          else if (f === "points") draftItems[idx].points = Number(el.value) || 0;
+          else draftItems[idx][f] = el.value;
+        });
+      });
       const items = draftItems.map((it) => {
         const prev = (m.items || []).find((x) => String(x.id) === String(it.id));
         const base = newMissionItem(it);
@@ -6728,7 +6942,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           : (prev && Array.isArray(prev.completions) ? prev.completions.slice() : []);
         return base;
       });
-      const top = items.find((it) => it.visible !== false) || items[0] || newMissionItem({ title: "今日门派任务" });
+      if (!items.length) {
+        alert("请至少添加一个任务再保存");
+        return;
+      }
+      const top = items.find((it) => it.visible !== false) || items[0];
       const next = {
         ...m,
         title: top.title,
@@ -6742,8 +6960,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       };
       await updatePaths({ "config/camp_mission": next });
       closeModal();
+      showVoteToast(`已保存 ${items.length} 个任务`);
+      activeMissionId = "";
       renderMissionBoard();
       if (teacherView === "mission") renderMissionDetail();
+      else {
+        showScreen("teacher");
+        setTeacherView("mission");
+        renderMissionDetail();
+      }
       if (teacherView === "settings") renderSettings();
     };
   }
@@ -12528,7 +12753,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
     if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); startVoteLiveLoop(); return; }
     if (act === "goto-games") { showScreen("teacher"); setTeacherView("games"); return; }
-    if (act === "goto-mission") { openMissionDetail(activeMissionId || ""); return; }
+    if (act === "goto-mission") { activeMissionId = ""; openMissionDetail(""); return; }
     if (act === "game-spin") { startGameDraw(); return; }
     if (act === "game-refresh") { renderGames(); return; }
     if (act === "edit-draw-actions") { openDrawActionsEditor(); return; }
