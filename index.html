@@ -260,6 +260,36 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   color: var(--gold) !important; background: #0c101c !important;
   padding: .35rem .4rem !important; min-height: 2.05rem;
 }
+.day-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  vertical-align: middle;
+}
+.day-stepper .day-step-btn {
+  width: 1.7rem;
+  min-width: 1.7rem;
+  min-height: 1.7rem !important;
+  padding: 0 !important;
+  font-size: 1rem !important;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: 6px;
+  color: #ffe39a;
+  border-color: rgba(240,193,75,.4);
+  background: rgba(240,193,75,.08);
+}
+.day-stepper .day-step-btn:hover {
+  border-color: var(--gold);
+  background: rgba(240,193,75,.16);
+}
+.day-stepper .day-step-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+.day-stepper .day-input {
+  width: 3.2rem;
+}
 .round-chip {
   display: inline-flex; align-items: center; gap: .25rem;
   padding: .28rem .55rem; border: 1px solid rgba(240,193,75,.4);
@@ -2824,11 +2854,54 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
   font-family: var(--font-brush); font-size: .85rem !important;
 }
 .course-rail .rail-day {
-  margin-top: auto; text-align: center; padding-top: .4rem;
+  margin-top: auto; text-align: center; padding-top: .45rem;
   border-top: 1px solid rgba(240,193,75,.2);
+  display: flex; flex-direction: column; align-items: center; gap: .28rem;
+}
+.course-rail .rail-day .day-label-cap {
+  font-size: .65rem; letter-spacing: .16em; color: var(--ink-soft);
+}
+.course-rail .rail-day .day-stepper {
+  width: 100%;
+  justify-content: center;
+  gap: .15rem;
+}
+.course-rail .rail-day .day-step-btn {
+  width: 1.55rem;
+  min-width: 1.55rem;
+  min-height: 1.55rem !important;
+  font-size: .95rem !important;
 }
 .course-rail .rail-day .day-num {
-  font-family: var(--font-num); color: var(--gold); font-size: 1.1rem; font-weight: 800;
+  font-family: var(--font-num);
+  color: var(--gold);
+  font-size: 1.15rem;
+  font-weight: 800;
+  min-width: 2rem;
+  min-height: 1.55rem;
+  padding: .1rem .2rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: text;
+  line-height: 1.3;
+}
+.course-rail .rail-day .day-num:hover {
+  border-color: rgba(240,193,75,.35);
+  background: rgba(240,193,75,.08);
+}
+.course-rail .rail-day .day-num-input {
+  width: 2.4rem;
+  min-height: 1.55rem !important;
+  padding: .1rem .15rem !important;
+  font-size: 1.05rem !important;
+  font-family: var(--font-num);
+  font-weight: 800;
+  text-align: center;
+  color: var(--gold) !important;
+  background: #0c101c !important;
+  border: 1px solid rgba(240,193,75,.55);
+  border-radius: 6px;
 }
 .course-stage-wrap {
   min-height: 100vh;
@@ -3443,9 +3516,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" class="rail-btn" data-action="edit-camp-mission" title="编辑今日门派任务"><span class="ico">任</span>任务</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
     </nav>
-    <div class="rail-day" id="rail-day-box" title="点击到设置调整天数" data-action="goto-settings" style="cursor:pointer">
-      <div class="muted" style="font-size:.65rem">DAY</div>
-      <div class="day-num" id="rail-day-label">1</div>
+    <div class="rail-day" id="rail-day-box" aria-label="课堂天数">
+      <div class="day-label-cap">DAY</div>
+      <div class="day-stepper" id="rail-day-stepper">
+        <button type="button" class="day-step-btn" id="rail-day-dec" title="天数 -1" aria-label="天数减一">−</button>
+        <button type="button" class="day-num" id="rail-day-label" title="点击输入天数">1</button>
+        <input type="number" class="day-num-input hidden" id="rail-day-input" min="1" max="999" inputmode="numeric" aria-label="手动输入天数" />
+        <button type="button" class="day-step-btn" id="rail-day-inc" title="天数 +1" aria-label="天数加一">+</button>
+      </div>
     </div>
   </aside>
 
@@ -6811,8 +6889,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       memBtn.style.opacity = day < 20 ? .45 : 1;
       memBtn.title = day < 20 ? "第 20 天解锁回忆" : "打开回忆";
     }
-    const railDay = document.getElementById("rail-day-label");
-    if (railDay) railDay.textContent = String(day);
+    syncRailDayUI();
 
     const redList = sortPeaks(getPeaksArray().filter((p) => p.camp !== "blue"));
     const blueList = sortPeaks(getPeaksArray().filter((p) => p.camp === "blue"));
@@ -7355,8 +7432,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.querySelectorAll("#teacher-nav-links [data-nav], #rail-nav-links [data-nav]").forEach((b) => {
       b.classList.toggle("active-nav", b.dataset.nav === view);
     });
-    const railDay = document.getElementById("rail-day-label");
-    if (railDay) railDay.textContent = String(state.config?.day || 1);
+    syncRailDayUI();
     if (view === "mission") renderMissionDetail();
     if (view === "checkin") renderTeacherCheckin();
     if (view === "vote") {
@@ -10262,7 +10338,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span class="meta-pill">模式 · ${demoMode ? (demoSyncEnabled ? "DEMO · 跨设备同步" : "DEMO · 仅本机") : "Firebase"}</span>
         <span class="demo-sync-badge ${demoSyncEnabled ? "ok" : ""}" ${demoMode ? "" : "hidden"}>${demoMode ? (demoSyncEnabled ? "DEMO · 跨设备同步中" : "DEMO · 仅本机（未连同步服务）") : ""}</span>
         <label class="tool-inline" style="margin:0"><span>天数</span>
-          <input id="day-input" class="day-input" type="number" min="1" value="${day}" />
+          <span class="day-stepper">
+            <button type="button" class="day-step-btn" id="day-dec" title="天数 -1">−</button>
+            <input id="day-input" class="day-input" type="number" min="1" max="999" value="${day}" title="点击可直接输入" />
+            <button type="button" class="day-step-btn" id="day-inc" title="天数 +1">+</button>
+          </span>
         </label>
         <span class="meta-pill">任务 · ${(m.items || []).filter((x) => x.visible !== false).length}/${(m.items || []).length || 0} 显示</span>
         <button type="button" data-action="add-peak-red">＋光影山峰</button>
@@ -10283,7 +10363,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}
         <input type="file" id="settings-sfx-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
       const dayIn = document.getElementById("day-input");
-      if (dayIn) dayIn.onchange = async (e) => { await changeDay(e.target.value); renderSettings(); };
+      if (dayIn) {
+        dayIn.onchange = async (e) => {
+          await changeDay(e.target.value);
+          syncRailDayUI();
+          renderSettings();
+        };
+        dayIn.onkeydown = (e) => {
+          if (e.key === "Enter") { e.preventDefault(); dayIn.blur(); }
+        };
+      }
+      const dayDec = document.getElementById("day-dec");
+      const dayInc = document.getElementById("day-inc");
+      if (dayDec) dayDec.onclick = async () => { await nudgeDay(-1); renderSettings(); };
+      if (dayInc) dayInc.onclick = async () => { await nudgeDay(1); renderSettings(); };
       const sfxToggle = document.getElementById("settings-sfx-toggle");
       if (sfxToggle) sfxToggle.onclick = () => {
         sfxEnabled = !sfxEnabled;
@@ -10539,20 +10632,139 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     a.href = URL.createObjectURL(new Blob([content], { type }));
     a.download = filename; a.click(); URL.revokeObjectURL(a.href);
   }
-  async function changeDay(newDay) {
-    const day = Math.max(1, Number(newDay) || 1);
-    const updates = { "config/day": day, "config/week": Math.ceil(day / 7) };
-    getPeaksArray().forEach((p) => { updates[`peaks/${peakKey(p.id)}/votes`] = 0; });
-    getDisciplesArray().forEach((d) => {
-      updates[`disciples/${d.id}/checked_in_am`] = false;
-      updates[`disciples/${d.id}/checked_in_pm`] = false;
-      updates[`disciples/${d.id}/checked_in_am_at`] = 0;
-      updates[`disciples/${d.id}/checked_in_pm_at`] = 0;
-      updates[`disciples/${d.id}/voted`] = false;
-      updates[`disciples/${d.id}/voted_for`] = "";
+  let dayChanging = false;
+  let railDayEditing = false;
+
+  function currentDay() {
+    return Math.max(1, Number(state.config?.day) || 1);
+  }
+
+  function syncRailDayUI() {
+    const day = currentDay();
+    const label = document.getElementById("rail-day-label");
+    const input = document.getElementById("rail-day-input");
+    const dec = document.getElementById("rail-day-dec");
+    const inc = document.getElementById("rail-day-inc");
+    if (label && !railDayEditing) label.textContent = String(day);
+    if (input && document.activeElement !== input) input.value = String(day);
+    if (dec) dec.disabled = dayChanging || day <= 1;
+    if (inc) inc.disabled = dayChanging || day >= 999;
+    const settingsIn = document.getElementById("day-input");
+    if (settingsIn && document.activeElement !== settingsIn) settingsIn.value = String(day);
+    const dayLabel = document.getElementById("day-label");
+    if (dayLabel) dayLabel.textContent = String(day);
+  }
+
+  function beginRailDayEdit() {
+    const label = document.getElementById("rail-day-label");
+    const input = document.getElementById("rail-day-input");
+    if (!label || !input) return;
+    railDayEditing = true;
+    input.value = String(currentDay());
+    label.classList.add("hidden");
+    input.classList.remove("hidden");
+    input.focus();
+    input.select();
+  }
+
+  function endRailDayEdit(commit) {
+    const label = document.getElementById("rail-day-label");
+    const input = document.getElementById("rail-day-input");
+    if (!label || !input) return;
+    const raw = input.value;
+    railDayEditing = false;
+    input.classList.add("hidden");
+    label.classList.remove("hidden");
+    if (commit) {
+      changeDay(raw).then(() => syncRailDayUI());
+    } else {
+      syncRailDayUI();
+    }
+  }
+
+  function bindRailDayControls() {
+    const box = document.getElementById("rail-day-box");
+    if (!box || box.dataset.bound === "1") return;
+    box.dataset.bound = "1";
+    const dec = document.getElementById("rail-day-dec");
+    const inc = document.getElementById("rail-day-inc");
+    const label = document.getElementById("rail-day-label");
+    const input = document.getElementById("rail-day-input");
+    if (dec) dec.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      nudgeDay(-1);
     });
-    localStorage.removeItem(LS_VOTE_KEY);
-    await updatePaths(updates);
+    if (inc) inc.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      nudgeDay(1);
+    });
+    if (label) label.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      beginRailDayEdit();
+    });
+    if (input) {
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          endRailDayEdit(true);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          endRailDayEdit(false);
+        }
+      });
+      input.addEventListener("blur", () => {
+        if (railDayEditing) endRailDayEdit(true);
+      });
+      input.addEventListener("click", (e) => e.stopPropagation());
+    }
+  }
+
+  async function nudgeDay(delta) {
+    if (dayChanging) return;
+    const next = Math.max(1, Math.min(999, currentDay() + Number(delta || 0)));
+    if (next === currentDay()) return;
+    await changeDay(next);
+  }
+
+  async function changeDay(newDay) {
+    const day = Math.max(1, Math.min(999, Math.floor(Number(newDay) || 1)));
+    if (day === currentDay() && Number(state.config?.day) === day) {
+      syncRailDayUI();
+      return;
+    }
+    if (dayChanging) return;
+    dayChanging = true;
+    syncRailDayUI();
+    try {
+      const updates = { "config/day": day, "config/week": Math.ceil(day / 7) };
+      getPeaksArray().forEach((p) => { updates[`peaks/${peakKey(p.id)}/votes`] = 0; });
+      getDisciplesArray().forEach((d) => {
+        updates[`disciples/${d.id}/checked_in_am`] = false;
+        updates[`disciples/${d.id}/checked_in_pm`] = false;
+        updates[`disciples/${d.id}/checked_in_am_at`] = 0;
+        updates[`disciples/${d.id}/checked_in_pm_at`] = 0;
+        updates[`disciples/${d.id}/voted`] = false;
+        updates[`disciples/${d.id}/voted_for`] = "";
+      });
+      localStorage.removeItem(LS_VOTE_KEY);
+      await updatePaths(updates);
+      showVoteToast(`已切换到第 ${day} 天`);
+      syncRailDayUI();
+      if (teacherView === "settings") renderSettings();
+      const memBtn = document.getElementById("btn-memories");
+      if (memBtn) {
+        memBtn.disabled = day < 20;
+        memBtn.style.opacity = day < 20 ? .45 : 1;
+        memBtn.title = day < 20 ? "第 20 天解锁回忆" : "打开回忆";
+        memBtn.textContent = day < 20 ? "回忆·D20" : "回忆";
+      }
+    } finally {
+      dayChanging = false;
+      syncRailDayUI();
+    }
   }
   async function doSettleRanks() {
     const ranks = settleRanks(state.disciples || {});
@@ -11371,8 +11583,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     bindNavHost(document.getElementById("brand-nav"));
     bindNavHost(document.getElementById("rail-left"));
     bindNavHost(document.getElementById("rail-props"));
-    const dayInputEl = document.getElementById("day-input");
-    if (dayInputEl) dayInputEl.addEventListener("change", async (e) => changeDay(e.target.value));
+    bindRailDayControls();
+    syncRailDayUI();
     document.querySelectorAll("[data-log-filter]").forEach((btn) => {
       btn.addEventListener("click", () => {
         logFilter = btn.dataset.logFilter;
