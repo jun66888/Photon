@@ -2616,6 +2616,179 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 .pager-bar .pager-btns { display: flex; gap: .35rem; align-items: center; }
 .pager-bar button[disabled] { opacity: .35; }
 
+/* -------- 课堂抽人游戏：大转轮 / 水果机 / 蛇盘 -------- */
+.game-mode-tabs {
+  display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem;
+}
+.game-mode-tabs button {
+  font-size: .85rem !important; padding: .4rem .75rem !important; min-height: 2.2rem;
+}
+.game-mode-tabs button.on {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
+.game-pool-bar {
+  display: flex; flex-wrap: wrap; gap: .3rem; align-items: center;
+  margin-bottom: .75rem; min-height: 1.8rem;
+}
+.game-pool-chip {
+  display: inline-flex; align-items: center; gap: .2rem;
+  font-size: .72rem; padding: .12rem .4rem; border-radius: 99px;
+  border: 1px solid rgba(61,255,154,.4);
+  background: rgba(61,255,154,.1); color: #9dffc4;
+}
+.game-stage {
+  position: relative;
+  min-height: 22rem;
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 12px;
+  padding: .85rem;
+  background:
+    radial-gradient(90% 70% at 50% 20%, rgba(240,193,75,.12), transparent 55%),
+    rgba(8,12,20,.72);
+  overflow: hidden;
+}
+.game-stage .game-empty {
+  display: grid; place-items: center; min-height: 18rem;
+  color: var(--ink-soft); text-align: center; line-height: 1.6;
+}
+.game-actions {
+  display: flex; flex-wrap: wrap; gap: .45rem; justify-content: center;
+  margin-top: .85rem;
+}
+.game-actions button.primary { min-width: 8rem; font-weight: 800; }
+
+/* 大转轮 */
+.wheel-wrap {
+  position: relative; width: min(420px, 86vw); aspect-ratio: 1;
+  margin: .4rem auto 0;
+}
+.wheel-pointer {
+  position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+  z-index: 3; width: 0; height: 0;
+  border-left: 12px solid transparent; border-right: 12px solid transparent;
+  border-top: 22px solid var(--gold);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+}
+.wheel-disk {
+  position: relative;
+  width: 100%; height: 100%; border-radius: 50%;
+  border: 4px solid rgba(240,193,75,.65);
+  box-shadow: 0 0 0 6px rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.4);
+  transition: transform 4.2s cubic-bezier(.12,.75,.08,1);
+  background: #151b2e;
+  overflow: hidden;
+}
+.wheel-disk.spinning { pointer-events: none; }
+.wheel-label {
+  position: absolute; inset: 0; border-radius: 50%;
+  pointer-events: none;
+}
+.wheel-label span {
+  position: absolute; left: 50%; top: 50%;
+  transform-origin: 0 0;
+  font-size: clamp(.62rem, 1.6vw, .78rem); font-weight: 700;
+  color: #fff5e8; white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,.7);
+}
+.wheel-hub {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 2; width: 18%; aspect-ratio: 1; border-radius: 50%;
+  background: linear-gradient(180deg, #ffe39a, var(--gold));
+  border: 3px solid #1a1205; color: #1a1205;
+  display: grid; place-items: center;
+  font-family: var(--font-brush); font-size: clamp(.9rem, 2vw, 1.15rem); font-weight: 800;
+}
+
+/* 水果机 */
+.fruit-machine {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem;
+  max-width: 520px; margin: .6rem auto 0;
+}
+.fruit-reel {
+  height: 14rem; border-radius: 10px; overflow: hidden;
+  border: 2px solid rgba(240,193,75,.4);
+  background: rgba(0,0,0,.45);
+  position: relative;
+}
+.fruit-reel::before, .fruit-reel::after {
+  content: ""; position: absolute; left: 0; right: 0; z-index: 2; height: 28%;
+  pointer-events: none;
+}
+.fruit-reel::before { top: 0; background: linear-gradient(180deg, rgba(0,0,0,.75), transparent); }
+.fruit-reel::after { bottom: 0; background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); }
+.fruit-reel .reel-window {
+  position: absolute; left: 6%; right: 6%; top: 36%; height: 28%;
+  border: 2px solid rgba(240,193,75,.55); border-radius: 6px; z-index: 1;
+  box-shadow: inset 0 0 12px rgba(240,193,75,.2);
+  pointer-events: none;
+}
+.fruit-strip {
+  display: flex; flex-direction: column; align-items: stretch;
+  will-change: transform;
+}
+.fruit-strip .fruit-cell {
+  height: 3.9rem; display: grid; place-items: center;
+  font-family: var(--font-brush); font-size: 1.25rem; color: #fff5e8;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.fruit-strip .fruit-cell.win { color: var(--gold); text-shadow: 0 0 12px rgba(240,193,75,.55); }
+
+/* 贪吃蛇盘 */
+.snake-board {
+  display: grid;
+  gap: .28rem;
+  max-width: 640px; margin: .5rem auto 0;
+}
+.snake-cell {
+  min-height: 2.6rem; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.28);
+  display: grid; place-items: center;
+  font-size: .78rem; font-weight: 700; color: #c5d0e2;
+  transition: background .12s ease, border-color .12s ease, color .12s ease, transform .12s ease;
+  padding: .2rem .3rem; text-align: center; line-height: 1.15;
+}
+.snake-cell.on {
+  border-color: rgba(240,193,75,.75);
+  background: rgba(240,193,75,.22);
+  color: #ffe39a;
+  transform: scale(1.04);
+  box-shadow: 0 0 14px rgba(240,193,75,.35);
+}
+.snake-cell.win {
+  border-color: var(--ok);
+  background: rgba(61,255,154,.2);
+  color: #9dffc4;
+  box-shadow: 0 0 18px rgba(61,255,154,.4);
+  animation: snakeWinPop .55s ease;
+}
+@keyframes snakeWinPop {
+  0% { transform: scale(.92); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(1.04); }
+}
+.draw-reward-banner {
+  text-align: center; margin: .35rem 0 .7rem;
+}
+.draw-reward-banner .dr-who {
+  font-family: var(--font-brush); font-size: 1.8rem; color: #fff5e8; letter-spacing: .08em;
+}
+.draw-reward-banner .dr-opt {
+  margin-top: .45rem; display: inline-flex; align-items: center; gap: .35rem;
+  padding: .45rem .9rem; border-radius: 8px;
+  border: 2px solid rgba(240,193,75,.55);
+  background: rgba(240,193,75,.12);
+  color: var(--gold); font-size: 1.15rem; font-weight: 800;
+  animation: discipleRewardIn 1.2s ease both;
+}
+.proxy-pick-list {
+  display: flex; flex-wrap: wrap; gap: .35rem; max-height: 40vh; overflow: auto;
+  margin: .4rem 0 .7rem;
+}
+.proxy-pick-list button { font-size: .82rem !important; padding: .35rem .6rem !important; }
+
 /* 可插入编辑框：拖拽移动 + 右下角拖拽改大小 */
 #edit-box-layer {
   position: absolute; inset: 0; z-index: 18; pointer-events: none;
@@ -2701,6 +2874,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" data-action="custom-score">加分</button>
       <button type="button" data-action="goto-checkin" data-nav="checkin">签到</button>
       <button type="button" data-action="goto-vote" data-nav="vote">投票</button>
+      <button type="button" data-action="goto-games" data-nav="games">抽人</button>
       <button type="button" data-action="goto-logs" data-nav="logs">日志</button>
       <button type="button" data-action="edit-camp-mission">任务</button>
       <button type="button" data-action="goto-settings" data-nav="settings">设置</button>
@@ -2719,6 +2893,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
       <button type="button" class="rail-btn" data-action="goto-checkin" data-nav="checkin"><span class="ico">签</span>签到</button>
       <button type="button" class="rail-btn" data-action="goto-vote" data-nav="vote"><span class="ico">票</span>投票</button>
+      <button type="button" class="rail-btn" data-action="goto-games" data-nav="games" title="课堂抽人答题"><span class="ico">转</span>抽人</button>
       <button type="button" class="rail-btn" data-action="custom-score"><span class="ico">＋</span>加分</button>
       <button type="button" class="rail-btn" data-action="edit-camp-mission" title="编辑今日门派任务"><span class="ico">任</span>任务</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
@@ -2876,6 +3051,35 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <div class="muted" style="margin-bottom:.35rem" id="vote-qr-hint">先点「开启投票」，再让学生扫下方二维码</div>
             <div class="qr-box" id="student-vote-qr"></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="teacher-games" class="subview course-page hidden">
+      <div class="course-hero">
+        <div class="ch-seal">转</div>
+        <div class="ch-text">
+          <div class="ch-kicker">COURSE · DRAW</div>
+          <div class="ch-title">课堂抽人 · 答题加分</div>
+          <div class="ch-sub">已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分</div>
+        </div>
+        <div class="ch-actions">
+          <button type="button" data-action="goto-checkin">去签到</button>
+          <button type="button" class="primary" data-action="game-spin" id="game-spin-top">开始抽取</button>
+        </div>
+      </div>
+      <div class="course-panel">
+        <div class="game-mode-tabs" id="game-mode-tabs" role="tablist">
+          <button type="button" class="on" data-game-mode="wheel">大转轮</button>
+          <button type="button" data-game-mode="fruit">水果机</button>
+          <button type="button" data-game-mode="snake">贪吃蛇盘</button>
+        </div>
+        <div class="muted" style="margin-bottom:.35rem">抽人池 · 本场已签到 <strong id="game-pool-count">0</strong> 人</div>
+        <div class="game-pool-bar" id="game-pool-bar"></div>
+        <div class="game-stage" id="game-stage"></div>
+        <div class="game-actions">
+          <button type="button" class="primary" data-action="game-spin" id="game-spin-btn">开始抽取</button>
+          <button type="button" class="ghost" data-action="game-refresh">刷新名单</button>
         </div>
       </div>
     </div>
@@ -3480,10 +3684,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let logFilter = "today", teacherView = "main", sortMode = "score";
   let logsPage = 1;
   const LOGS_PAGE_SIZE = 12;
-  const VIEW_ORDER = ["main", "mission", "checkin", "vote", "logs", "settings"];
+  const VIEW_ORDER = ["main", "mission", "checkin", "vote", "games", "logs", "settings"];
   let dragPeakId = null, sectModalTab = "bonus";
   let activeMissionId = "";
   let dragMissionMemberId = "";
+  let gameMode = "wheel";
+  let gameSpinning = false;
+  let gameWheelAngle = 0;
+  let gameSnakeTimer = null;
   /** 作品投票榜快照：用于追赶排序动效 */
   let votePrevMap = {};
   let voteBoardPrimed = false;
@@ -6103,7 +6311,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       ? (nextIdx > prevIdx ? "from-right" : "from-left")
       : "";
 
-    ["main", "mission", "checkin", "vote", "logs", "settings"].forEach((v) => {
+    ["main", "mission", "checkin", "vote", "games", "logs", "settings"].forEach((v) => {
       const id = v === "main" ? "teacher-main" : "teacher-" + v;
       const el = document.getElementById(id);
       if (!el) return;
@@ -6135,6 +6343,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       startVoteLiveLoop();
       renderTeacherVote();
     }
+    if (view === "games") renderGames();
     if (view === "logs") { logsPage = 1; renderLogs(); }
     if (view === "settings") renderSettings();
     renderEditBoxes();
@@ -6472,6 +6681,377 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       showDiscipleRewardToast(d.name || "弟子", pts);
       if (typeof renderAll === "function") renderAll();
     }
+  }
+
+  /* -------- 课堂抽人：大转轮 / 水果机 / 蛇盘 -------- */
+  function getCheckedInDisciples() {
+    return sortDisciples(getDisciplesArray().filter(discipleCheckedIn), "name");
+  }
+
+  function setGameSpinButtons(busy) {
+    gameSpinning = !!busy;
+    ["game-spin-btn", "game-spin-top"].forEach((id) => {
+      const b = document.getElementById(id);
+      if (b) {
+        b.disabled = gameSpinning;
+        b.textContent = gameSpinning ? "抽取中…" : "开始抽取";
+      }
+    });
+  }
+
+  function renderGames() {
+    if (gameSnakeTimer) { clearInterval(gameSnakeTimer); gameSnakeTimer = null; }
+    const pool = getCheckedInDisciples();
+    const countEl = document.getElementById("game-pool-count");
+    const bar = document.getElementById("game-pool-bar");
+    const stage = document.getElementById("game-stage");
+    if (countEl) countEl.textContent = String(pool.length);
+    if (bar) {
+      bar.innerHTML = pool.length
+        ? pool.map((d) => `<span class="game-pool-chip">${esc(d.name)}${d.role === "队长" ? "★" : ""}</span>`).join("")
+        : `<span class="muted">暂无已签到弟子 · 请先完成签到</span>`;
+    }
+    document.querySelectorAll("#game-mode-tabs [data-game-mode]").forEach((b) => {
+      b.classList.toggle("on", b.dataset.gameMode === gameMode);
+      b.onclick = () => {
+        if (gameSpinning) return;
+        gameMode = b.dataset.gameMode;
+        renderGames();
+      };
+    });
+    if (!stage) return;
+    if (!pool.length) {
+      stage.innerHTML = `<div class="game-empty">还没有已签到的学生<br>请先到「签到」页生成签到码，学生签到后再来抽人</div>`;
+      setGameSpinButtons(false);
+      return;
+    }
+    if (gameMode === "wheel") renderWheelStage(pool);
+    else if (gameMode === "fruit") renderFruitStage(pool);
+    else renderSnakeStage(pool);
+    setGameSpinButtons(false);
+  }
+
+  function wheelColors(i, n) {
+    const a = ["#8a1030", "#0a6a7a", "#3a4668", "#6a5010", "#1c4a3a", "#4a2858"];
+    return a[i % a.length];
+  }
+
+  function renderWheelStage(pool) {
+    const stage = document.getElementById("game-stage");
+    const n = pool.length;
+    const seg = 360 / n;
+    const stops = pool.map((_, i) => `${wheelColors(i, n)} ${i * seg}deg ${(i + 1) * seg}deg`).join(",");
+    stage.innerHTML = `
+      <div class="wheel-wrap">
+        <div class="wheel-pointer" aria-hidden="true"></div>
+        <div class="wheel-disk" id="game-wheel" style="background:conic-gradient(${stops});transform:rotate(${gameWheelAngle}deg)">
+          <div class="wheel-label" id="game-wheel-labels"></div>
+        </div>
+        <div class="wheel-hub">抽</div>
+      </div>`;
+    const lab = document.getElementById("game-wheel-labels");
+    if (!lab) return;
+    lab.innerHTML = pool.map((d, i) => {
+      const mid = i * seg + seg / 2;
+      const rad = (mid - 90) * Math.PI / 180;
+      const r = 38;
+      const x = 50 + r * Math.cos(rad);
+      const y = 50 + r * Math.sin(rad);
+      return `<span style="left:${x}%;top:${y}%;transform:translate(-50%,-50%) rotate(${mid}deg)">${esc(d.name)}</span>`;
+    }).join("");
+  }
+
+  function buildFruitStrip(pool, winner, loops) {
+    const cells = [];
+    for (let i = 0; i < loops; i++) {
+      const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+      shuffled.forEach((d) => cells.push(d));
+    }
+    cells.push(winner);
+    pool.slice(0, Math.min(4, pool.length)).forEach((d) => cells.push(d));
+    return cells;
+  }
+
+  function renderFruitStage(pool) {
+    const stage = document.getElementById("game-stage");
+    const preview = pool.slice(0, Math.max(8, Math.min(pool.length, 12)));
+    stage.innerHTML = `
+      <div class="fruit-machine" id="fruit-machine">
+        ${[0, 1, 2].map((i) => `
+          <div class="fruit-reel" data-reel="${i}">
+            <div class="reel-window"></div>
+            <div class="fruit-strip" id="fruit-strip-${i}">
+              ${preview.map((d) => `<div class="fruit-cell">${esc(d.name)}</div>`).join("")}
+            </div>
+          </div>`).join("")}
+      </div>`;
+  }
+
+  function snakeGridSize(n) {
+    const cols = n <= 8 ? 4 : n <= 15 ? 5 : n <= 24 ? 6 : 7;
+    const rows = Math.max(2, Math.ceil(n / cols));
+    return { cols, rows };
+  }
+
+  function snakePathOrder(cols, rows) {
+    const order = [];
+    for (let r = 0; r < rows; r++) {
+      if (r % 2 === 0) {
+        for (let c = 0; c < cols; c++) order.push({ r, c });
+      } else {
+        for (let c = cols - 1; c >= 0; c--) order.push({ r, c });
+      }
+    }
+    return order;
+  }
+
+  function renderSnakeStage(pool) {
+    const stage = document.getElementById("game-stage");
+    const { cols, rows } = snakeGridSize(pool.length);
+    const path = snakePathOrder(cols, rows);
+    const cells = path.map((p, i) => {
+      const d = pool[i];
+      if (!d) return `<div class="snake-cell" data-snake-empty="1" style="opacity:.25"></div>`;
+      return `<div class="snake-cell" data-snake-id="${esc(String(d.id))}">${esc(d.name)}</div>`;
+    }).join("");
+    stage.innerHTML = `<div class="snake-board" id="snake-board" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${cells}</div>`;
+  }
+
+  function pickRandomDisciple(pool) {
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function pickRandomRewardOption() {
+    const opts = [
+      { type: "score", points: 1, label: "答对 +1 分" },
+      { type: "score", points: 3, label: "答对 +3 分" },
+      { type: "score", points: 5, label: "答对 +5 分" },
+      { type: "proxy", label: "指定某人代为回答" }
+    ];
+    return opts[Math.floor(Math.random() * opts.length)];
+  }
+
+  async function startGameDraw() {
+    if (gameSpinning) return;
+    const pool = getCheckedInDisciples();
+    if (!pool.length) {
+      alert("暂无已签到学生，请先签到");
+      setTeacherView("checkin");
+      return;
+    }
+    const winner = pickRandomDisciple(pool);
+    if (!winner) return;
+    setGameSpinButtons(true);
+    try {
+      if (gameMode === "wheel") await runWheelDraw(pool, winner);
+      else if (gameMode === "fruit") await runFruitDraw(pool, winner);
+      else await runSnakeDraw(pool, winner);
+      showDrawResultModal(winner);
+    } finally {
+      setGameSpinButtons(false);
+    }
+  }
+
+  function runWheelDraw(pool, winner) {
+    return new Promise((resolve) => {
+      const disk = document.getElementById("game-wheel");
+      if (!disk) { resolve(); return; }
+      const n = pool.length;
+      const seg = 360 / n;
+      const idx = pool.findIndex((d) => String(d.id) === String(winner.id));
+      const targetIdx = idx >= 0 ? idx : 0;
+      // 指针在顶部(0deg)，扇区 i 的中线在 conic 的 i*seg+seg/2；需转到使中线对准顶部
+      const center = targetIdx * seg + seg / 2;
+      const spins = 5 + Math.floor(Math.random() * 3);
+      const final = spins * 360 + (360 - center);
+      disk.classList.add("spinning");
+      gameWheelAngle = final;
+      disk.style.transition = "transform 4.2s cubic-bezier(.12,.75,.08,1)";
+      disk.style.transform = `rotate(${final}deg)`;
+      playHitSfx(8, "日常");
+      setTimeout(() => {
+        disk.classList.remove("spinning");
+        // 归一化角度，避免无限增大
+        gameWheelAngle = ((final % 360) + 360) % 360;
+        disk.style.transition = "none";
+        disk.style.transform = `rotate(${gameWheelAngle}deg)`;
+        void disk.offsetWidth;
+        disk.style.transition = "";
+        resolve();
+      }, 4300);
+    });
+  }
+
+  function runFruitDraw(pool, winner) {
+    return new Promise((resolve) => {
+      const reels = [0, 1, 2];
+      let done = 0;
+      reels.forEach((ri) => {
+        const strip = document.getElementById("fruit-strip-" + ri);
+        if (!strip) { if (++done === 3) resolve(); return; }
+        const loops = 3 + ri;
+        const cells = buildFruitStrip(pool, winner, loops);
+        // 保证赢家出现在条带靠后位置，三轴最终都停在赢家
+        const pad = cells.slice();
+        while (pad.length < 16) pad.push(...pool);
+        const winAt = pad.length - 3;
+        pad[winAt] = winner;
+        strip.innerHTML = pad.map((d) => `<div class="fruit-cell">${esc(d.name)}</div>`).join("");
+        const reel = strip.parentElement;
+        const reelH = reel ? reel.clientHeight : 224;
+        const itemH = strip.querySelector(".fruit-cell")?.offsetHeight || 62;
+        const offset = winAt * itemH - (reelH / 2 - itemH / 2);
+        strip.style.transition = "none";
+        strip.style.transform = "translateY(0)";
+        void strip.offsetWidth;
+        const dur = 2.4 + ri * 0.55;
+        strip.style.transition = `transform ${dur}s cubic-bezier(.12,.8,.08,1)`;
+        strip.style.transform = `translateY(${-Math.max(0, offset)}px)`;
+        setTimeout(() => {
+          strip.querySelectorAll(".fruit-cell").forEach((c) => c.classList.remove("win"));
+          const mid = strip.children[winAt];
+          if (mid) mid.classList.add("win");
+          if (++done === 3) {
+            playHitSfx(12, "任务");
+            resolve();
+          }
+        }, dur * 1000 + 40);
+      });
+      playHitSfx(5, "日常");
+    });
+  }
+
+  function runSnakeDraw(pool, winner) {
+    return new Promise((resolve) => {
+      const board = document.getElementById("snake-board");
+      if (!board) { resolve(); return; }
+      const cells = [...board.querySelectorAll(".snake-cell[data-snake-id]")];
+      if (!cells.length) { resolve(); return; }
+      const winCell = cells.find((c) => String(c.dataset.snakeId) === String(winner.id)) || cells[0];
+      const winIdx = cells.indexOf(winCell);
+      const laps = 2 + Math.floor(Math.random() * 2);
+      const totalSteps = laps * cells.length + winIdx;
+      let step = 0;
+      playHitSfx(5, "日常");
+      if (gameSnakeTimer) clearInterval(gameSnakeTimer);
+      gameSnakeTimer = setInterval(() => {
+        cells.forEach((c) => c.classList.remove("on", "win"));
+        const cur = cells[step % cells.length];
+        if (cur) cur.classList.add("on");
+        step += 1;
+        if (step > totalSteps) {
+          clearInterval(gameSnakeTimer);
+          gameSnakeTimer = null;
+          cells.forEach((c) => c.classList.remove("on"));
+          winCell.classList.add("win", "on");
+          playHitSfx(15, "擂台");
+          setTimeout(resolve, 480);
+        }
+      }, 70);
+    });
+  }
+
+  function showDrawResultModal(winner) {
+    const reward = pickRandomRewardOption();
+    const peak = findPeak(winner.peak);
+    const place = peak ? `${peak.icon || ""} ${peak.name}` : "大厅";
+    openModal(`
+      <div class="draw-reward-banner">
+        <div class="muted" style="letter-spacing:.16em;color:var(--gold)">抽中答题</div>
+        <div class="dr-who">${esc(winner.name || "弟子")}</div>
+        <div class="muted" style="margin-top:.2rem">${esc(place)} · Lv${winner.level || 1}</div>
+        <div class="dr-opt" id="draw-reward-opt">${esc(reward.label)}</div>
+      </div>
+      <p class="muted" style="text-align:center;margin-bottom:.55rem">请该同学回答问题 · 下方为本次随机奖励规则</p>
+      <div id="draw-reward-body"></div>
+      <div class="row" style="justify-content:flex-end;flex-wrap:wrap;gap:.4rem;margin-top:.5rem">
+        <button type="button" class="ghost" id="draw-reroll-reward">换个奖励</button>
+        <button type="button" class="ghost" id="draw-again">再抽一次</button>
+        <button type="button" class="ghost" id="modal-cancel">关闭</button>
+        <button type="button" class="primary" id="draw-confirm">${reward.type === "proxy" ? "去指定代答" : "答对发奖"}</button>
+      </div>`);
+
+    let current = reward;
+    const paintOpt = () => {
+      const el = document.getElementById("draw-reward-opt");
+      if (el) {
+        el.textContent = current.label;
+        el.style.animation = "none";
+        void el.offsetWidth;
+        el.style.animation = "";
+      }
+      const conf = document.getElementById("draw-confirm");
+      if (conf) conf.textContent = current.type === "proxy" ? "去指定代答" : "答对发奖";
+      const body = document.getElementById("draw-reward-body");
+      if (body) {
+        body.innerHTML = current.type === "proxy"
+          ? `<p class="muted" style="text-align:center">将从已签到名单中另选一人代为回答；答对后积分给代答者。</p>`
+          : `<p class="muted" style="text-align:center">确认答对后，给 <b style="color:var(--gold)">${esc(winner.name)}</b> 发放 <b style="color:var(--gold)">+${current.points}</b> 分。</p>`;
+      }
+    };
+    paintOpt();
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("draw-again").onclick = () => { closeModal(); startGameDraw(); };
+    document.getElementById("draw-reroll-reward").onclick = () => {
+      current = pickRandomRewardOption();
+      paintOpt();
+    };
+    document.getElementById("draw-confirm").onclick = async () => {
+      if (current.type === "proxy") {
+        openProxyPickModal(winner);
+        return;
+      }
+      await addScoreToDisciple(winner.id, current.points, `抽中答题·${winner.name}`, "日常");
+    };
+  }
+
+  function openProxyPickModal(original) {
+    const pool = getCheckedInDisciples().filter((d) => String(d.id) !== String(original.id));
+    if (!pool.length) {
+      alert("没有其他已签到同学可代答");
+      return;
+    }
+    openModal(`
+      <h3>指定代答</h3>
+      <p class="muted" style="text-align:center;margin-bottom:.45rem">原抽中：${esc(original.name)} · 请另选一人代为回答</p>
+      <div class="proxy-pick-list" id="proxy-pick-list">
+        ${pool.map((d) => {
+          const pk = findPeak(d.peak);
+          return `<button type="button" data-proxy-id="${esc(String(d.id))}">${esc(d.name)}${d.role === "队长" ? "★" : ""} · ${esc(pk ? pk.name : "大厅")}</button>`;
+        }).join("")}
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:.4rem">
+        <button type="button" class="ghost" id="proxy-back">返回</button>
+        <button type="button" class="ghost" id="modal-cancel">关闭</button>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("proxy-back").onclick = () => showDrawResultModal(original);
+    document.querySelectorAll("[data-proxy-id]").forEach((btn) => {
+      btn.onclick = () => {
+        const proxy = (state.disciples || {})[btn.dataset.proxyId];
+        if (!proxy) return;
+        // 代答也随机一个分数奖励
+        const pts = pick([1, 3, 5]);
+        openModal(`
+          <div class="draw-reward-banner">
+            <div class="muted" style="letter-spacing:.16em;color:var(--gold)">代为回答</div>
+            <div class="dr-who">${esc(proxy.name)}</div>
+            <div class="muted">代替 ${esc(original.name)} 答题</div>
+            <div class="dr-opt">答对 +${pts} 分</div>
+          </div>
+          <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.6rem">
+            <button type="button" class="ghost" id="proxy-back2">重选</button>
+            <button type="button" class="ghost" id="modal-cancel">关闭</button>
+            <button type="button" class="primary" id="proxy-award">答对发奖</button>
+          </div>`);
+        document.getElementById("modal-cancel").onclick = closeModal;
+        document.getElementById("proxy-back2").onclick = () => openProxyPickModal(original);
+        document.getElementById("proxy-award").onclick = async () => {
+          await addScoreToDisciple(proxy.id, pts, `代答·替${original.name}`, "日常");
+        };
+      };
+    });
   }
 
   function openScoreHubModal(startTab) {
@@ -8349,6 +8929,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       else if (teacherView === "mission") renderMissionDetail();
       else if (teacherView === "checkin") renderTeacherCheckin();
       else if (teacherView === "vote") renderTeacherVote();
+      else if (teacherView === "games") renderGames();
       else if (teacherView === "logs") renderLogs();
       else if (teacherView === "settings") renderSettings();
     } else if (mode === "student") renderStudent();
@@ -8367,6 +8948,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "insert-edit-box") { insertEditBox(); return; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
     if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); startVoteLiveLoop(); return; }
+    if (act === "goto-games") { showScreen("teacher"); setTeacherView("games"); return; }
+    if (act === "game-spin") { startGameDraw(); return; }
+    if (act === "game-refresh") { renderGames(); return; }
     if (act === "goto-logs") { showScreen("teacher"); setTeacherView("logs"); return; }
     if (act === "goto-settings") { showScreen("teacher"); setTeacherView("settings"); return; }
     if (act === "export-data") {
