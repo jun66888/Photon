@@ -3434,6 +3434,27 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   margin: .4rem 0 .7rem;
 }
 .proxy-pick-list button { font-size: .82rem !important; padding: .35rem .6rem !important; }
+.draw-perk-row {
+  display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center;
+  margin: .55rem 0 .2rem;
+}
+.draw-perk-row button.draw-perk {
+  font-size: .78rem !important; padding: .4rem .65rem !important; min-height: 2.35rem;
+  display: inline-flex; align-items: center; gap: .28rem;
+}
+.draw-perk-row button.draw-perk .dp-cost {
+  font-family: var(--font-num); font-weight: 800; color: var(--gold); font-size: .72rem;
+}
+.draw-perk-row button.draw-perk:disabled {
+  opacity: .45; filter: grayscale(.3);
+}
+.draw-fee-row {
+  display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; justify-content: center;
+  margin: .45rem 0 .2rem;
+}
+.draw-fee-row input {
+  width: 4.8rem; text-align: center; font-family: var(--font-num); font-weight: 800;
+}
 
 /* -------- 奖品兑换 -------- */
 .redeem-tabs {
@@ -3821,6 +3842,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
         <div class="ch-actions">
           <button type="button" data-action="goto-checkin">去签到</button>
+          <button type="button" data-action="edit-draw-actions" title="配置抽中后的积分特权小按钮">特权设置</button>
           <button type="button" class="primary" data-action="game-spin" id="game-spin-top">开始抽取</button>
         </div>
       </div>
@@ -4398,6 +4420,32 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   /** 兑换目录种子；升级 REDEEM_SEED_REV 时会把缺失 id 的卡并入已有存档 */
   const REDEEM_SEED_REV = 2;
+  /** 抽人特权按钮种子 */
+  const DRAW_ACTIONS_REV = 1;
+  function getDrawActionsSeed() {
+    return [
+      {
+        id: "da_proxy", label: "指定代答", type: "proxy", icon: "🎭",
+        unlock_cost: 10, fee_min: 10, fee_default: 10, visible: true,
+        tip: "花贡献分兑换代答权；答对分给代答者，另划拨报酬（最少 10 分）"
+      },
+      {
+        id: "da_assist", label: "同组求助", type: "assist", icon: "🤝",
+        unlock_cost: 8, fee_min: 10, fee_default: 10, visible: true,
+        tip: "仅可请同组代答；答对分与报酬规则同指定代答"
+      },
+      {
+        id: "da_hint", label: "请求提示", type: "hint", icon: "💡",
+        unlock_cost: 5, fee_min: 0, fee_default: 0, visible: true,
+        tip: "消耗贡献分换一次提示机会（老师口述提示）"
+      },
+      {
+        id: "da_skip", label: "跳过本题", type: "skip", icon: "⏭",
+        unlock_cost: 15, fee_min: 0, fee_default: 0, visible: true,
+        tip: "消耗贡献分跳过本题，可再抽一次"
+      }
+    ];
+  }
   function getRedeemCatalogSeed() {
     return [
       // —— 派系道具 ——
@@ -4447,6 +4495,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ],
         redeem_catalog: getRedeemCatalogSeed().map((c) => ({ ...c })),
         redeem_seed_rev: REDEEM_SEED_REV,
+        draw_actions: getDrawActionsSeed().map((c) => ({ ...c })),
+        draw_actions_rev: DRAW_ACTIONS_REV,
         redeem_logs: {},
         brand: {
           name: "光影盟",
@@ -7881,6 +7931,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function renderGames() {
+    ensureDrawActionsConfig();
     if (gameSnakeTimer) { clearInterval(gameSnakeTimer); gameSnakeTimer = null; }
     const pool = getCheckedInDisciples();
     const countEl = document.getElementById("game-pool-count");
@@ -8005,6 +8056,160 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   /** 抽人答对默认加分；随机加分区间为 1～2×基本分 */
   const DRAW_DEFAULT_POINTS = 5;
+  const PROXY_FEE_MIN = 10;
+  function newDrawAction(raw) {
+    const r = raw || {};
+    const feeMin = Math.max(0, Math.floor(Number(r.fee_min) || 0));
+    const feeDefault = Math.max(feeMin, Math.floor(Number(r.fee_default) || feeMin));
+    return {
+      id: r.id || ("da_" + Date.now() + "_" + Math.floor(Math.random() * 999)),
+      label: String(r.label || "特权").trim() || "特权",
+      type: ["proxy", "assist", "hint", "skip"].includes(r.type) ? r.type : "hint",
+      icon: r.icon || "🎴",
+      unlock_cost: Math.max(0, Math.floor(Number(r.unlock_cost) || 0)),
+      fee_min: feeMin,
+      fee_default: feeDefault,
+      visible: r.visible !== false,
+      tip: String(r.tip || "").trim()
+    };
+  }
+  function ensureDrawActionsConfig() {
+    if (!state.config) state.config = {};
+    const seed = getDrawActionsSeed();
+    if (!Array.isArray(state.config.draw_actions) || !state.config.draw_actions.length) {
+      state.config.draw_actions = seed.map((c) => ({ ...c }));
+      state.config.draw_actions_rev = DRAW_ACTIONS_REV;
+      return;
+    }
+    const rev = Number(state.config.draw_actions_rev) || 0;
+    if (rev < DRAW_ACTIONS_REV) {
+      const have = new Set(state.config.draw_actions.map((c) => c && c.id).filter(Boolean).map(String));
+      const missing = seed.filter((c) => c && c.id && !have.has(String(c.id)));
+      if (missing.length) {
+        state.config.draw_actions = state.config.draw_actions.concat(missing.map((c) => ({ ...c })));
+      }
+      state.config.draw_actions_rev = DRAW_ACTIONS_REV;
+      try {
+        if (demoMode && typeof saveDemoLocal === "function") saveDemoLocal();
+      } catch (e) { /* ignore */ }
+    }
+  }
+  function getDrawActions(includeHidden) {
+    ensureDrawActionsConfig();
+    return (state.config.draw_actions || [])
+      .filter(Boolean)
+      .map((c) => newDrawAction(c))
+      .filter((c) => includeHidden || c.visible !== false);
+  }
+  function discipleContributedBalance(d) {
+    return Math.max(0, Number(d?.contributed) || 0);
+  }
+  /** 仅扣学员贡献分（兑换消耗，不进他人账户） */
+  async function spendDiscipleContributed(discipleId, cost, reason) {
+    const d = (state.disciples || {})[discipleId];
+    if (!d) throw new Error("未找到学员");
+    const need = Math.max(0, Math.floor(Number(cost) || 0));
+    if (!need) return true;
+    const bal = discipleContributedBalance(d);
+    if (bal < need) {
+      throw new Error(`「${d.name || "学员"}」贡献分不足（现有 ${bal}，需要 ${need}）`);
+    }
+    const updates = {};
+    updates[`disciples/${discipleId}/contributed`] = bal - need;
+    const day = state.config?.day || 1;
+    const peak = findPeak(d.peak);
+    await updatePaths(updates);
+    await pushLog({
+      timestamp: Date.now(),
+      peak_id: peak ? peak.id : "",
+      peak_name: peak ? peak.name : "大厅",
+      reason: reason || `消耗贡献·${d.name}`,
+      points: -need,
+      category: "日常",
+      operator: OPERATOR,
+      day
+    });
+    return true;
+  }
+  /**
+   * 代答发奖：答题分给代答者；抽中者再划拨报酬（最少 feeMin）给代答者。
+   * silent=true 时不关弹窗、不播 combo（由调用方统一处理）。
+   */
+  async function awardProxyWithFee({ originalId, proxyId, awardPts, feePts, feeMin, reason }) {
+    const original = (state.disciples || {})[originalId];
+    const proxy = (state.disciples || {})[proxyId];
+    if (!original || !proxy) throw new Error("学员不存在");
+    const award = Math.max(0, Math.floor(Number(awardPts) || 0));
+    const minFee = Math.max(PROXY_FEE_MIN, Math.floor(Number(feeMin) || PROXY_FEE_MIN));
+    const fee = Math.max(minFee, Math.floor(Number(feePts) || minFee));
+    const bal = discipleContributedBalance(original);
+    if (bal < fee) {
+      throw new Error(`「${original.name}」贡献分不足，代答报酬至少 ${fee} 分（现有 ${bal}）`);
+    }
+    if (!award && !fee) throw new Error("分数无效");
+
+    const updates = {};
+    const day = state.config?.day || 1;
+    updates[`disciples/${originalId}/contributed`] = bal - fee;
+
+    const totalToProxy = award + fee;
+    const prop = rewardPropForPoints(totalToProxy || fee);
+    const newExp = (proxy.exp || 0) + totalToProxy * 10;
+    const lv = calcPersonalLevel(newExp);
+    updates[`disciples/${proxyId}/exp`] = newExp;
+    updates[`disciples/${proxyId}/level`] = lv.level;
+    updates[`disciples/${proxyId}/title`] = lv.title;
+    updates[`disciples/${proxyId}/contributed`] = (Number(proxy.contributed) || 0) + totalToProxy;
+
+    const peak = findPeak(proxy.peak);
+    const why = `${reason || "代答"}·奖${award}+酬${fee}·${prop.name}`;
+    let newPeakScore = peak ? (peak.score || 0) : 0;
+    let oldLevel = peak ? peak.peak_level : 0;
+    let levelInfo = null;
+    if (peak && totalToProxy) {
+      newPeakScore = (peak.score || 0) + totalToProxy;
+      levelInfo = calcPeakLevel(newPeakScore);
+      const pk = peakKey(peak.id);
+      updates[`peaks/${pk}/score`] = newPeakScore;
+      updates[`peaks/${pk}/peak_level`] = levelInfo.peak_level;
+      updates[`peaks/${pk}/peak_level_name`] = levelInfo.peak_level_name;
+      updates[`peaks/${pk}/progress`] = levelInfo.progress;
+      updates[`peaks/${pk}/next_level_score`] = levelInfo.next_level_score;
+    }
+
+    closeModal();
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
+    await updatePaths(updates);
+    await pushLog({
+      timestamp: Date.now(),
+      peak_id: peak ? peak.id : "",
+      peak_name: peak ? peak.name : "大厅",
+      reason: why,
+      points: totalToProxy,
+      category: "日常",
+      operator: OPERATOR,
+      day
+    });
+    await pushLog({
+      timestamp: Date.now() + 1,
+      peak_id: findPeak(original.peak)?.id || "",
+      peak_name: findPeak(original.peak)?.name || "大厅",
+      reason: `代答报酬划拨·${original.name}→${proxy.name}`,
+      points: -fee,
+      category: "日常",
+      operator: OPERATOR,
+      day
+    });
+    if (peak && totalToProxy) {
+      const fresh = findPeak(peak.id);
+      if (fresh) {
+        showComboAnnounce(fresh, totalToProxy, why, "日常", newPeakScore, { discipleName: proxy.name || "弟子" });
+        if (levelInfo && levelInfo.peak_level > oldLevel) playLevelUpAnimation(fresh, oldLevel, levelInfo);
+      }
+    }
+    showDiscipleRewardToast(proxy.name || "弟子", totalToProxy);
+    showVoteToast(`${original.name} 支付代答报酬 ${fee} 分 → ${proxy.name}`);
+  }
 
   async function startGameDraw() {
     if (gameSpinning) return;
@@ -8127,18 +8332,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function showDrawResultModal(winner) {
+    ensureDrawActionsConfig();
     const peak = findPeak(winner.peak);
     const place = peak ? `${peak.icon || ""} ${peak.name}` : "大厅";
     const base = DRAW_DEFAULT_POINTS;
     const range = randomScoreRange(base);
+    const bal = discipleContributedBalance(winner);
+    const perks = getDrawActions(false);
     openModal(`
       <div class="draw-reward-banner">
         <div class="muted" style="letter-spacing:.16em;color:var(--gold)">抽中答题</div>
         <div class="dr-who">${esc(winner.name || "弟子")}</div>
-        <div class="muted" style="margin-top:.2rem">${esc(place)} · Lv${winner.level || 1}</div>
+        <div class="muted" style="margin-top:.2rem">${esc(place)} · Lv${winner.level || 1} · 贡献 ${bal}</div>
         <div class="dr-opt">默认奖励 +${base} 分</div>
       </div>
-      <p class="muted" style="text-align:center;margin-bottom:.55rem">请该同学回答问题 · 答对后选下方发奖方式</p>
+      <p class="muted" style="text-align:center;margin-bottom:.35rem">请该同学回答问题 · 答对后选下方发奖方式</p>
       <div class="lucky-actions">
         <button type="button" class="primary" id="draw-award-fixed">
           <span class="la-title">答对发奖</span>
@@ -8149,21 +8357,32 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <span class="la-sub">${range.min}–${range.max} 分</span>
         </button>
       </div>
+      <p class="muted" style="text-align:center;margin:.65rem 0 .2rem;font-size:.78rem">积分特权（消耗本人贡献分兑换）</p>
+      <div class="draw-perk-row" id="draw-perk-row">
+        ${perks.length ? perks.map((a) => {
+          const need = a.unlock_cost + (["proxy", "assist"].includes(a.type) ? Math.max(PROXY_FEE_MIN, a.fee_min || 0) : 0);
+          const disabled = bal < a.unlock_cost;
+          return `<button type="button" class="draw-perk" data-draw-perk="${esc(a.id)}" ${disabled ? "disabled" : ""} title="${esc(a.tip || a.label)}">
+            <span>${esc(a.icon || "")} ${esc(a.label)}</span>
+            <span class="dp-cost">${a.unlock_cost > 0 ? `-${a.unlock_cost}` : "免费"}</span>
+          </button>`;
+        }).join("") : `<span class="muted">暂无特权 · 可在「特权设置」添加</span>`}
+      </div>
+      <p class="muted" style="text-align:center;font-size:.72rem;margin-top:.25rem">代答类还需另划拨报酬（最少 ${PROXY_FEE_MIN} 分），请预留足够贡献分</p>
       <div class="row" style="justify-content:flex-end;flex-wrap:wrap;gap:.4rem;margin-top:.65rem">
-        <button type="button" class="ghost" id="draw-proxy">指定代答</button>
         <button type="button" class="ghost" id="draw-again">再抽一次</button>
         <button type="button" class="ghost" id="modal-cancel">关闭</button>
       </div>`);
 
     const setAwardBusy = (busy) => {
-      ["draw-award-fixed", "draw-award-random", "draw-proxy", "draw-again"].forEach((id) => {
+      ["draw-award-fixed", "draw-award-random", "draw-again"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.disabled = !!busy;
       });
+      document.querySelectorAll("[data-draw-perk]").forEach((el) => { el.disabled = !!busy || el.disabled; });
     };
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("draw-again").onclick = () => { closeModal(); startGameDraw(); };
-    document.getElementById("draw-proxy").onclick = () => openProxyPickModal(winner);
     document.getElementById("draw-award-fixed").onclick = async () => {
       setAwardBusy(true);
       try {
@@ -8182,17 +8401,92 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         setAwardBusy(false);
       }
     };
+    document.querySelectorAll("[data-draw-perk]").forEach((btn) => {
+      btn.onclick = async () => {
+        const action = getDrawActions(true).find((a) => String(a.id) === String(btn.dataset.drawPerk));
+        if (!action) return;
+        await runDrawPerkAction(winner, action);
+      };
+    });
   }
 
-  function openProxyPickModal(original) {
-    const pool = getCheckedInDisciples().filter((d) => String(d.id) !== String(original.id));
-    if (!pool.length) {
-      alert("没有其他已签到同学可代答");
+  async function runDrawPerkAction(winner, action) {
+    const cost = Math.max(0, Number(action.unlock_cost) || 0);
+    const bal = discipleContributedBalance(winner);
+    if (bal < cost) {
+      alert(`贡献分不足：兑换「${action.label}」需要 ${cost} 分（现有 ${bal}）`);
       return;
     }
+    if (["proxy", "assist"].includes(action.type)) {
+      const feeNeed = Math.max(PROXY_FEE_MIN, Number(action.fee_min) || PROXY_FEE_MIN);
+      if (bal < cost + feeNeed) {
+        if (!confirm(`「${action.label}」兑换 ${cost} 分后，答对时还需划拨报酬至少 ${feeNeed} 分。\n当前贡献 ${bal}，可能不够付报酬。仍要兑换吗？`)) return;
+      } else if (!confirm(`确认花费 ${cost} 贡献分兑换「${action.label}」？\n答对后还需向代答者划拨报酬（最少 ${feeNeed} 分）。`)) {
+        return;
+      }
+    } else if (cost > 0 && !confirm(`确认花费 ${cost} 贡献分兑换「${action.label}」？`)) {
+      return;
+    }
+
+    try {
+      if (cost > 0) {
+        await spendDiscipleContributed(winner.id, cost, `抽人特权·${action.label}·${winner.name}`);
+        showVoteToast(`${winner.name} 兑换「${action.label}」 -${cost}`);
+      }
+    } catch (e) {
+      alert(String(e.message || e));
+      return;
+    }
+
+    const fresh = (state.disciples || {})[winner.id] || winner;
+    if (action.type === "proxy") {
+      openProxyPickModal(fresh, action, { samePeakOnly: false });
+      return;
+    }
+    if (action.type === "assist") {
+      openProxyPickModal(fresh, action, { samePeakOnly: true });
+      return;
+    }
+    if (action.type === "hint") {
+      openModal(`
+        <div class="draw-reward-banner">
+          <div class="dr-opt">${esc(action.icon || "💡")} 已兑换提示</div>
+          <div class="dr-who">${esc(fresh.name)}</div>
+          <p class="muted" style="margin-top:.45rem">请老师口述一次提示，再继续答题发奖。</p>
+        </div>
+        <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.55rem">
+          <button type="button" class="primary" id="hint-back">回到发奖</button>
+        </div>`);
+      document.getElementById("hint-back").onclick = () => showDrawResultModal(fresh);
+      return;
+    }
+    if (action.type === "skip") {
+      closeModal();
+      showVoteToast(`${fresh.name} 跳过本题`);
+      if (confirm("已跳过。是否立刻再抽一次？")) startGameDraw();
+    }
+  }
+
+  function openProxyPickModal(original, action, opts) {
+    const samePeakOnly = !!(opts && opts.samePeakOnly);
+    const feeMin = Math.max(PROXY_FEE_MIN, Number(action?.fee_min) || PROXY_FEE_MIN);
+    const feeDefault = Math.max(feeMin, Number(action?.fee_default) || feeMin);
+    let pool = getCheckedInDisciples().filter((d) => String(d.id) !== String(original.id));
+    if (samePeakOnly) {
+      pool = pool.filter((d) => String(d.peak || "") === String(original.peak || "") && original.peak !== "" && original.peak != null);
+    }
+    if (!pool.length) {
+      alert(samePeakOnly ? "同组没有其他已签到同学可代答" : "没有其他已签到同学可代答");
+      showDrawResultModal(original);
+      return;
+    }
+    const title = action?.label || "指定代答";
     openModal(`
-      <h3>指定代答</h3>
-      <p class="muted" style="text-align:center;margin-bottom:.45rem">原抽中：${esc(original.name)} · 请另选一人代为回答</p>
+      <h3>${esc(action?.icon || "🎭")} ${esc(title)}</h3>
+      <p class="muted" style="text-align:center;margin-bottom:.45rem">
+        原抽中：${esc(original.name)}（贡献 ${discipleContributedBalance(original)}）· 请另选代答者<br>
+        答对后：答题分给代答者，并由 ${esc(original.name)} 划拨报酬（最少 ${feeMin} 分）
+      </p>
       <div class="proxy-pick-list" id="proxy-pick-list">
         ${pool.map((d) => {
           const pk = findPeak(d.peak);
@@ -8209,57 +8503,176 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       btn.onclick = () => {
         const proxy = (state.disciples || {})[btn.dataset.proxyId];
         if (!proxy) return;
-        const base = DRAW_DEFAULT_POINTS;
-        const range = randomScoreRange(base);
-        openModal(`
-          <div class="draw-reward-banner">
-            <div class="muted" style="letter-spacing:.16em;color:var(--gold)">代为回答</div>
-            <div class="dr-who">${esc(proxy.name)}</div>
-            <div class="muted">代替 ${esc(original.name)} 答题</div>
-            <div class="dr-opt">默认奖励 +${base} 分</div>
-          </div>
-          <div class="lucky-actions">
-            <button type="button" class="primary" id="proxy-award-fixed">
-              <span class="la-title">答对发奖</span>
-              <span class="la-sub">+${base} 分</span>
-            </button>
-            <button type="button" class="lucky-random" id="proxy-award-random">
-              <span class="la-title">随机加分</span>
-              <span class="la-sub">${range.min}–${range.max} 分</span>
-            </button>
-          </div>
-          <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.65rem">
-            <button type="button" class="ghost" id="proxy-back2">重选</button>
-            <button type="button" class="ghost" id="modal-cancel">关闭</button>
-          </div>`);
-        const setBusy = (busy) => {
-          ["proxy-award-fixed", "proxy-award-random", "proxy-back2"].forEach((id) => {
-            const el = document.getElementById(id);
-            if (el) el.disabled = !!busy;
-          });
-        };
-        document.getElementById("modal-cancel").onclick = closeModal;
-        document.getElementById("proxy-back2").onclick = () => openProxyPickModal(original);
-        document.getElementById("proxy-award-fixed").onclick = async () => {
-          setBusy(true);
-          try {
-            await addScoreToDisciple(proxy.id, base, `代答·替${original.name}`, "日常");
-          } finally {
-            setBusy(false);
-          }
-        };
-        document.getElementById("proxy-award-random").onclick = async () => {
-          setBusy(true);
-          try {
-            const rolled = rollRandomScore(base);
-            await playLuckyRollFx(base, rolled);
-            await addScoreToDisciple(proxy.id, rolled, `代答·随机·替${original.name}`, "日常");
-          } finally {
-            setBusy(false);
-          }
-        };
+        openProxyAwardModal(original, proxy, action, feeMin, feeDefault);
       };
     });
+  }
+
+  function openProxyAwardModal(original, proxy, action, feeMin, feeDefault) {
+    const base = DRAW_DEFAULT_POINTS;
+    const range = randomScoreRange(base);
+    const bal = discipleContributedBalance(original);
+    openModal(`
+      <div class="draw-reward-banner">
+        <div class="muted" style="letter-spacing:.16em;color:var(--gold)">代为回答</div>
+        <div class="dr-who">${esc(proxy.name)}</div>
+        <div class="muted">代替 ${esc(original.name)} 答题</div>
+        <div class="dr-opt">答对奖励归代答者 · 另收报酬</div>
+      </div>
+      <div class="draw-fee-row">
+        <span class="muted">代答报酬（从 ${esc(original.name)} 划拨，最少 ${feeMin}）</span>
+        <input id="proxy-fee-input" type="number" min="${feeMin}" max="999" value="${feeDefault}" />
+        <span class="muted">现有贡献 ${bal}</span>
+      </div>
+      <div class="lucky-actions">
+        <button type="button" class="primary" id="proxy-award-fixed">
+          <span class="la-title">答对发奖</span>
+          <span class="la-sub">+${base} 分给代答者</span>
+        </button>
+        <button type="button" class="lucky-random" id="proxy-award-random">
+          <span class="la-title">随机加分</span>
+          <span class="la-sub">${range.min}–${range.max} 分给代答者</span>
+        </button>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.65rem">
+        <button type="button" class="ghost" id="proxy-back2">重选</button>
+        <button type="button" class="ghost" id="modal-cancel">关闭</button>
+      </div>`);
+    const readFee = () => {
+      const v = Math.floor(Number(document.getElementById("proxy-fee-input")?.value) || feeMin);
+      return Math.max(feeMin, v);
+    };
+    const setBusy = (busy) => {
+      ["proxy-award-fixed", "proxy-award-random", "proxy-back2", "proxy-fee-input"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !!busy;
+      });
+    };
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("proxy-back2").onclick = () => openProxyPickModal(original, action, { samePeakOnly: action?.type === "assist" });
+    document.getElementById("proxy-award-fixed").onclick = async () => {
+      setBusy(true);
+      try {
+        await awardProxyWithFee({
+          originalId: original.id,
+          proxyId: proxy.id,
+          awardPts: base,
+          feePts: readFee(),
+          feeMin,
+          reason: `${action?.label || "代答"}·替${original.name}`
+        });
+      } catch (e) {
+        alert(String(e.message || e));
+      } finally {
+        setBusy(false);
+      }
+    };
+    document.getElementById("proxy-award-random").onclick = async () => {
+      setBusy(true);
+      try {
+        const rolled = rollRandomScore(base);
+        await playLuckyRollFx(base, rolled);
+        await awardProxyWithFee({
+          originalId: original.id,
+          proxyId: proxy.id,
+          awardPts: rolled,
+          feePts: readFee(),
+          feeMin,
+          reason: `${action?.label || "代答"}·随机·替${original.name}`
+        });
+      } catch (e) {
+        alert(String(e.message || e));
+      } finally {
+        setBusy(false);
+      }
+    };
+  }
+
+  function openDrawActionsEditor() {
+    ensureDrawActionsConfig();
+    const list = getDrawActions(true);
+    openModal(`
+      <h3>抽人特权设置</h3>
+      <p class="muted" style="margin-bottom:.45rem">配置抽中后的小按钮：兑换消耗贡献分；代答类答对后还要划拨报酬（最少 ${PROXY_FEE_MIN} 分）。</p>
+      <div id="da-editor" style="display:flex;flex-direction:column;gap:.55rem;max-height:55vh;overflow:auto">
+        ${list.map((a, idx) => `
+          <div class="mission-item-card" data-da-idx="${idx}">
+            <div class="row" style="gap:.35rem;flex-wrap:wrap">
+              <label style="width:3.5rem"><span>图标</span><input data-da="icon" maxlength="4" value="${esc(a.icon)}" /></label>
+              <label style="flex:1;min-width:7rem"><span>名称</span><input data-da="label" maxlength="16" value="${esc(a.label)}" /></label>
+              <label style="width:6.5rem"><span>类型</span>
+                <select data-da="type">
+                  <option value="proxy" ${a.type === "proxy" ? "selected" : ""}>指定代答</option>
+                  <option value="assist" ${a.type === "assist" ? "selected" : ""}>同组求助</option>
+                  <option value="hint" ${a.type === "hint" ? "selected" : ""}>请求提示</option>
+                  <option value="skip" ${a.type === "skip" ? "selected" : ""}>跳过本题</option>
+                </select>
+              </label>
+              <label style="width:5.5rem"><span>兑换分</span><input data-da="unlock_cost" type="number" min="0" value="${a.unlock_cost}" /></label>
+              <label style="width:5.5rem"><span>报酬最少</span><input data-da="fee_min" type="number" min="0" value="${a.fee_min}" /></label>
+              <label style="width:5.5rem"><span>报酬默认</span><input data-da="fee_default" type="number" min="0" value="${a.fee_default}" /></label>
+            </div>
+            <label><span>说明</span><input data-da="tip" value="${esc(a.tip || "")}" /></label>
+            <div class="row" style="justify-content:space-between;margin-top:.25rem">
+              <label><input type="checkbox" data-da="visible" ${a.visible !== false ? "checked" : ""} /> 启用</label>
+              <button type="button" class="ghost" data-da-del="${idx}">删除</button>
+            </div>
+            <input type="hidden" data-da="id" value="${esc(a.id)}" />
+          </div>`).join("") || `<div class="muted">暂无特权按钮</div>`}
+      </div>
+      <div class="row" style="justify-content:space-between;margin-top:.65rem;flex-wrap:wrap;gap:.4rem">
+        <button type="button" id="da-add">＋添加按钮</button>
+        <div class="row" style="gap:.4rem">
+          <button type="button" class="ghost" id="modal-cancel">取消</button>
+          <button type="button" class="primary" id="da-save">保存</button>
+        </div>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("da-add").onclick = () => {
+      ensureDrawActionsConfig();
+      const cur = getDrawActions(true);
+      cur.push(newDrawAction({
+        label: "新特权", type: "hint", icon: "✨", unlock_cost: 5, fee_min: 0, fee_default: 0, tip: ""
+      }));
+      state.config.draw_actions = cur;
+      openDrawActionsEditor();
+    };
+    document.querySelectorAll("[data-da-del]").forEach((btn) => {
+      btn.onclick = () => {
+        const idx = Number(btn.dataset.daDel);
+        const cur = getDrawActions(true);
+        cur.splice(idx, 1);
+        state.config.draw_actions = cur;
+        openDrawActionsEditor();
+      };
+    });
+    document.getElementById("da-save").onclick = async () => {
+      const cards = [...document.querySelectorAll("#da-editor [data-da-idx]")];
+      const next = cards.map((card) => {
+        const get = (k) => card.querySelector(`[data-da="${k}"]`);
+        return newDrawAction({
+          id: get("id")?.value,
+          icon: get("icon")?.value,
+          label: get("label")?.value,
+          type: get("type")?.value,
+          unlock_cost: get("unlock_cost")?.value,
+          fee_min: get("fee_min")?.value,
+          fee_default: get("fee_default")?.value,
+          tip: get("tip")?.value,
+          visible: !!get("visible")?.checked
+        });
+      }).filter((c) => c.label);
+      // 代答类报酬最少不低于全局下限
+      next.forEach((c) => {
+        if (["proxy", "assist"].includes(c.type)) {
+          c.fee_min = Math.max(PROXY_FEE_MIN, c.fee_min || 0);
+          c.fee_default = Math.max(c.fee_min, c.fee_default || c.fee_min);
+        }
+      });
+      await updatePaths({ "config/draw_actions": next, "config/draw_actions_rev": DRAW_ACTIONS_REV });
+      closeModal();
+      showVoteToast(`已保存 ${next.length} 个抽人特权`);
+    };
   }
 
   /* -------- 奖品兑换 -------- */
@@ -12084,6 +12497,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!Array.isArray(p.inventory)) p.inventory = [];
     });
     ensureRedeemConfig();
+    ensureDrawActionsConfig();
     syncBrandNavVisibility();
     applyBrandUI();
     const { mode } = getMode();
@@ -12117,6 +12531,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "goto-mission") { openMissionDetail(activeMissionId || ""); return; }
     if (act === "game-spin") { startGameDraw(); return; }
     if (act === "game-refresh") { renderGames(); return; }
+    if (act === "edit-draw-actions") { openDrawActionsEditor(); return; }
     if (act === "goto-redeem") { showScreen("teacher"); redeemTab = "shop"; setTeacherView("redeem"); return; }
     if (act === "prop-lot") { await runPropLottery(); return; }
     if (act === "prop-cast") { await runPropCastShow(); return; }
