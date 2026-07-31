@@ -5,21 +5,30 @@
 临时公网隧道（`*.trycloudflare.com`）**隔天或重启后地址会变**，旧二维码里的链接会失效。  
 另外若老师端开在 `localhost`，二维码会写成 `127.0.0.1`，手机微信永远打不开。
 
-## 云端预览（今天有效）
+## 云端预览（当前有效）
 
-**老师端：** https://postcards-school-seem-specializing.trycloudflare.com/?mode=teacher
+**老师端：** https://relatively-trout-through-traditional.trycloudflare.com/?mode=teacher
 
-**学生端：** https://postcards-school-seem-specializing.trycloudflare.com/?mode=student
+**学生端：** https://relatively-trout-through-traditional.trycloudflare.com/?mode=student
 
 > 请硬刷新（Ctrl+F5）后再「生成签到码」。隧道关掉后需重开并换新地址。
 
-## 课堂推荐用法（最稳）
+## 真正的本机地址（你自己的电脑）
 
-1. 电脑在项目目录执行 `npm start`（或双击 `start.bat`）
-2. 看终端里的 **手机同网** 地址（形如 `http://192.168.x.x:3000`）
-3. 用该地址打开老师端 → 签到 → 生成签到码  
-4. 二维码会自动尽量避开 localhost；也可在上方「手机扫码地址」粘贴后点「应用到二维码」
-5. **扫不开时**：让学生用手机浏览器打开同一「手机同网」地址，进入签到页后 **手输投屏上的 6 位黄色大号数字**
+云端 Agent 里的 `localhost:3000` **不是**你电脑上的地址。要在自己电脑打开：
+
+```bash
+cd Photon
+git checkout cursor/guangyingmeng-arena-f9c7
+git pull
+npm install
+npm start
+```
+
+然后浏览器打开：
+
+- 老师端：http://localhost:3000/?mode=teacher
+- 手机同 Wi-Fi：终端打印的 `http://192.168.x.x:3000/?mode=teacher`
 
 ## 本机排查
 
