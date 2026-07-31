@@ -1401,6 +1401,21 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   background: rgba(240,193,75,.12); border: 1px solid rgba(240,193,75,.4);
   color: #ffe39a; font-size: .75rem; text-align: left;
 }
+#demo-sync-badge, .demo-sync-badge {
+  display: inline-block;
+  margin: .25rem 0;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  border: 1px solid rgba(255,138,154,.45);
+  color: #ffb0bd;
+  background: rgba(120, 20, 40, .28);
+}
+#demo-sync-badge.ok, .demo-sync-badge.ok {
+  border-color: rgba(61,255,154,.45);
+  color: #9dffc0;
+  background: rgba(20, 80, 50, .28);
+}
 .member-bar-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -3208,9 +3223,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>
       <div class="course-panel">
         <div class="course-section-title">本场进度</div>
-        <div>已签到 <strong id="checkin-count">0</strong> / <strong id="checkin-total">25</strong></div>
+        <div>已签到 <strong id="checkin-count">0</strong> / <strong id="checkin-total">25</strong>
+          <span class="demo-sync-badge" hidden></span>
+        </div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
-        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「结束签到」前一直有效</p>
+        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「结束签到」前一直有效 · 须与老师端同一服务地址</p>
         <div class="checkin-qr-layout">
           <div class="qr-stage">
             <div class="muted">签到码 <span id="checkin-code-text">------</span> · <span id="checkin-countdown">进行中</span></div>
@@ -4018,8 +4035,106 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return arr;
   }
 
-  function saveDemo() { try { localStorage.setItem(DEMO_DB_KEY, JSON.stringify(state)); } catch (e) {} }
+  /** DEMO 跨设备同步：经本地 server.mjs 的 /__gy/demo-db 共享（手机签到 ↔ 老师端） */
+  let demoSyncEnabled = false;
+  let demoRev = 0;
+  let demoSyncTimer = null;
+
+  function saveDemoLocal() {
+    try { localStorage.setItem(DEMO_DB_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function saveDemo() { saveDemoLocal(); }
   function loadDemo() { try { const r = localStorage.getItem(DEMO_DB_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+
+  function demoSyncSignature(src) {
+    const s = src || state || {};
+    const cfg = s.config || {};
+    const discs = Object.values(s.disciples || {});
+    const marks = discs
+      .map((d) => `${d.id}:${d.student_id || ""}:${d.checked_in_am ? 1 : 0}${d.checked_in_pm ? 1 : 0}:${d.name || ""}`)
+      .sort()
+      .join("|");
+    return [cfg.checkin_code || "", cfg.checkin_active ? 1 : 0, cfg.voting_open ? 1 : 0, discs.length, marks].join("::");
+  }
+
+  async function pushDemoFull() {
+    if (!demoSyncEnabled) return;
+    try {
+      const res = await fetch("/__gy/demo-db", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ rev: demoRev, state })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 409 && data.state) {
+        state = data.state;
+        demoRev = Number(data.rev) || demoRev;
+        saveDemoLocal();
+        return;
+      }
+      if (data && data.rev != null) demoRev = Number(data.rev) || demoRev;
+    } catch (e) {
+      console.warn("demo full push failed", e);
+    }
+  }
+
+  async function pushDemoUpdates(updates) {
+    if (!demoSyncEnabled || !updates) return;
+    try {
+      const res = await fetch("/__gy/demo-db/patch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ updates })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data && data.state) {
+        state = data.state;
+        demoRev = Number(data.rev) || demoRev;
+        saveDemoLocal();
+      }
+    } catch (e) {
+      console.warn("demo patch failed", e);
+    }
+  }
+
+  async function pullDemoFromServer() {
+    if (!demoSyncEnabled) return false;
+    try {
+      const res = await fetch("/__gy/demo-db", { cache: "no-store" });
+      if (!res.ok) return false;
+      const data = await res.json();
+      const remoteRev = Number(data.rev) || 0;
+      if (!data.state || remoteRev <= demoRev) return false;
+      const before = demoSyncSignature(state);
+      state = data.state;
+      demoRev = remoteRev;
+      saveDemoLocal();
+      return demoSyncSignature(state) !== before;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function startDemoSyncLoop() {
+    if (demoSyncTimer) clearInterval(demoSyncTimer);
+    demoSyncTimer = setInterval(async () => {
+      if (!demoMode || !demoSyncEnabled) return;
+      const changed = await pullDemoFromServer();
+      if (!changed) return;
+      if (typeof renderAll === "function") renderAll();
+    }, 1000);
+  }
+
+  function updateDemoSyncBadge() {
+    document.querySelectorAll(".demo-sync-badge").forEach((el) => {
+      if (!demoMode) { el.hidden = true; return; }
+      el.hidden = false;
+      el.textContent = demoSyncEnabled ? "DEMO · 跨设备同步中" : "DEMO · 仅本机（未连同步服务）";
+      el.classList.toggle("ok", !!demoSyncEnabled);
+    });
+  }
 
   function applyLocalPath(path, value) {
     const parts = path.split("/");
@@ -4033,18 +4148,33 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   async function setPath(path, value, opts) {
     applyLocalPath(path, value);
-    if (demoMode) { saveDemo(); if (!opts?.silent) renderAll(); return; }
+    if (demoMode) {
+      saveDemoLocal();
+      if (demoSyncEnabled) await pushDemoUpdates({ [path]: value });
+      if (!opts?.silent) renderAll();
+      return;
+    }
     await arenaRef.child(path).set(value);
   }
   async function updatePaths(updates, opts) {
     Object.entries(updates).forEach(([p, v]) => applyLocalPath(p, v));
-    if (demoMode) { saveDemo(); if (!opts?.silent) renderAll(); return; }
+    if (demoMode) {
+      saveDemoLocal();
+      if (demoSyncEnabled) await pushDemoUpdates(updates);
+      if (!opts?.silent) renderAll();
+      return;
+    }
     await arenaRef.update(updates);
   }
   async function pushLog(entry) {
     const id = "log_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
     if (!state.score_logs) state.score_logs = {};
-    if (demoMode) { state.score_logs[id] = entry; saveDemo(); return id; }
+    if (demoMode) {
+      state.score_logs[id] = entry;
+      saveDemoLocal();
+      if (demoSyncEnabled) await pushDemoUpdates({ [`score_logs/${id}`]: entry });
+      return id;
+    }
     const ref = await arenaRef.child("score_logs").push(entry);
     state.score_logs[ref.key] = entry;
     return ref.key;
@@ -4955,8 +5085,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       4: pick([`☆ ${packMeta.name} ☆`, "MAX SUPER!", "山河变色！"])
     };
 
-    // 有拳皇角色包时播对应音色；否则回退仙剑合成/导入包
-    if (peak && peak.sfx_pack) playKofPackSfx(peak.sfx_pack, pts, category);
+    // 小组加分走拳皇角色包（按峰设置的专属音色）；无峰信息时回退仙剑包
+    if (peak) playKofPackSfx(peak.sfx_pack || "kyo", pts, category);
     else playHitSfx(pts, category);
 
     const ringCount = Math.min(2 + lv, 5);
@@ -5179,10 +5309,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!state.config) state.config = {};
     if (vote === "1" || vote === "open" || vote === "on") {
       state.config.voting_open = true;
-      if (demoMode) saveDemo();
+      if (demoMode) {
+        saveDemoLocal();
+        if (demoSyncEnabled) pushDemoUpdates({ "config/voting_open": true }).catch(() => {});
+      }
     } else if (vote === "0" || vote === "closed" || vote === "off") {
       state.config.voting_open = false;
-      if (demoMode) saveDemo();
+      if (demoMode) {
+        saveDemoLocal();
+        if (demoSyncEnabled) pushDemoUpdates({ "config/voting_open": false }).catch(() => {});
+      }
     }
   }
 
@@ -6584,7 +6720,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         if (demoMode) {
           delete state.peaks[peakKey(peakId)];
           Object.keys(updates).forEach((k) => { if (k !== `peaks/${peakKey(peakId)}`) applyLocalPath(k, updates[k]); });
-          saveDemo(); renderAll();
+          saveDemoLocal();
+          if (demoSyncEnabled) await pushDemoFull();
+          renderAll();
         } else {
           await arenaRef.update(updates);
         }
@@ -8707,7 +8845,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (demoMode) {
       const warn = document.createElement("div");
       warn.className = "demo-qr-warn";
-      warn.textContent = "DEMO 本地模式：签到可在手机完成；实时同步到老师端需配置 Firebase。";
+      warn.textContent = demoSyncEnabled
+        ? "DEMO 跨设备同步已开启：手机签到会实时出现在老师端签到列表与抽人池。"
+        : "DEMO 未连上同步服务（请用 npm start / 当前隧道打开老师端与扫码页）。仅本机 localStorage 时，手机签到老师端看不到。";
       host.appendChild(warn);
     }
 
@@ -8883,6 +9023,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.getElementById("checkin-countdown").textContent = state.config?.checkin_active
       ? "扫码签到中 · 扫不开可让学生手输上方6位码"
       : "未开启";
+    updateDemoSyncBadge();
     const qrHost = document.getElementById("checkin-qr");
     if (state.config?.checkin_active && code !== "------") {
       // 先尽量用手机可达 origin 再画码（async 在 renderQr 内也会再校正一次）
@@ -9259,7 +9400,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (demoMode) {
       delete state.peaks[peakKey(pid)];
       Object.keys(updates).forEach((k) => { if (!k.startsWith("peaks/")) applyLocalPath(k, updates[k]); });
-      saveDemo(); renderAll();
+      saveDemoLocal();
+      if (demoSyncEnabled) await pushDemoFull();
+      renderAll();
     } else await arenaRef.update(updates);
     renderSettings();
   }
@@ -9360,7 +9503,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const runtime = document.getElementById("settings-runtime");
     if (runtime) {
       runtime.innerHTML = `
-        <span class="meta-pill">模式 · ${demoMode ? "DEMO 本地" : "Firebase"}</span>
+        <span class="meta-pill">模式 · ${demoMode ? (demoSyncEnabled ? "DEMO · 跨设备同步" : "DEMO · 仅本机") : "Firebase"}</span>
+        <span class="demo-sync-badge ${demoSyncEnabled ? "ok" : ""}" ${demoMode ? "" : "hidden"}>${demoMode ? (demoSyncEnabled ? "DEMO · 跨设备同步中" : "DEMO · 仅本机（未连同步服务）") : ""}</span>
         <label class="tool-inline" style="margin:0"><span>天数</span>
           <input id="day-input" class="day-input" type="number" min="1" value="${day}" />
         </label>
@@ -9401,9 +9545,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         renderSettings();
       };
       const clearBtn = document.getElementById("settings-clear-demo");
-      if (clearBtn) clearBtn.onclick = () => {
-        if (!confirm("确认清空本地 DEMO 数据并刷新？")) return;
+      if (clearBtn) clearBtn.onclick = async () => {
+        if (!confirm("确认清空 DEMO 数据（含服务器同步库）并刷新？")) return;
         localStorage.removeItem(DEMO_DB_KEY);
+        try {
+          await fetch("/__gy/demo-db/reset", { method: "POST", cache: "no-store" });
+        } catch (e) { /* ignore */ }
         location.reload();
       };
       const memBtn = document.getElementById("btn-memories");
@@ -9830,7 +9977,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       cfg.checkin_code = code;
       if (!cfg.checkin_session) cfg.checkin_session = "am";
       if (!cfg.checkin_expires_at) cfg.checkin_expires_at = Date.now() + CHECKIN_TTL_MS;
-      if (demoMode) saveDemo();
+      if (demoMode) {
+        saveDemoLocal();
+        if (demoSyncEnabled) {
+          pushDemoUpdates({
+            "config/checkin_active": true,
+            "config/checkin_code": code,
+            "config/checkin_session": cfg.checkin_session,
+            "config/checkin_expires_at": cfg.checkin_expires_at
+          }).catch(() => {});
+        }
+      }
     }
   }
   function isCodeValid(code) {
@@ -10532,13 +10689,36 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     setTimeout(() => { tickCultivation().catch(() => {}); }, 2500);
   }
 
-  function bootDemo() {
-    // clear old demo if schema too old
+  async function bootDemo() {
     const loaded = loadDemo();
     state = loaded || buildSeedArena();
-    // ensure new fields
     if (!state.config) state.config = buildSeedArena().config;
-    saveDemo();
+    saveDemoLocal();
+    demoSyncEnabled = false;
+    demoRev = 0;
+    try {
+      const res = await fetch("/__gy/demo-db", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.sync) {
+          demoSyncEnabled = true;
+          if (data.state && (Number(data.rev) || 0) > 0) {
+            // 优先用服务器库（含其他设备刚签到的数据）
+            state = data.state;
+            demoRev = Number(data.rev) || 1;
+            if (!state.config) state.config = buildSeedArena().config;
+            saveDemoLocal();
+          } else {
+            // 服务器空库：把本机种子/旧数据推上去，供手机共用
+            await pushDemoFull();
+          }
+          startDemoSyncLoop();
+        }
+      }
+    } catch (e) {
+      demoSyncEnabled = false;
+    }
+    updateDemoSyncBadge();
   }
   async function init() {
     try {
@@ -10551,10 +10731,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           db = firebase.database(); arenaRef = db.ref("arena");
           const snap = await arenaRef.once("value");
           if (!snap.exists()) await arenaRef.set(buildSeedArena());
-          arenaRef.on("value", (s) => { state = s.val() || buildSeedArena(); renderAll(); });
+          arenaRef.on("value", (s) => { state = s.val() || buildSeedArena(); renderAll(); updateDemoSyncBadge(); });
           demoMode = false;
-        } catch (err) { console.warn(err); demoMode = true; bootDemo(); }
-      } else { demoMode = true; bootDemo(); }
+        } catch (err) { console.warn(err); demoMode = true; await bootDemo(); }
+      } else { demoMode = true; await bootDemo(); }
       applyVoteUrlGate();
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
       ensureSfxToggle();
@@ -10566,6 +10746,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       syncBrandNavVisibility();
       applyBrandUI();
       updateFullscreenButtons();
+      updateDemoSyncBadge();
       if (m === "teacher") setTeacherView("main");
       if (m === "memories") { /* loader */ } else renderAll();
       window.addEventListener("resize", () => {
@@ -10575,7 +10756,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         applyArenaDensity(redN, blueN);
       });
       syncBrandNavVisibility();
-    } catch (err) { console.error(err); showBootError(err); try { showScreen("teacher"); bootDemo(); renderTeacherMain(); } catch(e2){} }
+    } catch (err) { console.error(err); showBootError(err); try { showScreen("teacher"); await bootDemo(); renderTeacherMain(); } catch(e2){} }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
