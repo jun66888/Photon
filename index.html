@@ -9,7 +9,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet" />
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script>
+    (function () {
+      function ready() {
+        return !!(window.QRCode && typeof window.QRCode.toCanvas === "function");
+      }
+      if (ready()) return;
+      var s = document.createElement("script");
+      s.src = "https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js";
+      s.onerror = function () {
+        var s2 = document.createElement("script");
+        s2.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
   <style>
 :root {
   --bg0: #07090f;
@@ -37,21 +53,14 @@ html, body {
   min-height: 100%;
   color: var(--ink);
   font-family: var(--font-ui);
-  /* 中国古剑光标：贴纸小剑，剑尖为热点 */
-  cursor: url("data:image/png;base64,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") 7 43, url("assets/sword-cursor-48.png") 7 43, crosshair;
+  cursor: default;
   background:
     radial-gradient(1000px 420px at 0% 0%, rgba(255,59,92,.18), transparent 50%),
     radial-gradient(1000px 420px at 100% 0%, rgba(46,230,255,.14), transparent 50%),
     radial-gradient(900px 520px at 50% 110%, rgba(120,180,140,.1), transparent 55%),
     linear-gradient(180deg, #15201f 0%, #0b1220 45%, #05070c 100%);
 }
-#cursor-spark {
-  position: fixed; width: 8px; height: 8px; border-radius: 50%;
-  pointer-events: none; z-index: 9999;
-  background: radial-gradient(circle, #ffe39a, transparent 70%);
-  box-shadow: 0 0 10px #f0c14b, 0 0 18px rgba(46,230,255,.45);
-  mix-blend-mode: screen; opacity: 0;
-}
+#cursor-spark { display: none !important; }
 body::before {
   content: "";
   position: fixed; inset: 0; pointer-events: none; z-index: 0;
@@ -71,7 +80,7 @@ body::after {
   pointer-events: none;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
-button, a, [role="button"], label, select, summary { cursor: inherit; }
+button, a, [role="button"], label, select, summary { cursor: pointer; }
 input, textarea { cursor: text; }
 button {
   border: 2px solid rgba(240,193,75,.45);
@@ -2130,15 +2139,17 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   aspect-ratio: 1 / 1;
   display: grid; place-items: center;
   overflow: hidden;
+  background: #fff;
+  padding: 10px;
 }
-.qr-resizable .qr-canvas-host img,
-.qr-resizable .qr-canvas-host canvas {
-  width: 100% !important;
-  height: 100% !important;
+.qr-resizable .qr-canvas-host canvas,
+.qr-resizable .qr-canvas-host img {
+  width: auto !important;
+  height: auto !important;
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
   image-rendering: pixelated;
+  background: #fff;
 }
 .qr-resizable .qr-resize-handle {
   position: absolute; right: 0; bottom: 0;
@@ -4703,22 +4714,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function ensureSwordCursorTrail() {
-    if (window.__swordCursorBound) return;
-    window.__swordCursorBound = true;
-    let last = 0;
-    document.addEventListener("pointermove", (e) => {
-      const now = performance.now();
-      if (now - last < 28) return;
-      last = now;
-      const petal = document.createElement("div");
-      petal.className = "cursor-petal";
-      petal.style.left = e.clientX + "px";
-      petal.style.top = e.clientY + "px";
-      petal.style.setProperty("--px", (Math.random() * 24 - 12) + "px");
-      petal.style.setProperty("--py", (18 + Math.random() * 28) + "px");
-      document.body.appendChild(petal);
-      setTimeout(() => petal.remove(), 720);
-    }, { passive: true });
+    /* 已改回默认光标，不再绘制剑迹粒子 */
   }
 
   function playLevelUpAnimation(peak, oldLevel, levelInfo) {
@@ -7919,7 +7915,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function randCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
   function publicPageUrl(query) {
-    return `${location.origin}${location.pathname}${query.startsWith("?") ? query : "?" + query}`;
+    // 可在控制台设置局域网地址：localStorage.setItem('gy_arena_public_origin','http://192.168.x.x:3000')
+    const override = String(localStorage.getItem("gy_arena_public_origin") || "").trim().replace(/\/$/, "");
+    const origin = override || location.origin;
+    const path = location.pathname || "/";
+    return `${origin}${path}${query.startsWith("?") ? query : "?" + query}`;
+  }
+  function isLocalOrigin(url) {
+    try {
+      const u = new URL(url, location.href);
+      return /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(u.hostname);
+    } catch (e) { return false; }
   }
   function defaultQrSize() {
     const half = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.48);
@@ -7938,6 +7944,60 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (saved && saved >= 160) return Math.min(720, saved);
     return defaultQrSize();
   }
+  function paintQrInto(canvasHost, url, px) {
+    canvasHost.innerHTML = "";
+    const drawPx = Math.max(128, Math.floor(px * 0.88)); // 留白静区，利于微信扫码
+    // 优先 npm qrcode（模块边缘干净）；回退 qrcodejs
+    if (window.QRCode && typeof window.QRCode.toCanvas === "function") {
+      const canvas = document.createElement("canvas");
+      canvasHost.appendChild(canvas);
+      return window.QRCode.toCanvas(canvas, url, {
+        width: drawPx,
+        margin: 2,
+        errorCorrectionLevel: "H",
+        color: { dark: "#000000", light: "#ffffff" }
+      }).then(() => true).catch((err) => {
+        console.warn("QR toCanvas failed", err);
+        return false;
+      });
+    }
+    if (typeof window.QRCode === "function" && window.QRCode.CorrectLevel) {
+      try {
+        // eslint-disable-next-line no-new
+        new window.QRCode(canvasHost, {
+          text: url,
+          width: drawPx,
+          height: drawPx,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.H
+        });
+        // 去掉 qrcodejs canvas 描边残影：若有 img 则隐藏 canvas
+        const img = canvasHost.querySelector("img");
+        const cvs = canvasHost.querySelector("canvas");
+        if (img && cvs) { cvs.style.display = "none"; img.style.display = "block"; }
+        return Promise.resolve(true);
+      } catch (err) {
+        console.warn("QRCodejs failed", err);
+        return Promise.resolve(false);
+      }
+    }
+    // 最后回退：在线二维码图（需外网）
+    try {
+      const img = document.createElement("img");
+      img.alt = "二维码";
+      img.width = drawPx;
+      img.height = drawPx;
+      img.decoding = "async";
+      img.src = "https://api.qrserver.com/v1/create-qr-code/?size=" + drawPx + "x" + drawPx +
+        "&margin=12&ecc=H&data=" + encodeURIComponent(url);
+      canvasHost.appendChild(img);
+      return Promise.resolve(true);
+    } catch (err) {
+      return Promise.resolve(false);
+    }
+  }
+
   function renderQr(host, url, sizeOrKey) {
     if (!host) return;
     const key = typeof sizeOrKey === "string" ? sizeOrKey : (host.id || "qr");
@@ -7967,47 +8027,34 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     frame.appendChild(handle);
     host.appendChild(frame);
 
-    let ok = false;
-    const paint = (px) => {
-      canvasHost.innerHTML = "";
-      if (typeof QRCode === "undefined") return false;
-      try {
-        new QRCode(canvasHost, {
-          text: url,
-          width: px,
-          height: px,
-          colorDark: "#111111",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel ? QRCode.CorrectLevel.M : 1
-        });
-        return true;
-      } catch (err) {
-        console.warn("QR render failed", err);
-        return false;
-      }
-    };
-    ok = paint(size);
-
     const link = document.createElement("a");
     link.className = "qr-link-line";
     link.href = url;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = ok ? "扫码或点此打开（码已放大，可拖角缩放）" : url;
+    link.textContent = "扫码或点此打开（可拖角缩放）";
     host.appendChild(link);
 
-    if (demoMode) {
+    if (demoMode || isLocalOrigin(url)) {
       const warn = document.createElement("div");
       warn.className = "demo-qr-warn";
-      warn.textContent = "DEMO 模式：手机扫码需与投屏同一浏览器数据源；多设备请配置 Firebase。当前链接：" + location.origin;
+      warn.innerHTML = isLocalOrigin(url)
+        ? "当前是本机地址，手机扫不开。请用电脑局域网 IP 启动服务，或在控制台执行：<br><code style=\"color:#ffe39a\">localStorage.setItem('gy_arena_public_origin','http://你的IP:3000')</code> 后刷新再生成二维码。"
+        : ("DEMO 模式：多设备实时同步需配置 Firebase。当前链接：" + url);
       host.appendChild(warn);
     }
-    if (!ok) {
-      const fail = document.createElement("div");
-      fail.style.cssText = "margin-top:6px;font-size:12px;color:#a33;text-align:center";
-      fail.textContent = "二维码库未加载，请用上方链接打开";
-      host.appendChild(fail);
-    }
+
+    const fail = document.createElement("div");
+    fail.style.cssText = "margin-top:6px;font-size:12px;color:#a33;text-align:center;display:none";
+    fail.textContent = "二维码生成失败，请点上方链接打开，或检查网络后刷新";
+    host.appendChild(fail);
+
+    const paint = (px) => paintQrInto(canvasHost, url, px).then((ok) => {
+      fail.style.display = ok ? "none" : "block";
+      link.textContent = ok ? "扫码或点此打开（可拖角缩放）" : url;
+      return ok;
+    });
+    paint(size);
 
     let resizing = false;
     const beginResize = (e) => {
@@ -8038,7 +8085,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       document.addEventListener("pointerup", onUp);
     };
     handle.addEventListener("pointerdown", beginResize);
-    // 右下角空白区也可拖
     frame.addEventListener("pointerdown", (e) => {
       const r = frame.getBoundingClientRect();
       if (e.clientX > r.right - 40 && e.clientY > r.bottom - 40) beginResize(e);
