@@ -2447,9 +2447,11 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 /* ===== 课程分页壳：单侧导航常驻，中间舞台翻页 ===== */
 body.teacher-shell {
   --rail-w: 92px;
+  --prop-rail-w: 132px;
 }
 body.teacher-shell.mode-mobile-clean {
   --rail-w: 0px;
+  --prop-rail-w: 0px;
 }
 .course-rail {
   position: fixed; top: 0; bottom: 0; z-index: 52;
@@ -2467,6 +2469,138 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
 .course-rail.left {
   left: 0; width: var(--rail-w);
   border-right: 2px solid rgba(240,193,75,.28);
+}
+.course-rail.right.prop-rail {
+  right: 0;
+  width: var(--prop-rail-w);
+  left: auto;
+  border-left: 2px solid rgba(240,193,75,.28);
+  border-right: none;
+  padding: .55rem .4rem .75rem;
+  gap: .3rem;
+  background:
+    linear-gradient(180deg, rgba(12,16,28,.98), rgba(8,12,20,.94)),
+    radial-gradient(140px 240px at 50% 10%, rgba(46,230,255,.1), transparent 72%);
+}
+.prop-rail .prop-rail-head {
+  text-align: center;
+  padding-bottom: .35rem;
+  margin-bottom: .15rem;
+  border-bottom: 1px solid rgba(240,193,75,.22);
+}
+.prop-rail .prop-rail-head .pr-title {
+  font-family: var(--font-brush);
+  color: var(--gold);
+  font-size: 1.15rem;
+  letter-spacing: .12em;
+}
+.prop-rail .prop-rail-head .pr-count {
+  font-family: var(--font-num);
+  font-size: .72rem;
+  color: var(--ink-soft);
+  margin-top: .1rem;
+}
+.prop-rail-tabs {
+  display: flex; flex-wrap: wrap; gap: .2rem; justify-content: center;
+}
+.prop-rail-tabs button {
+  font-size: .62rem !important;
+  padding: .18rem .28rem !important;
+  min-height: 1.55rem !important;
+  letter-spacing: 0;
+}
+.prop-rail-tabs button.on {
+  border-color: var(--gold);
+  color: #ffe39a;
+  background: rgba(240,193,75,.12);
+}
+.prop-rail-list {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: .15rem 0 .3rem;
+}
+.prop-rail-empty {
+  font-size: .68rem;
+  color: var(--ink-soft);
+  text-align: center;
+  line-height: 1.45;
+  padding: .6rem .2rem;
+}
+.prop-mini-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .12rem;
+  width: 100%;
+  padding: .45rem .3rem .4rem !important;
+  min-height: 0 !important;
+  border-radius: 10px;
+  background:
+    linear-gradient(165deg, rgba(40,48,72,.95), rgba(16,20,34,.95));
+  border: 1px solid rgba(240,193,75,.35);
+  box-shadow: 0 4px 12px rgba(0,0,0,.28);
+  cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.prop-mini-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(46,230,255,.55);
+}
+.prop-mini-card .pm-ico {
+  font-size: 1.45rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
+}
+.prop-mini-card .pm-name {
+  font-size: .72rem;
+  font-weight: 800;
+  color: #ffe39a;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prop-mini-card .pm-owner {
+  font-size: .58rem;
+  color: var(--ink-soft);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prop-mini-card .pm-tier {
+  font-size: .55rem;
+  letter-spacing: .06em;
+  color: #9fe9ff;
+  border: 1px solid rgba(46,230,255,.3);
+  border-radius: 999px;
+  padding: .05rem .28rem;
+}
+.prop-mini-card.used {
+  opacity: .45;
+  filter: grayscale(.35);
+}
+.prop-rail-foot {
+  margin-top: auto;
+  padding-top: .35rem;
+  border-top: 1px solid rgba(240,193,75,.2);
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.prop-rail-foot button {
+  width: 100%;
+  font-size: .68rem !important;
+  min-height: 2rem !important;
+  padding: .25rem .2rem !important;
 }
 .course-rail .rail-brand {
   display: flex; flex-direction: column; align-items: center; gap: .25rem;
@@ -2511,7 +2645,7 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
 }
 body.teacher-shell:not(.mode-mobile-clean) .course-stage-wrap {
   margin-left: var(--rail-w);
-  margin-right: 0;
+  margin-right: var(--prop-rail-w);
 }
 body.teacher-shell:not(.mode-mobile-clean) #teacher-screen.screen.compact-arena {
   padding: .75rem .85rem 1.2rem;
@@ -3059,12 +3193,15 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 }
 body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
+@media (max-width: 1100px) {
+  body.teacher-shell { --prop-rail-w: 118px; }
+}
 @media (max-width: 980px) {
-  body.teacher-shell { --rail-w: 76px; }
+  body.teacher-shell { --rail-w: 76px; --prop-rail-w: 108px; }
   .course-rail button.rail-btn { font-size: .65rem !important; min-height: 2.35rem; }
 }
 @media (max-width: 720px) {
-  body.teacher-shell { --rail-w: 0px; }
+  body.teacher-shell { --rail-w: 0px; --prop-rail-w: 0px; }
   body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: none; }
   body.teacher-shell:not(.mode-mobile-clean) #brand-nav { display: flex !important; }
   body.teacher-shell:not(.mode-mobile-clean) .course-stage-wrap { margin: 0; }
@@ -3119,6 +3256,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     <div class="rail-day" id="rail-day-box" title="点击到设置调整天数" data-action="goto-settings" style="cursor:pointer">
       <div class="muted" style="font-size:.65rem">DAY</div>
       <div class="day-num" id="rail-day-label">1</div>
+    </div>
+  </aside>
+
+  <!-- 右侧道具栏：已兑换道具卡常驻展示 -->
+  <aside class="course-rail right prop-rail" id="rail-props" aria-label="道具栏">
+    <div class="prop-rail-head">
+      <div class="pr-title">道具</div>
+      <div class="pr-count" id="prop-rail-count">0 张</div>
+    </div>
+    <div class="prop-rail-tabs" id="prop-rail-tabs">
+      <button type="button" class="on" data-prop-filter="all">全部</button>
+      <button type="button" data-prop-filter="camp">派系</button>
+      <button type="button" data-prop-filter="peak">小组</button>
+      <button type="button" data-prop-filter="disciple">学员</button>
+    </div>
+    <div class="prop-rail-list" id="prop-rail-list">
+      <div class="prop-rail-empty">暂无道具卡<br>去「兑换」领取</div>
+    </div>
+    <div class="prop-rail-foot">
+      <button type="button" class="primary" data-action="goto-redeem" title="打开兑换中心">去兑换</button>
     </div>
   </aside>
 
@@ -7687,6 +7844,165 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!state.config.redeem_logs || typeof state.config.redeem_logs !== "object") {
       state.config.redeem_logs = {};
     }
+    if (!Array.isArray(state.config.camp_inventory_red)) state.config.camp_inventory_red = [];
+    if (!Array.isArray(state.config.camp_inventory_blue)) state.config.camp_inventory_blue = [];
+  }
+
+  let propRailFilter = "all"; // all | camp | peak | disciple
+
+  /** 汇总各实体已兑换道具卡，供右侧道具栏展示 */
+  function collectHeldProps() {
+    ensureRedeemConfig();
+    const list = [];
+    const pushItems = (items, meta) => {
+      (Array.isArray(items) ? items : []).forEach((it, idx) => {
+        if (!it) return;
+        list.push({
+          uid: `${meta.scope}:${meta.ownerKey}:${idx}:${it.at || 0}:${it.card_id || it.name || ""}`,
+          scope: meta.scope,
+          ownerKey: meta.ownerKey,
+          ownerLabel: meta.ownerLabel,
+          index: idx,
+          card_id: it.card_id || "",
+          name: it.name || "道具卡",
+          rule: it.rule || "",
+          icon: it.icon || "🎴",
+          tier: it.tier || meta.scope,
+          cost: Number(it.cost) || 0,
+          at: it.at || 0,
+          used: !!it.used,
+          used_at: it.used_at || 0
+        });
+      });
+    };
+    const redName = state.config?.alliance_red_name || "光影";
+    const blueName = state.config?.alliance_blue_name || "声浪";
+    pushItems(state.config.camp_inventory_red, { scope: "camp", ownerKey: "red", ownerLabel: `派系·${redName}` });
+    pushItems(state.config.camp_inventory_blue, { scope: "camp", ownerKey: "blue", ownerLabel: `派系·${blueName}` });
+    getPeaksArray().forEach((p) => {
+      pushItems(p.inventory, {
+        scope: "peak",
+        ownerKey: String(p.id),
+        ownerLabel: `小组·${p.icon || ""}${p.name || "未名"}`
+      });
+    });
+    getDisciplesArray().forEach((d) => {
+      if (!d.student_id && !(Array.isArray(d.inventory) && d.inventory.length)) return;
+      pushItems(d.inventory, {
+        scope: "disciple",
+        ownerKey: String(d.id),
+        ownerLabel: `学员·${d.name || "弟子"}`
+      });
+    });
+    return list.sort((a, b) => (b.at || 0) - (a.at || 0) || String(a.name).localeCompare(String(b.name), "zh-CN"));
+  }
+
+  function renderPropRail() {
+    const host = document.getElementById("rail-props");
+    if (!host) return;
+    const countEl = document.getElementById("prop-rail-count");
+    const listEl = document.getElementById("prop-rail-list");
+    const tabs = document.getElementById("prop-rail-tabs");
+    if (!listEl) return;
+    const all = collectHeldProps();
+    const filtered = propRailFilter === "all" ? all : all.filter((x) => x.scope === propRailFilter || x.tier === propRailFilter);
+    if (countEl) countEl.textContent = `${filtered.length} / ${all.length} 张`;
+    if (tabs) {
+      tabs.querySelectorAll("[data-prop-filter]").forEach((b) => {
+        b.classList.toggle("on", b.dataset.propFilter === propRailFilter);
+        b.onclick = () => {
+          propRailFilter = b.dataset.propFilter || "all";
+          renderPropRail();
+        };
+      });
+    }
+    if (!filtered.length) {
+      listEl.innerHTML = `<div class="prop-rail-empty">${all.length ? "该分类暂无道具" : "暂无道具卡<br>去「兑换」领取"}</div>`;
+      return;
+    }
+    listEl.innerHTML = filtered.map((p) => `
+      <button type="button" class="prop-mini-card ${p.used ? "used" : ""}" data-prop-uid="${esc(p.uid)}" title="${esc(p.rule || p.name)}">
+        <span class="pm-ico">${p.icon || "🎴"}</span>
+        <span class="pm-name">${esc(p.name)}</span>
+        <span class="pm-owner">${esc(p.ownerLabel)}</span>
+        <span class="pm-tier">${esc(REDEEM_TIER_LABEL[p.tier] || REDEEM_TIER_LABEL[p.scope] || "道具")}${p.used ? " · 已用" : ""}</span>
+      </button>`).join("");
+    listEl.querySelectorAll("[data-prop-uid]").forEach((btn) => {
+      btn.onclick = () => {
+        const item = filtered.find((x) => x.uid === btn.dataset.propUid);
+        if (item) openHeldPropModal(item);
+      };
+    });
+  }
+
+  function openHeldPropModal(item) {
+    if (!item) return;
+    openModal(`
+      <div style="text-align:center;padding:.2rem 0 .4rem">
+        <div style="font-size:2.6rem;line-height:1">${item.icon || "🎴"}</div>
+        <h3 style="margin:.35rem 0 .15rem;font-family:var(--font-brush);color:var(--seal);font-size:1.7rem">${esc(item.name)}</h3>
+        <div class="muted">${esc(item.ownerLabel)} · ${esc(REDEEM_TIER_LABEL[item.tier] || "道具卡")}${item.used ? " · 已使用" : ""}</div>
+      </div>
+      <div class="paper" style="padding:.75rem .85rem;margin:.35rem 0 .55rem">
+        <div class="muted" style="font-size:.75rem;margin-bottom:.25rem">使用规则</div>
+        <div style="color:#1a1205;line-height:1.55">${esc(item.rule || "（未填写规则）")}</div>
+        <div class="muted" style="margin-top:.55rem;font-size:.75rem">
+          兑换花费 ${item.cost || "—"} 分
+          ${item.at ? ` · ${fmtTime(item.at)}` : ""}
+          ${item.used_at ? ` · 使用于 ${fmtTime(item.used_at)}` : ""}
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;flex-wrap:wrap;gap:.4rem">
+        <button type="button" class="ghost" id="modal-cancel">关闭</button>
+        <button type="button" data-action="goto-redeem" id="prop-goto-redeem">兑换中心</button>
+        ${item.used
+          ? '<button type="button" class="ghost" id="prop-restore">恢复未用</button>'
+          : '<button type="button" class="primary" id="prop-use">使用道具</button>'}
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    const go = document.getElementById("prop-goto-redeem");
+    if (go) go.onclick = () => { closeModal(); setTeacherView("redeem"); };
+    const useBtn = document.getElementById("prop-use");
+    if (useBtn) useBtn.onclick = async () => {
+      if (!confirm(`确认使用「${item.name}」？\n持有者：${item.ownerLabel}`)) return;
+      await markHeldPropUsed(item, true);
+      closeModal();
+      showVoteToast(`${item.ownerLabel} 使用「${item.name}」`);
+    };
+    const restoreBtn = document.getElementById("prop-restore");
+    if (restoreBtn) restoreBtn.onclick = async () => {
+      await markHeldPropUsed(item, false);
+      closeModal();
+    };
+  }
+
+  async function markHeldPropUsed(item, used) {
+    if (!item) return;
+    let path = "";
+    let list = [];
+    if (item.scope === "camp") {
+      const key = item.ownerKey === "blue" ? "blue" : "red";
+      path = `config/camp_inventory_${key}`;
+      list = Array.isArray(state.config?.[`camp_inventory_${key}`]) ? state.config[`camp_inventory_${key}`].slice() : [];
+    } else if (item.scope === "peak") {
+      const peak = findPeak(item.ownerKey);
+      if (!peak) return;
+      path = `peaks/${peakKey(peak.id)}/inventory`;
+      list = Array.isArray(peak.inventory) ? peak.inventory.slice() : [];
+    } else {
+      const d = (state.disciples || {})[item.ownerKey];
+      if (!d) return;
+      path = `disciples/${d.id}/inventory`;
+      list = Array.isArray(d.inventory) ? d.inventory.slice() : [];
+    }
+    if (!list[item.index]) return;
+    list[item.index] = {
+      ...list[item.index],
+      used: !!used,
+      used_at: used ? Date.now() : 0
+    };
+    await updatePaths({ [path]: list });
+    renderPropRail();
   }
 
   function newRedeemCard(raw) {
@@ -8130,6 +8446,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       day
     });
     showVoteToast(`${redeemerLabel} 兑换「${card.name}」· -${cost}`);
+    renderPropRail();
     if (teacherView === "redeem") renderRedeem();
     else if (typeof renderAll === "function") renderAll();
   }
@@ -10474,8 +10791,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       else if (teacherView === "redeem") renderRedeem();
       else if (teacherView === "logs") renderLogs();
       else if (teacherView === "settings") renderSettings();
-    } else if (mode === "student") renderStudent();
+    }     else if (mode === "student") renderStudent();
     else if (mode === "checkin") renderCheckin();
+    if (mode === "teacher") renderPropRail();
   }
 
   async function handleTeacherAction(act, btn) {
@@ -10597,6 +10915,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     };
     bindNavHost(document.getElementById("brand-nav"));
     bindNavHost(document.getElementById("rail-left"));
+    bindNavHost(document.getElementById("rail-props"));
     const dayInputEl = document.getElementById("day-input");
     if (dayInputEl) dayInputEl.addEventListener("change", async (e) => changeDay(e.target.value));
     document.querySelectorAll("[data-log-filter]").forEach((btn) => {
