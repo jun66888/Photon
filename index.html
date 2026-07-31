@@ -1632,6 +1632,80 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 .score-hub-hint {
   font-size: .75rem; color: var(--ink-soft); margin: .2rem 0 .45rem;
 }
+.lucky-base-row {
+  display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin: .25rem 0 .5rem;
+}
+.lucky-base-row button.lb {
+  font-size: .8rem !important; padding: .35rem .6rem !important; min-height: 2.1rem;
+  font-family: var(--font-num); font-weight: 800;
+}
+.lucky-base-row button.lb.on {
+  border-color: var(--gold); color: #ffe39a;
+  background: rgba(240,193,75,.14);
+}
+.lucky-base-row .lb-input {
+  width: 4.5rem; text-align: center; font-family: var(--font-num); font-weight: 800;
+}
+.lucky-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; margin-top: .65rem;
+}
+@media (max-width: 520px) {
+  .lucky-actions { grid-template-columns: 1fr; }
+}
+.lucky-actions button {
+  min-height: 4.2rem; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .15rem; font-weight: 800;
+}
+.lucky-actions button .la-title { font-size: 1.05rem; letter-spacing: .06em; }
+.lucky-actions button .la-sub {
+  font-size: .78rem; color: var(--ink-soft); font-family: var(--font-num);
+}
+.lucky-actions button.primary .la-sub { color: rgba(26,18,5,.72); }
+.lucky-actions button.lucky-random {
+  border-color: rgba(46, 230, 255, .55);
+  background: linear-gradient(180deg, #2a3d55, #152033);
+  color: #9fe9ff;
+  box-shadow: 0 0 0 1px rgba(46,230,255,.18), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.lucky-actions button.lucky-random .la-sub { color: #ffe39a; }
+.lucky-roll-fx {
+  position: fixed; inset: 0; z-index: 12000;
+  display: grid; place-items: center;
+  background: rgba(5, 8, 14, .72);
+  backdrop-filter: blur(4px);
+  animation: fadeIn .18s ease;
+}
+.lucky-roll-card {
+  min-width: min(86vw, 320px);
+  padding: 1.4rem 1.6rem 1.2rem;
+  border: 2px solid rgba(240,193,75,.65);
+  border-radius: 14px;
+  background: linear-gradient(165deg, #1c2740, #0d1322 60%, #151a2a);
+  text-align: center;
+  box-shadow: 0 18px 48px rgba(0,0,0,.45), 0 0 40px rgba(46,230,255,.12);
+}
+.lucky-roll-card .lr-kicker {
+  font-size: .78rem; color: var(--ink-soft); letter-spacing: .12em;
+}
+.lucky-roll-card .lr-num {
+  margin: .35rem 0 .15rem;
+  font-family: var(--font-num); font-weight: 900;
+  font-size: clamp(2.8rem, 10vw, 4.2rem);
+  color: #ffe39a;
+  text-shadow: 0 0 18px rgba(240,193,75,.45);
+  transition: transform .08s ease;
+}
+.lucky-roll-card .lr-num.hit {
+  color: #3dff9a;
+  transform: scale(1.12);
+  text-shadow: 0 0 22px rgba(61,255,154,.55);
+}
+.lucky-roll-card .lr-range {
+  font-size: .85rem; color: #9fe9ff; font-family: var(--font-num);
+}
+.lucky-roll-card .lr-done {
+  margin-top: .55rem; font-size: 1rem; color: #ffe39a; font-weight: 800;
+}
 .attr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
 @media (max-width: 640px) { .attr-grid { grid-template-columns: 1fr; } }
 .choice-field { display: flex; flex-direction: column; gap: .35rem; }
@@ -7661,11 +7735,59 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else if (typeof renderAll === "function") renderAll();
   }
 
+  /** 基本分 N → 随机区间 1～2N（例：5→1-10，10→1-20） */
+  function randomScoreRange(base) {
+    const b = Math.max(1, Math.min(99, Math.floor(Number(base) || 1)));
+    return { base: b, min: 1, max: b * 2 };
+  }
+  function rollRandomScore(base) {
+    const { min, max } = randomScoreRange(base);
+    return min + Math.floor(Math.random() * (max - min + 1));
+  }
+  function playLuckyRollFx(base, rolled) {
+    const { min, max } = randomScoreRange(base);
+    return new Promise((resolve) => {
+      const wrap = document.createElement("div");
+      wrap.className = "lucky-roll-fx";
+      wrap.innerHTML = `
+        <div class="lucky-roll-card">
+          <div class="lr-kicker">幸运加分 · 掷点中</div>
+          <div class="lr-num" id="lucky-roll-num">${min}</div>
+          <div class="lr-range">随机范围 ${min}–${max}（基本分 ${randomScoreRange(base).base}）</div>
+          <div class="lr-done" id="lucky-roll-done" style="visibility:hidden">命中 +${rolled}</div>
+        </div>`;
+      document.body.appendChild(wrap);
+      const numEl = wrap.querySelector("#lucky-roll-num");
+      const doneEl = wrap.querySelector("#lucky-roll-done");
+      let ticks = 0;
+      const total = 14 + Math.floor(Math.random() * 6);
+      const timer = setInterval(() => {
+        ticks += 1;
+        if (!numEl) return;
+        if (ticks >= total) {
+          clearInterval(timer);
+          numEl.textContent = String(rolled);
+          numEl.classList.add("hit");
+          if (doneEl) doneEl.style.visibility = "visible";
+          setTimeout(() => {
+            wrap.remove();
+            resolve(rolled);
+          }, 720);
+          return;
+        }
+        const n = min + Math.floor(Math.random() * (max - min + 1));
+        numEl.textContent = String(n);
+        numEl.style.transform = ticks % 2 ? "scale(1.06)" : "scale(1)";
+      }, 70);
+    });
+  }
+
   function openScoreHubModal(startTab) {
     let tab = startTab || "quick";
     let targetMode = "peak"; // peak | camp-red | camp-blue | all
     let selectedPeakId = (getPeaksArray()[0] && getPeaksArray()[0].id) || "";
     let selectedDiscipleId = "";
+    let luckyBase = 5;
 
     const peaks = () => sortPeaks(getPeaksArray());
     const disciples = () => sortDisciples(getDisciplesArray(), "name");
@@ -7678,6 +7800,117 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const tabs = modal.querySelectorAll(".score-hub-tabs [data-sh-tab]");
       tabs.forEach((b) => b.classList.toggle("active", b.dataset.shTab === tab));
       if (!pane) return;
+
+      if (tab === "play") {
+        const range = randomScoreRange(luckyBase);
+        const peakOpts = peaks().map((p) => `<option value="${p.id}" ${String(p.id) === String(selectedPeakId) ? "selected" : ""}>${p.icon || ""} ${esc(p.name)}</option>`).join("");
+        const baseChoices = [3, 5, 8, 10, 15, 20];
+        pane.innerHTML = `
+          <p class="score-hub-hint">小玩法：先定基本分，再选「正常加分」或「随机加分」。随机区间始终为 1～2×基本分。</p>
+          <div class="field-name" style="color:#ffe39a;font-size:.85rem">基本分</div>
+          <div class="lucky-base-row" id="lucky-base-row">
+            ${baseChoices.map((n) => `<button type="button" class="lb ${n === range.base ? "on" : ""}" data-lb="${n}">${n}</button>`).join("")}
+            <label style="display:flex;align-items:center;gap:.3rem;margin:0">
+              <span class="muted" style="font-size:.75rem">自定义</span>
+              <input class="lb-input" id="lucky-base-input" type="number" min="1" max="99" value="${range.base}" />
+            </label>
+          </div>
+          <label><span>理由</span><input id="lucky-reason" type="text" value="幸运加分" list="sh-reason-list-lucky" /></label>
+          <datalist id="sh-reason-list-lucky">${REASON_PRESETS.map((r) => `<option value="${esc(r)}"></option>`).join("")}</datalist>
+          <div class="field-name" style="margin-top:.45rem;color:#ffe39a;font-size:.85rem">作用范围</div>
+          <div class="score-target-row" id="lucky-target-row">
+            <button type="button" class="pick ${targetMode === "peak" ? "on" : ""}" data-tm="peak">指定小组</button>
+            <button type="button" class="pick ${targetMode === "camp-red" ? "on" : ""}" data-tm="camp-red">光影派系</button>
+            <button type="button" class="pick ${targetMode === "camp-blue" ? "on" : ""}" data-tm="camp-blue">声浪派系</button>
+            <button type="button" class="pick ${targetMode === "all" ? "on" : ""}" data-tm="all">全体小组</button>
+          </div>
+          <label id="lucky-peak-wrap" style="${targetMode === "peak" ? "" : "display:none"}"><span>小组</span>
+            <select id="lucky-peak">${peakOpts || '<option value="">暂无小组</option>'}</select>
+          </label>
+          <div class="lucky-actions">
+            <button type="button" class="primary" id="lucky-normal">
+              <span class="la-title">正常加分</span>
+              <span class="la-sub" id="lucky-normal-sub">+${range.base} 分</span>
+            </button>
+            <button type="button" class="lucky-random" id="lucky-random">
+              <span class="la-title">随机加分</span>
+              <span class="la-sub" id="lucky-random-sub">${range.min}–${range.max} 分</span>
+            </button>
+          </div>
+          <p class="muted" style="font-size:.72rem;margin:.55rem 0 0;text-align:center">当前：基本 ${range.base} → 随机 ${range.min}–${range.max}（基本改为 10 则随机变为 1–20）</p>`;
+
+        const syncLuckyLabels = () => {
+          const r = randomScoreRange(luckyBase);
+          luckyBase = r.base;
+          const input = pane.querySelector("#lucky-base-input");
+          if (input && Number(input.value) !== r.base) input.value = String(r.base);
+          pane.querySelectorAll("[data-lb]").forEach((b) => b.classList.toggle("on", Number(b.dataset.lb) === r.base));
+          const nSub = pane.querySelector("#lucky-normal-sub");
+          const rSub = pane.querySelector("#lucky-random-sub");
+          if (nSub) nSub.textContent = `+${r.base} 分`;
+          if (rSub) rSub.textContent = `${r.min}–${r.max} 分`;
+          const tip = pane.querySelector(".lucky-actions + .muted");
+          if (tip) tip.textContent = `当前：基本 ${r.base} → 随机 ${r.min}–${r.max}（基本改为 10 则随机变为 1–20）`;
+        };
+        pane.querySelectorAll("[data-lb]").forEach((b) => {
+          b.onclick = () => {
+            luckyBase = Number(b.dataset.lb) || 5;
+            syncLuckyLabels();
+          };
+        });
+        const baseInput = pane.querySelector("#lucky-base-input");
+        if (baseInput) {
+          baseInput.oninput = () => {
+            luckyBase = Number(baseInput.value) || 1;
+            syncLuckyLabels();
+          };
+        }
+        pane.querySelectorAll("#lucky-target-row [data-tm]").forEach((b) => {
+          b.onclick = () => { targetMode = b.dataset.tm; paint(); };
+        });
+        const peakSel = pane.querySelector("#lucky-peak");
+        if (peakSel) peakSel.onchange = () => { selectedPeakId = peakSel.value; };
+
+        const readReason = () => (document.getElementById("lucky-reason")?.value || "").trim() || "幸运加分";
+        const applyLucky = async (pts, reason) => {
+          if (targetMode === "all") await addScoreToAllPeaks(pts, reason, "玩法");
+          else if (targetMode === "camp-red") await addScoreToCamp("red", pts, reason, "玩法");
+          else if (targetMode === "camp-blue") await addScoreToCamp("blue", pts, reason, "玩法");
+          else {
+            const raw = (document.getElementById("lucky-peak") || {}).value || selectedPeakId;
+            const pid = Number(raw);
+            if (!Number.isFinite(pid) || !findPeak(pid)) { alert("请选择小组"); return false; }
+            await scoreFromModal(pid, pts, reason, "玩法", 0);
+          }
+          return true;
+        };
+        pane.querySelector("#lucky-normal").onclick = async () => {
+          const r = randomScoreRange(luckyBase);
+          const reason = readReason();
+          await applyLucky(r.base, reason);
+        };
+        pane.querySelector("#lucky-random").onclick = async () => {
+          const r = randomScoreRange(luckyBase);
+          const modeNow = targetMode;
+          let peakIdForRoll = Number(selectedPeakId);
+          if (modeNow === "peak") {
+            const raw = (document.getElementById("lucky-peak") || {}).value || selectedPeakId;
+            peakIdForRoll = Number(raw);
+            if (!Number.isFinite(peakIdForRoll) || !findPeak(peakIdForRoll)) { alert("请选择小组"); return; }
+            selectedPeakId = String(peakIdForRoll);
+          }
+          const rolled = rollRandomScore(r.base);
+          const reasonBase = readReason();
+          closeModal();
+          await playLuckyRollFx(r.base, rolled);
+          const reason = `${reasonBase}·掷出${rolled}（${r.min}-${r.max}）`;
+          if (modeNow === "all") await addScoreToAllPeaks(rolled, reason, "玩法");
+          else if (modeNow === "camp-red") await addScoreToCamp("red", rolled, reason, "玩法");
+          else if (modeNow === "camp-blue") await addScoreToCamp("blue", rolled, reason, "玩法");
+          else await scoreFromModal(peakIdForRoll, rolled, reason, "玩法", 0);
+        };
+        return;
+      }
 
       if (tab === "quick") {
         const opts = getScoreQuickOptions();
@@ -7893,8 +8126,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     openModal(`
       <h3>加分中心</h3>
-      <p class="muted" style="text-align:center;margin-top:-.2rem;margin-bottom:.2rem">快捷 · 小组 · 派系 · 队员 · 自定义，一处集中出招</p>
+      <p class="muted" style="text-align:center;margin-top:-.2rem;margin-bottom:.2rem">幸运玩法 · 快捷 · 小组 · 派系 · 队员 · 自定义</p>
       <div class="score-hub-tabs">
+        <button type="button" data-sh-tab="play">幸运加分</button>
         <button type="button" data-sh-tab="quick">整体快捷</button>
         <button type="button" data-sh-tab="peak">小组加分</button>
         <button type="button" data-sh-tab="camp">派系加分</button>
