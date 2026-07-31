@@ -2096,13 +2096,7 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   35% { opacity: 1; }
   100% { transform: scaleX(1.15) rotate(var(--rr)); opacity: 0; }
 }
-.cursor-petal {
-  position: fixed; width: 6px; height: 6px; border-radius: 50% 0 50% 50%;
-  pointer-events: none; z-index: 9998;
-  background: radial-gradient(circle at 30% 30%, #ffe39a, #f0c14b 55%, transparent);
-  box-shadow: 0 0 8px rgba(240,193,75,.7);
-  animation: petalFade .7s ease-out forwards;
-}
+.cursor-petal { display: none !important; }
 @keyframes petalFade {
   0% { transform: translate(0,0) scale(1) rotate(0); opacity: .9; }
   100% { transform: translate(var(--px), var(--py)) scale(0) rotate(120deg); opacity: 0; }
