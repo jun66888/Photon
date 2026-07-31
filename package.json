@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "光影盟·联盟积分体系（本地静态站点）",
+  "type": "module",
   "scripts": {
-    "start": "serve -l 3000 .",
-    "dev": "serve -l 3000 .",
-    "preview": "serve -l 4173 .",
-    "tunnel": "cloudflared tunnel --url http://127.0.0.1:4173 --no-autoupdate"
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "preview": "PORT=4173 node server.mjs",
+    "tunnel": "cloudflared tunnel --url http://127.0.0.1:3000 --no-autoupdate --protocol http2"
   },
   "dependencies": {
     "serve": "^14.2.6"
