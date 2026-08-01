@@ -44,8 +44,8 @@ git log -3 --oneline
 echo ""
 echo "当前 HEAD：$(git rev-parse --short HEAD)"
 
-if grep -q "openPlayModePicker" "$INDEX" && grep -q "PLAY_MODE_DEFS" "$INDEX" && grep -q "goto-play-mode" "$INDEX" && grep -q "play-mode-detail-btn" "$INDEX"; then
-  echo "✅ 校验通过：玩法为弹窗三选项 + 详情"
+if grep -q "openPlayModePicker" "$INDEX" && grep -q "ICE_MODE_DEFS" "$INDEX" && grep -q "破冰互动" "$INDEX"; then
+  echo "✅ 校验通过：玩法弹窗 + 六个破冰小游戏"
 else
   echo "❌ 校验失败：index.html 仍是旧版"
   exit 1

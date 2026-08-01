@@ -8960,6 +8960,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       renderTeacherVote();
     }
     if (view === "games") renderGames();
+    else { clearIceTimer(); iceBusy = false; }
     if (view === "redeem") renderRedeem();
     if (view === "logs") { logsPage = 1; renderLogs(); }
     if (view === "settings") renderSettings();
