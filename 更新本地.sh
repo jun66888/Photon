@@ -44,8 +44,8 @@ git log -3 --oneline
 echo ""
 echo "当前 HEAD：$(git rev-parse --short HEAD)"
 
-if grep -q "teacher-play" "$INDEX" && grep -q "PLAY_MODE_DEFS" "$INDEX" && grep -q "goto-play-mode" "$INDEX" && grep -q 'data-nav="play"' "$INDEX"; then
-  echo "✅ 校验通过：已包含独立玩法页（与设置页分离）"
+if grep -q "play-mode-options" "$INDEX" && grep -q "PLAY_MODE_DEFS" "$INDEX" && grep -q "goto-play-mode" "$INDEX" && grep -q 'data-nav="play"' "$INDEX"; then
+  echo "✅ 校验通过：玩法页为简洁三选项"
 else
   echo "❌ 校验失败：index.html 仍是旧版"
   exit 1

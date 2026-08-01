@@ -22,7 +22,7 @@ if [[ "$ROOT" != "$PHOTON_HOME" ]]; then
   echo "  [警告] 固定目录应为 $PHOTON_HOME"
   echo "         当前目录不是固定路径，页面可能一直不更新。"
 fi
-if ! grep -q "settings-play-top" "$ROOT/index.html" 2>/dev/null; then
+if ! grep -q "play-mode-options" "$ROOT/index.html" 2>/dev/null; then
   echo "  [警告] 当前 index.html 没有「玩法模式」，是旧文件。"
   echo "         请先运行：$PHOTON_HOME/更新本地.sh"
   echo ""

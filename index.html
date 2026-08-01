@@ -3257,41 +3257,64 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 /* 设置页：紧凑横排归类 */
 #teacher-settings .course-hero { margin-bottom: .55rem; padding: .55rem .8rem; }
 #teacher-settings .course-hero .ch-title { font-size: clamp(1.25rem, 2.2vw, 1.65rem); }
-#teacher-play .course-hero { margin-bottom: .55rem; }
-.settings-play-top {
-  margin: 0 0 .65rem;
-  padding: .75rem .85rem .8rem;
-  border: 2px solid rgba(240,193,75,.65);
-  border-radius: 12px;
-  background: linear-gradient(165deg, rgba(240,193,75,.2), rgba(18,22,38,.97) 38%, rgba(8,10,18,.98));
-  box-shadow: 0 8px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
-}
-.settings-play-top .settings-panel-head { margin-bottom: .45rem; }
-.settings-play-top .settings-panel-head h4 {
-  margin: 0;
-  font-family: var(--font-brush);
-  font-size: clamp(1.25rem, 2.4vw, 1.55rem);
-  color: #ffe9a8;
-  letter-spacing: .08em;
-}
-.settings-play-top .settings-panel-desc {
-  margin: .15rem 0 0;
-  font-size: .74rem;
-  color: #f0e2c0;
-  line-height: 1.4;
-}
-.play-page-tips {
-  margin: .55rem 0 .75rem;
-  padding: .65rem .75rem;
+.play-page-box {
+  max-width: 520px;
+  padding: .85rem 1rem 1rem;
+  border: 1px solid rgba(240,193,75,.3);
   border-radius: 10px;
-  border: 1px solid rgba(240,193,75,.22);
-  background: rgba(0,0,0,.18);
-  font-size: .78rem;
-  color: #e8dcc8;
-  line-height: 1.5;
+  background: linear-gradient(160deg, rgba(22,28,46,.94), rgba(10,14,24,.92));
 }
-.play-page-tips strong { color: #ffe39a; }
-.play-page-tips ul { margin: .35rem 0 0; padding-left: 1.1rem; }
+.play-page-box h3 {
+  margin: 0 0 .2rem;
+  font-family: var(--font-brush);
+  font-size: 1.2rem;
+  color: var(--seal);
+  letter-spacing: .05em;
+}
+.play-page-box .play-page-note {
+  margin: 0 0 .65rem;
+  font-size: .72rem;
+  color: var(--ink-soft);
+}
+.play-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.play-mode-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  width: 100%;
+  text-align: left;
+  padding: .55rem .7rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.22);
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+.play-mode-opt:hover {
+  border-color: rgba(240,193,75,.4);
+  background: rgba(240,193,75,.06);
+}
+.play-mode-opt.on {
+  border-color: rgba(240,193,75,.7);
+  background: rgba(240,193,75,.12);
+  color: #ffe39a;
+}
+.play-mode-opt .pmo-name {
+  font-size: .92rem;
+  font-weight: 600;
+}
+.play-mode-opt .pmo-size {
+  font-size: .72rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.play-mode-opt.on .pmo-size { color: #ffe39a; }
 .settings-play-summary {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem;
 }
@@ -3525,54 +3548,6 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 .data-history-row .dh-i { font-family: var(--font-num); color: var(--gold); font-weight: 700; }
 .data-history-row .dh-meta { color: var(--ink-soft); font-size: .68rem; }
 
-/* -------- 玩法模式：按人数选用 -------- */
-.play-modes-hint {
-  font-size: .72rem; color: var(--ink-soft); line-height: 1.45; margin: 0 0 .5rem;
-}
-.play-modes-grid {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem;
-}
-.play-mode-card {
-  display: flex; flex-direction: column; gap: .28rem; align-items: stretch;
-  text-align: left; padding: .6rem .65rem; border-radius: 10px; cursor: pointer;
-  border: 1px solid rgba(240,193,75,.22); background: rgba(0,0,0,.22);
-  color: inherit; font-family: inherit; min-height: 100%;
-  transition: border-color .15s, background .15s, transform .12s;
-}
-.play-mode-card:hover {
-  border-color: rgba(240,193,75,.45); background: rgba(240,193,75,.06);
-  transform: translateY(-1px);
-}
-.play-mode-card.on {
-  border-color: rgba(240,193,75,.75);
-  background: linear-gradient(165deg, rgba(240,193,75,.18), rgba(0,0,0,.25));
-  box-shadow: inset 0 0 0 1px rgba(240,193,75,.22);
-}
-.play-mode-card .pm-head {
-  display: flex; flex-direction: column; align-items: flex-start; gap: .2rem;
-}
-.play-mode-card .pm-name {
-  font-family: var(--font-brush); font-size: 1rem; color: #fff5e8; letter-spacing: .04em;
-}
-.play-mode-card .pm-size {
-  font-size: .68rem; color: #ffe39a; white-space: nowrap;
-  padding: .08rem .32rem; border-radius: 999px;
-  border: 1px solid rgba(240,193,75,.35); background: rgba(240,193,75,.08);
-}
-.play-mode-card .pm-blurb {
-  font-size: .72rem; color: var(--ink-soft); line-height: 1.4; margin: 0;
-}
-.play-mode-card .pm-foot {
-  margin-top: auto; padding-top: .3rem; font-size: .68rem; color: var(--ink-soft);
-  border-top: 1px dashed rgba(240,193,75,.2);
-}
-.play-mode-card.on .pm-foot { color: #ffe39a; }
-.play-mode-guide-list {
-  margin: .5rem 0 0; padding-left: 1.1rem; font-size: .85rem; line-height: 1.55; color: #e8dcc8;
-}
-@media (max-width: 860px) {
-  .play-modes-grid { grid-template-columns: 1fr; }
-}
 /* 低于所需档位的入口整体隐藏 */
 body.play-mode-basic [data-play-min="standard"],
 body.play-mode-basic [data-play-min="advanced"],
@@ -4284,30 +4259,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>
     </div>
 
-    <!-- 玩法页：只选模式，不与设置页重复 -->
+    <!-- 玩法页：三个简单选项 -->
     <div id="teacher-play" class="subview course-page hidden">
-      <div class="course-hero">
-        <div class="ch-seal">玩</div>
-        <div class="ch-text">
-          <div class="ch-kicker">COURSE · PLAY MODE</div>
-          <div class="ch-title">玩法模式</div>
-          <div class="ch-sub">按课堂人数选用 · 切换不清空名册与积分</div>
-        </div>
-        <div class="ch-actions">
-          <button type="button" data-action="goto-settings">去设置名册</button>
-        </div>
+      <div class="play-page-box" id="play-page-panel" aria-label="玩法模式">
+        <h3>玩法</h3>
+        <p class="play-page-note">按人数选一档 · 切换不清空积分</p>
+        <div class="play-mode-options" id="play-page-modes"></div>
       </div>
-      <section class="settings-play-top" id="play-page-panel" aria-label="玩法模式">
-        <div class="settings-panel-head">
-          <div>
-            <h4>点选一档开始</h4>
-            <p class="settings-panel-desc">基础适合小队红蓝对抗 · 进阶适合常规班 · 高级适合大班全功能</p>
-          </div>
-          <span class="settings-panel-badge" id="play-page-badge">进阶</span>
-        </div>
-        <div id="play-page-modes"></div>
-      </section>
-      <div class="play-page-tips" id="play-page-tips"></div>
     </div>
 
     <div id="teacher-settings" class="subview course-page hidden">
@@ -5737,25 +5695,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.body.classList.add("play-mode-" + mode);
     if (!playModeAllowsGame(gameMode)) gameMode = "wheel";
   }
-  function showPlayModeGuide(mode) {
-    const def = getPlayModeDef(mode);
-    const tips = (def.setupTips || []).map((t) => `<li>${esc(t)}</li>`).join("");
-    const feats = (def.features || []).map((t) => `<li>${esc(t)}</li>`).join("");
-    openModal(`
-      <div style="max-width:min(520px,92vw)">
-        <h3 style="font-family:var(--font-brush);color:var(--seal);margin:.2rem 0">${esc(def.name)}</h3>
-        <div class="muted" style="margin-bottom:.35rem">${esc(def.size)} · ${esc(def.blurb)}</div>
-        <div style="font-size:.82rem;color:#ffe39a;margin:.4rem 0 .15rem">本档可用</div>
-        <ul class="play-mode-guide-list">${feats}</ul>
-        <div style="font-size:.82rem;color:#ffe39a;margin:.65rem 0 .15rem">布置建议</div>
-        <ul class="play-mode-guide-list">${tips}</ul>
-        <p class="muted" style="font-size:.72rem;margin:.65rem 0 0">${esc(def.lockedHint || "")} · 切换模式不会清空名册与积分</p>
-        <div class="row" style="justify-content:flex-end;margin-top:.85rem">
-          <button type="button" class="primary" id="modal-cancel">知道了</button>
-        </div>
-      </div>`);
-    document.getElementById("modal-cancel").onclick = closeModal;
-  }
   function bindPlayModeHost() {
     const root = document.getElementById("play-page-panel");
     if (!root || root.dataset.playBound === "1") return;
@@ -5767,59 +5706,32 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       setPlayMode(b.dataset.playMode);
     });
   }
-  function renderPlayModeCards(host) {
-    if (!host) return;
-    const cur = getPlayMode();
-    const nDisc = getDisciplesArray().length;
-    host.innerHTML = `
-      <p class="play-modes-hint">当前名册 <strong>${nDisc}</strong> 人 · 点选一档即可切换；再点当前档可看布置建议。</p>
-      <div class="play-modes-grid">
-        ${PLAY_MODE_ORDER.map((id) => {
-          const d = PLAY_MODE_DEFS[id];
-          const on = id === cur;
-          const sizeHint = nDisc > d.sizeMax
-            ? `名册 ${nDisc} 人 · 略超建议`
-            : `建议 ≤${d.sizeMax} 人`;
-          return `
-            <button type="button" class="play-mode-card ${on ? "on" : ""}" data-play-mode="${id}">
-              <div class="pm-head">
-                <span class="pm-name">${esc(d.name)}</span>
-                <span class="pm-size">${esc(d.size)}</span>
-              </div>
-              <p class="pm-blurb">${esc(d.blurb)}</p>
-              <div class="pm-foot">${on ? "当前选用 · 点看建议" : sizeHint}</div>
-            </button>`;
-        }).join("")}
-      </div>`;
-  }
   function renderPlayPage() {
     bindPlayModeHost();
+    const host = document.getElementById("play-page-modes");
+    if (!host) return;
     const cur = getPlayMode();
-    const curDef = getPlayModeDef(cur);
-    const badge = document.getElementById("play-page-badge");
-    if (badge) badge.textContent = (curDef.name || "").split("·")[0].trim() || curDef.name;
-    renderPlayModeCards(document.getElementById("play-page-modes"));
-    const tips = document.getElementById("play-page-tips");
-    if (tips) {
-      const feat = (curDef.features || []).map((t) => `<li>${esc(t)}</li>`).join("");
-      const setup = (curDef.setupTips || []).map((t) => `<li>${esc(t)}</li>`).join("");
-      tips.innerHTML = `
-        <div><strong>当前：${esc(curDef.name)}</strong> · ${esc(curDef.size)}</div>
-        <div style="margin-top:.35rem">${esc(curDef.blurb)}</div>
-        <div style="margin-top:.45rem;color:#ffe39a">本档可用</div>
-        <ul>${feat}</ul>
-        <div style="margin-top:.45rem;color:#ffe39a">布置建议</div>
-        <ul>${setup}</ul>
-        <div class="muted" style="margin-top:.45rem;font-size:.72rem">${esc(curDef.lockedHint || "")} · 名册与品牌请到「设置」</div>`;
-    }
+    const short = {
+      basic: { name: "基础 · 红蓝对抗", size: "不足 10 人" },
+      standard: { name: "进阶 · 门派擂台", size: "30 人以内" },
+      advanced: { name: "高级 · 全盟盛典", size: "50 人以内" }
+    };
+    host.innerHTML = PLAY_MODE_ORDER.map((id) => {
+      const d = short[id] || getPlayModeDef(id);
+      const on = id === cur;
+      return `<button type="button" class="play-mode-opt ${on ? "on" : ""}" data-play-mode="${id}">
+        <span class="pmo-name">${esc(d.name)}${on ? " · 当前" : ""}</span>
+        <span class="pmo-size">${esc(d.size)}</span>
+      </button>`;
+    }).join("");
   }
   function renderSettingsPlaySummary() {
     const host = document.getElementById("settings-play-summary");
     if (!host) return;
     const def = getPlayModeDef();
     host.innerHTML = `
-      <div class="sps-text">当前玩法 <b>${esc(def.name)}</b><br>${esc(def.size)} · 切换请用侧栏「玩法」</div>
-      <button type="button" class="primary" data-action="goto-play-mode">去玩法页</button>`;
+      <div class="sps-text">当前玩法 <b>${esc(def.name)}</b> · ${esc(def.size)}</div>
+      <button type="button" data-action="goto-play-mode">改玩法</button>`;
   }
 
   const LS_SETTINGS_ACC = "gy_arena_settings_acc_v1";
@@ -5883,23 +5795,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   async function setPlayMode(mode) {
     const def = PLAY_MODE_DEFS[mode];
     if (!def) return;
-    const prev = getPlayMode();
-    if (prev === mode) {
-      showPlayModeGuide(mode);
+    if (getPlayMode() === mode) {
+      showVoteToast(`当前已是「${def.name}」`);
       return;
     }
-    const nDisc = getDisciplesArray().length;
-    const sizeWarn = nDisc > def.sizeMax
-      ? `\n\n提示：当前名册 ${nDisc} 人，已超过该档建议上限（${def.sizeMax}）。仍可切换，课堂节奏可能偏紧。`
-      : "";
-    if (!confirm(`切换到「${def.name}」？\n${def.size}\n\n界面会按该模式显隐功能，已有名册与积分不会清空。${sizeWarn}`)) return;
+    if (!confirm(`切换到「${def.name}」？\n${def.size}\n名册与积分不会清空。`)) return;
     await updatePaths({ "config/play_mode": mode });
     applyPlayModeUI();
     if (!playModeAllowsView(teacherView)) {
       setTeacherView("main");
-      showVoteToast(`${def.name} 下已回到首页`);
+      showVoteToast(`已切换为 ${def.name}`);
+    } else {
+      showVoteToast(`已切换为 ${def.name}`);
     }
-    showPlayModeGuide(mode);
     if (teacherView === "play") renderPlayPage();
     if (teacherView === "settings") renderSettings();
   }
