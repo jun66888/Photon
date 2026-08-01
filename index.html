@@ -3257,21 +3257,14 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 /* 设置页：紧凑横排归类 */
 #teacher-settings .course-hero { margin-bottom: .55rem; padding: .55rem .8rem; }
 #teacher-settings .course-hero .ch-title { font-size: clamp(1.25rem, 2.2vw, 1.65rem); }
-.play-page-box {
-  max-width: 520px;
-  padding: .85rem 1rem 1rem;
-  border: 1px solid rgba(240,193,75,.3);
-  border-radius: 10px;
-  background: linear-gradient(160deg, rgba(22,28,46,.94), rgba(10,14,24,.92));
-}
-.play-page-box h3 {
+.play-picker-modal { width: min(420px, 92vw); }
+.play-picker-modal h3 {
   margin: 0 0 .2rem;
   font-family: var(--font-brush);
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   color: var(--seal);
-  letter-spacing: .05em;
 }
-.play-page-box .play-page-note {
+.play-picker-note {
   margin: 0 0 .65rem;
   font-size: .72rem;
   color: var(--ink-soft);
@@ -3281,20 +3274,26 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   flex-direction: column;
   gap: .4rem;
 }
+.play-mode-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .35rem;
+  align-items: stretch;
+}
 .play-mode-opt {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: .5rem;
-  width: 100%;
   text-align: left;
-  padding: .55rem .7rem;
+  padding: .5rem .65rem;
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(0,0,0,.22);
   color: inherit;
   font-family: inherit;
   cursor: pointer;
+  min-height: 2.4rem;
 }
 .play-mode-opt:hover {
   border-color: rgba(240,193,75,.4);
@@ -3305,16 +3304,22 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   background: rgba(240,193,75,.12);
   color: #ffe39a;
 }
-.play-mode-opt .pmo-name {
-  font-size: .92rem;
-  font-weight: 600;
-}
-.play-mode-opt .pmo-size {
-  font-size: .72rem;
-  color: var(--ink-soft);
+.play-mode-opt .pmo-name { font-size: .9rem; font-weight: 600; }
+.play-mode-opt .pmo-size { font-size: .7rem; color: var(--ink-soft); white-space: nowrap; }
+.play-mode-opt.on .pmo-size { color: #ffe39a; }
+.play-mode-detail-btn {
+  min-height: 2.4rem !important;
+  padding: .35rem .55rem !important;
+  font-size: .72rem !important;
   white-space: nowrap;
 }
-.play-mode-opt.on .pmo-size { color: #ffe39a; }
+.play-mode-detail-list {
+  margin: .4rem 0 0;
+  padding-left: 1.1rem;
+  font-size: .82rem;
+  line-height: 1.5;
+  color: #e8dcc8;
+}
 .settings-play-summary {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem;
 }
@@ -3946,7 +3951,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" data-action="goto-redeem" data-nav="redeem" data-play-min="standard">兑换</button>
       <button type="button" data-action="goto-logs" data-nav="logs" data-play-min="basic">日志</button>
       <button type="button" data-action="goto-mission" data-nav="mission" data-play-min="standard">任务</button>
-      <button type="button" data-action="goto-play-mode" data-nav="play" data-play-min="basic">玩法</button>
+      <button type="button" data-action="goto-play-mode" data-play-min="basic">玩法</button>
       <button type="button" data-action="goto-settings" data-nav="settings" data-play-min="basic">设置</button>
     </nav>
   </header>
@@ -3968,7 +3973,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="rail-label rail-label-more" data-play-min="standard">更多</div>
       <button type="button" class="rail-btn" data-action="goto-redeem" data-nav="redeem" data-play-min="standard" title="奖品兑换"><span class="ico">兑</span>兑换</button>
       <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" data-play-min="basic" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
-      <button type="button" class="rail-btn rail-hot" data-action="goto-play-mode" data-nav="play" data-play-min="basic" title="选择玩法模式"><span class="ico">玩</span>玩法</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-play-mode" data-play-min="basic" title="选择玩法模式"><span class="ico">玩</span>玩法</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings" data-play-min="basic" title="名册与系统设置"><span class="ico">设</span>设置</button>
     </nav>
     <div class="rail-day" id="rail-day-box" aria-label="课堂天数">
@@ -4256,15 +4261,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <button type="button" id="logs-next">下一页</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 玩法页：三个简单选项 -->
-    <div id="teacher-play" class="subview course-page hidden">
-      <div class="play-page-box" id="play-page-panel" aria-label="玩法模式">
-        <h3>玩法</h3>
-        <p class="play-page-note">按人数选一档 · 切换不清空积分</p>
-        <div class="play-mode-options" id="play-page-modes"></div>
       </div>
     </div>
 
@@ -4904,7 +4900,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         "名册控制在 10 人以内，方便人人上场",
         "推荐流程：签到 → 课堂加分 → 转盘抽答"
       ],
-      views: ["main", "checkin", "games", "logs", "play", "settings"],
+      views: ["main", "checkin", "games", "logs", "settings"],
       gameModes: ["wheel"],
       allowPropRail: false,
       allowPropPlays: false
@@ -4922,7 +4918,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         "名册约 15～30 人",
         "可发今日任务，用投票收作品分，再用兑换激励"
       ],
-      views: ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "play", "settings"],
+      views: ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "settings"],
       gameModes: ["wheel", "fruit", "snake"],
       allowPropRail: true,
       allowPropPlays: false
@@ -4940,7 +4936,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         "名册可达 40～50 人",
         "善用兑换与道具玩法活跃大班气氛，课末可做段位结算"
       ],
-      views: ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "play", "settings"],
+      views: ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "settings"],
       gameModes: ["wheel", "fruit", "snake"],
       allowPropRail: true,
       allowPropPlays: true
@@ -5025,7 +5021,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let logFilter = "today", teacherView = "main", sortMode = "score";
   let logsPage = 1;
   const LOGS_PAGE_SIZE = 12;
-  const VIEW_ORDER = ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "play", "settings"];
+  const VIEW_ORDER = ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "settings"];
   let dragPeakId = null, sectModalTab = "bonus";
   let activeMissionId = "";
   const LS_MISSION_COLLAPSE_KEY = "gy_arena_mission_collapsed";
@@ -5695,35 +5691,75 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.body.classList.add("play-mode-" + mode);
     if (!playModeAllowsGame(gameMode)) gameMode = "wheel";
   }
-  function bindPlayModeHost() {
-    const root = document.getElementById("play-page-panel");
-    if (!root || root.dataset.playBound === "1") return;
-    root.dataset.playBound = "1";
-    root.addEventListener("click", (e) => {
-      const b = e.target.closest("[data-play-mode]");
-      if (!b || !root.contains(b)) return;
-      e.preventDefault();
-      setPlayMode(b.dataset.playMode);
-    });
-  }
-  function renderPlayPage() {
-    bindPlayModeHost();
-    const host = document.getElementById("play-page-modes");
-    if (!host) return;
-    const cur = getPlayMode();
-    const short = {
+  function playModeShortLabel(id) {
+    const map = {
       basic: { name: "基础 · 红蓝对抗", size: "不足 10 人" },
       standard: { name: "进阶 · 门派擂台", size: "30 人以内" },
       advanced: { name: "高级 · 全盟盛典", size: "50 人以内" }
     };
-    host.innerHTML = PLAY_MODE_ORDER.map((id) => {
-      const d = short[id] || getPlayModeDef(id);
+    return map[id] || { name: getPlayModeDef(id).name, size: getPlayModeDef(id).size };
+  }
+  function showPlayModeDetail(mode) {
+    const def = getPlayModeDef(mode);
+    const feats = (def.features || []).map((t) => `<li>${esc(t)}</li>`).join("");
+    const tips = (def.setupTips || []).map((t) => `<li>${esc(t)}</li>`).join("");
+    openModal(`
+      <div class="play-picker-modal">
+        <h3>${esc(def.name)}</h3>
+        <p class="play-picker-note">${esc(def.size)} · ${esc(def.blurb)}</p>
+        <div style="font-size:.8rem;color:#ffe39a">本档可用</div>
+        <ul class="play-mode-detail-list">${feats}</ul>
+        <div style="font-size:.8rem;color:#ffe39a;margin-top:.55rem">布置建议</div>
+        <ul class="play-mode-detail-list">${tips}</ul>
+        <p class="muted" style="font-size:.72rem;margin:.55rem 0 0">${esc(def.lockedHint || "")}</p>
+        <div class="row" style="justify-content:flex-end;gap:.4rem;margin-top:.85rem">
+          <button type="button" class="ghost" id="pm-detail-back">返回选项</button>
+          <button type="button" class="primary" id="pm-detail-use">选用此玩法</button>
+        </div>
+      </div>`);
+    document.getElementById("pm-detail-back").onclick = () => openPlayModePicker();
+    document.getElementById("pm-detail-use").onclick = async () => {
+      closeModal();
+      await setPlayMode(mode);
+    };
+  }
+  function openPlayModePicker() {
+    const cur = getPlayMode();
+    const rows = PLAY_MODE_ORDER.map((id) => {
+      const d = playModeShortLabel(id);
       const on = id === cur;
-      return `<button type="button" class="play-mode-opt ${on ? "on" : ""}" data-play-mode="${id}">
-        <span class="pmo-name">${esc(d.name)}${on ? " · 当前" : ""}</span>
-        <span class="pmo-size">${esc(d.size)}</span>
-      </button>`;
+      return `<div class="play-mode-row">
+        <button type="button" class="play-mode-opt ${on ? "on" : ""}" data-play-pick="${id}">
+          <span class="pmo-name">${esc(d.name)}${on ? " · 当前" : ""}</span>
+          <span class="pmo-size">${esc(d.size)}</span>
+        </button>
+        <button type="button" class="ghost play-mode-detail-btn" data-play-detail="${id}">详情</button>
+      </div>`;
     }).join("");
+    openModal(`
+      <div class="play-picker-modal">
+        <h3>玩法</h3>
+        <p class="play-picker-note">点左侧切换 · 点「详情」看说明 · 不清空积分</p>
+        <div class="play-mode-options">${rows}</div>
+        <div class="row" style="justify-content:flex-end;margin-top:.85rem">
+          <button type="button" class="ghost" id="modal-cancel">关闭</button>
+        </div>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.querySelectorAll("[data-play-pick]").forEach((b) => {
+      b.onclick = async () => {
+        const mode = b.dataset.playPick;
+        if (mode === getPlayMode()) {
+          showVoteToast(`当前已是「${playModeShortLabel(mode).name}」`);
+          return;
+        }
+        closeModal();
+        await setPlayMode(mode);
+      };
+    });
+    document.querySelectorAll("[data-play-detail]").forEach((b) => {
+      b.onclick = () => showPlayModeDetail(b.dataset.playDetail);
+    });
   }
   function renderSettingsPlaySummary() {
     const host = document.getElementById("settings-play-summary");
@@ -5804,11 +5840,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     applyPlayModeUI();
     if (!playModeAllowsView(teacherView)) {
       setTeacherView("main");
-      showVoteToast(`已切换为 ${def.name}`);
-    } else {
-      showVoteToast(`已切换为 ${def.name}`);
     }
-    if (teacherView === "play") renderPlayPage();
+    showVoteToast(`已切换为 ${def.name}`);
     if (teacherView === "settings") renderSettings();
   }
   function guardPlayFeature(minMode, label) {
@@ -8750,7 +8783,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       ? (nextIdx > prevIdx ? "from-right" : "from-left")
       : "";
 
-    ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "play", "settings"].forEach((v) => {
+    ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "settings"].forEach((v) => {
       const id = v === "main" ? "teacher-main" : "teacher-" + v;
       const el = document.getElementById(id);
       if (!el) return;
@@ -8784,7 +8817,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (view === "games") renderGames();
     if (view === "redeem") renderRedeem();
     if (view === "logs") { logsPage = 1; renderLogs(); }
-    if (view === "play") renderPlayPage();
     if (view === "settings") renderSettings();
     renderEditBoxes();
   }
@@ -12355,7 +12387,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span class="meta-pill">名册 ${getDisciplesArray().length} 人</span>
         <span class="meta-pill">模式 · ${demoMode ? (demoSyncEnabled ? "本机离线 · 同步中" : "本机离线") : "Firebase"}</span>
         <span class="demo-sync-badge ${demoSyncEnabled ? "ok" : ""}" ${demoMode ? "" : "hidden"}>${demoMode ? (demoSyncEnabled ? "局域网同步中" : "未连同步服务") : ""}</span>
-        <button type="button" class="ghost" data-action="goto-play-mode" title="打开玩法页">改玩法</button>`;
+        <button type="button" class="ghost" data-action="goto-play-mode" title="切换玩法">改玩法</button>`;
       const dayIn = document.getElementById("day-input");
       if (dayIn) {
         dayIn.onchange = async (e) => {
@@ -13891,7 +13923,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       else if (teacherView === "games") renderGames();
       else if (teacherView === "redeem") renderRedeem();
       else if (teacherView === "logs") renderLogs();
-      else if (teacherView === "play") renderPlayPage();
       else if (teacherView === "settings") renderSettings();
     }     else if (mode === "student") renderStudent();
     else if (mode === "checkin") renderCheckin();
@@ -13950,8 +13981,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (act === "goto-logs") { showScreen("teacher"); setTeacherView("logs"); return; }
     if (act === "goto-play-mode") {
-      showScreen("teacher");
-      setTeacherView("play");
+      openPlayModePicker();
       return;
     }
     if (act === "goto-settings") {
@@ -14249,7 +14279,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       } else { demoMode = true; await bootDemo(); }
       applyVoteUrlGate();
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
-      try { bindPlayModeHost(); } catch (e) { /* ignore */ }
       ensureSfxToggle();
       ensureSwordCursorTrail();
       ensureFullscreenBinding();
