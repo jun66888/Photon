@@ -18,7 +18,7 @@ if [[ -d "$PHOTON_HOME" ]]; then
   fi
   echo ""
   echo "特征检测："
-  for key in openPlayModePicker ICE_MODE_DEFS 破冰互动; do
+  for key in openPlayModePicker ICE_MODE_DEFS 破冰互动 iceDuelStart iceBuzzStart iceDareStart iceSpyStart 十个小游戏; do
     if grep -q "$key" index.html 2>/dev/null; then echo "  ✅ $key"; else echo "  ❌ 缺少 $key"; fi
   done
   if [[ -f gy-build.json ]]; then

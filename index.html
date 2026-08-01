@@ -3617,13 +3617,13 @@ body.play-mode-basic #rail-side-mode-tabs {
 }
 .ice-mode-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .4rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .35rem;
   margin-bottom: .75rem;
 }
 .ice-mode-tabs button {
-  font-size: .82rem !important; padding: .45rem .5rem !important; min-height: 2.4rem;
-  text-align: center;
+  font-size: .78rem !important; padding: .4rem .35rem !important; min-height: 2.35rem;
+  text-align: center; line-height: 1.2;
 }
 .ice-mode-tabs button.on {
   border-color: var(--gold);
@@ -3639,7 +3639,7 @@ body.play-mode-basic #rail-side-mode-tabs {
   font-family: var(--font-brush); font-size: clamp(1.6rem, 3.5vw, 2.4rem);
   color: #ffe9a8; letter-spacing: .06em; line-height: 1.2;
 }
-.ice-stage-sub { font-size: .9rem; color: var(--ink-soft); max-width: 28rem; line-height: 1.45; }
+.ice-stage-sub { font-size: .9rem; color: var(--ink-soft); max-width: 32rem; line-height: 1.45; }
 .ice-stage-big {
   font-family: var(--font-brush);
   font-size: clamp(2.2rem, 6vw, 3.6rem);
@@ -3651,11 +3651,37 @@ body.play-mode-basic #rail-side-mode-tabs {
 }
 .ice-stage-row { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
 .ice-stage-row button { min-width: 5.5rem; }
+.ice-scoreboard {
+  display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap;
+  font-family: var(--font-num); font-size: 1.05rem; font-weight: 700;
+}
+.ice-scoreboard .red { color: #ffb0bd; }
+.ice-scoreboard .blue { color: #9ec9ff; }
+.ice-scoreboard .vs { color: var(--ink-soft); font-weight: 500; }
+.ice-player-grid {
+  display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center;
+  max-width: 34rem; margin: .2rem auto 0;
+}
+.ice-player-grid button {
+  min-width: 4.2rem; font-size: .8rem !important; padding: .35rem .45rem !important;
+}
+.ice-player-grid button.gone { opacity: .35; text-decoration: line-through; }
+.ice-player-grid button.spy-on { border-color: #ffb0bd; color: #ffb0bd; }
 .ice-guess-log {
   max-width: 26rem; margin: .2rem auto 0; font-size: .78rem; color: var(--ink-soft);
   line-height: 1.4; max-height: 5.5rem; overflow: auto;
 }
-@media (max-width: 720px) {
+.ice-private-mask {
+  position: fixed; inset: 0; z-index: 80;
+  background: rgba(8, 10, 16, .92);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+}
+.ice-private-mask .ice-stage-card { background: #141a28; border: 1px solid rgba(255,227,154,.25); border-radius: 1rem; padding: 1.25rem; min-width: min(90vw, 22rem); }
+@media (max-width: 900px) {
+  .ice-mode-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
   .ice-mode-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .game-pool-bar {
@@ -4272,6 +4298,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <button type="button" data-ice-mode="charades">你比我猜</button>
             <button type="button" data-ice-mode="sync">红蓝默契</button>
             <button type="button" data-ice-mode="stand">站队表决</button>
+            <button type="button" data-ice-mode="duel">双人对决</button>
+            <button type="button" data-ice-mode="buzz">红蓝抢答</button>
+            <button type="button" data-ice-mode="dare">真心话冒险</button>
+            <button type="button" data-ice-mode="spy">谁是卧底</button>
           </div>
           <div class="muted" style="margin-bottom:.35rem" id="ice-mode-hint">暖场互动 · 不扣积分</div>
         </div>
@@ -5118,7 +5148,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let iceTimer = null;
   let iceBusy = false;
   let iceState = {};
-  const ICE_MODE_ORDER = ["flower", "bomb", "intro", "charades", "sync", "stand"];
+  const ICE_MODE_ORDER = ["flower", "bomb", "intro", "charades", "sync", "stand", "duel", "buzz", "dare", "spy"];
   const ICE_MODE_DEFS = {
     flower: {
       name: "击鼓传花",
@@ -5146,26 +5176,81 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     },
     sync: {
       name: "红蓝默契",
-      hint: "同一道题 · 两派各选 A/B · 选一样即默契成功",
+      hint: "同一道题 · 两派各选 A/B · 选一样计分 · 比默契连击",
       startLabel: "出题",
       nextLabel: "下一题"
     },
     stand: {
       name: "站队表决",
-      hint: "抛出问题 · 学生站左/右/中间 · 老师点计数",
+      hint: "抛出问题 · 学生站左/右/中间 · 老师点计数看阵营",
       startLabel: "出题",
       nextLabel: "下一题"
+    },
+    duel: {
+      name: "双人对决",
+      hint: "随机抽两人上场 · 限时挑战 · 老师判定胜负计分",
+      startLabel: "抽对手",
+      nextLabel: "再抽一对"
+    },
+    buzz: {
+      name: "红蓝抢答",
+      hint: "出题后红蓝抢答 · 答对加分答错扣分 · 比谁更猛",
+      startLabel: "出题抢答",
+      nextLabel: "下一题"
+    },
+    dare: {
+      name: "真心话冒险",
+      hint: "抽人 + 真心话/大冒险 · 完成或换题 · 对抗气氛拉满",
+      startLabel: "抽挑战",
+      nextLabel: "换一位"
+    },
+    spy: {
+      name: "谁是卧底",
+      hint: "发词后轮流描述 · 投票淘汰 · 揪出卧底即平民胜",
+      startLabel: "发牌开局",
+      nextLabel: "新一局"
     }
   };
+  let iceLastPick = {};
+  function pickIce(arr, key) {
+    if (!arr || !arr.length) return null;
+    if (arr.length === 1) return arr[0];
+    let item = null;
+    for (let i = 0; i < 10; i++) {
+      item = arr[Math.floor(Math.random() * arr.length)];
+      const sig = typeof item === "string" ? item : JSON.stringify(item);
+      if (sig !== iceLastPick[key]) break;
+    }
+    iceLastPick[key] = typeof item === "string" ? item : JSON.stringify(item);
+    return item;
+  }
   const ICE_INTRO_TOPICS = [
     "用三个词介绍自己", "最近一次让你开心的小事", "你最想去的城市",
     "一项隐藏技能", "今天的课堂期待", "推荐一部作品并说一句理由",
-    "如果有超能力想要什么", "本周学到的一件事"
+    "如果有超能力想要什么", "本周学到的一件事", "描述你的「人设」一句话",
+    "童年最爱的零食", "最近熬夜是为了什么", "你的幸运色是什么",
+    "最想和谁组队做项目", "课堂上最怕听到的一句话", "分享一个冷知识",
+    "如果今天只能做一件事会做什么", "你的桌面壁纸是什么", "最近一次大笑因为什么",
+    "想对未来的自己说一句", "最拿手的一道菜或外卖", "第一次上台的感觉",
+    "你觉得自己像哪种动物", "最近在追什么剧/书/播客", "一个小确幸",
+    "更像社牛还是社恐，举例说明", "本学期想突破的一点", "推荐一首歌并哼一句",
+    "如果班级是剧组你想当什么", "最想删掉的一个坏习惯", "今天的心情用天气形容",
+    "你的口头禅是什么", "最近一次帮助别人是什么", "如果中奖了第一件事",
+    "最想学会的技能", "描述理想的周末一天", "课堂上最想坐的位置为什么",
+    "一个别人不知道的小癖好", "你最容易被什么逗笑", "用数字介绍自己（年龄除外）",
+    "如果给小组起战队名会叫什么"
   ];
   const ICE_CHARADES_WORDS = [
     "追光", "镜头", "剪辑", "配乐", "开场白", "掌声", "导演", "幕后",
     "电风扇", "泡面", "地铁", "自拍", "迟到", "闹钟", "外卖", "雨伞",
-    "武侠", "擂台", "红蓝对抗", "签到", "投票", "转盘"
+    "武侠", "擂台", "红蓝对抗", "签到", "投票", "转盘", "麦克风", "提词器",
+    "红绿灯", "电梯故障", "追剧熬夜", "抢红包", "拍照修图", "假装认真听课",
+    "打瞌睡", "举手发言", "分组撕名牌", "运动会短跑", "厨房翻车", "迷路",
+    "放风筝", "滑板", "演唱会应援", "拍立得", "咖啡续命", "图书馆占座",
+    "期末周", "答辩紧张", "团建烤肉", "雨中狂奔", "丢钥匙", "充电焦虑",
+    "网购退货", "开箱惊喜", "狼人杀发言", "剧本杀沉浸", "羽毛球杀球", "跳绳",
+    "哑剧表演", "口误现场", "同声传译", "慢动作回放", "片场喊卡", "灯光师",
+    "绿幕抠像", "分镜手稿", "花絮NG", "压轴登场", "冷场救场", "全场欢呼"
   ];
   const ICE_SYNC_QUESTIONS = [
     { q: "周末更想？", a: "宅家充电", b: "出门浪一浪" },
@@ -5173,14 +5258,213 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { q: "甜咸大战选？", a: "甜党", b: "咸党" },
     { q: "上课座位偏好？", a: "前排冲锋", b: "后排观察" },
     { q: "遇到难题先？", a: "自己想", b: "找人聊" },
-    { q: "更怕哪种？", a: "突然点名", b: "突然加戏" }
+    { q: "更怕哪种？", a: "突然点名", b: "突然加戏" },
+    { q: "午饭决策？", a: "秒选一家", b: "纠结半小时" },
+    { q: "看作品更先看？", a: "画面", b: "故事" },
+    { q: "队友掉链子时？", a: "先补位", b: "先复盘" },
+    { q: "手机电量 10%？", a: "省电模式苟着", b: "立刻找充电器" },
+    { q: "旅行打包？", a: "极简登机", b: "能带全带上" },
+    { q: "聊天回复速度？", a: "秒回型", b: "已读不回型" },
+    { q: "更吃哪套？", a: "热血鸡血", b: "冷静分析" },
+    { q: "组队选人？", a: "熟手老将", b: "新人潜力股" },
+    { q: "deadline 前夜？", a: "通宵冲刺", b: "早早就交" },
+    { q: "拍照出镜？", a: "主动抢镜", b: "能躲就躲" },
+    { q: "失败之后？", a: "马上再试", b: "先缓缓再说" },
+    { q: "更想要的夸奖？", a: "你真有想法", b: "你真靠谱" },
+    { q: "音乐偏好？", a: "鼓点狠的", b: "旋律软的" },
+    { q: "课堂发言？", a: "抢麦型", b: "被点才说" },
+    { q: "冲突处理？", a: "当场说开", b: "冷处理后再谈" },
+    { q: "更信哪种？", a: "直觉", b: "数据" },
+    { q: "夜宵立场？", a: "必须吃", b: "忍住不吃" },
+    { q: "游戏开黑？", a: "指挥全场", b: "默默输出" },
+    { q: "礼物收到？", a: "当面拆开", b: "回家再拆" },
+    { q: "天气选边？", a: "大晴天", b: "下雨天" },
+    { q: "更怕冷场还是？", a: "冷场", b: "太热闹失控" },
+    { q: "学习方式？", a: "听讲吸收", b: "动手试错" },
+    { q: "队名风格？", a: "霸气侧漏", b: "搞笑整活" },
+    { q: "胜利庆祝？", a: "大喊一嗓", b: "内心窃喜" }
   ];
   const ICE_STAND_QUESTIONS = [
     "更喜欢早起还是夜猫？左=早起 · 右=夜猫 · 中=看心情",
     "作品更看重画面还是声音？左=画面 · 右=声音 · 中=都要",
     "今天状态如何？左=满血 · 右=节能 · 中=重启中",
     "更想当导演还是主演？左=导演 · 右=主演 · 中=幕后英雄",
-    "团建首选？左=吃饭 · 右=游戏 · 中=散步吹风"
+    "团建首选？左=吃饭 · 右=游戏 · 中=散步吹风",
+    "冲突来了站哪边？左=先冷静 · 右=先表达 · 中=先听全",
+    "更信计划还是灵感？左=计划 · 右=灵感 · 中=边做边调",
+    "手机通知要不要开？左=全开 · 右=全关 · 中=只开关键的",
+    "考试/答辩前夜？左=狂复习 · 右=早睡养神 · 中=轻度浏览",
+    "更想要的队友？左=搞笑担当 · 右=靠谱担当 · 中=两者都要",
+    "咖啡还是茶？左=咖啡 · 右=茶 · 中=白开水党",
+    "镜头前更自然还是紧张？左=自然 · 右=紧张 · 中=看场合",
+    "喜欢快节奏还是慢镜头？左=快切 · 右=长镜头 · 中=看题材",
+    "失败后的第一反应？左=复盘 · 右=找安慰 · 中=先吃顿好的",
+    "更怕被忽略还是被关注？左=被忽略 · 右=被过度关注 · 中=都行",
+    "旅行跟团还是自由行？左=跟团 · 右=自由行 · 中=半跟半自由",
+    "更想赢面子还是赢里子？左=面子 · 右=里子 · 中=看赌注",
+    "课堂提问：左=主动举手 · 右=希望别点到 · 中=点到就答",
+    "更爱夏天还是冬天？左=夏 · 右=冬 · 中=春秋最好",
+    "组队规则偏好？左=自由组 · 右=随机组 · 中=老师分配",
+    "作品署名要不要抢第一？左=要抢 · 右=随意 · 中=按贡献排",
+    "更想被夸聪明还是努力？左=聪明 · 右=努力 · 中=有趣",
+    "遇到分歧投票还是辩论？左=投票 · 右=辩论到统一 · 中=先试再定",
+    "晚上刷手机上限？左=十一点睡 · 右=刷到困 · 中=看心情",
+    "更愿意当队长还是核心输出？左=队长 · 右=核心 · 中=灵活补位"
+  ];
+  const ICE_DUEL_CHALLENGES = [
+    "用 20 秒互相夸对方三个优点，更真诚者胜",
+    "同一话题即兴发言 30 秒，更有说服力者胜",
+    "轮流说反义词，卡壳者负",
+    "比谁能更快说出 8 个不重复的城市名",
+    "用成语接龙，接不上者负",
+    "同时比划同一个词，观众投票谁更像",
+    "用一句话推销桌上任意物品，更想买者胜",
+    "限时互问三个问题，回答更精彩者胜",
+    "数到 30，逢 3 的倍数拍手，先错者负",
+    "用表情演「尴尬」「得意」「震惊」，观众点赞更多者胜",
+    "各讲一个 20 秒冷笑话，笑场更大者胜",
+    "背对背猜对方今天穿的鞋子颜色，猜对者胜",
+    "用非中文发音模仿对方说一句话，更像者胜",
+    "同时做 10 个开合跳，姿态更稳者胜",
+    "限时说出对方名字的三个谐音梗，更损且友善者胜",
+    "石头剪刀布三局两胜，外加败者表演胜利姿势",
+    "各用三个词总结今天课程，更精准者胜",
+    "对视 15 秒先笑者负",
+    "轮流夸班级，不能重复，卡壳者负",
+    "比谁能用更少的字讲清「什么是光影盟」",
+    "各演示一个「超级英雄登场」动作，气场更强者胜",
+    "限时互相指出对方一个值得学习的点，更具体者胜",
+    "同时说绕口令「四是四，十是十」，更清楚者胜",
+    "用肢体语言表达同一情绪，观众秒懂者胜",
+    "比谁先想出 5 个以「光」开头的词",
+    "即兴编一句队歌副歌，更好记的胜",
+    "各做一个 10 秒广告口播，更有感染力者胜",
+    "闭眼转三圈后走直线，歪得少者胜",
+    "互相反驳对方一个无厘头观点，逻辑更稳者胜",
+    "用「然而」开头接对方的话，接得妙者胜"
+  ];
+  const ICE_BUZZ_QUESTIONS = [
+    { q: "一年有多少个星期？", a: "约 52 个" },
+    { q: "红绿灯里，哪种颜色波长通常最长？", a: "红" },
+    { q: "「杯弓蛇影」比喻什么？", a: "疑神疑鬼 / 自己吓自己" },
+    { q: "电影里常见的「NG」是什么意思？", a: "这条作废 / 重来" },
+    { q: "三原色光通常指哪三种？", a: "红绿蓝" },
+    { q: "「盲盒」最早火出圈主要靠什么心理？", a: "未知惊喜 / 概率刺激" },
+    { q: "一周里英语 Wednesday 指哪一天？", a: "星期三" },
+    { q: "「焦头烂额」最初和什么有关？", a: "救火 / 被火燎到" },
+    { q: "相机「光圈」数字越小通常怎样？", a: "进光更多 / 光圈更大" },
+    { q: "「破冰」一词来自哪种场景隐喻？", a: "破开冰层让船通行 / 打开局面" },
+    { q: "乒乓球比赛一局常见到几分？", a: "11 分" },
+    { q: "「沉鱼落雁」用来形容什么？", a: "貌美" },
+    { q: "RGB 里的 G 代表？", a: "Green / 绿" },
+    { q: "「时间就是金钱」更接近哪句英语？", a: "Time is money" },
+    { q: "站在地球上看，太阳从哪边升起？", a: "东边" },
+    { q: "「五音不全」的五音通常指？", a: "宫商角徵羽" },
+    { q: "短视频竖屏常见比例？", a: "9:16" },
+    { q: "「临阵磨枪」是褒还是偏贬？", a: "偏贬 / 临时抱佛脚" },
+    { q: "声音在空气中大约每秒传播多少米？（约）", a: "约 340 米" },
+    { q: "「班门弄斧」劝人别怎样？", a: "在高手面前炫耀" },
+    { q: "一周七天，英文 Friday 是周几？", a: "星期五" },
+    { q: "「画龙点睛」强调什么？", a: "关键一笔 / 关键点" },
+    { q: "摄影里 ISO 越高通常怎样？", a: "更灵敏 / 更易噪点" },
+    { q: "「一言既出，驷马难追」提醒什么？", a: "说话要负责" },
+    { q: "足球一场常规时间多少分钟？", a: "90 分钟" },
+    { q: "「青出于蓝」比喻什么？", a: "学生超过老师 / 后辈更强" },
+    { q: "「MVP」在比赛里常指？", a: "最有价值球员/选手" },
+    { q: "「对牛弹琴」形容什么？", a: "对不懂的人白费口舌" },
+    { q: "剪辑里「卡点」主要卡什么？", a: "音乐节拍 / 节奏" },
+    { q: "「三个臭皮匠」后半句？", a: "顶个诸葛亮" },
+    { q: "中国国旗主色是？", a: "红" },
+    { q: "「耳听为虚」下一句？", a: "眼见为实" },
+    { q: "「BGM」是什么缩写意思？", a: "背景音乐" },
+    { q: "「半途而废」劝人别怎样？", a: "做事别中途放弃" },
+    { q: "篮球一队场上同时几人？", a: "5 人" },
+    { q: "「雪中送炭」反义更接近？", a: "锦上添花（对比）" },
+    { q: "「PPT」常被吐槽成？", a: "稿件投影仪 / 演示文稿" },
+    { q: "「开诚布公」强调什么态度？", a: "坦诚公开" },
+    { q: "「抖包袱」来自哪类表演？", a: "相声" },
+    { q: "「反转」剧情让观众感到？", a: "意外 / 预期被打破" }
+  ];
+  const ICE_DARE_TRUTHS = [
+    "最近一次不好意思承认的小骄傲是什么？",
+    "课堂上最想坐的位置，为什么？",
+    "有没有偷偷练习过却还不敢展示的技能？",
+    "你觉得自己在小组里是什么角色？",
+    "最怕被当众问到什么问题？",
+    "最近一次被谁的一句话鼓舞到？",
+    "如果重来一次上周，你想改哪件事？",
+    "你对「出风头」是喜欢还是回避？",
+    "分享一个别人可能不知道的冷癖好",
+    "你更想被夸有趣还是靠谱？",
+    "最近一次认真道歉是为了什么？",
+    "如果组队只能带一个人，你会带谁（并说明）？",
+    "你觉得自己最大的「反差萌」是什么？",
+    "有没有一件事你坚持了很久？",
+    "今天进门时心情打几分，为什么？",
+    "你最容易在什么场合社死？",
+    "分享一个童年糗事（可轻度）",
+    "你理想中的队友画像是怎样的？",
+    "最近一次主动帮助别人是什么场景？",
+    "如果给自己的课堂表现打标签，会是哪三个词？",
+    "你隐藏的野心是什么（可以半开玩笑）？",
+    "更害怕失败，还是害怕没试过？",
+    "有没有一句你常对自己说的话？",
+    "你希望大家怎么记住你？",
+    "说一件你其实很在意却装作不在意的事"
+  ];
+  const ICE_DARE_DARES = [
+    "用播音腔朗读黑板上/屏幕上任意一句话",
+    "对邻座做 10 秒夸张的「颁奖感言」",
+    "带领全班做一套 5 秒热身操",
+    "用表情包脸演「震惊」「无语」「得意」三连",
+    "即兴编一句班级口号并喊出来",
+    "闭眼转两圈后指出教室前方",
+    "用三种动物叫声表达「我来了」",
+    "和随机一位同学击掌三次并齐喊「冲」",
+    "用慢动作走到门口再走回来",
+    "即兴给今天课程起一个电影片名",
+    "用夸张广告腔推销自己的文具",
+    "当 20 秒「气氛组」，带大家鼓掌加速",
+    "用一句歌词形容现在的你（可改词）",
+    "做个超级英雄登场 pose，定格 3 秒",
+    "用绕口令自我介绍一遍",
+    "请一位同学当你的「专访主持」互问一轮",
+    "用肢体语言表演「赶作业」",
+    "带全班同步做一个同步拍手节奏",
+    "用天气预报口吻播报「今日课堂天气」",
+    "发明一个握手暗号并教给邻座",
+    "用「然而」开头连续说三句关于自己的话",
+    "即兴颁一个「本场勇气奖」给在场某人",
+    "用夸张惊讶脸听别人说完一句话",
+    "带领大家齐声倒计时 5 到 1",
+    "用舞蹈感走秀 5 步（可很短）"
+  ];
+  const ICE_SPY_PAIRS = [
+    { civ: "牛奶", spy: "豆浆" },
+    { civ: "地铁", spy: "公交" },
+    { civ: "咖啡", spy: "奶茶" },
+    { civ: "篮球", spy: "足球" },
+    { civ: "剪刀", spy: "美工刀" },
+    { civ: "微信", spy: "短信" },
+    { civ: "雨伞", spy: "雨衣" },
+    { civ: "口红", spy: "唇膏" },
+    { civ: "高铁", spy: "动车" },
+    { civ: "面包", spy: "馒头" },
+    { civ: "空调", spy: "风扇" },
+    { civ: "电影", spy: "电视剧" },
+    { civ: "铅笔", spy: "中性笔" },
+    { civ: "书包", spy: "双肩包" },
+    { civ: "西瓜", spy: "哈密瓜" },
+    { civ: "吉他", spy: "尤克里里" },
+    { civ: "台灯", spy: "吊灯" },
+    { civ: "拖鞋", spy: "凉鞋" },
+    { civ: "火锅", spy: "烧烤" },
+    { civ: "自拍", spy: "合影" },
+    { civ: "闹钟", spy: "手机提醒" },
+    { civ: "手套", spy: "连指手套" },
+    { civ: "可乐", spy: "雪碧" },
+    { civ: "耳机", spy: "音箱" },
+    { civ: "黑板", spy: "白板" }
   ];
   let redeemTab = "shop";
   /** 作品投票榜快照：用于追赶排序动效 */
@@ -9345,10 +9629,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const ice = gamesCat === "ice";
     if (seal) seal.textContent = ice ? "冰" : "转";
     if (kicker) kicker.textContent = ice ? "COURSE · ICEBREAKER" : "COURSE · DRAW";
-    if (title) title.textContent = ice ? "破冰互动 · 六个小游戏" : "课堂抽人 · 答题加分";
+    if (title) title.textContent = ice ? "破冰互动 · 十个小游戏" : "课堂抽人 · 答题加分";
     if (sub) {
       sub.textContent = ice
-        ? "暖场破冰 · 击鼓传花 / 数字炸弹 / 闪电介绍 / 你比我猜 / 红蓝默契 / 站队表决"
+        ? "暖场对抗 · 传花/炸弹/介绍/比划/默契/站队/对决/抢答/真心话/卧底"
         : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分";
     }
     if (actions) {
@@ -9458,7 +9742,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else if (iceMode === "intro") renderIceIntroStage();
     else if (iceMode === "charades") renderIceCharadesStage();
     else if (iceMode === "sync") renderIceSyncStage();
-    else renderIceStandStage();
+    else if (iceMode === "stand") renderIceStandStage();
+    else if (iceMode === "duel") renderIceDuelStage();
+    else if (iceMode === "buzz") renderIceBuzzStage();
+    else if (iceMode === "dare") renderIceDareStage();
+    else if (iceMode === "spy") renderIceSpyStage();
+    else renderIceFlowerStage();
   }
 
   function renderIceFlowerStage() {
@@ -9542,12 +9831,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderIceSyncStage() {
     const stage = document.getElementById("game-stage");
     const st = iceState;
+    const score = st.score || { hit: 0, miss: 0, streak: 0 };
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
           <div class="ice-stage-kicker">红蓝默契</div>
           <div class="ice-stage-title">测两派默契</div>
-          <div class="ice-stage-sub">出题后，红蓝各选 A 或 B，选一样即成功</div>
+          <div class="ice-stage-sub">出题后红蓝各选 A/B，选一样加分并累计连击</div>
+          <div class="ice-scoreboard"><span class="red">默契 ${score.hit}</span><span class="vs">·</span><span class="blue">分歧 ${score.miss}</span><span class="vs">连击 ${score.streak}</span></div>
         </div>`;
       return;
     }
@@ -9556,6 +9847,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">红蓝默契</div>
+        <div class="ice-scoreboard"><span class="red">默契 ${score.hit}</span><span class="vs">·</span><span class="blue">分歧 ${score.miss}</span><span class="vs">连击 ${score.streak}</span></div>
         <div class="ice-stage-title" style="font-size:clamp(1.3rem,2.8vw,1.9rem)">${esc(st.q)}</div>
         <div class="ice-stage-sub">A · ${esc(st.a)}　　B · ${esc(st.b)}</div>
         <div class="ice-stage-row">
@@ -9566,12 +9858,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
         <div class="ice-stage-sub">
           红方：${st.red ? esc(st.red) : "未选"} · 蓝方：${st.blue ? esc(st.blue) : "未选"}
-          ${revealed ? `<br><strong style="color:${match ? "#9dffc4" : "#ffb0bd"}">${match ? "默契成功！" : "再磨合磨合"}</strong>` : ""}
+          ${revealed ? `<br><strong style="color:${match ? "#9dffc4" : "#ffb0bd"}">${match ? "默契成功！" : "想法撞车失败"}</strong>` : ""}
         </div>
       </div>`;
     stage.querySelectorAll("[data-ice-sync-camp]").forEach((b) => {
       b.onclick = () => {
+        if (iceState.scored) return;
         iceState[b.dataset.iceSyncCamp] = b.dataset.iceSyncAns;
+        if (iceState.red && iceState.blue && !iceState.scored) {
+          iceState.scored = true;
+          iceState.score = iceState.score || { hit: 0, miss: 0, streak: 0 };
+          if (iceState.red === iceState.blue) {
+            iceState.score.hit += 1;
+            iceState.score.streak += 1;
+            showVoteToast(`默契成功 · 连击 ${iceState.score.streak}`);
+          } else {
+            iceState.score.miss += 1;
+            iceState.score.streak = 0;
+            showVoteToast("分歧出现 · 连击清零");
+          }
+        }
         renderIceSyncStage();
       };
     });
@@ -9589,16 +9895,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>`;
       return;
     }
+    const L = st.left || 0, M = st.mid || 0, R = st.right || 0;
+    const lead = L === R && L >= M ? "左右胶着" : (L >= M && L >= R ? "左阵领先" : (R >= M && R >= L ? "右阵领先" : "中间派占优"));
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">站队表决</div>
+        <div class="ice-stage-kicker">站队表决 · ${esc(lead)}</div>
         <div class="ice-stage-title" style="font-size:clamp(1.15rem,2.4vw,1.7rem)">${esc(st.q)}</div>
         <div class="ice-stage-row">
-          <button type="button" data-ice-stand="left">左 +1（${st.left || 0}）</button>
-          <button type="button" data-ice-stand="mid">中 +1（${st.mid || 0}）</button>
-          <button type="button" data-ice-stand="right">右 +1（${st.right || 0}）</button>
+          <button type="button" data-ice-stand="left">左 +1（${L}）</button>
+          <button type="button" data-ice-stand="mid">中 +1（${M}）</button>
+          <button type="button" data-ice-stand="right">右 +1（${R}）</button>
+          <button type="button" data-ice-stand-reset="1">计数清零</button>
         </div>
-        <div class="ice-stage-sub">左 ${st.left || 0} · 中 ${st.mid || 0} · 右 ${st.right || 0}</div>
+        <div class="ice-stage-sub">左 ${L} · 中 ${M} · 右 ${R}</div>
       </div>`;
     stage.querySelectorAll("[data-ice-stand]").forEach((b) => {
       b.onclick = () => {
@@ -9607,6 +9916,202 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         renderIceStandStage();
       };
     });
+    const rz = stage.querySelector("[data-ice-stand-reset]");
+    if (rz) rz.onclick = () => { iceState.left = iceState.mid = iceState.right = 0; renderIceStandStage(); };
+  }
+
+  function renderIceDuelStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    const score = st.score || { a: 0, b: 0 };
+    if (!st.left || !st.right) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">双人对决</div>
+          <div class="ice-stage-title">抽两人对战</div>
+          <div class="ice-stage-sub">随机抽取两名同学上场挑战，老师判定胜负计分</div>
+          <div class="ice-scoreboard"><span class="red">甲胜 ${score.a}</span><span class="vs">VS</span><span class="blue">乙胜 ${score.b}</span></div>
+        </div>`;
+      return;
+    }
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">双人对决 · 限时挑战</div>
+        <div class="ice-scoreboard"><span class="red">甲胜 ${score.a}</span><span class="vs">VS</span><span class="blue">乙胜 ${score.b}</span></div>
+        <div class="ice-stage-big" style="font-size:clamp(1.6rem,4vw,2.6rem)">${esc(st.left)} <span class="vs" style="font-size:.7em">VS</span> ${esc(st.right)}</div>
+        <div class="ice-stage-title" style="font-size:clamp(1.1rem,2.4vw,1.55rem)">${esc(st.challenge || "")}</div>
+        <div class="ice-stage-timer" id="ice-duel-timer">${st.sec != null ? st.sec : "30"}</div>
+        <div class="ice-stage-row">
+          <button type="button" class="primary" data-ice-duel-win="left">甲胜 · ${esc(st.left)}</button>
+          <button type="button" data-ice-duel-win="draw">平局再战</button>
+          <button type="button" class="primary" data-ice-duel-win="right">乙胜 · ${esc(st.right)}</button>
+        </div>
+        <div class="ice-stage-sub">到点未分胜负可点平局，或直接判胜</div>
+      </div>`;
+    stage.querySelectorAll("[data-ice-duel-win]").forEach((b) => {
+      b.onclick = () => iceDuelJudge(b.dataset.iceDuelWin);
+    });
+  }
+
+  function renderIceBuzzStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    const score = st.score || { red: 0, blue: 0 };
+    if (!st.q) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">红蓝抢答</div>
+          <div class="ice-stage-title">抢答擂台</div>
+          <div class="ice-stage-sub">出题后红蓝抢答：答对 +1，抢错 −1，比分实时更新</div>
+          <div class="ice-scoreboard"><span class="red">红 ${score.red}</span><span class="vs">VS</span><span class="blue">蓝 ${score.blue}</span></div>
+        </div>`;
+      return;
+    }
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">红蓝抢答 · 第 ${st.round || 1} 题</div>
+        <div class="ice-scoreboard"><span class="red">红 ${score.red}</span><span class="vs">VS</span><span class="blue">蓝 ${score.blue}</span></div>
+        <div class="ice-stage-title" style="font-size:clamp(1.25rem,2.8vw,1.85rem)">${esc(st.q)}</div>
+        <div class="ice-stage-sub">${st.showAns || st.locked ? `参考：${esc(st.a || "—")}` : "先抢后答 · 老师判定对错"}</div>
+        <div class="ice-stage-row">
+          <button type="button" class="primary" data-ice-buzz="red-ok" ${st.locked ? "disabled" : ""}>红方答对</button>
+          <button type="button" data-ice-buzz="red-bad" ${st.locked ? "disabled" : ""}>红方答错</button>
+          <button type="button" class="primary" data-ice-buzz="blue-ok" ${st.locked ? "disabled" : ""}>蓝方答对</button>
+          <button type="button" data-ice-buzz="blue-bad" ${st.locked ? "disabled" : ""}>蓝方答错</button>
+          <button type="button" data-ice-buzz="reveal">看答案</button>
+        </div>
+      </div>`;
+    stage.querySelectorAll("[data-ice-buzz]").forEach((b) => {
+      b.onclick = () => iceBuzzJudge(b.dataset.iceBuzz);
+    });
+  }
+
+  function renderIceDareStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    const done = st.done || 0;
+    if (!st.name) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">真心话冒险</div>
+          <div class="ice-stage-title">抽人开整</div>
+          <div class="ice-stage-sub">随机抽人，再抽真心话或大冒险；完成计一次勇气值</div>
+          <div class="ice-stage-sub">本场已完成 ${done} 次挑战</div>
+        </div>`;
+      return;
+    }
+    const kindLabel = st.kind === "truth" ? "真心话" : "大冒险";
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">${esc(kindLabel)} · 勇气值 ${done}</div>
+        <div class="ice-stage-big">${esc(st.name)}</div>
+        <div class="ice-stage-title" style="font-size:clamp(1.15rem,2.5vw,1.7rem)">${esc(st.prompt || "")}</div>
+        <div class="ice-stage-row">
+          <button type="button" class="primary" data-ice-dare="done">完成了</button>
+          <button type="button" data-ice-dare="swap">换一条</button>
+          <button type="button" data-ice-dare="flip">${st.kind === "truth" ? "改大冒险" : "改真心话"}</button>
+        </div>
+        <div class="ice-stage-sub">可换题或改类型 · 完成后再抽下一位</div>
+      </div>`;
+    stage.querySelectorAll("[data-ice-dare]").forEach((b) => {
+      b.onclick = () => iceDareAct(b.dataset.iceDare);
+    });
+  }
+
+  function renderIceSpyStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    if (!st.players || !st.players.length) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">谁是卧底</div>
+          <div class="ice-stage-title">发牌开局</div>
+          <div class="ice-stage-sub">至少 3 人 · 点名偷看自己的词 · 轮流描述后投票淘汰 · 揪出卧底即平民胜</div>
+        </div>`;
+      return;
+    }
+    if (st.phase === "end") {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">谁是卧底 · 终局</div>
+          <div class="ice-stage-title">${esc(st.result || "结束")}</div>
+          <div class="ice-stage-sub">平民词：${esc(st.civ)} · 卧底词：${esc(st.spyWord)} · 卧底是 ${esc(st.spyName || "?")}</div>
+          <div class="ice-stage-row"><button type="button" class="primary" data-action="ice-next">再来一局</button></div>
+        </div>`;
+      return;
+    }
+    const alive = st.players.filter((p) => !p.out);
+    const chips = st.players.map((p, i) =>
+      `<button type="button" data-ice-spy-peek="${i}" class="${p.out ? "gone" : ""}${st.showRoles && p.role === "spy" ? " spy-on" : ""}">${esc(p.name)}${p.out ? "·淘汰" : ""}${st.showRoles ? (p.role === "spy" ? "·卧底" : "·平民") : ""}</button>`
+    ).join("");
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">谁是卧底 · ${st.phase === "vote" ? "投票淘汰" : "偷看词牌"} · 存活 ${alive.length}</div>
+        <div class="ice-stage-sub">老师点名字让本人偷看词语（投屏时注意遮挡）· 描述后进入投票</div>
+        <div class="ice-player-grid">${chips}</div>
+        <div class="ice-stage-row">
+          <button type="button" class="primary" data-ice-spy-phase="vote">${st.phase === "vote" ? "继续投票" : "开始投票"}</button>
+          <button type="button" data-ice-spy-phase="deal">回到发牌</button>
+          <button type="button" data-ice-spy-roles="1">${st.showRoles ? "隐藏身份" : "老师看身份"}</button>
+        </div>
+        ${st.phase === "vote" ? `<div class="ice-stage-sub">点选要淘汰的人</div><div class="ice-player-grid" id="ice-spy-vote">${st.players.map((p, i) => p.out ? "" :
+          `<button type="button" data-ice-spy-kill="${i}">淘汰 ${esc(p.name)}</button>`
+        ).join("")}</div>` : ""}
+      </div>`;
+    stage.querySelectorAll("[data-ice-spy-peek]").forEach((b) => {
+      b.onclick = () => iceSpyPeek(Number(b.dataset.iceSpyPeek));
+    });
+    stage.querySelectorAll("[data-ice-spy-phase]").forEach((b) => {
+      b.onclick = () => {
+        iceState.phase = b.dataset.iceSpyPhase;
+        renderIceSpyStage();
+      };
+    });
+    const rolesBtn = stage.querySelector("[data-ice-spy-roles]");
+    if (rolesBtn) rolesBtn.onclick = () => { iceState.showRoles = !iceState.showRoles; renderIceSpyStage(); };
+    stage.querySelectorAll("[data-ice-spy-kill]").forEach((b) => {
+      b.onclick = () => iceSpyKill(Number(b.dataset.iceSpyKill));
+    });
+  }
+
+  function iceSpyPeek(idx) {
+    const p = (iceState.players || [])[idx];
+    if (!p || p.out) return;
+    const word = p.role === "spy" ? iceState.spyWord : iceState.civ;
+    const mask = document.createElement("div");
+    mask.className = "ice-private-mask";
+    mask.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">${esc(p.name)} 的词牌 · 仅本人看</div>
+        <div class="ice-stage-big">${esc(word)}</div>
+        <div class="ice-stage-sub">看完点任意处关闭 · 勿让旁人看到</div>
+      </div>`;
+    mask.onclick = () => mask.remove();
+    document.body.appendChild(mask);
+  }
+
+  function iceSpyKill(idx) {
+    const p = (iceState.players || [])[idx];
+    if (!p || p.out) return;
+    p.out = true;
+    const alive = iceState.players.filter((x) => !x.out);
+    const spiesLeft = alive.filter((x) => x.role === "spy").length;
+    if (p.role === "spy" && spiesLeft === 0) {
+      iceState.phase = "end";
+      iceState.result = "平民胜利 · 卧底全部出局";
+      showVoteToast("卧底被揪出！");
+    } else if (spiesLeft > 0 && spiesLeft >= alive.length - spiesLeft) {
+      iceState.phase = "end";
+      iceState.result = "卧底胜利 · 人数占优";
+      showVoteToast("卧底赢了");
+    } else if (p.role === "spy") {
+      showVoteToast(`${p.name} 出局（卧底）· 仍有卧底潜伏`);
+      iceState.phase = "vote";
+    } else {
+      showVoteToast(`${p.name} 出局（平民）· 继续`);
+      iceState.phase = "vote";
+    }
+    renderIceSpyStage();
   }
 
   async function iceStart() {
@@ -9617,6 +10122,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "charades") return iceCharadesStart();
     if (iceMode === "sync") return iceSyncStart();
     if (iceMode === "stand") return iceStandStart();
+    if (iceMode === "duel") return iceDuelStart();
+    if (iceMode === "buzz") return iceBuzzStart();
+    if (iceMode === "dare") return iceDareStart();
+    if (iceMode === "spy") return iceSpyStart();
   }
   function iceNext() {
     if (iceMode === "flower") {
@@ -9630,6 +10139,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "charades") return iceCharadesStart();
     if (iceMode === "sync") return iceSyncStart();
     if (iceMode === "stand") return iceStandStart();
+    if (iceMode === "duel") return iceDuelStart();
+    if (iceMode === "buzz") return iceBuzzStart();
+    if (iceMode === "dare") return iceDareStart();
+    if (iceMode === "spy") return iceSpyStart();
   }
   function iceReset() {
     clearIceTimer();
@@ -9710,7 +10223,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!pool.length) { showVoteToast("名册为空，请先添加弟子或签到"); return; }
     clearIceTimer();
     const person = pool[Math.floor(Math.random() * pool.length)];
-    const topic = ICE_INTRO_TOPICS[Math.floor(Math.random() * ICE_INTRO_TOPICS.length)];
+    const topic = pickIce(ICE_INTRO_TOPICS, "intro");
     iceState = { name: person.name, topic, sec: 15 };
     renderIceIntroStage();
     iceTimer = setInterval(() => {
@@ -9725,21 +10238,154 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function iceCharadesStart() {
-    const word = ICE_CHARADES_WORDS[Math.floor(Math.random() * ICE_CHARADES_WORDS.length)];
+    const word = pickIce(ICE_CHARADES_WORDS, "charades");
     iceState = { word };
     renderIceCharadesStage();
   }
 
   function iceSyncStart() {
-    const item = ICE_SYNC_QUESTIONS[Math.floor(Math.random() * ICE_SYNC_QUESTIONS.length)];
-    iceState = { q: item.q, a: item.a, b: item.b, red: "", blue: "" };
+    const prevScore = iceState.score || { hit: 0, miss: 0, streak: 0 };
+    const item = pickIce(ICE_SYNC_QUESTIONS, "sync");
+    iceState = { q: item.q, a: item.a, b: item.b, red: "", blue: "", scored: false, score: prevScore };
     renderIceSyncStage();
   }
 
   function iceStandStart() {
-    const q = ICE_STAND_QUESTIONS[Math.floor(Math.random() * ICE_STAND_QUESTIONS.length)];
+    const q = pickIce(ICE_STAND_QUESTIONS, "stand");
     iceState = { q, left: 0, mid: 0, right: 0 };
     renderIceStandStage();
+  }
+
+  function iceDuelStart() {
+    const pool = getIcePool();
+    if (pool.length < 2) { showVoteToast("至少需要 2 人才能对决"); return; }
+    clearIceTimer();
+    const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+    const left = shuffled[0].name;
+    const right = shuffled[1].name;
+    const challenge = pickIce(ICE_DUEL_CHALLENGES, "duel");
+    const score = iceState.score || { a: 0, b: 0 };
+    iceState = { left, right, challenge, sec: 30, score, judged: false };
+    renderIceDuelStage();
+    iceTimer = setInterval(() => {
+      iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
+      const el = document.getElementById("ice-duel-timer");
+      if (el) el.textContent = String(iceState.sec);
+      if (iceState.sec <= 0) {
+        clearIceTimer();
+        showVoteToast("时间到 · 请判定胜负");
+      }
+    }, 1000);
+  }
+  function iceDuelJudge(side) {
+    if (!iceState.left || iceState.judged) return;
+    iceState.score = iceState.score || { a: 0, b: 0 };
+    clearIceTimer();
+    if (side === "left") {
+      iceState.score.a += 1;
+      iceState.judged = true;
+      showVoteToast(`${iceState.left} 胜`);
+    } else if (side === "right") {
+      iceState.score.b += 1;
+      iceState.judged = true;
+      showVoteToast(`${iceState.right} 胜`);
+    } else {
+      showVoteToast("平局 · 换挑战再战");
+      iceState.challenge = pickIce(ICE_DUEL_CHALLENGES, "duel");
+      iceState.sec = 30;
+      iceState.judged = false;
+      renderIceDuelStage();
+      clearIceTimer();
+      iceTimer = setInterval(() => {
+        iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
+        const el = document.getElementById("ice-duel-timer");
+        if (el) el.textContent = String(iceState.sec);
+        if (iceState.sec <= 0) { clearIceTimer(); showVoteToast("时间到 · 请判定胜负"); }
+      }, 1000);
+      return;
+    }
+    renderIceDuelStage();
+  }
+
+  function iceBuzzStart() {
+    const prev = iceState.score || { red: 0, blue: 0 };
+    const round = (iceState.round || 0) + 1;
+    const item = pickIce(ICE_BUZZ_QUESTIONS, "buzz");
+    iceState = { q: item.q, a: item.a, score: prev, round, locked: false, showAns: false };
+    renderIceBuzzStage();
+  }
+  function iceBuzzJudge(act) {
+    if (act === "reveal") {
+      iceState.showAns = true;
+      showVoteToast(`参考答案：${iceState.a || "—"}`);
+      renderIceBuzzStage();
+      return;
+    }
+    if (iceState.locked) return;
+    iceState.score = iceState.score || { red: 0, blue: 0 };
+    if (act === "red-ok") { iceState.score.red += 1; showVoteToast("红方 +1"); }
+    else if (act === "red-bad") { iceState.score.red -= 1; showVoteToast("红方 −1"); }
+    else if (act === "blue-ok") { iceState.score.blue += 1; showVoteToast("蓝方 +1"); }
+    else if (act === "blue-bad") { iceState.score.blue -= 1; showVoteToast("蓝方 −1"); }
+    iceState.locked = true;
+    iceState.showAns = true;
+    renderIceBuzzStage();
+  }
+
+  function iceDareStart() {
+    const pool = getIcePool();
+    if (!pool.length) { showVoteToast("名册为空，请先添加弟子或签到"); return; }
+    const person = pool[Math.floor(Math.random() * pool.length)];
+    const kind = Math.random() < 0.5 ? "truth" : "dare";
+    const prompt = kind === "truth" ? pickIce(ICE_DARE_TRUTHS, "truth") : pickIce(ICE_DARE_DARES, "dare");
+    const done = iceState.done || 0;
+    iceState = { name: person.name, kind, prompt, done };
+    renderIceDareStage();
+  }
+  function iceDareAct(act) {
+    if (!iceState.name) return;
+    if (act === "done") {
+      iceState.done = (iceState.done || 0) + 1;
+      showVoteToast(`完成 · 勇气值 ${iceState.done}`);
+      return iceDareStart();
+    }
+    if (act === "swap") {
+      iceState.prompt = iceState.kind === "truth"
+        ? pickIce(ICE_DARE_TRUTHS, "truth")
+        : pickIce(ICE_DARE_DARES, "dare");
+      renderIceDareStage();
+      return;
+    }
+    if (act === "flip") {
+      iceState.kind = iceState.kind === "truth" ? "dare" : "truth";
+      iceState.prompt = iceState.kind === "truth"
+        ? pickIce(ICE_DARE_TRUTHS, "truth")
+        : pickIce(ICE_DARE_DARES, "dare");
+      renderIceDareStage();
+    }
+  }
+
+  function iceSpyStart() {
+    const pool = getIcePool();
+    if (pool.length < 3) { showVoteToast("谁是卧底至少需要 3 人"); return; }
+    const pair = pickIce(ICE_SPY_PAIRS, "spy");
+    const names = pool.slice().sort(() => Math.random() - 0.5).map((d) => d.name);
+    // 人数多时增加卧底：>=7 人 2 卧底，否则 1
+    const spyCount = names.length >= 7 ? 2 : 1;
+    const players = names.map((name, i) => ({ name, role: i < spyCount ? "spy" : "civ", out: false }));
+    // shuffle roles assignment already by sorting names then assigning first N — reshuffle players
+    players.sort(() => Math.random() - 0.5);
+    const spyName = players.filter((p) => p.role === "spy").map((p) => p.name).join("、");
+    iceState = {
+      players,
+      civ: pair.civ,
+      spyWord: pair.spy,
+      spyName,
+      phase: "deal",
+      showRoles: false
+    };
+    renderIceSpyStage();
+    showVoteToast(`已发牌 · ${spyCount} 名卧底潜伏中`);
   }
 
   function wheelColors(i, n) {

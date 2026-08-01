@@ -109,6 +109,10 @@ MISS=0
 grep -q "openPlayModePicker" "$INDEX" || { echo "❌ 缺少玩法弹窗"; MISS=1; }
 grep -q "ICE_MODE_DEFS" "$INDEX" || { echo "❌ 缺少破冰游戏"; MISS=1; }
 grep -q "破冰互动" "$INDEX" || { echo "❌ 缺少破冰入口文案"; MISS=1; }
+grep -q "iceDuelStart" "$INDEX" || { echo "❌ 缺少双人对决"; MISS=1; }
+grep -q "iceBuzzStart" "$INDEX" || { echo "❌ 缺少红蓝抢答"; MISS=1; }
+grep -q "iceDareStart" "$INDEX" || { echo "❌ 缺少真心话冒险"; MISS=1; }
+grep -q "iceSpyStart" "$INDEX" || { echo "❌ 缺少谁是卧底"; MISS=1; }
 if [[ "$MISS" -ne 0 ]]; then
   echo "校验失败：文件仍不对。请把本段输出发给开发者。"
   exit 1
