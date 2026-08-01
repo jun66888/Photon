@@ -3593,6 +3593,17 @@ body.play-mode-basic #rail-side-mode-tabs {
 .pager-bar button[disabled] { opacity: .35; }
 
 /* -------- 课堂抽人游戏：大转轮 / 水果机 / 蛇盘 -------- */
+.game-cat-tabs {
+  display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .65rem;
+}
+.game-cat-tabs button {
+  font-size: .9rem !important; padding: .45rem .9rem !important; min-height: 2.3rem;
+}
+.game-cat-tabs button.on {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
 .game-mode-tabs {
   display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem;
 }
@@ -3603,6 +3614,49 @@ body.play-mode-basic #rail-side-mode-tabs {
   border-color: var(--gold);
   background: linear-gradient(180deg, #3a4668, #1c2438);
   color: #ffe39a;
+}
+.ice-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .4rem;
+  margin-bottom: .75rem;
+}
+.ice-mode-tabs button {
+  font-size: .82rem !important; padding: .45rem .5rem !important; min-height: 2.4rem;
+  text-align: center;
+}
+.ice-mode-tabs button.on {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
+.ice-stage-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .55rem; min-height: 18rem; text-align: center; padding: .5rem;
+}
+.ice-stage-kicker { font-size: .75rem; color: var(--ink-soft); letter-spacing: .12em; }
+.ice-stage-title {
+  font-family: var(--font-brush); font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  color: #ffe9a8; letter-spacing: .06em; line-height: 1.2;
+}
+.ice-stage-sub { font-size: .9rem; color: var(--ink-soft); max-width: 28rem; line-height: 1.45; }
+.ice-stage-big {
+  font-family: var(--font-brush);
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  color: #fff5e8; letter-spacing: .08em;
+}
+.ice-stage-timer {
+  font-family: var(--font-num); font-size: clamp(2.4rem, 7vw, 4rem);
+  color: var(--gold); font-weight: 800;
+}
+.ice-stage-row { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
+.ice-stage-row button { min-width: 5.5rem; }
+.ice-guess-log {
+  max-width: 26rem; margin: .2rem auto 0; font-size: .78rem; color: var(--ink-soft);
+  line-height: 1.4; max-height: 5.5rem; overflow: auto;
+}
+@media (max-width: 720px) {
+  .ice-mode-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .game-pool-bar {
   display: flex; flex-wrap: wrap; gap: .3rem; align-items: center;
@@ -4184,30 +4238,52 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     <div id="teacher-games" class="subview course-page hidden">
       <div class="course-hero">
-        <div class="ch-seal">转</div>
+        <div class="ch-seal" id="games-hero-seal">转</div>
         <div class="ch-text">
-          <div class="ch-kicker">COURSE · DRAW</div>
-          <div class="ch-title">课堂抽人 · 答题加分</div>
-          <div class="ch-sub">已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分</div>
+          <div class="ch-kicker" id="games-hero-kicker">COURSE · DRAW</div>
+          <div class="ch-title" id="games-hero-title">课堂抽人 · 答题加分</div>
+          <div class="ch-sub" id="games-hero-sub">已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分</div>
         </div>
-        <div class="ch-actions">
+        <div class="ch-actions" id="games-hero-actions">
           <button type="button" data-action="goto-checkin">去签到</button>
           <button type="button" data-action="edit-draw-actions" title="配置抽中后的积分特权小按钮">特权设置</button>
           <button type="button" class="primary" data-action="game-spin" id="game-spin-top">开始抽取</button>
         </div>
       </div>
       <div class="course-panel">
-        <div class="game-mode-tabs" id="game-mode-tabs" role="tablist">
-          <button type="button" class="on" data-game-mode="wheel" data-play-min="basic">大转轮</button>
-          <button type="button" data-game-mode="fruit" data-play-min="standard">水果机</button>
-          <button type="button" data-game-mode="snake" data-play-min="standard">贪吃蛇盘</button>
+        <div class="game-cat-tabs" id="game-cat-tabs" role="tablist" aria-label="互动分类">
+          <button type="button" class="on" data-games-cat="draw">抽人答题</button>
+          <button type="button" data-games-cat="ice">破冰互动</button>
         </div>
-        <div class="muted" style="margin-bottom:.35rem">抽人池 · 本场已签到 <strong id="game-pool-count">0</strong> 人</div>
-        <div class="game-pool-bar" id="game-pool-bar"></div>
+        <div id="games-draw-pane">
+          <div class="game-mode-tabs" id="game-mode-tabs" role="tablist">
+            <button type="button" class="on" data-game-mode="wheel" data-play-min="basic">大转轮</button>
+            <button type="button" data-game-mode="fruit" data-play-min="standard">水果机</button>
+            <button type="button" data-game-mode="snake" data-play-min="standard">贪吃蛇盘</button>
+          </div>
+          <div class="muted" style="margin-bottom:.35rem">抽人池 · 本场已签到 <strong id="game-pool-count">0</strong> 人</div>
+          <div class="game-pool-bar" id="game-pool-bar"></div>
+        </div>
+        <div id="games-ice-pane" class="hidden">
+          <div class="ice-mode-tabs" id="ice-mode-tabs" role="tablist" aria-label="破冰小游戏">
+            <button type="button" class="on" data-ice-mode="flower">击鼓传花</button>
+            <button type="button" data-ice-mode="bomb">数字炸弹</button>
+            <button type="button" data-ice-mode="intro">闪电介绍</button>
+            <button type="button" data-ice-mode="charades">你比我猜</button>
+            <button type="button" data-ice-mode="sync">红蓝默契</button>
+            <button type="button" data-ice-mode="stand">站队表决</button>
+          </div>
+          <div class="muted" style="margin-bottom:.35rem" id="ice-mode-hint">暖场互动 · 不扣积分</div>
+        </div>
         <div class="game-stage" id="game-stage"></div>
-        <div class="game-actions">
+        <div class="game-actions" id="games-draw-actions">
           <button type="button" class="primary" data-action="game-spin" id="game-spin-btn">开始抽取</button>
           <button type="button" class="ghost" data-action="game-refresh">刷新名单</button>
+        </div>
+        <div class="game-actions hidden" id="games-ice-actions">
+          <button type="button" class="primary" data-action="ice-start" id="ice-start-btn">开始</button>
+          <button type="button" class="ghost" data-action="ice-next" id="ice-next-btn">下一题</button>
+          <button type="button" class="ghost" data-action="ice-reset" id="ice-reset-btn">重置</button>
         </div>
       </div>
     </div>
@@ -5037,6 +5113,75 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let gameSpinning = false;
   let gameWheelAngle = 0;
   let gameSnakeTimer = null;
+  let gamesCat = "draw"; // draw | ice
+  let iceMode = "flower";
+  let iceTimer = null;
+  let iceBusy = false;
+  let iceState = {};
+  const ICE_MODE_ORDER = ["flower", "bomb", "intro", "charades", "sync", "stand"];
+  const ICE_MODE_DEFS = {
+    flower: {
+      name: "击鼓传花",
+      hint: "点开始后名单快速滚动，再点停下 · 谁停谁上场",
+      startLabel: "击鼓开始",
+      nextLabel: "再来一轮"
+    },
+    bomb: {
+      name: "数字炸弹",
+      hint: "系统藏一个炸弹数 · 学生猜大小 · 踩中即爆",
+      startLabel: "埋下炸弹",
+      nextLabel: "新一局"
+    },
+    intro: {
+      name: "闪电介绍",
+      hint: "随机抽人 + 题目 · 限时自我介绍 / 回答",
+      startLabel: "抽取上场",
+      nextLabel: "换一位"
+    },
+    charades: {
+      name: "你比我猜",
+      hint: "投屏出题给表演者 · 其他人猜 · 老师点对错",
+      startLabel: "抽一道题",
+      nextLabel: "下一题"
+    },
+    sync: {
+      name: "红蓝默契",
+      hint: "同一道题 · 两派各选 A/B · 选一样即默契成功",
+      startLabel: "出题",
+      nextLabel: "下一题"
+    },
+    stand: {
+      name: "站队表决",
+      hint: "抛出问题 · 学生站左/右/中间 · 老师点计数",
+      startLabel: "出题",
+      nextLabel: "下一题"
+    }
+  };
+  const ICE_INTRO_TOPICS = [
+    "用三个词介绍自己", "最近一次让你开心的小事", "你最想去的城市",
+    "一项隐藏技能", "今天的课堂期待", "推荐一部作品并说一句理由",
+    "如果有超能力想要什么", "本周学到的一件事"
+  ];
+  const ICE_CHARADES_WORDS = [
+    "追光", "镜头", "剪辑", "配乐", "开场白", "掌声", "导演", "幕后",
+    "电风扇", "泡面", "地铁", "自拍", "迟到", "闹钟", "外卖", "雨伞",
+    "武侠", "擂台", "红蓝对抗", "签到", "投票", "转盘"
+  ];
+  const ICE_SYNC_QUESTIONS = [
+    { q: "周末更想？", a: "宅家充电", b: "出门浪一浪" },
+    { q: "创作时更靠？", a: "灵感爆发", b: "死磕打磨" },
+    { q: "甜咸大战选？", a: "甜党", b: "咸党" },
+    { q: "上课座位偏好？", a: "前排冲锋", b: "后排观察" },
+    { q: "遇到难题先？", a: "自己想", b: "找人聊" },
+    { q: "更怕哪种？", a: "突然点名", b: "突然加戏" }
+  ];
+  const ICE_STAND_QUESTIONS = [
+    "更喜欢早起还是夜猫？左=早起 · 右=夜猫 · 中=看心情",
+    "作品更看重画面还是声音？左=画面 · 右=声音 · 中=都要",
+    "今天状态如何？左=满血 · 右=节能 · 中=重启中",
+    "更想当导演还是主演？左=导演 · 右=主演 · 中=幕后英雄",
+    "团建首选？左=吃饭 · 右=游戏 · 中=散步吹风"
+  ];
   let redeemTab = "shop";
   /** 作品投票榜快照：用于追赶排序动效 */
   let votePrevMap = {};
@@ -9159,6 +9304,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function getCheckedInDisciples() {
     return sortDisciples(getDisciplesArray().filter(discipleCheckedIn), "name");
   }
+  function getIcePool() {
+    const checked = getCheckedInDisciples();
+    if (checked.length) return checked;
+    return sortDisciples(getDisciplesArray(), "name");
+  }
+  function clearIceTimer() {
+    if (iceTimer) { clearInterval(iceTimer); iceTimer = null; }
+  }
+  function iceDef() {
+    return ICE_MODE_DEFS[iceMode] || ICE_MODE_DEFS.flower;
+  }
 
   function setGameSpinButtons(busy) {
     gameSpinning = !!busy;
@@ -9171,9 +9327,58 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     });
   }
 
+  function syncGamesHero() {
+    const seal = document.getElementById("games-hero-seal");
+    const kicker = document.getElementById("games-hero-kicker");
+    const title = document.getElementById("games-hero-title");
+    const sub = document.getElementById("games-hero-sub");
+    const actions = document.getElementById("games-hero-actions");
+    const ice = gamesCat === "ice";
+    if (seal) seal.textContent = ice ? "冰" : "转";
+    if (kicker) kicker.textContent = ice ? "COURSE · ICEBREAKER" : "COURSE · DRAW";
+    if (title) title.textContent = ice ? "破冰互动 · 六个小游戏" : "课堂抽人 · 答题加分";
+    if (sub) {
+      sub.textContent = ice
+        ? "暖场破冰 · 击鼓传花 / 数字炸弹 / 闪电介绍 / 你比我猜 / 红蓝默契 / 站队表决"
+        : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分";
+    }
+    if (actions) {
+      actions.innerHTML = ice
+        ? `<button type="button" data-action="goto-checkin">去签到</button>
+           <button type="button" class="primary" data-action="ice-start" id="game-spin-top">${esc(iceDef().startLabel || "开始")}</button>`
+        : `<button type="button" data-action="goto-checkin">去签到</button>
+           <button type="button" data-action="edit-draw-actions" title="配置抽中后的积分特权小按钮">特权设置</button>
+           <button type="button" class="primary" data-action="game-spin" id="game-spin-top">开始抽取</button>`;
+    }
+  }
+
   function renderGames() {
     ensureDrawActionsConfig();
     if (gameSnakeTimer) { clearInterval(gameSnakeTimer); gameSnakeTimer = null; }
+    const drawPane = document.getElementById("games-draw-pane");
+    const icePane = document.getElementById("games-ice-pane");
+    const drawActions = document.getElementById("games-draw-actions");
+    const iceActions = document.getElementById("games-ice-actions");
+    document.querySelectorAll("#game-cat-tabs [data-games-cat]").forEach((b) => {
+      b.classList.toggle("on", b.dataset.gamesCat === gamesCat);
+      b.onclick = () => {
+        if (gameSpinning || iceBusy) return;
+        gamesCat = b.dataset.gamesCat === "ice" ? "ice" : "draw";
+        clearIceTimer();
+        renderGames();
+      };
+    });
+    if (drawPane) drawPane.classList.toggle("hidden", gamesCat !== "draw");
+    if (icePane) icePane.classList.toggle("hidden", gamesCat !== "ice");
+    if (drawActions) drawActions.classList.toggle("hidden", gamesCat !== "draw");
+    if (iceActions) iceActions.classList.toggle("hidden", gamesCat !== "ice");
+    syncGamesHero();
+
+    if (gamesCat === "ice") {
+      renderIceGames();
+      return;
+    }
+
     const pool = getCheckedInDisciples();
     const countEl = document.getElementById("game-pool-count");
     const bar = document.getElementById("game-pool-bar");
@@ -9208,6 +9413,324 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else if (gameMode === "fruit") renderFruitStage(pool);
     else renderSnakeStage(pool);
     setGameSpinButtons(false);
+  }
+
+  function renderIceGames() {
+    if (!ICE_MODE_DEFS[iceMode]) iceMode = "flower";
+    const def = iceDef();
+    const hint = document.getElementById("ice-mode-hint");
+    if (hint) hint.textContent = `${def.name} · ${def.hint}`;
+    document.querySelectorAll("#ice-mode-tabs [data-ice-mode]").forEach((b) => {
+      b.classList.toggle("on", b.dataset.iceMode === iceMode);
+      b.onclick = () => {
+        if (iceBusy) return;
+        clearIceTimer();
+        iceMode = b.dataset.iceMode;
+        iceState = {};
+        renderGames();
+      };
+    });
+    const startBtn = document.getElementById("ice-start-btn");
+    const nextBtn = document.getElementById("ice-next-btn");
+    const resetBtn = document.getElementById("ice-reset-btn");
+    if (startBtn) startBtn.textContent = def.startLabel || "开始";
+    if (nextBtn) nextBtn.textContent = def.nextLabel || "下一题";
+    if (resetBtn) resetBtn.textContent = "重置";
+    const top = document.getElementById("game-spin-top");
+    if (top && gamesCat === "ice") top.textContent = def.startLabel || "开始";
+    renderIceStage();
+  }
+
+  function renderIceStage() {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return;
+    if (iceMode === "flower") renderIceFlowerStage();
+    else if (iceMode === "bomb") renderIceBombStage();
+    else if (iceMode === "intro") renderIceIntroStage();
+    else if (iceMode === "charades") renderIceCharadesStage();
+    else if (iceMode === "sync") renderIceSyncStage();
+    else renderIceStandStage();
+  }
+
+  function renderIceFlowerStage() {
+    const stage = document.getElementById("game-stage");
+    const pool = getIcePool();
+    const name = iceState.winner || (iceBusy ? (iceState.flash || "…") : "准备传花");
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">击鼓传花</div>
+        <div class="ice-stage-big" id="ice-flower-name">${esc(name)}</div>
+        <div class="ice-stage-sub">${pool.length ? `池中 ${pool.length} 人 · ${iceBusy ? "再点「停下」定人" : "点开始后滚动，再点停下"}` : "名册为空 · 请先到设置添加弟子"}</div>
+      </div>`;
+  }
+
+  function renderIceBombStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    if (!st.answer) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">数字炸弹</div>
+          <div class="ice-stage-title">埋下一颗炸弹</div>
+          <div class="ice-stage-sub">默认范围 1–100 · 学生轮流猜数字，猜中即爆炸</div>
+          <div class="ice-stage-row">
+            <label class="tool-inline"><span>最小</span><input id="ice-bomb-min" type="number" value="1" min="0" max="999" style="width:4.5rem" /></label>
+            <label class="tool-inline"><span>最大</span><input id="ice-bomb-max" type="number" value="100" min="1" max="999" style="width:4.5rem" /></label>
+          </div>
+        </div>`;
+      return;
+    }
+    const log = (st.guesses || []).slice(-8).map((g) =>
+      `${esc(g.by || "猜")} ${g.n} → ${g.n === st.answer ? "💥 爆炸" : (g.n < st.answer ? "太小" : "太大")}`
+    ).join("<br>") || "还没有人猜";
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">数字炸弹 · ${st.min}–${st.max}</div>
+        <div class="ice-stage-title">${st.boom ? "💥 炸了！" : "危险靠近中"}</div>
+        <div class="ice-stage-sub">${st.boom ? `炸弹是 ${st.answer}` : "让学生报数字，老师点记录"}</div>
+        <div class="ice-stage-row">
+          <input id="ice-bomb-guess" type="number" min="${st.min}" max="${st.max}" placeholder="输入猜测" style="width:7rem" ${st.boom ? "disabled" : ""} />
+          <button type="button" class="primary" id="ice-bomb-submit" ${st.boom ? "disabled" : ""}>记录</button>
+        </div>
+        <div class="ice-guess-log">${log}</div>
+      </div>`;
+    const submit = document.getElementById("ice-bomb-submit");
+    if (submit) submit.onclick = () => iceBombGuess();
+  }
+
+  function renderIceIntroStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">闪电介绍</div>
+        <div class="ice-stage-big">${esc(st.name || "等待抽取")}</div>
+        <div class="ice-stage-title" style="font-size:clamp(1.2rem,2.5vw,1.7rem)">${esc(st.topic || "点开始抽取上场同学与题目")}</div>
+        <div class="ice-stage-timer" id="ice-intro-timer">${st.sec != null ? st.sec : "15"}</div>
+        <div class="ice-stage-sub">限时回答 / 自我介绍 · 到点可换下一位</div>
+      </div>`;
+  }
+
+  function renderIceCharadesStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">你比我猜 · 仅表演者看题</div>
+        <div class="ice-stage-big">${esc(st.word || "点开始抽题")}</div>
+        <div class="ice-stage-sub">${st.word ? "不能说原词 · 比划或描述让大家猜" : "抽题后让一人表演，其他人猜"}</div>
+        ${st.word ? `<div class="ice-stage-row">
+          <button type="button" class="primary" id="ice-charades-ok">猜对了</button>
+          <button type="button" id="ice-charades-skip">跳过</button>
+        </div>` : ""}
+      </div>`;
+    const ok = document.getElementById("ice-charades-ok");
+    const skip = document.getElementById("ice-charades-skip");
+    if (ok) ok.onclick = () => { showVoteToast(`猜对：${st.word}`); iceNext(); };
+    if (skip) skip.onclick = () => iceNext();
+  }
+
+  function renderIceSyncStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    if (!st.q) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">红蓝默契</div>
+          <div class="ice-stage-title">测两派默契</div>
+          <div class="ice-stage-sub">出题后，红蓝各选 A 或 B，选一样即成功</div>
+        </div>`;
+      return;
+    }
+    const revealed = !!(st.red && st.blue);
+    const match = revealed && st.red === st.blue;
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">红蓝默契</div>
+        <div class="ice-stage-title" style="font-size:clamp(1.3rem,2.8vw,1.9rem)">${esc(st.q)}</div>
+        <div class="ice-stage-sub">A · ${esc(st.a)}　　B · ${esc(st.b)}</div>
+        <div class="ice-stage-row">
+          <button type="button" data-ice-sync-camp="red" data-ice-sync-ans="A">红方 A</button>
+          <button type="button" data-ice-sync-camp="red" data-ice-sync-ans="B">红方 B</button>
+          <button type="button" data-ice-sync-camp="blue" data-ice-sync-ans="A">蓝方 A</button>
+          <button type="button" data-ice-sync-camp="blue" data-ice-sync-ans="B">蓝方 B</button>
+        </div>
+        <div class="ice-stage-sub">
+          红方：${st.red ? esc(st.red) : "未选"} · 蓝方：${st.blue ? esc(st.blue) : "未选"}
+          ${revealed ? `<br><strong style="color:${match ? "#9dffc4" : "#ffb0bd"}">${match ? "默契成功！" : "再磨合磨合"}</strong>` : ""}
+        </div>
+      </div>`;
+    stage.querySelectorAll("[data-ice-sync-camp]").forEach((b) => {
+      b.onclick = () => {
+        iceState[b.dataset.iceSyncCamp] = b.dataset.iceSyncAns;
+        renderIceSyncStage();
+      };
+    });
+  }
+
+  function renderIceStandStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    if (!st.q) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">站队表决</div>
+          <div class="ice-stage-title">左 · 右 · 中间</div>
+          <div class="ice-stage-sub">出题后学生站位，老师点计数看阵营倾向</div>
+        </div>`;
+      return;
+    }
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">站队表决</div>
+        <div class="ice-stage-title" style="font-size:clamp(1.15rem,2.4vw,1.7rem)">${esc(st.q)}</div>
+        <div class="ice-stage-row">
+          <button type="button" data-ice-stand="left">左 +1（${st.left || 0}）</button>
+          <button type="button" data-ice-stand="mid">中 +1（${st.mid || 0}）</button>
+          <button type="button" data-ice-stand="right">右 +1（${st.right || 0}）</button>
+        </div>
+        <div class="ice-stage-sub">左 ${st.left || 0} · 中 ${st.mid || 0} · 右 ${st.right || 0}</div>
+      </div>`;
+    stage.querySelectorAll("[data-ice-stand]").forEach((b) => {
+      b.onclick = () => {
+        const k = b.dataset.iceStand;
+        iceState[k] = (iceState[k] || 0) + 1;
+        renderIceStandStage();
+      };
+    });
+  }
+
+  async function iceStart() {
+    if (gamesCat !== "ice") return;
+    if (iceMode === "flower") return iceFlowerToggle();
+    if (iceMode === "bomb") return iceBombStart();
+    if (iceMode === "intro") return iceIntroStart();
+    if (iceMode === "charades") return iceCharadesStart();
+    if (iceMode === "sync") return iceSyncStart();
+    if (iceMode === "stand") return iceStandStart();
+  }
+  function iceNext() {
+    if (iceMode === "flower") {
+      iceState = {};
+      iceBusy = false;
+      clearIceTimer();
+      return iceFlowerToggle();
+    }
+    if (iceMode === "bomb") return iceBombStart();
+    if (iceMode === "intro") return iceIntroStart();
+    if (iceMode === "charades") return iceCharadesStart();
+    if (iceMode === "sync") return iceSyncStart();
+    if (iceMode === "stand") return iceStandStart();
+  }
+  function iceReset() {
+    clearIceTimer();
+    iceBusy = false;
+    iceState = {};
+    renderIceStage();
+    showVoteToast("已重置");
+  }
+
+  function syncIceStartLabels(text) {
+    const startBtn = document.getElementById("ice-start-btn");
+    const top = document.getElementById("game-spin-top");
+    if (startBtn) startBtn.textContent = text;
+    if (top && gamesCat === "ice") top.textContent = text;
+  }
+  function iceFlowerToggle() {
+    const pool = getIcePool();
+    if (!pool.length) { showVoteToast("名册为空，请先添加弟子或签到"); return; }
+    if (iceBusy) {
+      clearIceTimer();
+      iceBusy = false;
+      const winner = pool[Math.floor(Math.random() * pool.length)];
+      iceState = { winner: winner.name };
+      renderIceFlowerStage();
+      syncIceStartLabels(iceDef().startLabel || "开始");
+      showVoteToast(`花落：${winner.name}`);
+      return;
+    }
+    iceBusy = true;
+    iceState = { flash: pool[0].name };
+    renderIceFlowerStage();
+    let i = 0;
+    clearIceTimer();
+    iceTimer = setInterval(() => {
+      i = (i + 1) % pool.length;
+      iceState.flash = pool[i].name;
+      const el = document.getElementById("ice-flower-name");
+      if (el) el.textContent = pool[i].name;
+    }, 70);
+    syncIceStartLabels("停下");
+  }
+
+  function iceBombStart() {
+    let min = 1, max = 100;
+    const minEl = document.getElementById("ice-bomb-min");
+    const maxEl = document.getElementById("ice-bomb-max");
+    if (minEl) min = Number(minEl.value) || 1;
+    if (maxEl) max = Number(maxEl.value) || 100;
+    if (max < min) { const t = min; min = max; max = t; }
+    if (max - min < 2) { showVoteToast("范围至少相差 2"); return; }
+    const answer = min + Math.floor(Math.random() * (max - min + 1));
+    iceState = { min, max, answer, guesses: [], boom: false };
+    renderIceBombStage();
+    showVoteToast("炸弹已埋好，开始猜吧");
+  }
+  function iceBombGuess() {
+    if (!iceState.answer || iceState.boom) return;
+    const input = document.getElementById("ice-bomb-guess");
+    const n = Number(input && input.value);
+    if (!Number.isFinite(n)) { showVoteToast("请输入数字"); return; }
+    if (n < iceState.min || n > iceState.max) {
+      showVoteToast(`请猜 ${iceState.min}–${iceState.max}`);
+      return;
+    }
+    iceState.guesses = iceState.guesses || [];
+    iceState.guesses.push({ n, by: "课堂" });
+    if (n === iceState.answer) {
+      iceState.boom = true;
+      showVoteToast(`💥 ${n} 踩中炸弹！`);
+    } else {
+      showVoteToast(n < iceState.answer ? `${n} 太小` : `${n} 太大`);
+    }
+    renderIceBombStage();
+  }
+
+  function iceIntroStart() {
+    const pool = getIcePool();
+    if (!pool.length) { showVoteToast("名册为空，请先添加弟子或签到"); return; }
+    clearIceTimer();
+    const person = pool[Math.floor(Math.random() * pool.length)];
+    const topic = ICE_INTRO_TOPICS[Math.floor(Math.random() * ICE_INTRO_TOPICS.length)];
+    iceState = { name: person.name, topic, sec: 15 };
+    renderIceIntroStage();
+    iceTimer = setInterval(() => {
+      iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
+      const el = document.getElementById("ice-intro-timer");
+      if (el) el.textContent = String(iceState.sec);
+      if (iceState.sec <= 0) {
+        clearIceTimer();
+        showVoteToast("时间到");
+      }
+    }, 1000);
+  }
+
+  function iceCharadesStart() {
+    const word = ICE_CHARADES_WORDS[Math.floor(Math.random() * ICE_CHARADES_WORDS.length)];
+    iceState = { word };
+    renderIceCharadesStage();
+  }
+
+  function iceSyncStart() {
+    const item = ICE_SYNC_QUESTIONS[Math.floor(Math.random() * ICE_SYNC_QUESTIONS.length)];
+    iceState = { q: item.q, a: item.a, b: item.b, red: "", blue: "" };
+    renderIceSyncStage();
+  }
+
+  function iceStandStart() {
+    const q = ICE_STAND_QUESTIONS[Math.floor(Math.random() * ICE_STAND_QUESTIONS.length)];
+    iceState = { q, left: 0, mid: 0, right: 0 };
+    renderIceStandStage();
   }
 
   function wheelColors(i, n) {
@@ -13954,6 +14477,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (act === "game-spin") { startGameDraw(); return; }
     if (act === "game-refresh") { renderGames(); return; }
+    if (act === "ice-start") { await iceStart(); return; }
+    if (act === "ice-next") { iceNext(); return; }
+    if (act === "ice-reset") { iceReset(); return; }
     if (act === "edit-draw-actions") { openDrawActionsEditor(); return; }
     if (act === "goto-redeem") {
       if (!guardPlayFeature("standard", "兑换")) return;
