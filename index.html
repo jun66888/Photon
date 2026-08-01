@@ -3255,8 +3255,35 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   background: var(--gold); box-shadow: 0 0 8px rgba(240,193,75,.7);
 }
 /* 设置页：紧凑横排归类 */
-#teacher-settings .course-hero { margin-bottom: .55rem; padding: .55rem .8rem; }
-#teacher-settings .course-hero .ch-title { font-size: clamp(1.25rem, 2.2vw, 1.65rem); }
+#teacher-settings .course-hero { display: none !important; }
+#teacher-settings.settings-focus-play {
+  scroll-margin-top: 0;
+}
+.settings-play-top {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  margin: 0 0 .65rem;
+  padding: .75rem .85rem .8rem;
+  border: 2px solid rgba(240,193,75,.65);
+  border-radius: 12px;
+  background: linear-gradient(165deg, rgba(240,193,75,.2), rgba(18,22,38,.97) 38%, rgba(8,10,18,.98));
+  box-shadow: 0 8px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.settings-play-top .settings-panel-head { margin-bottom: .45rem; }
+.settings-play-top .settings-panel-head h4 {
+  margin: 0;
+  font-family: var(--font-brush);
+  font-size: clamp(1.25rem, 2.4vw, 1.55rem);
+  color: #ffe9a8;
+  letter-spacing: .08em;
+}
+.settings-play-top .settings-panel-desc {
+  margin: .15rem 0 0;
+  font-size: .74rem;
+  color: #f0e2c0;
+  line-height: 1.4;
+}
 
 .brand-edit-preview {
   display: flex; align-items: center; justify-content: center; gap: .8rem; flex-wrap: wrap;
@@ -3931,6 +3958,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <button type="button" data-action="goto-redeem" data-nav="redeem" data-play-min="standard">兑换</button>
       <button type="button" data-action="goto-logs" data-nav="logs" data-play-min="basic">日志</button>
       <button type="button" data-action="goto-mission" data-nav="mission" data-play-min="standard">任务</button>
+      <button type="button" data-action="goto-play-mode" data-nav="settings" data-play-min="basic">玩法</button>
       <button type="button" data-action="goto-settings" data-nav="settings" data-play-min="basic">设置</button>
     </nav>
   </header>
@@ -3952,6 +3980,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="rail-label rail-label-more" data-play-min="standard">更多</div>
       <button type="button" class="rail-btn" data-action="goto-redeem" data-nav="redeem" data-play-min="standard" title="奖品兑换"><span class="ico">兑</span>兑换</button>
       <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" data-play-min="basic" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-play-mode" data-nav="settings" data-play-min="basic" title="选择玩法模式"><span class="ico">玩</span>玩法</button>
       <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings" data-play-min="basic"><span class="ico">设</span>设置</button>
     </nav>
     <div class="rail-day" id="rail-day-box" aria-label="课堂天数">
@@ -4243,28 +4272,38 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     </div>
 
     <div id="teacher-settings" class="subview course-page hidden">
-      <div class="course-hero">
-        <div class="ch-seal">设</div>
-        <div class="ch-text">
-          <div class="ch-kicker">COURSE · SETTINGS</div>
-          <div class="ch-title">对战设置</div>
-          <div class="ch-sub">顶部选玩法 · 常用分组可展开 · 非常用默认收起</div>
-        </div>
-      </div>
-      <div class="settings-stack" id="settings-stack">
-        <!-- ① 玩法模式：常显置顶 -->
-        <section class="settings-panel settings-panel-focus" id="settings-panel-play">
-          <div class="settings-panel-head">
-            <div>
-              <h4>玩法模式</h4>
-              <p class="settings-panel-desc">按课堂人数选用 · 切换不清空名册与积分</p>
-            </div>
-            <span class="settings-panel-badge" id="settings-play-mode-badge">进阶</span>
+      <!-- 玩法模式：页面最上方，始终可见 -->
+      <section class="settings-play-top" id="settings-panel-play" aria-label="玩法模式">
+        <div class="settings-panel-head">
+          <div>
+            <h4>玩法模式 · 按人数选用</h4>
+            <p class="settings-panel-desc">打开设置第一眼就是这里 · 点选一档即可切换 · 不清空名册与积分</p>
           </div>
-          <div id="settings-play-modes"></div>
-        </section>
+          <span class="settings-panel-badge" id="settings-play-mode-badge">进阶</span>
+        </div>
+        <div id="settings-play-modes">
+          <div class="play-modes-grid">
+            <button type="button" class="play-mode-card" data-play-mode="basic">
+              <div class="pm-head"><span class="pm-name">基础 · 红蓝对抗</span><span class="pm-size">不足 10 人</span></div>
+              <p class="pm-blurb">两派对垒、签到加分、大转轮抽人</p>
+              <div class="pm-foot">建议小队使用</div>
+            </button>
+            <button type="button" class="play-mode-card on" data-play-mode="standard">
+              <div class="pm-head"><span class="pm-name">进阶 · 门派擂台</span><span class="pm-size">30 人以内</span></div>
+              <p class="pm-blurb">任务、投票、兑换，适合常规班级</p>
+              <div class="pm-foot">当前默认</div>
+            </button>
+            <button type="button" class="play-mode-card" data-play-mode="advanced">
+              <div class="pm-head"><span class="pm-name">高级 · 全盟盛典</span><span class="pm-size">50 人以内</span></div>
+              <p class="pm-blurb">道具玩法、段位结算，适合大班</p>
+              <div class="pm-foot">全功能</div>
+            </button>
+          </div>
+        </div>
+      </section>
 
-        <!-- ② 课堂天数：常显一行 -->
+      <div class="settings-stack" id="settings-stack">
+        <!-- 课堂天数 -->
         <section class="settings-panel settings-panel-day">
           <div id="settings-day-bar" class="settings-day-bar"></div>
         </section>
@@ -5694,7 +5733,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>`);
     document.getElementById("modal-cancel").onclick = closeModal;
   }
+  function bindPlayModeHost() {
+    const root = document.getElementById("settings-panel-play");
+    if (!root || root.dataset.playBound === "1") return;
+    root.dataset.playBound = "1";
+    root.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-play-mode]");
+      if (!b || !root.contains(b)) return;
+      e.preventDefault();
+      setPlayMode(b.dataset.playMode);
+    });
+  }
+  function focusSettingsPlayMode() {
+    const page = document.getElementById("teacher-settings");
+    const el = document.getElementById("settings-panel-play");
+    try {
+      if (page) page.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) { /* ignore */ }
+  }
   function renderSettingsPlayModes() {
+    bindPlayModeHost();
     const host = document.getElementById("settings-play-modes");
     if (!host) return;
     const cur = getPlayMode();
@@ -5722,9 +5782,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             </button>`;
         }).join("")}
       </div>`;
-    host.querySelectorAll("[data-play-mode]").forEach((b) => {
-      b.onclick = () => setPlayMode(b.dataset.playMode);
-    });
   }
 
   const LS_SETTINGS_ACC = "gy_arena_settings_acc_v1";
@@ -8780,7 +8837,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (view === "games") renderGames();
     if (view === "redeem") renderRedeem();
     if (view === "logs") { logsPage = 1; renderLogs(); }
-    if (view === "settings") renderSettings();
+    if (view === "settings") {
+      renderSettings();
+      focusSettingsPlayMode();
+    }
     renderEditBoxes();
   }
 
@@ -13947,7 +14007,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       showScreen("teacher"); redeemTab = "manage"; setTeacherView("redeem"); return;
     }
     if (act === "goto-logs") { showScreen("teacher"); setTeacherView("logs"); return; }
-    if (act === "goto-settings") { showScreen("teacher"); setTeacherView("settings"); return; }
+    if (act === "goto-play-mode") {
+      showScreen("teacher");
+      setTeacherView("settings");
+      focusSettingsPlayMode();
+      showVoteToast("页面最上方就是玩法模式");
+      return;
+    }
+    if (act === "goto-settings") {
+      showScreen("teacher");
+      setTeacherView("settings");
+      focusSettingsPlayMode();
+      return;
+    }
     if (act === "reset-all-scores") { await resetAllScores(); return; }
     if (act === "import-demo-data") { await importDemoData(); return; }
     if (act === "score-curve") { openScoreCurveModal(); return; }
@@ -14238,6 +14310,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       } else { demoMode = true; await bootDemo(); }
       applyVoteUrlGate();
       bindTeacherActions(); bindStudentActions(); bindMemoriesActions();
+      try { bindPlayModeHost(); } catch (e) { /* ignore */ }
       ensureSfxToggle();
       ensureSwordCursorTrail();
       ensureFullscreenBinding();
