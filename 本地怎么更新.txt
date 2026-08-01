@@ -1,47 +1,30 @@
-为何页面没变化？
-因为浏览器打开的是「你 Mac 上的旧 index.html」。
-云端改完推到 GitHub，不会自动进你电脑。
+本机固定目录（liwei）：
+  /Users/liwei/Photon
+  /Users/liwei/Photon/index.html
 
-你上传的那份 index.html 仍是旧版：
-- 设置页标题还是「对战设置」
-- 还在用 settings-grid
-- 没有「玩法模式 / settings-play-top」
+云端改完不会自动进电脑。必须在这个目录拉取。
 
-正确项目应在（推荐）：
-  ~/Photon
-正确文件应是：
-  ~/Photon/index.html
+【立刻对齐 · 终端整段复制】
 
-【立刻对齐 · 终端复制执行】
-
-  cd ~/Photon
-  git fetch origin
-  git checkout cursor/guangyingmeng-arena-f9c7
-  git pull origin cursor/guangyingmeng-arena-f9c7
-  ./更新本地.sh
-  ./start.sh
+cd /Users/liwei/Photon
+./更新本地.sh
+./start.sh
+./一键放到桌面.sh
 
 然后浏览器打开：
   http://127.0.0.1:3000/?mode=teacher
-按 Cmd+Shift+R 强制刷新。
-点左侧「玩法」或「设置」——最上方应是三档玩法卡片。
+按 Cmd+Shift+R，点左侧「玩法」。
 
-【自检：当前文件是不是新版】
+【自检】
 
-  grep -n "玩法模式" ~/Photon/index.html | head
+grep -n "玩法模式" /Users/liwei/Photon/index.html | head
 
-有输出才对。若没有，说明你更新错了目录，或打开的是别的副本。
+有输出才对。启动时终端也会打印「程序目录」，请确认是 /Users/liwei/Photon。
 
-【若 ~/Photon 不存在 / 没有 .git】
+【若校验失败 / 不是 git 仓库】
 
-重新克隆到家目录（不要用 Downloads 里的旧 zip）：
-
-  rm -rf ~/Photon
-  git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git ~/Photon
-  cd ~/Photon && ./start.sh
-
-【常见踩坑】
-1. 桌面快捷方式指向旧文件夹
-2. 在 Cursor / 编辑器里打开的是另一份 index.html
-3. 只刷新了浏览器，没有 git pull
-4. 启动了错误目录里的 start.sh / node server
+mv /Users/liwei/Photon "/Users/liwei/Photon-旧备份-$(date +%Y%m%d)"
+git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git /Users/liwei/Photon
+cd /Users/liwei/Photon
+./start.sh
+./一键放到桌面.sh

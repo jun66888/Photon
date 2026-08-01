@@ -1,0 +1,22 @@
+光影盟 · 本机固定目录（liwei）
+
+绝对路径：
+  /Users/liwei/Photon
+
+主文件：
+  /Users/liwei/Photon/index.html
+
+以后只在这个目录更新与启动，不要用 Downloads / 桌面解压的旧副本。
+
+终端一键对齐：
+
+  cd /Users/liwei/Photon
+  ./更新本地.sh
+  ./start.sh
+  ./一键放到桌面.sh
+
+浏览器收藏：
+  http://127.0.0.1:3000/?mode=teacher
+
+强刷：Cmd+Shift+R
+侧栏点「玩法」或「设置」——最上方应是三档玩法卡片。

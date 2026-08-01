@@ -60,14 +60,26 @@ chmod +x "$DESKTOP/光影盟-开始上课.command" \
          "$DESKTOP/光影盟-打开老师端.command" \
          "$DESKTOP/GY-Teacher.command"
 
+# 额外：一键更新（指向本目录）
+cat > "$DESKTOP/光影盟-更新.command" <<EOF
+#!/bin/bash
+cd "$ROOT"
+exec "$ROOT/更新本地.command"
+EOF
+chmod +x "$DESKTOP/光影盟-更新.command"
+
 echo ""
 echo "  [完成] 已放到桌面：$DESKTOP"
 echo "    光影盟-开始上课.command  或  GY-Start.command  ← 上课点这个"
+echo "    光影盟-更新.command  ← 拉取最新代码"
 echo "    光影盟-打开老师端.command / GY-Teacher.command"
 echo "    光影盟-收藏地址.txt"
 echo ""
 echo "  老师端收藏：http://127.0.0.1:3000/?mode=teacher"
 echo "  程序目录：$ROOT"
+if [[ "$ROOT" != "/Users/liwei/Photon" ]]; then
+  echo "  [注意] 当前不是固定目录 /Users/liwei/Photon"
+fi
 echo ""
 
 # 打开桌面与程序目录，方便你看见
