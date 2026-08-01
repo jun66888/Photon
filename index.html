@@ -3430,6 +3430,69 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 }
 .data-history-row .dh-i { font-family: var(--font-num); color: var(--gold); font-weight: 700; }
 .data-history-row .dh-meta { color: var(--ink-soft); font-size: .68rem; }
+
+/* -------- 玩法模式：按人数选用 -------- */
+.play-modes-hint {
+  font-size: .72rem; color: var(--ink-soft); line-height: 1.45; margin: 0 0 .55rem;
+}
+.play-modes-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem;
+}
+.play-mode-card {
+  display: flex; flex-direction: column; gap: .35rem; align-items: stretch;
+  text-align: left; padding: .7rem .75rem; border-radius: 12px; cursor: pointer;
+  border: 1px solid rgba(240,193,75,.22); background: rgba(0,0,0,.18);
+  color: inherit; font-family: inherit; min-height: 100%;
+  transition: border-color .15s, background .15s, transform .12s;
+}
+.play-mode-card:hover {
+  border-color: rgba(240,193,75,.45); background: rgba(240,193,75,.06);
+  transform: translateY(-1px);
+}
+.play-mode-card.on {
+  border-color: rgba(240,193,75,.7);
+  background: linear-gradient(165deg, rgba(240,193,75,.14), rgba(0,0,0,.22));
+  box-shadow: inset 0 0 0 1px rgba(240,193,75,.2);
+}
+.play-mode-card .pm-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .4rem;
+}
+.play-mode-card .pm-name {
+  font-family: var(--font-brush); font-size: 1.05rem; color: #fff5e8; letter-spacing: .04em;
+}
+.play-mode-card .pm-size {
+  font-size: .68rem; color: #ffe39a; white-space: nowrap;
+  padding: .1rem .35rem; border-radius: 999px;
+  border: 1px solid rgba(240,193,75,.35); background: rgba(240,193,75,.08);
+}
+.play-mode-card .pm-blurb {
+  font-size: .74rem; color: var(--ink-soft); line-height: 1.4; margin: 0;
+}
+.play-mode-card .pm-list {
+  margin: .1rem 0 0; padding: 0 0 0 1rem; font-size: .72rem; color: #e8dcc8; line-height: 1.45;
+}
+.play-mode-card .pm-list li { margin: .08rem 0; }
+.play-mode-card .pm-foot {
+  margin-top: auto; padding-top: .35rem; font-size: .68rem; color: var(--ink-soft);
+  border-top: 1px dashed rgba(240,193,75,.2);
+}
+.play-mode-card.on .pm-foot { color: #ffe39a; }
+.play-mode-guide-list {
+  margin: .5rem 0 0; padding-left: 1.1rem; font-size: .85rem; line-height: 1.55; color: #e8dcc8;
+}
+@media (max-width: 960px) {
+  .play-modes-grid { grid-template-columns: 1fr; }
+}
+/* 低于所需档位的入口整体隐藏 */
+body.play-mode-basic [data-play-min="standard"],
+body.play-mode-basic [data-play-min="advanced"],
+body.play-mode-standard [data-play-min="advanced"] {
+  display: none !important;
+}
+body.play-mode-basic #rail-side-mode-tabs {
+  display: none !important;
+}
+
 .score-curve-modal { width: min(820px, 96vw); }
 .score-curve-svg {
   width: 100%; height: 220px; display: block;
@@ -3811,16 +3874,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <span class="brand-name">光影盟</span>
     </button>
     <nav class="brand-nav-links" id="teacher-nav-links">
-      <button type="button" data-action="goto-main" data-nav="main" title="返回首页">返回首页</button>
-      <button type="button" id="nav-fullscreen" data-action="toggle-fullscreen" title="全屏投屏">全屏</button>
-      <button type="button" data-action="custom-score">加分</button>
-      <button type="button" data-action="goto-checkin" data-nav="checkin">签到</button>
-      <button type="button" data-action="goto-vote" data-nav="vote">投票</button>
-      <button type="button" data-action="goto-games" data-nav="games">抽人</button>
-      <button type="button" data-action="goto-redeem" data-nav="redeem">兑换</button>
-      <button type="button" data-action="goto-logs" data-nav="logs">日志</button>
-      <button type="button" data-action="goto-mission" data-nav="mission">任务</button>
-      <button type="button" data-action="goto-settings" data-nav="settings">设置</button>
+      <button type="button" data-action="goto-main" data-nav="main" data-play-min="basic" title="返回首页">返回首页</button>
+      <button type="button" id="nav-fullscreen" data-action="toggle-fullscreen" data-play-min="basic" title="全屏投屏">全屏</button>
+      <button type="button" data-action="custom-score" data-play-min="basic">加分</button>
+      <button type="button" data-action="goto-checkin" data-nav="checkin" data-play-min="basic">签到</button>
+      <button type="button" data-action="goto-vote" data-nav="vote" data-play-min="standard">投票</button>
+      <button type="button" data-action="goto-games" data-nav="games" data-play-min="basic">抽人</button>
+      <button type="button" data-action="goto-redeem" data-nav="redeem" data-play-min="standard">兑换</button>
+      <button type="button" data-action="goto-logs" data-nav="logs" data-play-min="basic">日志</button>
+      <button type="button" data-action="goto-mission" data-nav="mission" data-play-min="standard">任务</button>
+      <button type="button" data-action="goto-settings" data-nav="settings" data-play-min="basic">设置</button>
     </nav>
   </header>
 
@@ -3832,16 +3895,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     </button>
     <div class="rail-label">常用</div>
     <nav id="rail-nav-links">
-      <button type="button" class="rail-btn" data-action="goto-main" data-nav="main" title="返回首页"><span class="ico">⌂</span>首页</button>
-      <button type="button" class="rail-btn rail-hot" data-action="goto-checkin" data-nav="checkin" title="课堂签到"><span class="ico">签</span>签到</button>
-      <button type="button" class="rail-btn rail-hot" data-action="custom-score" title="加分中心"><span class="ico">＋</span>加分</button>
-      <button type="button" class="rail-btn rail-hot" data-action="goto-games" data-nav="games" title="课堂抽人答题"><span class="ico">转</span>抽人</button>
-      <button type="button" class="rail-btn rail-hot" data-action="goto-vote" data-nav="vote" title="作品投票"><span class="ico">票</span>投票</button>
-      <button type="button" class="rail-btn rail-hot" data-action="goto-mission" data-nav="mission" title="门派任务"><span class="ico">任</span>任务</button>
-      <div class="rail-label rail-label-more">更多</div>
-      <button type="button" class="rail-btn" data-action="goto-redeem" data-nav="redeem" title="奖品兑换"><span class="ico">兑</span>兑换</button>
-      <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
-      <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings"><span class="ico">设</span>设置</button>
+      <button type="button" class="rail-btn" data-action="goto-main" data-nav="main" data-play-min="basic" title="返回首页"><span class="ico">⌂</span>首页</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-checkin" data-nav="checkin" data-play-min="basic" title="课堂签到"><span class="ico">签</span>签到</button>
+      <button type="button" class="rail-btn rail-hot" data-action="custom-score" data-play-min="basic" title="加分中心"><span class="ico">＋</span>加分</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-games" data-nav="games" data-play-min="basic" title="课堂抽人答题"><span class="ico">转</span>抽人</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-vote" data-nav="vote" data-play-min="standard" title="作品投票"><span class="ico">票</span>投票</button>
+      <button type="button" class="rail-btn rail-hot" data-action="goto-mission" data-nav="mission" data-play-min="standard" title="门派任务"><span class="ico">任</span>任务</button>
+      <div class="rail-label rail-label-more" data-play-min="standard">更多</div>
+      <button type="button" class="rail-btn" data-action="goto-redeem" data-nav="redeem" data-play-min="standard" title="奖品兑换"><span class="ico">兑</span>兑换</button>
+      <button type="button" class="rail-btn" id="rail-fullscreen" data-action="toggle-fullscreen" data-play-min="basic" title="全屏投屏"><span class="ico">⛶</span>全屏</button>
+      <button type="button" class="rail-btn" data-action="goto-settings" data-nav="settings" data-play-min="basic"><span class="ico">设</span>设置</button>
     </nav>
     <div class="rail-day" id="rail-day-box" aria-label="课堂天数">
       <div class="day-label-cap">DAY</div>
@@ -3861,8 +3924,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="pr-count" id="prop-rail-count" title="积分按天累计，切换天数不清零">累计</div>
     </div>
     <div class="rail-side-mode-tabs" id="rail-side-mode-tabs" role="tablist" aria-label="右侧栏模式">
-      <button type="button" class="on" data-rail-mode="rank" title="小组 / 学员累计排行">排行</button>
-      <button type="button" data-rail-mode="prop" title="已兑换道具卡">道具</button>
+      <button type="button" class="on" data-rail-mode="rank" data-play-min="basic" title="小组 / 学员累计排行">排行</button>
+      <button type="button" data-rail-mode="prop" data-play-min="standard" title="已兑换道具卡">道具</button>
     </div>
     <div class="rail-rank-pane" id="rail-rank-pane">
       <div class="rail-rank-block" aria-label="小组排行">
@@ -3888,13 +3951,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
       </div>
       <div class="prop-rail-foot">
-        <div class="prop-rail-plays" aria-label="道具玩法">
+        <div class="prop-rail-plays" aria-label="道具玩法" data-play-min="advanced">
           <button type="button" data-action="prop-lot" title="从未使用道具中随机抽取一张"><span class="pp-ico">🎋</span><span class="pp-txt">灵签</span></button>
           <button type="button" data-action="prop-cast" title="随机抽取并当众施法展示"><span class="pp-ico">✨</span><span class="pp-txt">施法</span></button>
           <button type="button" data-action="prop-duel" title="两张未用道具对决，败者标记已用"><span class="pp-ico">⚔</span><span class="pp-txt">对决</span></button>
           <button type="button" data-action="prop-oracle" title="掷骰决定本回合道具用法提示"><span class="pp-ico">🎲</span><span class="pp-txt">神谕</span></button>
         </div>
-        <button type="button" class="primary prop-redeem-btn" data-action="goto-redeem" title="打开兑换中心">去兑换</button>
+        <button type="button" class="primary prop-redeem-btn" data-action="goto-redeem" data-play-min="standard" title="打开兑换中心">去兑换</button>
       </div>
     </div>
   </aside>
@@ -4065,9 +4128,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>
       <div class="course-panel">
         <div class="game-mode-tabs" id="game-mode-tabs" role="tablist">
-          <button type="button" class="on" data-game-mode="wheel">大转轮</button>
-          <button type="button" data-game-mode="fruit">水果机</button>
-          <button type="button" data-game-mode="snake">贪吃蛇盘</button>
+          <button type="button" class="on" data-game-mode="wheel" data-play-min="basic">大转轮</button>
+          <button type="button" data-game-mode="fruit" data-play-min="standard">水果机</button>
+          <button type="button" data-game-mode="snake" data-play-min="standard">贪吃蛇盘</button>
         </div>
         <div class="muted" style="margin-bottom:.35rem">抽人池 · 本场已签到 <strong id="game-pool-count">0</strong> 人</div>
         <div class="game-pool-bar" id="game-pool-bar"></div>
@@ -4158,20 +4221,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </section>
         <section class="settings-card span-2">
           <header>
+            <h4>玩法模式 · 按人数选用</h4>
+          </header>
+          <div id="settings-play-modes"></div>
+        </section>
+        <section class="settings-card span-2">
+          <header>
             <h4>数据 · 积分 · 回滚</h4>
           </header>
           <div id="settings-data-tools"></div>
         </section>
-        <section class="settings-card">
+        <section class="settings-card" data-play-min="basic">
           <header>
             <h4>派系</h4>
             <div class="card-actions">
-              <button type="button" data-action="edit-camp-mission">编辑任务</button>
+              <button type="button" data-action="edit-camp-mission" data-play-min="standard">编辑任务</button>
             </div>
           </header>
           <div id="settings-factions" class="settings-faction-pair"></div>
         </section>
-        <section class="settings-card">
+        <section class="settings-card" data-play-min="standard">
           <header>
             <h4>门派任务</h4>
           </header>
@@ -4699,6 +4768,65 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       { id: "rc_disc_2", name: "传功帖", rule: "可将自己一次答题机会转让给同帮同学。", cost: 25, tier: "disciple", owner_peak_id: "", icon: "✉️", visible: true }
     ];
   }
+  /** 玩法模式：按课堂人数选用，控制功能显隐（不清空数据） */
+  const PLAY_MODE_ORDER = ["basic", "standard", "advanced"];
+  const PLAY_MODE_DEFS = {
+    basic: {
+      id: "basic",
+      name: "基础 · 红蓝对抗",
+      size: "适合不足 10 人",
+      sizeMax: 10,
+      blurb: "两派对垒、签到加分、大转轮抽人，人少时开箱即用。",
+      features: ["红蓝阵营首页", "签到 / 加分", "大转轮抽人", "累计排行", "日志"],
+      lockedHint: "暂不开：投票、任务、兑换与道具玩法",
+      setupTips: [
+        "建议红蓝各 1 个小组，共 2 座山峰",
+        "名册控制在 10 人以内，方便人人上场",
+        "推荐流程：签到 → 课堂加分 → 转盘抽答"
+      ],
+      views: ["main", "checkin", "games", "logs", "settings"],
+      gameModes: ["wheel"],
+      allowPropRail: false,
+      allowPropPlays: false
+    },
+    standard: {
+      id: "standard",
+      name: "进阶 · 门派擂台",
+      size: "适合 30 人以内",
+      sizeMax: 30,
+      blurb: "在红蓝对抗之上加入任务、投票与兑换，适合常规班级。",
+      features: ["基础全部能力", "门派任务", "作品投票", "奖品兑换", "水果机 / 蛇盘抽人"],
+      lockedHint: "暂不开：道具栏高阶玩法（灵签 / 对决 / 神谕）",
+      setupTips: [
+        "建议每派 2～3 个小组",
+        "名册约 15～30 人",
+        "可发今日任务，用投票收作品分，再用兑换激励"
+      ],
+      views: ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "settings"],
+      gameModes: ["wheel", "fruit", "snake"],
+      allowPropRail: true,
+      allowPropPlays: false
+    },
+    advanced: {
+      id: "advanced",
+      name: "高级 · 全盟盛典",
+      size: "适合 50 人以内",
+      sizeMax: 50,
+      blurb: "全功能开放：道具玩法、段位结算、多小组大型课堂。",
+      features: ["进阶全部能力", "道具栏与道具玩法", "段位结算", "多小组大型编排"],
+      lockedHint: "无锁定 · 完整课堂工具箱",
+      setupTips: [
+        "建议每派 3～5 个小组",
+        "名册可达 40～50 人",
+        "善用兑换与道具玩法活跃大班气氛，课末可做段位结算"
+      ],
+      views: ["main", "mission", "checkin", "vote", "games", "redeem", "logs", "settings"],
+      gameModes: ["wheel", "fruit", "snake"],
+      allowPropRail: true,
+      allowPropPlays: true
+    }
+  };
+
   function buildSeedArena() {
     const peaks = {};
     PEAK_SEED.forEach((p, idx) => { peaks["peak_" + p.id] = makePeak({ ...p, sort_order: idx }); });
@@ -4709,6 +4837,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return {
       config: {
         day: 1, week: 1, voting_open: false, title: "第1周最佳作品",
+        play_mode: "standard",
         checkin_code: "", checkin_expires_at: 0, checkin_session: "am", checkin_active: false,
         sort_mode: "score", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟",
         score_quick_options: [
@@ -5410,6 +5539,119 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     host.querySelectorAll("[data-hist-i]").forEach((b) => {
       b.onclick = () => restoreHistoryAt(Number(b.dataset.histI));
     });
+  }
+
+  function playModeRank(mode) {
+    const i = PLAY_MODE_ORDER.indexOf(mode);
+    return i >= 0 ? i : PLAY_MODE_ORDER.indexOf("standard");
+  }
+  function getPlayMode() {
+    const raw = String(state?.config?.play_mode || "standard").trim();
+    return PLAY_MODE_DEFS[raw] ? raw : "standard";
+  }
+  function getPlayModeDef(mode) {
+    return PLAY_MODE_DEFS[mode || getPlayMode()] || PLAY_MODE_DEFS.standard;
+  }
+  function ensurePlayModeConfig() {
+    if (!state.config) state.config = buildSeedArena().config;
+    if (!PLAY_MODE_DEFS[state.config.play_mode]) state.config.play_mode = "standard";
+  }
+  function playModeAllows(minMode) {
+    const need = playModeRank(minMode || "basic");
+    return playModeRank(getPlayMode()) >= need;
+  }
+  function playModeAllowsView(view) {
+    const def = getPlayModeDef();
+    return (def.views || []).includes(view);
+  }
+  function playModeAllowsGame(mode) {
+    const def = getPlayModeDef();
+    return (def.gameModes || ["wheel"]).includes(mode);
+  }
+  function applyPlayModeUI() {
+    ensurePlayModeConfig();
+    const mode = getPlayMode();
+    document.body.classList.remove("play-mode-basic", "play-mode-standard", "play-mode-advanced");
+    document.body.classList.add("play-mode-" + mode);
+    if (!playModeAllowsGame(gameMode)) gameMode = "wheel";
+  }
+  function showPlayModeGuide(mode) {
+    const def = getPlayModeDef(mode);
+    const tips = (def.setupTips || []).map((t) => `<li>${esc(t)}</li>`).join("");
+    const feats = (def.features || []).map((t) => `<li>${esc(t)}</li>`).join("");
+    openModal(`
+      <div style="max-width:min(520px,92vw)">
+        <h3 style="font-family:var(--font-brush);color:var(--seal);margin:.2rem 0">${esc(def.name)}</h3>
+        <div class="muted" style="margin-bottom:.35rem">${esc(def.size)} · ${esc(def.blurb)}</div>
+        <div style="font-size:.82rem;color:#ffe39a;margin:.4rem 0 .15rem">本档可用</div>
+        <ul class="play-mode-guide-list">${feats}</ul>
+        <div style="font-size:.82rem;color:#ffe39a;margin:.65rem 0 .15rem">布置建议</div>
+        <ul class="play-mode-guide-list">${tips}</ul>
+        <p class="muted" style="font-size:.72rem;margin:.65rem 0 0">${esc(def.lockedHint || "")} · 切换模式不会清空名册与积分</p>
+        <div class="row" style="justify-content:flex-end;margin-top:.85rem">
+          <button type="button" class="primary" id="modal-cancel">知道了</button>
+        </div>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+  }
+  function renderSettingsPlayModes() {
+    const host = document.getElementById("settings-play-modes");
+    if (!host) return;
+    const cur = getPlayMode();
+    const nDisc = getDisciplesArray().length;
+    host.innerHTML = `
+      <p class="play-modes-hint">按课堂人数选用玩法：基础适合小队红蓝对抗，进阶适合常规班级，高级适合大班全功能。当前名册 <strong>${nDisc}</strong> 人 · 切换只改界面能力，不清空数据。</p>
+      <div class="play-modes-grid">
+        ${PLAY_MODE_ORDER.map((id) => {
+          const d = PLAY_MODE_DEFS[id];
+          const on = id === cur;
+          const sizeHint = nDisc > d.sizeMax
+            ? `名册已 ${nDisc} 人，略超建议规模`
+            : `建议 ≤${d.sizeMax} 人`;
+          return `
+            <button type="button" class="play-mode-card ${on ? "on" : ""}" data-play-mode="${id}">
+              <div class="pm-head">
+                <span class="pm-name">${esc(d.name)}</span>
+                <span class="pm-size">${esc(d.size)}</span>
+              </div>
+              <p class="pm-blurb">${esc(d.blurb)}</p>
+              <ul class="pm-list">${(d.features || []).slice(0, 4).map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+              <div class="pm-foot">${on ? "当前选用 · 点开看布置建议" : sizeHint}</div>
+            </button>`;
+        }).join("")}
+      </div>`;
+    host.querySelectorAll("[data-play-mode]").forEach((b) => {
+      b.onclick = () => setPlayMode(b.dataset.playMode);
+    });
+  }
+  async function setPlayMode(mode) {
+    const def = PLAY_MODE_DEFS[mode];
+    if (!def) return;
+    const prev = getPlayMode();
+    if (prev === mode) {
+      showPlayModeGuide(mode);
+      return;
+    }
+    const nDisc = getDisciplesArray().length;
+    const sizeWarn = nDisc > def.sizeMax
+      ? `\n\n提示：当前名册 ${nDisc} 人，已超过该档建议上限（${def.sizeMax}）。仍可切换，课堂节奏可能偏紧。`
+      : "";
+    if (!confirm(`切换到「${def.name}」？\n${def.size}\n\n界面会按该模式显隐功能，已有名册与积分不会清空。${sizeWarn}`)) return;
+    await updatePaths({ "config/play_mode": mode });
+    applyPlayModeUI();
+    if (!playModeAllowsView(teacherView)) {
+      setTeacherView("main");
+      showVoteToast(`${def.name} 下已回到首页`);
+    }
+    showPlayModeGuide(mode);
+    if (teacherView === "settings") renderSettings();
+  }
+  function guardPlayFeature(minMode, label) {
+    if (playModeAllows(minMode)) return true;
+    const need = getPlayModeDef(minMode);
+    const cur = getPlayModeDef();
+    showVoteToast(`「${label || "该功能"}」需 ${need.name} 及以上 · 当前为 ${cur.name}`);
+    return false;
   }
 
   /* -------- FX + SFX：仙剑奇侠传3 气质音效（合成还原气质；可导入本地音效包） -------- */
@@ -8330,6 +8572,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function setTeacherView(view) {
+    if (!playModeAllowsView(view)) {
+      const def = getPlayModeDef();
+      showVoteToast(`「${def.name}」未开放此页 · 可在设置里切换玩法`);
+      view = "main";
+    }
     const prev = teacherView;
     teacherView = view;
     const prevIdx = VIEW_ORDER.indexOf(prev);
@@ -8739,11 +8986,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ? pool.map((d) => `<span class="game-pool-chip">${esc(d.name)}${d.role === "队长" ? "★" : ""}</span>`).join("")
         : `<span class="muted">暂无已签到弟子 · 请先完成签到</span>`;
     }
+    if (!playModeAllowsGame(gameMode)) gameMode = "wheel";
     document.querySelectorAll("#game-mode-tabs [data-game-mode]").forEach((b) => {
       b.classList.toggle("on", b.dataset.gameMode === gameMode);
       b.onclick = () => {
         if (gameSpinning) return;
-        gameMode = b.dataset.gameMode;
+        const next = b.dataset.gameMode;
+        if (!playModeAllowsGame(next)) {
+          showVoteToast("当前玩法模式未开放此抽人样式");
+          return;
+        }
+        gameMode = next;
         renderGames();
       };
     });
@@ -9562,7 +9815,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     tabs.dataset.bound = "1";
     tabs.querySelectorAll("[data-rail-mode]").forEach((b) => {
       b.addEventListener("click", () => {
-        railSideMode = b.dataset.railMode === "prop" ? "prop" : "rank";
+        const wantProp = b.dataset.railMode === "prop";
+        if (wantProp && !getPlayModeDef().allowPropRail) {
+          showVoteToast("当前玩法模式未开放道具栏");
+          railSideMode = "rank";
+        } else {
+          railSideMode = wantProp ? "prop" : "rank";
+        }
         renderRailSide();
       });
     });
@@ -9572,6 +9831,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const host = document.getElementById("rail-props");
     if (!host) return;
     bindRailSideModeTabs();
+    if (!getPlayModeDef().allowPropRail) railSideMode = "rank";
     const titleEl = document.getElementById("rail-side-title");
     const countEl = document.getElementById("prop-rail-count");
     const rankPane = document.getElementById("rail-rank-pane");
@@ -11915,6 +12175,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const runtime = document.getElementById("settings-runtime");
     if (runtime) {
       runtime.innerHTML = `
+        <span class="meta-pill">玩法 · ${esc(getPlayModeDef().name)}</span>
         <span class="meta-pill">模式 · ${demoMode ? (demoSyncEnabled ? "本机离线 · 跨设备同步" : "本机离线 · 仅本页") : "Firebase"}</span>
         <span class="demo-sync-badge ${demoSyncEnabled ? "ok" : ""}" ${demoMode ? "" : "hidden"}>${demoMode ? (demoSyncEnabled ? "本机离线 · 局域网同步中" : "本机离线 · 未连同步服务") : ""}</span>
         <label class="tool-inline" style="margin:0"><span>天数</span>
@@ -11934,10 +12195,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <button type="button" data-action="export-data">导出</button>
         <button type="button" data-action="export-csv">CSV</button>
         <button type="button" data-action="export-json">JSON</button>
-        <button type="button" class="seal" data-action="settle-ranks">段位结算</button>
+        <button type="button" class="seal" data-action="settle-ranks" data-play-min="advanced">段位结算</button>
         <button type="button" data-action="insert-edit-box">插入编辑框</button>
         <button type="button" data-action="edit-brand">品牌标识</button>
-        <button type="button" data-action="edit-camp-mission">门派任务</button>
+        <button type="button" data-action="edit-camp-mission" data-play-min="standard">门派任务</button>
         <button type="button" id="settings-fullscreen" data-action="toggle-fullscreen">全屏</button>
         <button type="button" id="btn-memories" data-action="goto-memories" ${day < 20 ? "disabled" : ""}>回忆${day < 20 ? "·D20" : ""}</button>
         ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}
@@ -11989,6 +12250,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       }
     }
 
+    try { renderSettingsPlayModes(); } catch (e) { console.warn(e); }
     try { renderSettingsDataTools(); } catch (e) { console.warn(e); }
 
     const factions = document.getElementById("settings-factions");
@@ -13412,6 +13674,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function renderAll() {
+    ensurePlayModeConfig();
+    applyPlayModeUI();
     // migrate old peaks missing new fields
     getPeaksArray().forEach((p) => {
       if (p.art == null) p.art = "未传绝学";
@@ -13470,22 +13734,49 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "edit-score-quick") { openScoreQuickEditor(); return; }
     if (act === "edit-brand") { openBrandModal(); return; }
     if (act === "toggle-fullscreen") { toggleFullscreen(); return; }
-    if (act === "edit-camp-mission") { openCampMissionModal(); return; }
+    if (act === "edit-camp-mission") {
+      if (!guardPlayFeature("standard", "门派任务")) return;
+      openCampMissionModal(); return;
+    }
     if (act === "camp-attrs") { openCampAttrsModal(btn?.dataset?.camp || "red"); return; }
     if (act === "insert-edit-box") { insertEditBox(); return; }
     if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
-    if (act === "goto-vote") { showScreen("teacher"); setTeacherView("vote"); startVoteLiveLoop(); return; }
+    if (act === "goto-vote") {
+      if (!guardPlayFeature("standard", "投票")) return;
+      showScreen("teacher"); setTeacherView("vote"); startVoteLiveLoop(); return;
+    }
     if (act === "goto-games") { showScreen("teacher"); setTeacherView("games"); return; }
-    if (act === "goto-mission") { activeMissionId = ""; openMissionDetail(""); return; }
+    if (act === "goto-mission") {
+      if (!guardPlayFeature("standard", "门派任务")) return;
+      activeMissionId = ""; openMissionDetail(""); return;
+    }
     if (act === "game-spin") { startGameDraw(); return; }
     if (act === "game-refresh") { renderGames(); return; }
     if (act === "edit-draw-actions") { openDrawActionsEditor(); return; }
-    if (act === "goto-redeem") { showScreen("teacher"); redeemTab = "shop"; setTeacherView("redeem"); return; }
-    if (act === "prop-lot") { await runPropLottery(); return; }
-    if (act === "prop-cast") { await runPropCastShow(); return; }
-    if (act === "prop-duel") { runPropDuelStart(); return; }
-    if (act === "prop-oracle") { runPropOracle(); return; }
-    if (act === "redeem-manage") { showScreen("teacher"); redeemTab = "manage"; setTeacherView("redeem"); return; }
+    if (act === "goto-redeem") {
+      if (!guardPlayFeature("standard", "兑换")) return;
+      showScreen("teacher"); redeemTab = "shop"; setTeacherView("redeem"); return;
+    }
+    if (act === "prop-lot") {
+      if (!guardPlayFeature("advanced", "灵签")) return;
+      await runPropLottery(); return;
+    }
+    if (act === "prop-cast") {
+      if (!guardPlayFeature("advanced", "施法")) return;
+      await runPropCastShow(); return;
+    }
+    if (act === "prop-duel") {
+      if (!guardPlayFeature("advanced", "对决")) return;
+      runPropDuelStart(); return;
+    }
+    if (act === "prop-oracle") {
+      if (!guardPlayFeature("advanced", "神谕")) return;
+      runPropOracle(); return;
+    }
+    if (act === "redeem-manage") {
+      if (!guardPlayFeature("standard", "兑换")) return;
+      showScreen("teacher"); redeemTab = "manage"; setTeacherView("redeem"); return;
+    }
     if (act === "goto-logs") { showScreen("teacher"); setTeacherView("logs"); return; }
     if (act === "goto-settings") { showScreen("teacher"); setTeacherView("settings"); return; }
     if (act === "reset-all-scores") { await resetAllScores(); return; }
@@ -13516,6 +13807,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     if (act === "open-vote") {
+      if (!guardPlayFeature("standard", "投票")) return;
       if (state.config?.voting_open) { setTeacherView("vote"); syncVoteToggleButtons(true); return; }
       localStorage.removeItem(LS_VOTE_KEY);
       resetVoteBoardSnapshot();
@@ -13525,6 +13817,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     if (act === "close-vote") {
+      if (!guardPlayFeature("standard", "投票")) return;
       if (!(state.config && state.config.voting_open)) return;
       await updatePaths({ "config/voting_open": false });
       setTeacherView("vote");
@@ -13533,6 +13826,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     if (act === "reset-votes") {
+      if (!guardPlayFeature("standard", "投票")) return;
       if (!confirm("确认清空所有小组作品票数？")) return;
       const updates = {};
       getPeaksArray().forEach((p) => updates[`peaks/${peakKey(p.id)}/votes`] = 0);
@@ -13544,6 +13838,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (board) board.innerHTML = "";
     }
     if (act === "demo-vote") {
+      if (!guardPlayFeature("standard", "投票")) return;
       if (!(state.config && state.config.voting_open)) {
         await updatePaths({ "config/voting_open": true });
       }
@@ -13555,7 +13850,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "add-peak-blue") await addPeak("blue");
     if (act === "add-disciple") editDiscipleModal("disciple_" + Date.now());
     if (act === "add-preset") editPresetModal("bp_" + Date.now());
-    if (act === "settle-ranks") await doSettleRanks();
+    if (act === "settle-ranks") {
+      if (!guardPlayFeature("advanced", "段位结算")) return;
+      await doSettleRanks();
+    }
     if (act === "export-csv") exportCSV();
     if (act === "export-json") exportJSON();
   }
