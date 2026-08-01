@@ -1,22 +1,22 @@
-把下面整段复制到 Mac「终端」回车（会下载/更新项目并放到桌面）：
+把下面整段复制到 Mac「终端」回车：
 
-cd ~
-git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git Photon 2>/dev/null || true
-cd ~/Photon
+cd /Users/liwei/Photon 2>/dev/null || git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git /Users/liwei/Photon
+cd /Users/liwei/Photon
 git fetch origin cursor/guangyingmeng-arena-f9c7
 git checkout cursor/guangyingmeng-arena-f9c7
 git pull origin cursor/guangyingmeng-arena-f9c7
-chmod +x start.sh 一键放到桌面.sh 一键放到桌面.command
+chmod +x start.sh 一键放到桌面.sh 一键放到桌面.command 更新本地.sh
 ./一键放到桌面.sh
 open ~/Desktop
 
 完成后桌面应有：
   光影盟-开始上课.command
+  光影盟-更新.command
   GY-Start.command
   光影盟-打开老师端.command
 
 老师端收藏：
   http://127.0.0.1:3000/?mode=teacher
 
-项目实际位置：
-  /Users/你的用户名/Photon
+本机唯一路径：
+  /Users/liwei/Photon

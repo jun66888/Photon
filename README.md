@@ -28,7 +28,11 @@ http://127.0.0.1:3000/?mode=teacher
 - **Windows（推荐）**：本机项目文件夹双击 `一键放到桌面.bat` 或 `PUT-ON-DESKTOP.bat`，之后用桌面 `GY-Start` /「光影盟-开始上课」
 - 或直接双击项目里的 `start.bat`（建议先跑一次 `开放防火墙.bat`）
 - 说明：云端 Agent **不会**把图标写到你教室电脑桌面，必须在本机双击上述脚本  
-- **Mac**：双击 `一键放到桌面.command`，之后用桌面「光影盟-开始上课」；或直接 `./start.sh` / `npm start`
+- **Mac（本机固定目录）**：`/Users/liwei/Photon`  
+  ```bash
+  cd /Users/liwei/Photon && ./更新本地.sh && ./start.sh && ./一键放到桌面.sh
+  ```
+  之后用桌面「光影盟-开始上课」/「光影盟-更新」
 - **Linux**：`./start.sh` 或 `npm start`
 
 手机扫码地址首次绑定后写入 `gy-classroom.json`，**不会自动更换**。  

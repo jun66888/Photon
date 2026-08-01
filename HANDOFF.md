@@ -16,8 +16,8 @@ https://cursor.com/agents/bc-c04c08a6-a313-481a-af1f-cece7532f9c7
 ## 本地路径与启动
 
 ```bash
-git clone https://github.com/jun66888/Photon.git
-cd Photon
+git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git /Users/liwei/Photon
+cd /Users/liwei/Photon
 git checkout cursor/guangyingmeng-arena-f9c7
 npm install
 npm start

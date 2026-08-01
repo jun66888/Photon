@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+PHOTON_HOME="/Users/liwei/Photon"
+# 若脚本不在固定目录，仍强制使用固定目录
+if [[ -d "$PHOTON_HOME" ]]; then
+  ROOT="$PHOTON_HOME"
+else
+  ROOT="$(cd "$(dirname "$0")" && pwd)"
+fi
 cd "$ROOT"
-EXPECTED="/Users/liwei/Photon"
 
 echo ""
 echo "  ========================================"
@@ -12,13 +18,13 @@ echo "  ========================================"
 echo ""
 echo "  程序目录：$ROOT"
 echo "  主文件  ：$ROOT/index.html"
-if [[ "$ROOT" != "$EXPECTED" ]]; then
-  echo "  [注意] 期望目录是 $EXPECTED"
-  echo "         若页面一直不更新，请到期望目录执行 ./更新本地.sh"
+if [[ "$ROOT" != "$PHOTON_HOME" ]]; then
+  echo "  [警告] 固定目录应为 $PHOTON_HOME"
+  echo "         当前目录不是固定路径，页面可能一直不更新。"
 fi
 if ! grep -q "settings-play-top" "$ROOT/index.html" 2>/dev/null; then
   echo "  [警告] 当前 index.html 没有「玩法模式」，是旧文件。"
-  echo "         请先运行：./更新本地.sh"
+  echo "         请先运行：$PHOTON_HOME/更新本地.sh"
   echo ""
 fi
 
