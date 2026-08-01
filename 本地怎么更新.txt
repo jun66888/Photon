@@ -1,0 +1,24 @@
+为何刷新没变化？
+因为浏览器打开的是「你 Mac 上的旧文件」。云端改完推到 GitHub，不会自动进你电脑。
+
+请任选一种更新本机：
+
+【方式 A · 推荐，若文件夹里有 .git】
+打开终端，进入你的项目目录后执行：
+
+  git pull origin cursor/guangyingmeng-arena-f9c7
+  ./start.sh
+
+然后浏览器按 Cmd+Shift+R 强制刷新。
+
+【方式 B · 你是 zip 解压的（没有 .git）】
+重新下载覆盖：
+https://github.com/jun66888/Photon/archive/refs/heads/cursor/guangyingmeng-arena-f9c7.zip
+
+解压后用新文件夹里的 start.sh 启动（不要继续用旧文件夹）。
+
+【方式 C】
+双击项目里的「更新本地.command」
+
+验证是否更新成功：
+点击小组应默认弹出「加分招式」；右侧栏有「排行 / 道具」。
