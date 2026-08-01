@@ -7249,7 +7249,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           return;
         }
         if (e.target.closest("button") || e.target.closest(".drag-handle")) return;
-        openSectModal(Number(peakId), "attr");
+        // 点击小组：默认弹出加分面板（可再切属性 / 名册）
+        openSectModal(Number(peakId), "bonus");
       });
       const btn = card.querySelector("[data-open-sect]");
       if (btn) btn.addEventListener("click", (e) => {
