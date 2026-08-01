@@ -1,24 +1,47 @@
-为何刷新没变化？
-因为浏览器打开的是「你 Mac 上的旧文件」。云端改完推到 GitHub，不会自动进你电脑。
+为何页面没变化？
+因为浏览器打开的是「你 Mac 上的旧 index.html」。
+云端改完推到 GitHub，不会自动进你电脑。
 
-请任选一种更新本机：
+你上传的那份 index.html 仍是旧版：
+- 设置页标题还是「对战设置」
+- 还在用 settings-grid
+- 没有「玩法模式 / settings-play-top」
 
-【方式 A · 推荐，若文件夹里有 .git】
-打开终端，进入你的项目目录后执行：
+正确项目应在（推荐）：
+  ~/Photon
+正确文件应是：
+  ~/Photon/index.html
 
+【立刻对齐 · 终端复制执行】
+
+  cd ~/Photon
+  git fetch origin
+  git checkout cursor/guangyingmeng-arena-f9c7
   git pull origin cursor/guangyingmeng-arena-f9c7
+  ./更新本地.sh
   ./start.sh
 
-然后浏览器按 Cmd+Shift+R 强制刷新。
+然后浏览器打开：
+  http://127.0.0.1:3000/?mode=teacher
+按 Cmd+Shift+R 强制刷新。
+点左侧「玩法」或「设置」——最上方应是三档玩法卡片。
 
-【方式 B · 你是 zip 解压的（没有 .git）】
-重新下载覆盖：
-https://github.com/jun66888/Photon/archive/refs/heads/cursor/guangyingmeng-arena-f9c7.zip
+【自检：当前文件是不是新版】
 
-解压后用新文件夹里的 start.sh 启动（不要继续用旧文件夹）。
+  grep -n "玩法模式" ~/Photon/index.html | head
 
-【方式 C】
-双击项目里的「更新本地.command」
+有输出才对。若没有，说明你更新错了目录，或打开的是别的副本。
 
-验证是否更新成功：
-点击小组应默认弹出「加分招式」；右侧栏有「排行 / 道具」。
+【若 ~/Photon 不存在 / 没有 .git】
+
+重新克隆到家目录（不要用 Downloads 里的旧 zip）：
+
+  rm -rf ~/Photon
+  git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git ~/Photon
+  cd ~/Photon && ./start.sh
+
+【常见踩坑】
+1. 桌面快捷方式指向旧文件夹
+2. 在 Cursor / 编辑器里打开的是另一份 index.html
+3. 只刷新了浏览器，没有 git pull
+4. 启动了错误目录里的 start.sh / node server
