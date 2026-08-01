@@ -3405,6 +3405,47 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 }
 .settings-mission-btn .sm-desc { font-size: .75rem; color: var(--ink-soft); line-height: 1.3; }
 .settings-empty { font-size: .78rem; color: var(--ink-soft); padding: .2rem 0; }
+.data-tools-bar {
+  display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-bottom: .55rem;
+}
+.data-tools-bar button.danger-soft {
+  border-color: rgba(255,59,92,.45); color: #ffb0bd;
+}
+.data-tools-hint {
+  font-size: .72rem; color: var(--ink-soft); line-height: 1.45; margin: 0 0 .5rem;
+}
+.data-history-list {
+  display: flex; flex-direction: column; gap: .28rem; max-height: 11rem; overflow: auto;
+  padding: .35rem; border-radius: 10px; border: 1px solid rgba(240,193,75,.22);
+  background: rgba(0,0,0,.18);
+}
+.data-history-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: .4rem; align-items: center;
+  padding: .35rem .45rem; border-radius: 8px; font-size: .78rem;
+  border: 1px solid transparent; cursor: pointer;
+}
+.data-history-row:hover { border-color: rgba(240,193,75,.35); background: rgba(240,193,75,.06); }
+.data-history-row.on {
+  border-color: rgba(240,193,75,.55); background: rgba(240,193,75,.12); color: #ffe39a;
+}
+.data-history-row .dh-i { font-family: var(--font-num); color: var(--gold); font-weight: 700; }
+.data-history-row .dh-meta { color: var(--ink-soft); font-size: .68rem; }
+.score-curve-modal { width: min(820px, 96vw); }
+.score-curve-svg {
+  width: 100%; height: 220px; display: block;
+  background: rgba(0,0,0,.22); border-radius: 12px; border: 1px solid rgba(240,193,75,.22);
+}
+.score-curve-legend {
+  display: flex; flex-wrap: wrap; gap: .65rem; margin: .55rem 0 .2rem; font-size: .78rem;
+}
+.score-curve-legend i {
+  display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .25rem; vertical-align: -1px;
+}
+.score-curve-table { width: 100%; border-collapse: collapse; font-size: .78rem; margin-top: .5rem; }
+.score-curve-table th, .score-curve-table td {
+  padding: .35rem .4rem; border-bottom: 1px solid rgba(240,193,75,.15); text-align: left;
+}
+.score-curve-table th { color: var(--gold); font-weight: 600; }
 @media (max-width: 820px) {
   .settings-grid { grid-template-columns: 1fr; }
   .settings-card.span-2 { grid-column: auto; }
@@ -4114,6 +4155,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <h4>运行 · 天数 · 工具（非常用）</h4>
           </header>
           <div id="settings-runtime" class="settings-inline"></div>
+        </section>
+        <section class="settings-card span-2">
+          <header>
+            <h4>数据 · 积分 · 回滚</h4>
+          </header>
+          <div id="settings-data-tools"></div>
         </section>
         <section class="settings-card">
           <header>
@@ -4975,6 +5022,394 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const ref = await arenaRef.child("score_logs").push(entry);
     state.score_logs[ref.key] = entry;
     return ref.key;
+  }
+
+  /* -------- 本机快照回滚 / 积分清零 / 演示数据 / 曲线 -------- */
+  const LS_HISTORY_KEY = "gy_arena_history_v1";
+  const HISTORY_MAX = 10;
+  const HISTORY_INTERVAL_MS = 5 * 60 * 1000;
+  let historyTimer = null;
+
+  function loadHistoryStore() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_HISTORY_KEY) || "null");
+      if (!raw) return { cursor: -1, items: [] };
+      if (Array.isArray(raw)) return { cursor: raw.length - 1, items: raw };
+      return {
+        cursor: Number.isFinite(Number(raw.cursor)) ? Number(raw.cursor) : -1,
+        items: Array.isArray(raw.items) ? raw.items : []
+      };
+    } catch (e) {
+      return { cursor: -1, items: [] };
+    }
+  }
+  function saveHistoryStore(store) {
+    try {
+      localStorage.setItem(LS_HISTORY_KEY, JSON.stringify({
+        cursor: store.cursor,
+        items: store.items
+      }));
+    } catch (e) {
+      console.warn("history save failed", e);
+      // quota：丢掉最旧带图快照再试
+      try {
+        const slim = {
+          cursor: store.cursor,
+          items: (store.items || []).map((it) => ({
+            at: it.at, label: it.label, state: cloneStateForHistory(it.state)
+          }))
+        };
+        while (slim.items.length > 3) slim.items.shift();
+        slim.cursor = Math.min(slim.cursor, slim.items.length - 1);
+        localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(slim));
+      } catch (e2) { /* ignore */ }
+    }
+  }
+  function cloneStateForHistory(s) {
+    const c = JSON.parse(JSON.stringify(s || {}));
+    Object.values(c.peaks || {}).forEach((p) => {
+      if (p && p.logo_url && String(p.logo_url).startsWith("data:")) p.logo_url = "";
+      if (p && p.bgm_url && String(p.bgm_url).startsWith("data:")) p.bgm_url = "";
+    });
+    Object.values(c.disciples || {}).forEach((d) => {
+      if (d && d.avatar && String(d.avatar).startsWith("data:")) d.avatar = "";
+    });
+    return c;
+  }
+  function historyCanUndo() {
+    const st = loadHistoryStore();
+    return st.cursor > 0 || (st.cursor === 0 && st.items.length > 0);
+  }
+  function historyCanRedo() {
+    const st = loadHistoryStore();
+    return st.cursor >= 0 && st.cursor < st.items.length - 1;
+  }
+  function pushHistorySnapshot(label) {
+    const st = loadHistoryStore();
+    const items = st.cursor >= 0 ? st.items.slice(0, st.cursor + 1) : st.items.slice();
+    items.push({
+      at: Date.now(),
+      label: label || "自动快照",
+      state: cloneStateForHistory(state)
+    });
+    while (items.length > HISTORY_MAX) items.shift();
+    const next = { cursor: items.length - 1, items };
+    saveHistoryStore(next);
+    return next;
+  }
+  async function replaceArenaState(nextState, opts) {
+    state = nextState && typeof nextState === "object" ? nextState : buildSeedArena();
+    if (!state.config) state.config = buildSeedArena().config;
+    if (!state.peaks) state.peaks = {};
+    if (!state.disciples) state.disciples = {};
+    if (!state.score_logs) state.score_logs = {};
+    if (!state.bonus_presets) state.bonus_presets = {};
+    if (!state.tasks) state.tasks = {};
+    saveDemoLocal();
+    if (demoSyncEnabled) {
+      try { await pushDemoFull(); } catch (e) { console.warn(e); }
+    }
+    if (!opts?.silent) renderAll();
+  }
+  async function restoreHistoryAt(index, opts) {
+    const st = loadHistoryStore();
+    if (index < 0 || index >= st.items.length) return false;
+    const snap = st.items[index];
+    if (!snap || !snap.state) return false;
+    st.cursor = index;
+    saveHistoryStore(st);
+    await replaceArenaState(JSON.parse(JSON.stringify(snap.state)));
+    if (!opts?.silent) showVoteToast(`已回到：${fmtTime(snap.at)} · ${snap.label || "快照"}`);
+    if (teacherView === "settings") renderSettings();
+    return true;
+  }
+  async function historyUndo() {
+    const st = loadHistoryStore();
+    if (!st.items.length) {
+      showVoteToast("还没有快照。可点「立即快照」，或等待 5 分钟自动记录");
+      return;
+    }
+    // 若当前状态比最新快照更新，先保存再退后
+    if (st.cursor === st.items.length - 1) {
+      const last = st.items[st.cursor];
+      try {
+        if (!last || JSON.stringify(cloneStateForHistory(last.state)) !== JSON.stringify(cloneStateForHistory(state))) {
+          pushHistorySnapshot("回滚前自动保存");
+        }
+      } catch (e) {
+        pushHistorySnapshot("回滚前自动保存");
+      }
+    }
+    const st2 = loadHistoryStore();
+    if (st2.cursor <= 0) {
+      await restoreHistoryAt(0);
+      showVoteToast("已是最早的快照");
+      return;
+    }
+    await restoreHistoryAt(st2.cursor - 1);
+  }
+  async function historyRedo() {
+    const st = loadHistoryStore();
+    if (st.cursor < 0 || st.cursor >= st.items.length - 1) {
+      showVoteToast("没有可前进的快照");
+      return;
+    }
+    await restoreHistoryAt(st.cursor + 1);
+  }
+  function startHistoryTimer() {
+    if (historyTimer) clearInterval(historyTimer);
+    historyTimer = setInterval(() => {
+      try { pushHistorySnapshot("定时快照（5分钟）"); } catch (e) { /* ignore */ }
+      if (teacherView === "settings") {
+        try { renderSettingsDataTools(); } catch (e2) { /* ignore */ }
+      }
+    }, HISTORY_INTERVAL_MS);
+  }
+
+  async function resetAllScores() {
+    if (!confirm("确认将所有小组总分、学员得分/经验清零？\n（会先自动快照，可后撤恢复）")) return;
+    pushHistorySnapshot("清零前");
+    const updates = {};
+    getPeaksArray().forEach((p) => {
+      const lv = calcPeakLevel(0);
+      updates[`peaks/${peakKey(p.id)}/score`] = 0;
+      updates[`peaks/${peakKey(p.id)}/peak_level`] = lv.peak_level;
+      updates[`peaks/${peakKey(p.id)}/peak_level_name`] = lv.peak_level_name;
+      updates[`peaks/${peakKey(p.id)}/progress`] = lv.progress;
+      updates[`peaks/${peakKey(p.id)}/next_level_score`] = lv.next_level_score;
+    });
+    getDisciplesArray().forEach((d) => {
+      const lv = calcPersonalLevel(0);
+      updates[`disciples/${d.id}/contributed`] = 0;
+      updates[`disciples/${d.id}/exp`] = 0;
+      updates[`disciples/${d.id}/level`] = lv.level;
+      updates[`disciples/${d.id}/title`] = lv.title;
+      updates[`disciples/${d.id}/rank`] = "青铜";
+    });
+    // 清空加分日志，曲线从零开始；保留名册与道具
+    Object.keys(state.score_logs || {}).forEach((id) => {
+      updates[`score_logs/${id}`] = null;
+    });
+    await updatePaths(updates);
+    pushHistorySnapshot("积分已清零");
+    showVoteToast("积分已全部清零");
+    if (teacherView === "settings") renderSettings();
+  }
+
+  function buildDemoShowcaseState() {
+    const base = buildSeedArena();
+    const peakIds = Object.keys(base.peaks);
+    const scorePlan = [120, 95, 80, 110, 70, 88];
+    peakIds.forEach((pk, i) => {
+      const sc = scorePlan[i % scorePlan.length] + (i * 7) % 40;
+      const lv = calcPeakLevel(sc);
+      Object.assign(base.peaks[pk], {
+        score: sc,
+        peak_level: lv.peak_level,
+        peak_level_name: lv.peak_level_name,
+        progress: lv.progress,
+        next_level_score: lv.next_level_score,
+        work_title: (base.peaks[pk].name || "小组") + "演示作品"
+      });
+    });
+    const logs = {};
+    let logN = 0;
+    const reasons = ["课堂表现", "完成任务", "作品分享", "创意亮点", "互助协作", "擂台加分"];
+    // 模拟多天加分，供曲线统计
+    for (let day = 1; day <= 5; day++) {
+      peakIds.forEach((pk, i) => {
+        const peak = base.peaks[pk];
+        const pts = 5 + ((day + i) % 5) * 2;
+        const id = "log_demo_" + (++logN);
+        logs[id] = {
+          timestamp: Date.now() - (5 - day) * 86400000 - i * 3600000,
+          peak_id: peak.id,
+          peak_name: peak.name,
+          reason: reasons[(day + i) % reasons.length],
+          points: pts,
+          category: pts >= 10 ? "任务" : "日常",
+          operator: OPERATOR,
+          day
+        };
+      });
+    }
+    base.score_logs = logs;
+    Object.keys(base.disciples).forEach((dk, i) => {
+      const d = base.disciples[dk];
+      const contrib = 8 + (i % 9) * 3 + (i % 4);
+      const exp = contrib * 10;
+      const lv = calcPersonalLevel(exp);
+      d.student_id = String(i + 1).padStart(3, "0");
+      d.contributed = contrib;
+      d.exp = exp;
+      d.level = lv.level;
+      d.title = lv.title;
+      d.checked_in_am = i % 3 !== 0;
+      d.checked_in_am_at = d.checked_in_am ? Date.now() - 3600000 : 0;
+    });
+    // 队长标记
+    peakIds.forEach((pk) => {
+      const peak = base.peaks[pk];
+      const members = Object.values(base.disciples).filter((d) => d.peak === peak.id);
+      if (members[0]) {
+        members[0].role = "队长";
+        peak.captain_name = members[0].name;
+      }
+    });
+    base.config.day = 5;
+    base.config.week = 1;
+    base.config.title = "演示周 · 最佳作品";
+    return base;
+  }
+
+  async function importDemoData() {
+    if (!confirm("导入演示数据将覆盖当前课堂数据（名册/积分/日志）。\n会先自动快照，可后撤恢复。确认导入？")) return;
+    pushHistorySnapshot("导入演示前");
+    await replaceArenaState(buildDemoShowcaseState());
+    pushHistorySnapshot("已导入演示数据");
+    showVoteToast("演示数据已导入");
+    if (teacherView === "settings") renderSettings();
+  }
+
+  function buildScoreCurveSeries() {
+    const logs = getLogsArray().slice().sort((a, b) => (a.day || 0) - (b.day || 0) || (a.timestamp || 0) - (b.timestamp || 0));
+    const peakMap = {};
+    getPeaksArray().forEach((p) => { peakMap[p.id] = p; });
+    const daySet = new Set();
+    logs.forEach((l) => daySet.add(Math.max(1, Number(l.day) || 1)));
+    if (!daySet.size) daySet.add(Number(state.config?.day) || 1);
+    const days = Array.from(daySet).sort((a, b) => a - b);
+    const redDaily = {};
+    const blueDaily = {};
+    days.forEach((d) => { redDaily[d] = 0; blueDaily[d] = 0; });
+    logs.forEach((l) => {
+      const d = Math.max(1, Number(l.day) || 1);
+      const peak = peakMap[l.peak_id] || getPeaksArray().find((p) => p.name === l.peak_name);
+      const camp = peak && peak.camp === "blue" ? "blue" : "red";
+      const pts = Number(l.points) || 0;
+      if (camp === "blue") blueDaily[d] = (blueDaily[d] || 0) + pts;
+      else redDaily[d] = (redDaily[d] || 0) + pts;
+    });
+    let red = 0, blue = 0;
+    const redCum = [];
+    const blueCum = [];
+    days.forEach((d) => {
+      red += redDaily[d] || 0;
+      blue += blueDaily[d] || 0;
+      redCum.push(red);
+      blueCum.push(blue);
+    });
+    // 若完全无日志，用当前总分画平点
+    if (!logs.length) {
+      const liveR = getCampLiveStats("red").score;
+      const liveB = getCampLiveStats("blue").score;
+      return {
+        days: [Number(state.config?.day) || 1],
+        redCum: [liveR],
+        blueCum: [liveB],
+        redDaily: { [(Number(state.config?.day) || 1)]: liveR },
+        blueDaily: { [(Number(state.config?.day) || 1)]: liveB },
+        fromLive: true
+      };
+    }
+    return { days, redCum, blueCum, redDaily, blueDaily, fromLive: false };
+  }
+
+  function openScoreCurveModal() {
+    const series = buildScoreCurveSeries();
+    const w = 760, h = 220, pad = { l: 40, r: 16, t: 16, b: 28 };
+    const innerW = w - pad.l - pad.r;
+    const innerH = h - pad.t - pad.b;
+    const maxY = Math.max(10, ...series.redCum, ...series.blueCum);
+    const n = Math.max(1, series.days.length);
+    const xAt = (i) => pad.l + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+    const yAt = (v) => pad.t + innerH - (v / maxY) * innerH;
+    const pathFor = (arr) => arr.map((v, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(" ");
+    const grid = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+      const y = pad.t + innerH * (1 - t);
+      const val = Math.round(maxY * t);
+      return `<line x1="${pad.l}" y1="${y}" x2="${w - pad.r}" y2="${y}" stroke="rgba(240,193,75,.15)" />
+        <text x="${pad.l - 6}" y="${y + 3}" fill="#8b97b0" font-size="10" text-anchor="end">${val}</text>`;
+    }).join("");
+    const xLabels = series.days.map((d, i) =>
+      `<text x="${xAt(i)}" y="${h - 8}" fill="#8b97b0" font-size="10" text-anchor="middle">D${d}</text>`
+    ).join("");
+    const rows = series.days.map((d, i) => `
+      <tr>
+        <td>第 ${d} 天</td>
+        <td style="color:#ff8aa0">+${series.redDaily[d] || 0} / 累计 ${series.redCum[i]}</td>
+        <td style="color:#7ef0ff">+${series.blueDaily[d] || 0} / 累计 ${series.blueCum[i]}</td>
+      </tr>`).join("");
+    openModal(`
+      <div class="score-curve-modal">
+        <h3 style="font-family:var(--font-brush);color:var(--seal);text-align:center;margin-bottom:.35rem">积分曲线</h3>
+        <p class="muted" style="text-align:center;margin-bottom:.55rem">
+          ${series.fromLive ? "暂无加分日志，显示当前派系总分" : "按加分日志累计 · 切换天数不清零"}
+        </p>
+        <svg class="score-curve-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="积分曲线">
+          ${grid}
+          <path d="${pathFor(series.redCum)}" fill="none" stroke="#ff6b84" stroke-width="2.5" />
+          <path d="${pathFor(series.blueCum)}" fill="none" stroke="#2ee6ff" stroke-width="2.5" />
+          ${series.redCum.map((v, i) => `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="3.2" fill="#ff6b84" />`).join("")}
+          ${series.blueCum.map((v, i) => `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="3.2" fill="#2ee6ff" />`).join("")}
+          ${xLabels}
+        </svg>
+        <div class="score-curve-legend">
+          <span><i style="background:#ff6b84"></i>光影累计</span>
+          <span><i style="background:#2ee6ff"></i>声浪累计</span>
+        </div>
+        <table class="score-curve-table">
+          <thead><tr><th>天数</th><th>光影</th><th>声浪</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="3">暂无数据</td></tr>'}</tbody>
+        </table>
+        <div class="row" style="justify-content:flex-end;margin-top:.75rem">
+          <button type="button" class="ghost" id="modal-cancel">关闭</button>
+        </div>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+  }
+
+  function renderSettingsDataTools() {
+    const host = document.getElementById("settings-data-tools");
+    if (!host) return;
+    const st = loadHistoryStore();
+    const items = st.items || [];
+    host.innerHTML = `
+      <p class="data-tools-hint">积分按天累计不清零。危险操作前会自动快照；另每 5 分钟自动记录，最多保留 10 步，可后撤 / 前进。</p>
+      <div class="data-tools-bar">
+        <button type="button" class="danger-soft" id="btn-reset-scores">积分清零</button>
+        <button type="button" id="btn-import-demo">导入演示数据</button>
+        <button type="button" class="primary" id="btn-score-curve">积分曲线</button>
+        <button type="button" id="btn-history-snap">立即快照</button>
+        <button type="button" id="btn-history-undo" ${items.length ? "" : "disabled"}>后撤</button>
+        <button type="button" id="btn-history-redo" ${historyCanRedo() ? "" : "disabled"}>前进</button>
+      </div>
+      <div class="muted" style="font-size:.72rem;margin-bottom:.35rem">
+        快照 ${items.length ? (st.cursor + 1) : 0} / ${items.length} · 最多 ${HISTORY_MAX} 步
+      </div>
+      <div class="data-history-list">
+        ${items.length ? items.map((it, i) => `
+          <button type="button" class="data-history-row ${i === st.cursor ? "on" : ""}" data-hist-i="${i}">
+            <span class="dh-i">${i + 1}</span>
+            <span>${esc(it.label || "快照")}<div class="dh-meta">${fmtTime(it.at)}</div></span>
+            <span class="dh-meta">${i === st.cursor ? "当前" : "恢复"}</span>
+          </button>`).join("") : '<div class="settings-empty">暂无快照 · 可点「立即快照」或等待自动记录</div>'}
+      </div>`;
+    const undoBtn = document.getElementById("btn-history-undo");
+    const redoBtn = document.getElementById("btn-history-redo");
+    if (undoBtn) undoBtn.onclick = () => historyUndo();
+    if (redoBtn) redoBtn.onclick = () => historyRedo();
+    document.getElementById("btn-reset-scores")?.addEventListener("click", () => resetAllScores());
+    document.getElementById("btn-import-demo")?.addEventListener("click", () => importDemoData());
+    document.getElementById("btn-score-curve")?.addEventListener("click", () => openScoreCurveModal());
+    document.getElementById("btn-history-snap")?.addEventListener("click", () => {
+      pushHistorySnapshot("手动快照");
+      showVoteToast("已保存快照");
+      renderSettingsDataTools();
+    });
+    host.querySelectorAll("[data-hist-i]").forEach((b) => {
+      b.onclick = () => restoreHistoryAt(Number(b.dataset.histI));
+    });
   }
 
   /* -------- FX + SFX：仙剑奇侠传3 气质音效（合成还原气质；可导入本地音效包） -------- */
@@ -11368,6 +11803,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   async function deletePeakFromSettings(pid) {
     if (!confirm("删除小组？弟子回大厅")) return;
+    try { pushHistorySnapshot("删除小组前"); } catch (e) { /* ignore */ }
     const updates = { [`peaks/${peakKey(pid)}`]: null };
     disciplesOfPeak(pid).forEach((d) => {
       updates[`disciples/${d.id}/peak`] = -1;
@@ -11552,6 +11988,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         memBtn.title = day < 20 ? "第 20 天解锁回忆" : "打开回忆";
       }
     }
+
+    try { renderSettingsDataTools(); } catch (e) { console.warn(e); }
 
     const factions = document.getElementById("settings-factions");
     if (factions) {
@@ -13050,6 +13488,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "redeem-manage") { showScreen("teacher"); redeemTab = "manage"; setTeacherView("redeem"); return; }
     if (act === "goto-logs") { showScreen("teacher"); setTeacherView("logs"); return; }
     if (act === "goto-settings") { showScreen("teacher"); setTeacherView("settings"); return; }
+    if (act === "reset-all-scores") { await resetAllScores(); return; }
+    if (act === "import-demo-data") { await importDemoData(); return; }
+    if (act === "score-curve") { openScoreCurveModal(); return; }
+    if (act === "history-undo") { await historyUndo(); return; }
+    if (act === "history-redo") { await historyRedo(); return; }
+    if (act === "history-snap") { pushHistorySnapshot("手动快照"); showVoteToast("已保存快照"); if (teacherView === "settings") renderSettings(); return; }
     if (act === "export-data") {
       openModal(`<h3>导出</h3><div class="row" style="justify-content:center;margin-top:1rem">
         <button type="button" class="primary" id="ex-json">JSON</button><button type="button" id="ex-csv">CSV</button><button type="button" class="ghost" id="modal-cancel">取消</button></div>`);
@@ -13330,6 +13774,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       ensureSfxToggle();
       ensureSwordCursorTrail();
       ensureFullscreenBinding();
+      try {
+        startHistoryTimer();
+        if (!loadHistoryStore().items.length) pushHistorySnapshot("启动快照");
+      } catch (e) { /* ignore */ }
       ensureVoteStorageSync();
       startVoteLiveLoop();
       startCultivationLoop();
