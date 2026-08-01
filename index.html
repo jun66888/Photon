@@ -5911,8 +5911,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!host) return;
     const def = getPlayModeDef();
     host.innerHTML = `
-      <div class="sps-text">当前玩法 <b>${esc(def.name)}</b> · ${esc(def.size)}</div>
+      <div class="sps-text">当前玩法 <b>${esc(def.name)}</b> · ${esc(def.size)}<br><span class="muted" id="settings-build-stamp">版本加载中…</span></div>
       <button type="button" data-action="goto-play-mode">改玩法</button>`;
+    fetch("/__gy/build", { cache: "no-store" }).then((r) => r.json()).then((b) => {
+      const el = document.getElementById("settings-build-stamp");
+      if (!el) return;
+      el.textContent = `版本 ${b.short || "?"} · ${b.synced_at || "未同步"}`;
+    }).catch(() => {
+      const el = document.getElementById("settings-build-stamp");
+      if (el) el.textContent = "版本未知 · 请用 start.sh 启动以自动同步";
+    });
   }
 
   const LS_SETTINGS_ACC = "gy_arena_settings_acc_v1";

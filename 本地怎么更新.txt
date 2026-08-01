@@ -1,25 +1,27 @@
 本机唯一目录：
   /Users/liwei/Photon
-  /Users/liwei/Photon/index.html
 
-【立刻对齐 · 终端整段复制】
+【已修复：不用每次覆盖】
+现在双击「开始上课」或运行 ./start.sh，会自动从 GitHub 强制同步最新代码。
+课堂数据（签到/积分库）会保留。
 
-cd /Users/liwei/Photon
-./更新本地.sh
-./start.sh
-./一键放到桌面.sh
+【日常用法】
+  cd /Users/liwei/Photon
+  ./start.sh
 
-然后浏览器打开 http://127.0.0.1:3000/?mode=teacher
-Cmd+Shift+R，点左侧「玩法」。
+或双击桌面「光影盟-开始上课」。
 
-【自检】
+【只更新不启动】
+  ./更新本地.sh
+  或双击「光影盟-更新」/ 诊断本机.command
 
-grep -n "玩法模式" /Users/liwei/Photon/index.html | head
+【若仍不对】
+1) 双击 诊断本机.command，看是不是 git 仓库、版本号
+2) 终端执行：
+   cd /Users/liwei/Photon && ./sync-from-github.sh && ./start.sh
+3) 设置页顶部会显示「版本 xxxxxxx · 同步时间」——有新版本号才算更新成功
 
-【重装（旧目录坏了）】
-
-mv /Users/liwei/Photon "/Users/liwei/Photon-旧备份-$(date +%Y%m%d)"
-git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git /Users/liwei/Photon
-cd /Users/liwei/Photon
-./start.sh
-./一键放到桌面.sh
+【彻底重装（最后手段）】
+  mv /Users/liwei/Photon "/Users/liwei/Photon-旧备份-$(date +%Y%m%d)"
+  git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git /Users/liwei/Photon
+  cd /Users/liwei/Photon && ./start.sh && ./一键放到桌面.sh

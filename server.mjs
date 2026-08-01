@@ -315,12 +315,19 @@ function sendFile(res, filePath) {
   }
   const ext = path.extname(filePath).toLowerCase();
   const type = MIME[ext] || "application/octet-stream";
-  const noCache = ext === ".html" || ext === ".js" || ext === ".json";
+  const base = path.basename(filePath);
+  const noStore = ext === ".html" || ext === ".js" || ext === ".mjs" || ext === ".json"
+    || base === "index.html" || base === "gy-build.json";
   const data = fs.readFileSync(filePath);
-  send(res, 200, data, {
+  const headers = {
     "Content-Type": type,
-    "Cache-Control": noCache ? "no-cache" : "public, max-age=3600"
-  });
+    "Cache-Control": noStore ? "no-store, no-cache, must-revalidate" : "public, max-age=3600"
+  };
+  if (noStore) {
+    headers.Pragma = "no-cache";
+    headers.ETag = `"${fs.statSync(filePath).mtimeMs}"`;
+  }
+  send(res, 200, data, headers);
 }
 
 function readJson(req) {
@@ -552,6 +559,21 @@ const server = http.createServer(async (req, res) => {
     demoStore = { rev: 0, updated_at: Date.now(), state: null };
     try { fs.unlinkSync(DEMO_DB_FILE); } catch (e) { /* ignore */ }
     sendJson(res, 200, { ok: true, rev: 0, state: null });
+    return;
+  }
+
+  if (u.pathname === "/__gy/build" && req.method === "GET") {
+    const buildFile = path.join(ROOT, "gy-build.json");
+    let build = { short: "local", synced_at: "", path: ROOT, commit: "" };
+    try {
+      if (fs.existsSync(buildFile)) build = JSON.parse(fs.readFileSync(buildFile, "utf8"));
+    } catch (e) { /* ignore */ }
+    try {
+      const st = fs.statSync(path.join(ROOT, "index.html"));
+      build.index_mtime = st.mtimeMs;
+      build.index_bytes = st.size;
+    } catch (e) { /* ignore */ }
+    sendJson(res, 200, build);
     return;
   }
 

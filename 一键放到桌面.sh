@@ -21,19 +21,21 @@ if [[ ! -d "$DESKTOP" ]]; then
   exit 1
 fi
 
-chmod +x "$ROOT/start.sh" "$ROOT/更新本地.sh" "$ROOT/更新本地.command" \
-         "$ROOT/一键放到桌面.sh" "$ROOT/打开老师端.command" 2>/dev/null || true
+chmod +x "$ROOT/start.sh" "$ROOT/sync-from-github.sh" "$ROOT/更新本地.sh" "$ROOT/更新本地.command" \
+         "$ROOT/一键放到桌面.sh" "$ROOT/打开老师端.command" "$ROOT/诊断本机.command" 2>/dev/null || true
 
-# macOS 可双击运行的 .command —— 全部写死绝对路径
+# macOS 可双击运行的 .command —— 全部写死绝对路径；上课前自动同步
 cat > "$DESKTOP/光影盟-开始上课.command" <<EOF
 #!/bin/bash
-cd "$PHOTON_HOME" || exit 1
+cd "$PHOTON_HOME" || { echo "找不到 $PHOTON_HOME"; read -r -p "按回车关闭… " _; exit 1; }
+chmod +x start.sh sync-from-github.sh 2>/dev/null || true
 exec "$PHOTON_HOME/start.sh"
 EOF
 
 cat > "$DESKTOP/GY-Start.command" <<EOF
 #!/bin/bash
 cd "$PHOTON_HOME" || exit 1
+chmod +x start.sh sync-from-github.sh 2>/dev/null || true
 exec "$PHOTON_HOME/start.sh"
 EOF
 
@@ -50,7 +52,20 @@ EOF
 cat > "$DESKTOP/光影盟-更新.command" <<EOF
 #!/bin/bash
 cd "$PHOTON_HOME" || exit 1
-exec "$PHOTON_HOME/更新本地.command"
+chmod +x sync-from-github.sh 更新本地.command 2>/dev/null || true
+if [[ -x "$PHOTON_HOME/sync-from-github.sh" ]]; then
+  "$PHOTON_HOME/sync-from-github.sh"
+  echo ""
+  read -r -p "按回车关闭… " _
+else
+  exec "$PHOTON_HOME/更新本地.command"
+fi
+EOF
+
+cat > "$DESKTOP/光影盟-诊断.command" <<EOF
+#!/bin/bash
+cd "$PHOTON_HOME" || exit 1
+exec "$PHOTON_HOME/诊断本机.command"
 EOF
 
 cat > "$DESKTOP/光影盟-收藏地址.txt" <<EOF
@@ -80,13 +95,15 @@ chmod +x "$DESKTOP/光影盟-开始上课.command" \
          "$DESKTOP/GY-Start.command" \
          "$DESKTOP/光影盟-打开老师端.command" \
          "$DESKTOP/GY-Teacher.command" \
-         "$DESKTOP/光影盟-更新.command"
+         "$DESKTOP/光影盟-更新.command" \
+         "$DESKTOP/光影盟-诊断.command"
 
 echo ""
 echo "  [完成] 已放到桌面：$DESKTOP"
-echo "    光影盟-开始上课.command  /  GY-Start.command  ← 上课"
-echo "    光影盟-更新.command  ← 拉取最新"
-echo "    光影盟-打开老师端.command / GY-Teacher.command"
+echo "    光影盟-开始上课.command  ← 上课（会自动同步代码）"
+echo "    光影盟-更新.command      ← 只同步不启动"
+echo "    光影盟-诊断.command      ← 检查路径/版本"
+echo "    光影盟-打开老师端.command"
 echo ""
 echo "  老师端：http://127.0.0.1:3000/?mode=teacher"
 echo "  固定目录：$PHOTON_HOME"
