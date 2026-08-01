@@ -2663,7 +2663,7 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
 /* ===== 课程分页壳：单侧导航常驻，中间舞台翻页 ===== */
 body.teacher-shell {
   --rail-w: 92px;
-  --prop-rail-w: 148px;
+  --prop-rail-w: 168px;
 }
 body.teacher-shell.mode-mobile-clean {
   --rail-w: 0px;
@@ -2719,13 +2719,16 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
   font-size: .7rem;
   color: var(--ink-soft);
 }
-.prop-rail-tabs {
+.prop-rail-tabs,
+.rail-side-mode-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: .2rem;
   flex: 0 0 auto;
 }
-.prop-rail-tabs button {
+.prop-rail-tabs { grid-template-columns: repeat(4, 1fr); }
+.prop-rail-tabs button,
+.rail-side-mode-tabs button {
   width: 100%;
   font-size: .62rem !important;
   padding: .22rem 0 !important;
@@ -2733,10 +2736,123 @@ body.teacher-shell:not(.mode-mobile-clean) .course-rail { display: flex; }
   letter-spacing: 0;
   border-radius: 6px;
 }
-.prop-rail-tabs button.on {
+.prop-rail-tabs button.on,
+.rail-side-mode-tabs button.on {
   border-color: var(--gold);
   color: #ffe39a;
   background: rgba(240,193,75,.14);
+}
+.rail-side-mode-tabs button {
+  font-size: .72rem !important;
+  letter-spacing: .08em;
+  min-height: 1.85rem !important;
+}
+.rail-rank-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  overflow: hidden;
+}
+.rail-rank-pane.hidden,
+.rail-prop-pane.hidden { display: none !important; }
+.rail-prop-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  overflow: hidden;
+}
+.rail-rank-block {
+  flex: 1 1 50%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.12)),
+    radial-gradient(90% 60% at 50% 0%, rgba(240,193,75,.08), transparent 70%);
+  padding: .35rem .3rem;
+  overflow: hidden;
+}
+.rail-rank-cap {
+  flex: 0 0 auto;
+  font-size: .62rem;
+  letter-spacing: .14em;
+  color: var(--gold);
+  padding: 0 .15rem .25rem;
+  border-bottom: 1px solid rgba(240,193,75,.18);
+  margin-bottom: .25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.rail-rank-cap .rr-sub {
+  letter-spacing: 0;
+  color: var(--ink-soft);
+  font-size: .55rem;
+}
+.rail-rank-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: .22rem;
+  scrollbar-width: thin;
+}
+.rail-rank-row {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  gap: .2rem;
+  align-items: center;
+  padding: .22rem .25rem;
+  border-radius: 7px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid transparent;
+  font-size: .68rem;
+  line-height: 1.2;
+}
+.rail-rank-row.top1 {
+  border-color: rgba(240,193,75,.45);
+  background: rgba(240,193,75,.1);
+}
+.rail-rank-row.top2 { border-color: rgba(180,200,220,.35); }
+.rail-rank-row.top3 { border-color: rgba(205,140,80,.35); }
+.rail-rank-row .rr-i {
+  font-family: var(--font-num);
+  color: var(--gold);
+  font-weight: 700;
+  text-align: center;
+}
+.rail-rank-row .rr-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.rail-rank-row .rr-name .rr-meta {
+  display: block;
+  color: var(--ink-soft);
+  font-size: .55rem;
+  margin-top: .05rem;
+}
+.rail-rank-row .rr-score {
+  font-family: var(--font-num);
+  color: #ffe39a;
+  font-weight: 700;
+  font-size: .72rem;
+}
+.rail-rank-empty {
+  color: var(--ink-soft);
+  font-size: .65rem;
+  text-align: center;
+  padding: .8rem .2rem;
+  line-height: 1.45;
 }
 /* 卡槽：道具卡装在里面 */
 .prop-rail-deck {
@@ -3626,10 +3742,10 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
 @media (max-width: 1100px) {
-  body.teacher-shell { --prop-rail-w: 136px; }
+  body.teacher-shell { --prop-rail-w: 156px; }
 }
 @media (max-width: 980px) {
-  body.teacher-shell { --rail-w: 76px; --prop-rail-w: 128px; }
+  body.teacher-shell { --rail-w: 76px; --prop-rail-w: 148px; }
   .course-rail button.rail-btn { font-size: .65rem !important; min-height: 2.35rem; }
 }
 @media (max-width: 720px) {
@@ -3697,32 +3813,48 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     </div>
   </aside>
 
-  <!-- 右侧道具栏：已兑换道具卡常驻展示 -->
-  <aside class="course-rail right prop-rail" id="rail-props" aria-label="道具栏">
+  <!-- 右侧栏：累计排行（日切不清零）+ 道具卡 -->
+  <aside class="course-rail right prop-rail" id="rail-props" aria-label="排行与道具栏">
     <div class="prop-rail-head">
-      <div class="pr-title">道具</div>
-      <div class="pr-count" id="prop-rail-count">0 张</div>
+      <div class="pr-title" id="rail-side-title">排行</div>
+      <div class="pr-count" id="prop-rail-count" title="积分按天累计，切换天数不清零">累计</div>
     </div>
-    <div class="prop-rail-tabs" id="prop-rail-tabs">
-      <button type="button" class="on" data-prop-filter="all" title="全部道具">全</button>
-      <button type="button" data-prop-filter="camp" title="派系道具">派</button>
-      <button type="button" data-prop-filter="peak" title="小组道具">组</button>
-      <button type="button" data-prop-filter="disciple" title="学员道具">员</button>
+    <div class="rail-side-mode-tabs" id="rail-side-mode-tabs" role="tablist" aria-label="右侧栏模式">
+      <button type="button" class="on" data-rail-mode="rank" title="小组 / 学员累计排行">排行</button>
+      <button type="button" data-rail-mode="prop" title="已兑换道具卡">道具</button>
     </div>
-    <div class="prop-rail-deck" aria-label="道具卡槽">
-      <div class="prop-deck-label">卡槽</div>
-      <div class="prop-rail-list" id="prop-rail-list">
-        <div class="prop-rail-empty">暂无道具卡<br>点下方兑换领取</div>
+    <div class="rail-rank-pane" id="rail-rank-pane">
+      <div class="rail-rank-block" aria-label="小组排行">
+        <div class="rail-rank-cap"><span>小组排行</span><span class="rr-sub">按总分</span></div>
+        <div class="rail-rank-list" id="rail-peak-rank"></div>
+      </div>
+      <div class="rail-rank-block" aria-label="学员排行">
+        <div class="rail-rank-cap"><span>学员排行</span><span class="rr-sub">按得分</span></div>
+        <div class="rail-rank-list" id="rail-disciple-rank"></div>
       </div>
     </div>
-    <div class="prop-rail-foot">
-      <div class="prop-rail-plays" aria-label="道具玩法">
-        <button type="button" data-action="prop-lot" title="从未使用道具中随机抽取一张"><span class="pp-ico">🎋</span><span class="pp-txt">灵签</span></button>
-        <button type="button" data-action="prop-cast" title="随机抽取并当众施法展示"><span class="pp-ico">✨</span><span class="pp-txt">施法</span></button>
-        <button type="button" data-action="prop-duel" title="两张未用道具对决，败者标记已用"><span class="pp-ico">⚔</span><span class="pp-txt">对决</span></button>
-        <button type="button" data-action="prop-oracle" title="掷骰决定本回合道具用法提示"><span class="pp-ico">🎲</span><span class="pp-txt">神谕</span></button>
+    <div class="rail-prop-pane hidden" id="rail-prop-pane">
+      <div class="prop-rail-tabs" id="prop-rail-tabs">
+        <button type="button" class="on" data-prop-filter="all" title="全部道具">全</button>
+        <button type="button" data-prop-filter="camp" title="派系道具">派</button>
+        <button type="button" data-prop-filter="peak" title="小组道具">组</button>
+        <button type="button" data-prop-filter="disciple" title="学员道具">员</button>
       </div>
-      <button type="button" class="primary prop-redeem-btn" data-action="goto-redeem" title="打开兑换中心">去兑换</button>
+      <div class="prop-rail-deck" aria-label="道具卡槽">
+        <div class="prop-deck-label">卡槽</div>
+        <div class="prop-rail-list" id="prop-rail-list">
+          <div class="prop-rail-empty">暂无道具卡<br>点下方兑换领取</div>
+        </div>
+      </div>
+      <div class="prop-rail-foot">
+        <div class="prop-rail-plays" aria-label="道具玩法">
+          <button type="button" data-action="prop-lot" title="从未使用道具中随机抽取一张"><span class="pp-ico">🎋</span><span class="pp-txt">灵签</span></button>
+          <button type="button" data-action="prop-cast" title="随机抽取并当众施法展示"><span class="pp-ico">✨</span><span class="pp-txt">施法</span></button>
+          <button type="button" data-action="prop-duel" title="两张未用道具对决，败者标记已用"><span class="pp-ico">⚔</span><span class="pp-txt">对决</span></button>
+          <button type="button" data-action="prop-oracle" title="掷骰决定本回合道具用法提示"><span class="pp-ico">🎲</span><span class="pp-txt">神谕</span></button>
+        </div>
+        <button type="button" class="primary prop-redeem-btn" data-action="goto-redeem" title="打开兑换中心">去兑换</button>
+      </div>
     </div>
   </aside>
 
@@ -8939,6 +9071,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   let propRailFilter = "all"; // all | camp | peak | disciple
+  let railSideMode = "rank"; // rank | prop —— 右侧默认显示累计排行
 
   /** 汇总各实体已兑换道具卡，供右侧道具栏展示 */
   function collectHeldProps() {
@@ -8987,7 +9120,96 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return list.sort((a, b) => (b.at || 0) - (a.at || 0) || String(a.name).localeCompare(String(b.name), "zh-CN"));
   }
 
+  function bindRailSideModeTabs() {
+    const tabs = document.getElementById("rail-side-mode-tabs");
+    if (!tabs || tabs.dataset.bound === "1") return;
+    tabs.dataset.bound = "1";
+    tabs.querySelectorAll("[data-rail-mode]").forEach((b) => {
+      b.addEventListener("click", () => {
+        railSideMode = b.dataset.railMode === "prop" ? "prop" : "rank";
+        renderRailSide();
+      });
+    });
+  }
+
+  function renderRailSide() {
+    const host = document.getElementById("rail-props");
+    if (!host) return;
+    bindRailSideModeTabs();
+    const titleEl = document.getElementById("rail-side-title");
+    const countEl = document.getElementById("prop-rail-count");
+    const rankPane = document.getElementById("rail-rank-pane");
+    const propPane = document.getElementById("rail-prop-pane");
+    const modeTabs = document.getElementById("rail-side-mode-tabs");
+    if (modeTabs) {
+      modeTabs.querySelectorAll("[data-rail-mode]").forEach((b) => {
+        b.classList.toggle("on", b.dataset.railMode === railSideMode);
+      });
+    }
+    const showRank = railSideMode !== "prop";
+    if (rankPane) rankPane.classList.toggle("hidden", !showRank);
+    if (propPane) propPane.classList.toggle("hidden", showRank);
+    if (titleEl) titleEl.textContent = showRank ? "排行" : "道具";
+    if (showRank) {
+      if (countEl) countEl.textContent = "日切不清零";
+      renderRankRail();
+    } else {
+      renderPropRailCards();
+    }
+  }
+
+  /** 小组总分 + 学员得分累计榜（切换天数不重置） */
+  function renderRankRail() {
+    const peakHost = document.getElementById("rail-peak-rank");
+    const discHost = document.getElementById("rail-disciple-rank");
+    if (!peakHost || !discHost) return;
+
+    const peaks = getPeaksArray().slice().sort((a, b) =>
+      (Number(b.score) || 0) - (Number(a.score) || 0) ||
+      String(a.name || "").localeCompare(String(b.name || ""), "zh-CN") ||
+      (Number(a.id) || 0) - (Number(b.id) || 0)
+    );
+    peakHost.innerHTML = peaks.length
+      ? peaks.map((p, i) => {
+          const camp = p.camp === "blue" ? "蓝" : "红";
+          const topCls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
+          return `<div class="rail-rank-row ${topCls}" title="${esc(p.name || "小组")} · ${camp}营">
+            <span class="rr-i">${i + 1}</span>
+            <span class="rr-name">${esc(p.icon || "")} ${esc(p.name || "小组")}<span class="rr-meta">${camp}营</span></span>
+            <span class="rr-score">${Number(p.score) || 0}</span>
+          </div>`;
+        }).join("")
+      : '<div class="rail-rank-empty">暂无小组</div>';
+
+    const disciples = getDisciplesArray()
+      .filter((d) => d && (d.student_id || d.name))
+      .slice()
+      .sort((a, b) =>
+        (Number(b.contributed) || 0) - (Number(a.contributed) || 0) ||
+        (Number(b.exp) || 0) - (Number(a.exp) || 0) ||
+        String(a.student_id || "").localeCompare(String(b.student_id || ""), "zh-CN") ||
+        String(a.name || "").localeCompare(String(b.name || ""), "zh-CN")
+      );
+    discHost.innerHTML = disciples.length
+      ? disciples.map((d, i) => {
+          const peak = findPeak(d.peak);
+          const place = peak ? `${peak.icon || ""}${peak.name || ""}` : "大厅";
+          const topCls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
+          const sid = d.student_id ? String(d.student_id) : "";
+          return `<div class="rail-rank-row ${topCls}" title="${esc(d.name || "")} · ${esc(place)}">
+            <span class="rr-i">${i + 1}</span>
+            <span class="rr-name">${sid ? esc(sid) + " " : ""}${esc(d.name || "未命名")}<span class="rr-meta">${esc(place)}</span></span>
+            <span class="rr-score">${Number(d.contributed) || 0}</span>
+          </div>`;
+        }).join("")
+      : '<div class="rail-rank-empty">暂无学员</div>';
+  }
+
   function renderPropRail() {
+    renderRailSide();
+  }
+
+  function renderPropRailCards() {
     const host = document.getElementById("rail-props");
     if (!host) return;
     const countEl = document.getElementById("prop-rail-count");
@@ -9002,7 +9224,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         b.classList.toggle("on", b.dataset.propFilter === propRailFilter);
         b.onclick = () => {
           propRailFilter = b.dataset.propFilter || "all";
-          renderPropRail();
+          renderPropRailCards();
         };
       });
     }
@@ -11732,8 +11954,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       });
       localStorage.removeItem(LS_VOTE_KEY);
       await updatePaths(updates);
-      showVoteToast(`已切换到第 ${day} 天`);
+      // 日切只重置票数与签到/投票状态；小组 score、学员 contributed/exp 累计保留
+      showVoteToast(`已切换到第 ${day} 天 · 积分累计不清零`);
       syncRailDayUI();
+      if (typeof renderRailSide === "function") renderRailSide();
       if (teacherView === "settings") renderSettings();
       const memBtn = document.getElementById("btn-memories");
       if (memBtn) {
@@ -12797,7 +13021,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       else if (teacherView === "settings") renderSettings();
     }     else if (mode === "student") renderStudent();
     else if (mode === "checkin") renderCheckin();
-    if (mode === "teacher") renderPropRail();
+    if (mode === "teacher") renderRailSide();
   }
 
   async function handleTeacherAction(act, btn) {
