@@ -6461,7 +6461,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const discs = getDisciplesArray().length;
     const hall = getHallDisciples().length;
     const roster = document.getElementById("acc-sum-roster");
-    if (roster) roster.textContent = `${peaks} 组 · ${discs} 人${hall ? ` · 大厅 ${hall}` : ""}`;
+    if (roster) {
+      const mode = (() => { try { return getUiDisplayMode(); } catch (e) { return "camp"; } })();
+      const modeName = (UI_DISPLAY_MODE_DEFS.find((m) => m.id === mode) || {}).name || "两派对抗";
+      roster.textContent = peaks
+        ? `${modeName} · ${peaks} 组 · ${discs} 人${hall ? ` · 未入组 ${hall}` : ""}`
+        : `${modeName} · 红蓝对抗 · ${discs} 人`;
+    }
     const m = getCampMission();
     const mission = document.getElementById("acc-sum-mission");
     if (mission) {
