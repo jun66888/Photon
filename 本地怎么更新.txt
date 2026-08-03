@@ -1,29 +1,30 @@
 本机唯一目录：
   /Users/liwei/Photon
 
-【前端打不开？】
-你关掉的那个黑色终端窗口就是「课堂环境」。
-再双击桌面「光影盟-启动环境」或「光影盟-开始上课」即可。
-桌面有「光影盟-环境说明.txt」写着需要开什么。
+【只需这一个】
+双击桌面「光影盟-一键上课」（或「开始上课」/ GY-Start）
+→ 自动更新 + 启动环境 + 打开启动台与老师端
+→ 黑色终端窗口上课期间别关
 
-【桌面更新按钮】
-双击桌面「光影盟-更新」或「GY-Update」即可拉最新代码。
-（若桌面没有，终端执行：cd /Users/liwei/Photon && ./一键放到桌面.sh）
+启动台：http://127.0.0.1:3000/launcher.html
+老师端：http://127.0.0.1:3000/?mode=teacher
 
-【日常上课】
-双击「光影盟-启动环境」——启动服务并打开浏览器；上课期间别关窗。
+【桌面没有按钮时】
+终端执行：
+  cd /Users/liwei/Photon && ./更新本地.sh && ./一键放到桌面.sh
 
 【命令行】
   cd /Users/liwei/Photon
+  ./一键上课.sh          # 更新+上课（推荐）
   ./更新本地.sh          # 只更新 + 刷新桌面按钮
-  ./start.sh             # 更新并上课
+  ./start.sh             # 同步并启动（也会开启动台）
 
 【若仍不对】
-1) 双击「光影盟-诊断」，看版本号与是否 git 仓库
-2) 设置页顶部看「版本 xxxxxxx · 同步时间」
-3) 浏览器 Cmd+Shift+R 强制刷新
+1) 双击「光影盟-诊断」
+2) 设置页看版本号
+3) 浏览器 Cmd+Shift+R
 
 【彻底重装】
   mv /Users/liwei/Photon "/Users/liwei/Photon-旧备份-$(date +%Y%m%d)"
   git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git /Users/liwei/Photon
-  cd /Users/liwei/Photon && ./一键放到桌面.sh && ./start.sh
+  cd /Users/liwei/Photon && ./一键放到桌面.sh && ./一键上课.sh

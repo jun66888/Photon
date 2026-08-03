@@ -31,10 +31,11 @@ http://127.0.0.1:3000/?mode=teacher
 - 说明：云端 Agent **不会**把图标写到你教室电脑桌面，必须在本机双击上述脚本  
 - **Mac（本机固定目录）**：`/Users/liwei/Photon`  
   ```bash
-  cd /Users/liwei/Photon && ./更新本地.sh && ./start.sh && ./一键放到桌面.sh
+  cd /Users/liwei/Photon && ./更新本地.sh && ./一键放到桌面.sh && ./一键上课.sh
   ```
-  之后用桌面「光影盟-开始上课」/「光影盟-更新」
-- **Linux**：`./start.sh` 或 `npm start`
+  之后桌面只需双击「光影盟-一键上课」（自动更新+启动+打开启动台）
+  启动台：`http://127.0.0.1:3000/launcher.html`
+- **Linux**：`./一键上课.sh` 或 `./start.sh` / `npm start`
 
 手机扫码地址首次绑定后写入 `gy-classroom.json`，**不会自动更换**。  
 详见 `固定访问地址.txt`（每次启动生成）。
