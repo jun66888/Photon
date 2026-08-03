@@ -1075,8 +1075,12 @@ const server = http.createServer(async (req, res) => {
           tunnelProc = null;
         }
         liveTunnelOrigin = "";
+        liveTunnelProvider = "";
         preferLocaltunnelNext = false;
         tunnelBootAttempt = 0;
+        tunnelFailStreak = 0;
+        lastTunnelRestartAt = 0; // 老师手动重建，不受冷却限制
+        stopTunnelHeartbeat();
         clearTunnelOriginFile();
         startPublicTunnel();
         sendJson(res, 200, { ok: true, restarting: true, tunnel_status: tunnelStatus });
