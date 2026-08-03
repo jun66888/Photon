@@ -1,27 +1,24 @@
 本机唯一目录：
   /Users/liwei/Photon
 
-【已修复：不用每次覆盖】
-现在双击「开始上课」或运行 ./start.sh，会自动从 GitHub 强制同步最新代码。
-课堂数据（签到/积分库）会保留。
+【桌面更新按钮】
+双击桌面「光影盟-更新」或「GY-Update」即可拉最新代码。
+（若桌面没有，终端执行：cd /Users/liwei/Photon && ./一键放到桌面.sh）
 
-【日常用法】
+【日常上课】
+双击桌面「光影盟-开始上课」——启动时也会自动同步。
+
+【命令行】
   cd /Users/liwei/Photon
-  ./start.sh
-
-或双击桌面「光影盟-开始上课」。
-
-【只更新不启动】
-  ./更新本地.sh
-  或双击「光影盟-更新」/ 诊断本机.command
+  ./更新本地.sh          # 只更新 + 刷新桌面按钮
+  ./start.sh             # 更新并上课
 
 【若仍不对】
-1) 双击 诊断本机.command，看是不是 git 仓库、版本号
-2) 终端执行：
-   cd /Users/liwei/Photon && ./sync-from-github.sh && ./start.sh
-3) 设置页顶部会显示「版本 xxxxxxx · 同步时间」——有新版本号才算更新成功
+1) 双击「光影盟-诊断」，看版本号与是否 git 仓库
+2) 设置页顶部看「版本 xxxxxxx · 同步时间」
+3) 浏览器 Cmd+Shift+R 强制刷新
 
-【彻底重装（最后手段）】
+【彻底重装】
   mv /Users/liwei/Photon "/Users/liwei/Photon-旧备份-$(date +%Y%m%d)"
   git clone -b cursor/guangyingmeng-arena-f9c7 https://github.com/jun66888/Photon.git /Users/liwei/Photon
-  cd /Users/liwei/Photon && ./start.sh && ./一键放到桌面.sh
+  cd /Users/liwei/Photon && ./一键放到桌面.sh && ./start.sh

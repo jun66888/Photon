@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# 光影盟 · 一键修复/更新（无 git 也会自动备份并重装）
+#!/bin/bash
+# 光影盟 · 桌面更新按钮（自包含：无 git / 旧 zip 也能修好）
 set -euo pipefail
 
 PHOTON_HOME="/Users/liwei/Photon"
@@ -12,12 +12,16 @@ KEEP_FILES=(
   "gy-public-origin.json"
 )
 
+clear 2>/dev/null || true
 echo "========================================"
-echo "固定目录：$PHOTON_HOME"
+echo "  光影盟 · 更新到最新"
+echo "  目录：$PHOTON_HOME"
 echo "========================================"
+echo ""
 
 if ! command -v git >/dev/null 2>&1; then
   echo "❌ 未安装 git。请先执行：xcode-select --install"
+  read -r -p "按回车关闭…" _
   exit 1
 fi
 
@@ -42,36 +46,31 @@ restore_data() {
 }
 
 if [[ -d "$PHOTON_HOME/.git" ]]; then
-  echo "检测到 git 仓库，强制同步…"
-  if [[ -x "$PHOTON_HOME/sync-from-github.sh" ]]; then
-    bash "$PHOTON_HOME/sync-from-github.sh"
-  else
-    cd "$PHOTON_HOME"
-    backup_data "$PHOTON_HOME"
-    git remote set-url origin "$PHOTON_REPO" 2>/dev/null || git remote add origin "$PHOTON_REPO"
-    git fetch --force origin "$PHOTON_BRANCH"
-    git checkout -B "$PHOTON_BRANCH" "origin/$PHOTON_BRANCH"
-    git reset --hard "origin/$PHOTON_BRANCH"
-    restore_data "$PHOTON_HOME"
+  echo "→ 强制同步 GitHub…"
+  cd "$PHOTON_HOME"
+  if [[ -x ./更新本地.sh ]]; then
+    ./更新本地.sh || true
   fi
+  git remote set-url origin "$PHOTON_REPO" 2>/dev/null || git remote add origin "$PHOTON_REPO"
+  git fetch --force origin "$PHOTON_BRANCH"
+  git checkout -B "$PHOTON_BRANCH" "origin/$PHOTON_BRANCH"
+  git reset --hard "origin/$PHOTON_BRANCH"
 else
-  echo "⚠️  不是 git 仓库（zip 解压会导致无法更新）。"
-  echo "正在自动备份课堂数据并重新克隆…"
+  echo "→ 当前不是 git 仓库，自动备份并重新克隆…"
   if [[ -d "$PHOTON_HOME" ]]; then
     backup_data "$PHOTON_HOME"
     STAMP="$(date +%Y%m%d%H%M)"
     mv "$PHOTON_HOME" "${PHOTON_HOME}-旧备份-${STAMP}"
-    echo "  旧目录已移到：${PHOTON_HOME}-旧备份-${STAMP}"
+    echo "  旧目录：${PHOTON_HOME}-旧备份-${STAMP}"
   fi
   git clone -b "$PHOTON_BRANCH" "$PHOTON_REPO" "$PHOTON_HOME"
   restore_data "$PHOTON_HOME"
 fi
 
 cd "$PHOTON_HOME"
-chmod +x sync-from-github.sh start.sh 更新本地.sh 更新本地.command \
-  一键放到桌面.sh 一键放到桌面.command 诊断本机.command 2>/dev/null || true
+chmod +x *.sh *.command 2>/dev/null || true
+restore_data "$PHOTON_HOME" 2>/dev/null || true
 
-# 写版本戳
 HEAD="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 WHEN="$(date '+%Y-%m-%d %H:%M:%S')"
 cat > gy-build.json <<EOF
@@ -84,24 +83,21 @@ cat > gy-build.json <<EOF
 }
 EOF
 
-echo ""
-echo "当前提交：$HEAD"
-git log -1 --oneline || true
-
-if grep -q "ICE_MODE_DEFS" index.html && grep -q "openPlayModePicker" index.html; then
-  echo "✅ 修复成功：已是 git 仓库，且包含玩法/破冰功能"
-else
-  echo "❌ 校验失败，请把上方输出发给开发者"
-  exit 1
-fi
-
-rm -rf "$BACKUP_DIR" 2>/dev/null || true
-
-# 自动把「更新」等按钮刷到桌面
+# 刷新桌面快捷方式（含本更新按钮）
 if [[ -x ./一键放到桌面.sh ]]; then
-  ./一键放到桌面.sh || true
+  ./一键放到桌面.sh >/dev/null 2>&1 || true
 fi
 
 echo ""
-echo "桌面已有「光影盟-更新」按钮，以后双击即可更新。"
-echo "现在也可执行：./start.sh"
+echo "✅ 更新完成"
+echo "   版本：$HEAD"
+git log -1 --oneline 2>/dev/null || true
+echo ""
+echo "桌面已有：光影盟-更新.command"
+echo "接下来可双击「光影盟-开始上课」，或按 y 立即启动。"
+echo ""
+read -r -p "现在启动上课吗？[y/N] " ans
+if [[ "${ans:-}" == "y" || "${ans:-}" == "Y" ]]; then
+  exec ./start.sh
+fi
+read -r -p "按回车关闭…" _
