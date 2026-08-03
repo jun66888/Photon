@@ -10757,9 +10757,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">闪电介绍</div>
         <div class="ice-stage-big">${esc(st.name || "等待抽取")}</div>
-        <div class="ice-stage-title">${esc(st.topic || "点开始抽取上场同学与题目")}</div>
+        <div class="ice-stage-title">${esc(st.topic || "点开始抽取同学与题目")}</div>
         <div class="ice-stage-timer" id="ice-intro-timer">${st.sec != null ? st.sec : "15"}</div>
-        <div class="ice-stage-sub">限时回答 / 自我介绍 · 到点可换下一位</div>
+        <div class="ice-stage-sub">坐着限时回答 / 自我介绍 · 到点可换下一位</div>
       </div>`;
   }
 
@@ -10770,7 +10770,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">你比我猜 · 仅表演者看题</div>
         <div class="ice-stage-big">${esc(st.word || "点开始抽题")}</div>
-        <div class="ice-stage-sub">${st.word ? "不能说原词 · 比划或描述让大家猜" : "抽题后让一人表演，其他人猜"}</div>
+        <div class="ice-stage-sub">${st.word ? "不能说原词 · 座位上比划或描述让大家猜" : "抽题后一人坐着表演，其他人猜"}</div>
         ${st.word ? `<div class="ice-stage-row">
           <button type="button" class="primary" id="ice-charades-ok">猜对了</button>
           <button type="button" id="ice-charades-skip">跳过</button>
@@ -10975,7 +10975,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ice-stage-card">
           <div class="ice-stage-kicker">双人对决</div>
           <div class="ice-stage-title">抽两人对战</div>
-          <div class="ice-stage-sub">随机抽取两名同学上场挑战，老师判定胜负计分</div>
+          <div class="ice-stage-sub">随机抽取两名同学 · 座位上比拼口才/反应，老师判定胜负</div>
           <div class="ice-scoreboard"><span class="red">甲胜 ${score.a}</span><span class="vs">VS</span><span class="blue">乙胜 ${score.b}</span></div>
         </div>`;
       return;
