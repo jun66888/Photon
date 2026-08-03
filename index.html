@@ -3802,6 +3802,45 @@ body.play-mode-basic #rail-side-mode-tabs {
 .sfx-settings-panel .sfx-hint {
   font-size: .72rem; color: var(--ink-soft); line-height: 1.4; max-width: 36rem;
 }
+.ice-match-rules {
+  display: flex; flex-direction: column; gap: .4rem;
+  margin: 0 0 .65rem;
+  padding: .55rem .7rem;
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 8px;
+  background: rgba(8, 12, 22, .45);
+}
+.ice-match-rules .imr-title {
+  font-size: .78rem; color: #ffe39a; letter-spacing: .08em; font-weight: 700;
+}
+.ice-match-rules .imr-row {
+  display: flex; flex-wrap: wrap; gap: .35rem .45rem; align-items: center;
+}
+.ice-match-rules .imr-row button {
+  min-height: 1.9rem !important; padding: .22rem .55rem !important; font-size: .74rem !important;
+}
+.ice-match-rules .imr-row button.on {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
+.ice-match-rules .imr-row label.tool-inline {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .78rem; color: var(--ink-soft);
+}
+.ice-match-rules .imr-row input[type="number"] {
+  width: 4.2rem; min-height: 1.85rem;
+  background: #0c101c; color: #ffe39a; border: 1px solid rgba(240,193,75,.35);
+  border-radius: 6px; padding: .15rem .35rem; font-family: var(--font-num);
+}
+.ice-match-rules .imr-hint {
+  font-size: .72rem; color: var(--ink-soft); line-height: 1.4;
+}
+.ice-match-progress {
+  display: inline-flex; flex-wrap: wrap; gap: .45rem .7rem; justify-content: center;
+  font-family: var(--font-num); font-size: .95rem; font-weight: 700; color: #ffe39a;
+}
+.ice-match-progress .warn { color: #ffb0bd; }
 .ice-stage-timer {
   font-family: var(--font-num); font-size: clamp(2.4rem, 7vw, 4rem);
   color: var(--gold); font-weight: 800;
@@ -4543,6 +4582,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div id="games-ice-pane" class="hidden">
           <div class="ice-mode-tabs" id="ice-mode-tabs" role="tablist" aria-label="破冰小游戏"></div>
           <div class="muted" style="margin-bottom:.35rem" id="ice-mode-hint">暖场互动 · 不扣积分</div>
+          <div id="ice-match-rules" class="ice-match-rules hidden" aria-label="游戏赛制"></div>
         </div>
         <div class="game-sfx-bar" id="game-sfx-bar" aria-label="音效调节"></div>
         <div class="game-stage" id="game-stage"></div>
@@ -5436,11 +5476,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let gamesCat = "draw"; // draw | ice | open
   let iceMode = "buzz";
   let iceTimer = null;
+  let iceMatchClock = null;
   let iceBusy = false;
   let iceState = {};
   /** ice / open 均可无签到开玩；抽人默认「抽号码」，老师自定数字范围 */
   const ICE_NUM_RANGE_KEY = "gy_arena_ice_num_range";
   const ICE_POOL_MODE_KEY = "gy_arena_ice_pool_mode"; // numbers | roster
+  const ICE_MATCH_RULES_KEY = "gy_arena_ice_match_rules";
+  /** 支持「共 N 题 / 倒计时」赛制的游戏 */
+  const ICE_MATCH_GAMES = new Set(["buzz", "sync", "charades", "stand", "choice", "dare"]);
   // 破冰：前半对抗有输赢（可发小奖品）→ 后半全员一起参与
   const ICE_MODE_ORDER_ICE = ["buzz", "duel", "spy", "sync", "flower", "dare", "intro"];
   // 暖场：前半有胜负 → 后半全班一起做
@@ -10654,6 +10698,262 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function clearIceTimer() {
     if (iceTimer) { clearInterval(iceTimer); iceTimer = null; }
   }
+  function clearIceMatchClock() {
+    if (iceMatchClock) { clearInterval(iceMatchClock); iceMatchClock = null; }
+  }
+  function getIceMatchRules() {
+    const defaults = { mode: "count", totalQ: 10, matchSec: 180, qSec: 20 };
+    try {
+      const raw = JSON.parse(localStorage.getItem(ICE_MATCH_RULES_KEY) || "{}");
+      if (!raw || typeof raw !== "object") return { ...defaults };
+      const mode = raw.mode === "free" || raw.mode === "timer" || raw.mode === "count" ? raw.mode : "count";
+      let totalQ = Math.floor(Number(raw.totalQ != null ? raw.totalQ : defaults.totalQ));
+      let matchSec = Math.floor(Number(raw.matchSec != null ? raw.matchSec : defaults.matchSec));
+      let qSec = Math.floor(Number(raw.qSec != null ? raw.qSec : defaults.qSec));
+      if (!Number.isFinite(totalQ)) totalQ = defaults.totalQ;
+      if (!Number.isFinite(matchSec)) matchSec = defaults.matchSec;
+      if (!Number.isFinite(qSec)) qSec = defaults.qSec;
+      totalQ = Math.max(1, Math.min(99, totalQ));
+      matchSec = Math.max(30, Math.min(3600, matchSec));
+      qSec = Math.max(0, Math.min(300, qSec));
+      return { mode, totalQ, matchSec, qSec };
+    } catch (e) {
+      return { ...defaults };
+    }
+  }
+  function setIceMatchRules(patch) {
+    const cur = getIceMatchRules();
+    const next = { ...cur, ...(patch || {}) };
+    if (next.mode !== "free" && next.mode !== "timer" && next.mode !== "count") next.mode = "count";
+    next.totalQ = Math.max(1, Math.min(99, Math.floor(Number(next.totalQ) || 10)));
+    next.matchSec = Math.max(30, Math.min(3600, Math.floor(Number(next.matchSec) || 180)));
+    next.qSec = Math.max(0, Math.min(300, Math.floor(Number(next.qSec) || 0)));
+    localStorage.setItem(ICE_MATCH_RULES_KEY, JSON.stringify(next));
+    return next;
+  }
+  function iceSupportsMatchRules(mode = iceMode) {
+    return ICE_MATCH_GAMES.has(mode);
+  }
+  function formatIceClock(sec) {
+    const s = Math.max(0, Math.floor(Number(sec) || 0));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}:${String(r).padStart(2, "0")}`;
+  }
+  function iceMatchMetaFromRules(rules) {
+    const r = rules || getIceMatchRules();
+    return {
+      matchMode: r.mode,
+      matchTotalQ: r.totalQ,
+      matchSecTotal: r.matchSec,
+      matchSecLeft: r.mode === "timer" ? r.matchSec : 0,
+      qSecLimit: r.qSec,
+      qSecLeft: r.qSec > 0 ? r.qSec : 0,
+      matchOver: false,
+      matchStarted: false
+    };
+  }
+  function iceCarryMatchMeta(prev) {
+    if (!prev) return iceMatchMetaFromRules();
+    return {
+      matchMode: prev.matchMode || "count",
+      matchTotalQ: prev.matchTotalQ || 10,
+      matchSecTotal: prev.matchSecTotal || 180,
+      matchSecLeft: prev.matchSecLeft != null ? prev.matchSecLeft : 0,
+      qSecLimit: prev.qSecLimit != null ? prev.qSecLimit : 0,
+      qSecLeft: 0,
+      matchOver: !!prev.matchOver,
+      matchStarted: !!prev.matchStarted,
+      score: prev.score,
+      done: prev.done,
+      round: prev.round
+    };
+  }
+  function startIceMatchClockIfNeeded() {
+    clearIceMatchClock();
+    if (!iceSupportsMatchRules() || iceState.matchMode !== "timer" || iceState.matchOver) return;
+    if (!iceState.matchStarted) {
+      iceState.matchStarted = true;
+      if (iceState.matchSecLeft == null || iceState.matchSecLeft <= 0) {
+        iceState.matchSecLeft = iceState.matchSecTotal || getIceMatchRules().matchSec;
+      }
+    }
+    iceMatchClock = setInterval(() => {
+      if (iceState.matchOver) { clearIceMatchClock(); return; }
+      iceState.matchSecLeft = Math.max(0, (iceState.matchSecLeft || 0) - 1);
+      const el = document.getElementById("ice-match-clock");
+      if (el) {
+        el.textContent = formatIceClock(iceState.matchSecLeft);
+        el.classList.toggle("warn", iceState.matchSecLeft <= 10);
+      }
+      if (iceState.matchSecLeft <= 0) {
+        clearIceMatchClock();
+        clearIceTimer();
+        iceState.matchOver = true;
+        playGameFx("fail", { banner: "时间到 · 本场结束" });
+        showVoteToast("倒计时结束 · 本场结算");
+        renderIceStage();
+      } else if (iceState.matchSecLeft <= 5) {
+        playGameFx("countdown");
+      }
+    }, 1000);
+  }
+  function startIceQuestionClockIfNeeded() {
+    clearIceTimer();
+    const limit = Number(iceState.qSecLimit || 0);
+    if (!limit || iceState.matchOver) return;
+    iceState.qSecLeft = limit;
+    iceTimer = setInterval(() => {
+      if (iceState.matchOver) { clearIceTimer(); return; }
+      iceState.qSecLeft = Math.max(0, (iceState.qSecLeft || 0) - 1);
+      const el = document.getElementById("ice-q-clock");
+      if (el) {
+        el.textContent = String(iceState.qSecLeft);
+        el.classList.toggle("warn", iceState.qSecLeft <= 5);
+      }
+      if (iceState.qSecLeft <= 0) {
+        clearIceTimer();
+        playGameFx("fail", { banner: "本题时间到" });
+        showVoteToast("本题时间到 · 可判分或点下一题");
+        if (iceMode === "buzz") {
+          iceState.locked = true;
+          iceState.showAns = true;
+          renderIceBuzzStage();
+        } else if (iceMode === "sync") {
+          renderIceSyncStage();
+        } else if (iceMode === "charades") {
+          renderIceCharadesStage();
+        } else {
+          renderIceStage();
+        }
+      } else if (iceState.qSecLeft <= 3) {
+        playGameFx("countdown");
+      }
+    }, 1000);
+  }
+  function iceMatchProgressHtml() {
+    if (!iceSupportsMatchRules()) return "";
+    const rules = getIceMatchRules();
+    const mode = iceState.matchMode || rules.mode;
+    const totalQ = iceState.matchTotalQ || rules.totalQ;
+    const qSecLimit = iceState.qSecLimit != null ? iceState.qSecLimit : rules.qSec;
+    const parts = [];
+    if (mode === "count") {
+      const cur = iceState.round || iceState.done || 0;
+      parts.push(`<span>题目 ${Math.min(cur, totalQ)} / ${totalQ}</span>`);
+    } else if (mode === "timer") {
+      const left = iceState.matchStarted
+        ? (iceState.matchSecLeft != null ? iceState.matchSecLeft : rules.matchSec)
+        : rules.matchSec;
+      parts.push(`<span id="ice-match-clock" class="${left <= 10 && iceState.matchStarted ? "warn" : ""}">全场 ${formatIceClock(left)}</span>`);
+      if (iceState.round || iceState.done) parts.push(`<span>已进行 ${iceState.round || iceState.done} 题</span>`);
+    } else {
+      parts.push(`<span>自由模式${iceState.round || iceState.done ? ` · 第 ${iceState.round || iceState.done} 题` : ""}</span>`);
+    }
+    if (qSecLimit > 0 && !iceState.matchOver) {
+      const qLeft = iceState.qSecLeft != null ? iceState.qSecLeft : qSecLimit;
+      parts.push(`<span id="ice-q-clock" class="${qLeft <= 5 && iceState.matchStarted ? "warn" : ""}">本题 ${qLeft}s</span>`);
+    }
+    return `<div class="ice-match-progress">${parts.join("")}</div>`;
+  }
+  function iceMatchShouldEndAfterRound(round) {
+    if (iceState.matchMode !== "count") return false;
+    return (round || 0) >= (iceState.matchTotalQ || 10);
+  }
+  function iceFinishMatch(reason) {
+    clearIceTimer();
+    clearIceMatchClock();
+    iceState.matchOver = true;
+    playGameFx("win", { banner: reason || "本场结束" });
+    showVoteToast(reason || "本场结束");
+    renderIceStage();
+  }
+  function renderIceMatchEndCard(extraHtml) {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return;
+    const modeLabel = iceState.matchMode === "timer" ? "倒计时赛" : (iceState.matchMode === "count" ? "定额赛" : "自由赛");
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">${esc(iceDef().name)} · ${modeLabel}结束</div>
+        <div class="ice-stage-title">本场结算</div>
+        ${extraHtml || ""}
+        <div class="ice-stage-sub">可改上方赛制后点「再来一局」</div>
+        <div class="ice-stage-row">
+          <button type="button" class="primary" id="ice-match-again">再来一局</button>
+        </div>
+      </div>`;
+    const again = document.getElementById("ice-match-again");
+    if (again) {
+      again.onclick = () => {
+        clearIceTimer();
+        clearIceMatchClock();
+        iceBusy = false;
+        iceState = { ...iceMatchMetaFromRules() };
+        renderIceStage();
+        syncIceStartLabels(iceDef().startLabel || "开始");
+        showVoteToast("已开新局 · 按当前赛制开始");
+      };
+    }
+  }
+  function renderIceMatchRulesBar() {
+    const host = document.getElementById("ice-match-rules");
+    if (!host) return;
+    if (!isIceLikeCat(gamesCat) || !iceSupportsMatchRules()) {
+      host.classList.add("hidden");
+      host.innerHTML = "";
+      return;
+    }
+    const r = getIceMatchRules();
+    host.classList.remove("hidden");
+    host.innerHTML = `
+      <div class="imr-title">本场玩法</div>
+      <div class="imr-row" role="group" aria-label="赛制">
+        <button type="button" data-ice-match-mode="count" class="${r.mode === "count" ? "on" : ""}">共 N 题</button>
+        <button type="button" data-ice-match-mode="timer" class="${r.mode === "timer" ? "on" : ""}">倒计时</button>
+        <button type="button" data-ice-match-mode="free" class="${r.mode === "free" ? "on" : ""}">自由无限</button>
+      </div>
+      <div class="imr-row">
+        <label class="tool-inline ${r.mode === "count" ? "" : "hidden"}" id="ice-match-totalq-wrap"><span>总题数</span>
+          <input id="ice-match-totalq" type="number" min="1" max="99" value="${r.totalQ}" />
+        </label>
+        <label class="tool-inline ${r.mode === "timer" ? "" : "hidden"}" id="ice-match-sec-wrap"><span>全场秒数</span>
+          <input id="ice-match-sec" type="number" min="30" max="3600" value="${r.matchSec}" />
+        </label>
+        <label class="tool-inline"><span>每题倒计时</span>
+          <input id="ice-match-qsec" type="number" min="0" max="300" value="${r.qSec}" title="0 表示不限本题时间" />
+        </label>
+        <span class="muted" style="font-size:.72rem">0=不限本题</span>
+        <button type="button" class="primary" id="ice-match-apply">应用赛制</button>
+      </div>
+      <div class="imr-hint" id="ice-match-hint">${r.mode === "count"
+        ? `共 ${r.totalQ} 题结束并结算；每题 ${r.qSec ? r.qSec + " 秒" : "不限时"}`
+        : (r.mode === "timer"
+          ? `全场 ${formatIceClock(r.matchSec)} 倒计时，到点结算；每题 ${r.qSec ? r.qSec + " 秒" : "不限时"}`
+          : `自由出题，不自动结束；每题 ${r.qSec ? r.qSec + " 秒" : "不限时"}`)}</div>`;
+    host.querySelectorAll("[data-ice-match-mode]").forEach((b) => {
+      b.onclick = () => {
+        setIceMatchRules({ mode: b.dataset.iceMatchMode });
+        renderIceMatchRulesBar();
+      };
+    });
+    const apply = document.getElementById("ice-match-apply");
+    if (apply) {
+      apply.onclick = () => {
+        const totalQ = document.getElementById("ice-match-totalq")?.value;
+        const matchSec = document.getElementById("ice-match-sec")?.value;
+        const qSec = document.getElementById("ice-match-qsec")?.value;
+        const next = setIceMatchRules({ totalQ, matchSec, qSec });
+        // 未开局或已结束时同步到 iceState；进行中只影响下一局
+        if (!iceState.q && !iceState.word && !iceState.name && !iceState.prompt && !iceState.matchStarted) {
+          iceState = { ...iceState, ...iceMatchMetaFromRules(next) };
+        }
+        renderIceMatchRulesBar();
+        showVoteToast(next.mode === "count"
+          ? `已应用：共 ${next.totalQ} 题`
+          : (next.mode === "timer" ? `已应用：倒计时 ${formatIceClock(next.matchSec)}` : "已应用：自由无限"));
+      };
+    }
+  }
   function iceDef() {
     return ICE_MODE_DEFS[iceMode] || ICE_MODE_DEFS.flower;
   }
@@ -10688,9 +10988,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (sub) {
       sub.textContent = open
-        ? "前半有输赢（炸弹/比划/限时）· 后半全班一起（举手/左右/坐席/接龙）"
+        ? "题目类可设共 N 题/倒计时 · 前半有输赢，后半全班一起"
         : (iceLike
-          ? "默认抽号码（自定范围）· 也可改用名单 · 前半对抗领小奖，后半一起玩"
+          ? "题目类可设共 N 题/倒计时 · 抽号码开玩 · 前半对抗领小奖"
           : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分");
     }
     if (actions) {
@@ -10802,8 +11102,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         b.onclick = () => {
           if (iceBusy) return;
           clearIceTimer();
+          clearIceMatchClock();
           iceMode = b.dataset.iceMode;
-          iceState = {};
+          iceState = iceSupportsMatchRules(iceMode) ? { ...iceMatchMetaFromRules() } : {};
           renderGames();
         };
       });
@@ -10816,6 +11117,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (resetBtn) resetBtn.textContent = "重置";
     const top = document.getElementById("game-spin-top");
     if (top && isIceLikeCat(gamesCat)) top.textContent = def.startLabel || "开始";
+    renderIceMatchRulesBar();
     renderIceStage();
   }
 
@@ -10952,11 +11254,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderIceCharadesStage() {
     const stage = document.getElementById("game-stage");
     const st = iceState;
+    const score = st.score || { ok: 0, skip: 0 };
+    if (st.matchOver) {
+      renderIceMatchEndCard(`
+        <div class="ice-scoreboard"><span class="red">猜对 ${score.ok}</span><span class="vs">·</span><span class="blue">跳过 ${score.skip}</span></div>
+        <div class="ice-stage-sub">共完成 ${st.round || 0} 题</div>`);
+      return;
+    }
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">你比我猜 · 仅表演者看题</div>
+        ${iceMatchProgressHtml()}
         <div class="ice-stage-big">${esc(st.word || "点开始抽题")}</div>
-        <div class="ice-stage-sub">${st.word ? "不能说原词 · 座位上比划或描述让大家猜" : "抽题后一人坐着表演，其他人猜"}</div>
+        <div class="ice-scoreboard"><span class="red">猜对 ${score.ok}</span><span class="vs">·</span><span class="blue">跳过 ${score.skip}</span></div>
+        <div class="ice-stage-sub">${st.word ? "不能说原词 · 座位上比划或描述让大家猜" : "先在上方选赛制，再点开始抽题"}</div>
         ${st.word ? `<div class="ice-stage-row">
           <button type="button" class="primary" id="ice-charades-ok">猜对了</button>
           <button type="button" id="ice-charades-skip">跳过</button>
@@ -10964,20 +11275,46 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>`;
     const ok = document.getElementById("ice-charades-ok");
     const skip = document.getElementById("ice-charades-skip");
-    if (ok) ok.onclick = () => { playGameFx("ok", { banner: `猜对 · ${st.word}` }); showVoteToast(`猜对：${st.word}`); iceNext(); };
-    if (skip) skip.onclick = () => { playGameFx("tick"); iceNext(); };
+    if (ok) {
+      ok.onclick = () => {
+        clearIceTimer();
+        iceState.score = iceState.score || { ok: 0, skip: 0 };
+        iceState.score.ok += 1;
+        playGameFx("ok", { banner: `猜对 · ${st.word}` });
+        showVoteToast(`猜对：${st.word}`);
+        if (iceMatchShouldEndAfterRound(iceState.round)) iceFinishMatch(`共 ${iceState.matchTotalQ} 题已完成`);
+        else iceNext();
+      };
+    }
+    if (skip) {
+      skip.onclick = () => {
+        clearIceTimer();
+        iceState.score = iceState.score || { ok: 0, skip: 0 };
+        iceState.score.skip += 1;
+        playGameFx("tick");
+        if (iceMatchShouldEndAfterRound(iceState.round)) iceFinishMatch(`共 ${iceState.matchTotalQ} 题已完成`);
+        else iceNext();
+      };
+    }
   }
 
   function renderIceSyncStage() {
     const stage = document.getElementById("game-stage");
     const st = iceState;
     const score = st.score || { hit: 0, miss: 0, streak: 0 };
+    if (st.matchOver) {
+      renderIceMatchEndCard(`
+        <div class="ice-scoreboard"><span class="red">默契 ${score.hit}</span><span class="vs">·</span><span class="blue">分歧 ${score.miss}</span><span class="vs">最高连击参考本场</span></div>
+        <div class="ice-stage-sub">共完成 ${st.round || 0} 题 · 连击留在过程里享受就好</div>`);
+      return;
+    }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">红蓝默契 · 无需签到</div>
+          <div class="ice-stage-kicker">红蓝默契 · 可设赛制</div>
+          ${iceMatchProgressHtml()}
           <div class="ice-stage-title">测两派默契</div>
-          <div class="ice-stage-sub">现场分红蓝两队举手选 A/B 即可 · 选一样加分</div>
+          <div class="ice-stage-sub">上方可选「共 N 题 / 倒计时」· 现场分红蓝队举手选 A/B</div>
           <div class="ice-scoreboard"><span class="red">默契 ${score.hit}</span><span class="vs">·</span><span class="blue">分歧 ${score.miss}</span><span class="vs">连击 ${score.streak}</span></div>
         </div>`;
       return;
@@ -10986,7 +11323,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const match = revealed && st.red === st.blue;
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">红蓝默契</div>
+        <div class="ice-stage-kicker">红蓝默契 · 第 ${st.round || 1} 题</div>
+        ${iceMatchProgressHtml()}
         <div class="ice-scoreboard"><span class="red">默契 ${score.hit}</span><span class="vs">·</span><span class="blue">分歧 ${score.miss}</span><span class="vs">连击 ${score.streak}</span></div>
         <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-sub">A · ${esc(st.a)}　　B · ${esc(st.b)}</div>
@@ -10999,14 +11337,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ice-stage-sub">
           红方：${st.red ? esc(st.red) : "未选"} · 蓝方：${st.blue ? esc(st.blue) : "未选"}
           ${revealed ? `<br><strong style="color:${match ? "#9dffc4" : "#ffb0bd"}">${match ? "默契成功！" : "想法撞车失败"}</strong>` : ""}
+          ${revealed && iceMatchShouldEndAfterRound(st.round) ? "<br>已是最后一题 · 点「下一题」结算" : ""}
         </div>
       </div>`;
     stage.querySelectorAll("[data-ice-sync-camp]").forEach((b) => {
       b.onclick = () => {
-        if (iceState.scored) return;
+        if (iceState.scored || iceState.matchOver) return;
         iceState[b.dataset.iceSyncCamp] = b.dataset.iceSyncAns;
         if (iceState.red && iceState.blue && !iceState.scored) {
           iceState.scored = true;
+          clearIceTimer();
           iceState.score = iceState.score || { hit: 0, miss: 0, streak: 0 };
           if (iceState.red === iceState.blue) {
             iceState.score.hit += 1;
@@ -11028,12 +11368,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderIceStandStage() {
     const stage = document.getElementById("game-stage");
     const st = iceState;
+    if (st.matchOver) {
+      renderIceMatchEndCard(`<div class="ice-stage-sub">共完成 ${st.round || 0} 题表决</div>`);
+      return;
+    }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">举手表决</div>
+          <div class="ice-stage-kicker">举手表决 · 可设赛制</div>
+          ${iceMatchProgressHtml()}
           <div class="ice-stage-title">举左手 · 举右手 · 双手平举</div>
-          <div class="ice-stage-sub">坐着示意即可 · 老师点数看倾向 · 不用离开座位</div>
+          <div class="ice-stage-sub">上方可选总题数或倒计时 · 坐着示意即可</div>
         </div>`;
       return;
     }
@@ -11042,6 +11387,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">举手表决 · ${esc(lead)}</div>
+        ${iceMatchProgressHtml()}
         <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-row">
           <button type="button" data-ice-stand="left">举左手 +1（${L}）</button>
@@ -11079,12 +11425,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderIceChoiceStage() {
     const stage = document.getElementById("game-stage");
     const st = iceState;
+    if (st.matchOver) {
+      renderIceMatchEndCard(`<div class="ice-stage-sub">共完成 ${st.round || 0} 题示意</div>`);
+      return;
+    }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">左右示意</div>
+          <div class="ice-stage-kicker">左右示意 · 可设赛制</div>
+          ${iceMatchProgressHtml()}
           <div class="ice-stage-title">二选一举手</div>
-          <div class="ice-stage-sub">坐着玩 · 举左手或举右手示意，老师点数看哪边人多</div>
+          <div class="ice-stage-sub">上方可选总题数或倒计时 · 举左手/右手示意</div>
         </div>`;
       return;
     }
@@ -11093,6 +11444,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">左右示意 · ${lead}</div>
+        ${iceMatchProgressHtml()}
         <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-big" style="font-size:clamp(1.4rem,3.2vw,2.1rem)">
           <span style="color:#ffb0bd">举左手 · ${esc(st.a)}</span>
@@ -11192,12 +11544,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const stage = document.getElementById("game-stage");
     const st = iceState;
     const score = st.score || { red: 0, blue: 0 };
+    if (st.matchOver) {
+      const red = score.red || 0;
+      const blue = score.blue || 0;
+      const winner = red === blue ? "平局" : (red > blue ? "红方胜" : "蓝方胜");
+      renderIceMatchEndCard(`
+        <div class="ice-scoreboard"><span class="red">红 ${red}</span><span class="vs">VS</span><span class="blue">蓝 ${blue}</span></div>
+        <div class="ice-stage-big" style="font-size:clamp(1.8rem,4vw,2.6rem)">${esc(winner)}</div>
+        <div class="ice-stage-sub">共完成 ${st.round || 0} 题</div>`);
+      return;
+    }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">红蓝抢答 · 无需签到</div>
+          <div class="ice-stage-kicker">红蓝抢答 · 可设赛制</div>
+          ${iceMatchProgressHtml()}
           <div class="ice-stage-title">抢答擂台</div>
-          <div class="ice-stage-sub">现场分红蓝两队举手抢答即可 · 答对 +1，抢错 −1</div>
+          <div class="ice-stage-sub">上方选「共 N 题 / 倒计时 / 自由」后开始 · 答对 +1，抢错 −1</div>
           <div class="ice-scoreboard"><span class="red">红 ${score.red}</span><span class="vs">VS</span><span class="blue">蓝 ${score.blue}</span></div>
         </div>`;
       return;
@@ -11205,9 +11568,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">红蓝抢答 · 第 ${st.round || 1} 题</div>
+        ${iceMatchProgressHtml()}
         <div class="ice-scoreboard"><span class="red">红 ${score.red}</span><span class="vs">VS</span><span class="blue">蓝 ${score.blue}</span></div>
         <div class="ice-stage-title">${esc(st.q)}</div>
-        <div class="ice-stage-sub">${st.showAns || st.locked ? `参考：${esc(st.a || "—")}` : "先抢后答 · 老师判定对错"}</div>
+        <div class="ice-stage-sub">${st.showAns || st.locked ? `参考：${esc(st.a || "—")}` : "先抢后答 · 老师判定对错"}${st.locked && iceMatchShouldEndAfterRound(st.round) ? "<br>最后一题已判 · 点「下一题」结算" : ""}</div>
         <div class="ice-stage-row">
           <button type="button" class="primary" data-ice-buzz="red-ok" ${st.locked ? "disabled" : ""}>红方答对</button>
           <button type="button" data-ice-buzz="red-bad" ${st.locked ? "disabled" : ""}>红方答错</button>
@@ -11225,13 +11589,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const stage = document.getElementById("game-stage");
     const st = iceState;
     const done = st.done || 0;
+    if (st.matchOver) {
+      renderIceMatchEndCard(`
+        <div class="ice-stage-big" style="font-size:clamp(1.8rem,4vw,2.6rem)">勇气值 ${done}</div>
+        <div class="ice-stage-sub">共完成 ${done} 轮挑战</div>`);
+      return;
+    }
     if (!st.name) {
       const pool = getIcePool();
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">真心话冒险 · 无需签到</div>
+          <div class="ice-stage-kicker">真心话冒险 · 可设赛制</div>
+          ${iceMatchProgressHtml()}
           <div class="ice-stage-title">抽人开整</div>
-          <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · 抽真心话或大冒险</div>
+          <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · 上方可选总轮数或倒计时</div>
           <div class="ice-stage-sub">本场已完成 ${done} 次挑战</div>
           ${renderIceNumberRangeRow(pool)}
         </div>`;
@@ -11242,6 +11613,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">${esc(kindLabel)} · 勇气值 ${done}</div>
+        ${iceMatchProgressHtml()}
         <div class="ice-stage-big">${esc(st.name)}</div>
         <div class="ice-stage-title">${esc(st.prompt || "")}</div>
         <div class="ice-stage-row">
@@ -11400,11 +11772,36 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function iceReset() {
     clearIceTimer();
+    clearIceMatchClock();
     iceBusy = false;
-    iceState = {};
+    iceState = iceSupportsMatchRules() ? { ...iceMatchMetaFromRules() } : {};
+    renderIceMatchRulesBar();
     renderIceStage();
     playGameFx("tick");
     showVoteToast("已重置");
+  }
+  /** 准备下一题公共字段；若已达总题数则结算并返回 null */
+  function iceOpenNextMatchRound(extra) {
+    if (iceState.matchOver) {
+      renderIceStage();
+      return null;
+    }
+    const carried = (iceState.matchStarted || iceState.round || iceState.done)
+      ? iceCarryMatchMeta(iceState)
+      : iceMatchMetaFromRules();
+    const round = (iceState.round || 0) + 1;
+    if (carried.matchMode === "count" && round > carried.matchTotalQ) {
+      iceState = { ...carried, ...(extra || {}), round: carried.matchTotalQ, matchOver: true, matchStarted: true };
+      iceFinishMatch(`共 ${carried.matchTotalQ} 题已完成`);
+      return null;
+    }
+    return {
+      ...carried,
+      ...(extra || {}),
+      round,
+      matchStarted: true,
+      matchOver: false
+    };
   }
 
   function syncIceStartLabels(text) {
@@ -11505,25 +11902,38 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function iceCharadesStart() {
+    const score = iceState.score || { ok: 0, skip: 0 };
+    const next = iceOpenNextMatchRound({ score, word: "" });
+    if (!next) return;
     const word = pickIce(ICE_CHARADES_WORDS, "charades");
-    iceState = { word };
+    iceState = { ...next, word, score };
     renderIceCharadesStage();
-    playGameFx("start", { banner: "你比我猜" });
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
+    playGameFx("start", { banner: `你比我猜 · 第 ${iceState.round} 题` });
   }
 
   function iceSyncStart() {
     const prevScore = iceState.score || { hit: 0, miss: 0, streak: 0 };
+    const next = iceOpenNextMatchRound({ score: prevScore });
+    if (!next) return;
     const item = pickIce(ICE_SYNC_QUESTIONS, "sync");
-    iceState = { q: item.q, a: item.a, b: item.b, red: "", blue: "", scored: false, score: prevScore };
+    iceState = { ...next, q: item.q, a: item.a, b: item.b, red: "", blue: "", scored: false, score: prevScore };
     renderIceSyncStage();
-    playGameFx("start", { banner: "红蓝默契" });
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
+    playGameFx("start", { banner: `红蓝默契 · 第 ${iceState.round} 题` });
   }
 
   function iceStandStart() {
+    const next = iceOpenNextMatchRound({});
+    if (!next) return;
     const q = pickIce(ICE_STAND_QUESTIONS, "stand");
-    iceState = { q, left: 0, mid: 0, right: 0 };
+    iceState = { ...next, q, left: 0, mid: 0, right: 0 };
     renderIceStandStage();
-    playGameFx("start", { banner: "举手表决" });
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
+    playGameFx("start", { banner: `举手表决 · 第 ${iceState.round} 题` });
   }
 
   function icePoseStart() {
@@ -11535,10 +11945,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function iceChoiceStart() {
+    const next = iceOpenNextMatchRound({});
+    if (!next) return;
     const item = pickIce(ICE_CHOICE_QUESTIONS, "choice");
-    iceState = { q: item.q, a: item.a, b: item.b, left: 0, right: 0 };
+    iceState = { ...next, q: item.q, a: item.a, b: item.b, left: 0, right: 0 };
     renderIceChoiceStage();
-    playGameFx("start", { banner: "左右示意" });
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
+    playGameFx("start", { banner: `左右示意 · 第 ${iceState.round} 题` });
   }
 
   function iceTimerStart() {
@@ -11632,13 +12046,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function iceBuzzStart() {
     const prev = iceState.score || { red: 0, blue: 0 };
-    const round = (iceState.round || 0) + 1;
+    const next = iceOpenNextMatchRound({ score: prev });
+    if (!next) return;
     const item = pickIce(ICE_BUZZ_QUESTIONS, "buzz");
-    iceState = { q: item.q, a: item.a, score: prev, round, locked: false, showAns: false };
+    iceState = { ...next, q: item.q, a: item.a, score: prev, locked: false, showAns: false };
     renderIceBuzzStage();
-    playGameFx("start", { banner: `抢答 · 第 ${round} 题` });
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
+    playGameFx("start", { banner: `抢答 · 第 ${iceState.round} 题` });
   }
   function iceBuzzJudge(act) {
+    if (iceState.matchOver) return;
     if (act === "reveal") {
       iceState.showAns = true;
       playGameFx("reveal", { banner: "看答案" });
@@ -11647,6 +12065,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     if (iceState.locked) return;
+    clearIceTimer();
     iceState.score = iceState.score || { red: 0, blue: 0 };
     if (act === "red-ok") { iceState.score.red += 1; playGameFx("ok", { banner: "红方答对" }); showVoteToast("红方 +1"); }
     else if (act === "red-bad") { iceState.score.red -= 1; playGameFx("bad", { banner: "红方答错" }); showVoteToast("红方 −1"); }
@@ -11654,26 +12073,40 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else if (act === "blue-bad") { iceState.score.blue -= 1; playGameFx("bad", { banner: "蓝方答错" }); showVoteToast("蓝方 −1"); }
     iceState.locked = true;
     iceState.showAns = true;
+    if (iceMatchShouldEndAfterRound(iceState.round)) {
+      renderIceBuzzStage();
+      showVoteToast(`最后一题已判 · 点「下一题」看结算`);
+      return;
+    }
     renderIceBuzzStage();
   }
 
   function iceDareStart() {
     const pool = getIcePool();
     if (!pool.length) { showVoteToast("号码池为空，请设定数字范围"); return; }
+    const done = iceState.done || 0;
+    const next = iceOpenNextMatchRound({ done });
+    if (!next) return;
     const person = pool[Math.floor(Math.random() * pool.length)];
     const kind = Math.random() < 0.5 ? "truth" : "dare";
     const prompt = kind === "truth" ? pickIce(ICE_DARE_TRUTHS, "truth") : pickIce(ICE_DARE_DARES, "dare");
-    const done = iceState.done || 0;
-    iceState = { name: person.name, kind, prompt, done };
+    iceState = { ...next, name: person.name, kind, prompt, done };
     renderIceDareStage();
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
     playGameFx("draw", { banner: `${person.name} · ${kind === "truth" ? "真心话" : "大冒险"}` });
   }
   function iceDareAct(act) {
-    if (!iceState.name) return;
+    if (!iceState.name || iceState.matchOver) return;
     if (act === "done") {
+      clearIceTimer();
       iceState.done = (iceState.done || 0) + 1;
       playGameFx("win", { banner: `勇气 +1 · ${iceState.done}` });
       showVoteToast(`完成 · 勇气值 ${iceState.done}`);
+      if (iceState.matchMode === "count" && iceState.done >= (iceState.matchTotalQ || 10)) {
+        iceFinishMatch(`共 ${iceState.matchTotalQ} 轮已完成`);
+        return;
+      }
       return iceDareStart();
     }
     if (act === "swap") {
