@@ -5374,72 +5374,72 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const ICE_MODE_DEFS = {
     flower: {
       name: "击鼓传花", group: "ice",
-      hint: "点开始后名单快速滚动，再点停下 · 谁停谁上场",
+      hint: "坐着玩 · 名单滚动停下即「接到花」· 座位上发言即可",
       startLabel: "击鼓开始", nextLabel: "再来一轮"
     },
     bomb: {
       name: "数字炸弹", group: "open",
-      hint: "无需签到 · 系统藏一个炸弹数 · 全场轮流猜大小",
+      hint: "坐着玩 · 轮流口头猜数字 · 踩中即爆",
       startLabel: "埋下炸弹", nextLabel: "新一局"
     },
     intro: {
       name: "闪电介绍", group: "ice",
-      hint: "随机抽人 + 题目 · 限时自我介绍 / 回答",
+      hint: "坐着玩 · 抽人 + 题目 · 座位上限时回答",
       startLabel: "抽取上场", nextLabel: "换一位"
     },
     charades: {
       name: "你比我猜", group: "open",
-      hint: "无需签到 · 投屏出题给表演者 · 其他人猜",
+      hint: "坐着玩 · 投屏出题 · 座位上比划/描述，其他人猜",
       startLabel: "抽一道题", nextLabel: "下一题"
     },
     sync: {
       name: "红蓝默契", group: "ice",
-      hint: "同一道题 · 两派各选 A/B · 选一样计分 · 比默契连击",
+      hint: "坐着玩 · 两派举手数 A/B · 选一样计分",
       startLabel: "出题", nextLabel: "下一题"
     },
     stand: {
-      name: "站队表决", group: "open",
-      hint: "无需签到 · 抛出问题 · 学生站左/右/中间 · 老师点数",
+      name: "举手表决", group: "open",
+      hint: "坐着玩 · 举左手 / 举右手 / 双手平举示意，不用离开座位",
       startLabel: "出题", nextLabel: "下一题"
     },
     duel: {
       name: "双人对决", group: "ice",
-      hint: "随机抽两人上场 · 限时挑战 · 老师判定胜负计分",
+      hint: "坐着玩 · 抽两人座位上比拼口才/反应，老师判定",
       startLabel: "抽对手", nextLabel: "再抽一对"
     },
     buzz: {
       name: "红蓝抢答", group: "ice",
-      hint: "出题后红蓝抢答 · 答对加分答错扣分 · 比谁更猛",
+      hint: "坐着玩 · 举手抢答 · 答对加分答错扣分",
       startLabel: "出题抢答", nextLabel: "下一题"
     },
     dare: {
       name: "真心话冒险", group: "ice",
-      hint: "抽人 + 真心话/大冒险 · 完成或换题 · 对抗气氛拉满",
+      hint: "坐着玩 · 真心话/小挑战，以说话与小动作为主",
       startLabel: "抽挑战", nextLabel: "换一位"
     },
     spy: {
       name: "谁是卧底", group: "ice",
-      hint: "发词后轮流描述 · 投票淘汰 · 揪出卧底即平民胜",
+      hint: "坐着玩 · 轮流口头描述 · 举手投票淘汰",
       startLabel: "发牌开局", nextLabel: "新一局"
     },
     pose: {
-      name: "全员动作", group: "open",
-      hint: "无需签到 · 投屏随机动作指令 · 全班一起做",
-      startLabel: "抽动作", nextLabel: "换一个"
+      name: "坐席互动", group: "open",
+      hint: "坐着玩 · 座位上的小动作/表情指令，不大动",
+      startLabel: "抽指令", nextLabel: "换一个"
     },
     choice: {
-      name: "左右互搏", group: "open",
-      hint: "无需签到 · 二选一站队 · 看哪边人多",
+      name: "左右示意", group: "open",
+      hint: "坐着玩 · 二选一举左手或举右手，看哪边人多",
       startLabel: "出题", nextLabel: "下一题"
     },
     timer: {
       name: "限时挑战", group: "open",
-      hint: "无需签到 · 全场倒计时挑战 · 到点喊停",
+      hint: "坐着玩 · 倒计时口头/小动作挑战，到点喊停",
       startLabel: "开始计时", nextLabel: "换挑战"
     },
     chain: {
       name: "接龙开场", group: "open",
-      hint: "无需签到 · 投屏接龙规则 · 全场轮流接",
+      hint: "坐着玩 · 口头接龙为主，轮流说即可",
       startLabel: "抽规则", nextLabel: "换规则"
     }
   };
@@ -5525,61 +5525,61 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { q: "胜利庆祝？", a: "大喊一嗓", b: "内心窃喜" }
   ];
   const ICE_STAND_QUESTIONS = [
-    "更喜欢早起还是夜猫？左=早起 · 右=夜猫 · 中=看心情",
-    "作品更看重画面还是声音？左=画面 · 右=声音 · 中=都要",
-    "今天状态如何？左=满血 · 右=节能 · 中=重启中",
-    "更想当导演还是主演？左=导演 · 右=主演 · 中=幕后英雄",
-    "团建首选？左=吃饭 · 右=游戏 · 中=散步吹风",
-    "冲突来了站哪边？左=先冷静 · 右=先表达 · 中=先听全",
-    "更信计划还是灵感？左=计划 · 右=灵感 · 中=边做边调",
-    "手机通知要不要开？左=全开 · 右=全关 · 中=只开关键的",
-    "考试/答辩前夜？左=狂复习 · 右=早睡养神 · 中=轻度浏览",
-    "更想要的队友？左=搞笑担当 · 右=靠谱担当 · 中=两者都要",
-    "咖啡还是茶？左=咖啡 · 右=茶 · 中=白开水党",
-    "镜头前更自然还是紧张？左=自然 · 右=紧张 · 中=看场合",
-    "喜欢快节奏还是慢镜头？左=快切 · 右=长镜头 · 中=看题材",
-    "失败后的第一反应？左=复盘 · 右=找安慰 · 中=先吃顿好的",
-    "更怕被忽略还是被关注？左=被忽略 · 右=被过度关注 · 中=都行",
-    "旅行跟团还是自由行？左=跟团 · 右=自由行 · 中=半跟半自由",
-    "更想赢面子还是赢里子？左=面子 · 右=里子 · 中=看赌注",
-    "课堂提问：左=主动举手 · 右=希望别点到 · 中=点到就答",
-    "更爱夏天还是冬天？左=夏 · 右=冬 · 中=春秋最好",
-    "组队规则偏好？左=自由组 · 右=随机组 · 中=老师分配",
-    "作品署名要不要抢第一？左=要抢 · 右=随意 · 中=按贡献排",
-    "更想被夸聪明还是努力？左=聪明 · 右=努力 · 中=有趣",
-    "遇到分歧投票还是辩论？左=投票 · 右=辩论到统一 · 中=先试再定",
-    "晚上刷手机上限？左=十一点睡 · 右=刷到困 · 中=看心情",
-    "更愿意当队长还是核心输出？左=队长 · 右=核心 · 中=灵活补位"
+    "更喜欢早起还是夜猫？举左手=早起 · 举右手=夜猫 · 双手平举=看心情",
+    "作品更看重画面还是声音？举左手=画面 · 举右手=声音 · 双手平举=都要",
+    "今天状态如何？举左手=满血 · 举右手=节能 · 双手平举=重启中",
+    "更想当导演还是主演？举左手=导演 · 举右手=主演 · 双手平举=幕后英雄",
+    "团建首选？举左手=吃饭 · 举右手=游戏 · 双手平举=聊天吹风",
+    "冲突来了先怎样？举左手=先冷静 · 举右手=先表达 · 双手平举=先听全",
+    "更信计划还是灵感？举左手=计划 · 举右手=灵感 · 双手平举=边做边调",
+    "手机通知要不要开？举左手=全开 · 举右手=全关 · 双手平举=只开关键的",
+    "考试/答辩前夜？举左手=狂复习 · 举右手=早睡养神 · 双手平举=轻度浏览",
+    "更想要的队友？举左手=搞笑担当 · 举右手=靠谱担当 · 双手平举=两者都要",
+    "咖啡还是茶？举左手=咖啡 · 举右手=茶 · 双手平举=白开水党",
+    "镜头前更自然还是紧张？举左手=自然 · 举右手=紧张 · 双手平举=看场合",
+    "喜欢快节奏还是慢镜头？举左手=快切 · 举右手=长镜头 · 双手平举=看题材",
+    "失败后的第一反应？举左手=复盘 · 举右手=找安慰 · 双手平举=先吃顿好的",
+    "更怕被忽略还是被关注？举左手=被忽略 · 举右手=被过度关注 · 双手平举=都行",
+    "旅行跟团还是自由行？举左手=跟团 · 举右手=自由行 · 双手平举=半跟半自由",
+    "更想赢面子还是赢里子？举左手=面子 · 举右手=里子 · 双手平举=看赌注",
+    "课堂提问：举左手=主动举手 · 举右手=希望别点到 · 双手平举=点到就答",
+    "更爱夏天还是冬天？举左手=夏 · 举右手=冬 · 双手平举=春秋最好",
+    "组队规则偏好？举左手=自由组 · 举右手=随机组 · 双手平举=老师分配",
+    "作品署名要不要抢第一？举左手=要抢 · 举右手=随意 · 双手平举=按贡献排",
+    "更想被夸聪明还是努力？举左手=聪明 · 举右手=努力 · 双手平举=有趣",
+    "遇到分歧投票还是辩论？举左手=投票 · 举右手=辩论到统一 · 双手平举=先试再定",
+    "晚上刷手机上限？举左手=十一点睡 · 举右手=刷到困 · 双手平举=看心情",
+    "更愿意当队长还是核心输出？举左手=队长 · 举右手=核心 · 双手平举=灵活补位"
   ];
   const ICE_DUEL_CHALLENGES = [
-    "用 20 秒互相夸对方三个优点，更真诚者胜",
+    "用 20 秒互相夸对方三个优点，更真诚者胜（坐着说即可）",
     "同一话题即兴发言 30 秒，更有说服力者胜",
     "轮流说反义词，卡壳者负",
     "比谁能更快说出 8 个不重复的城市名",
     "用成语接龙，接不上者负",
-    "同时比划同一个词，观众投票谁更像",
+    "坐着同时用手比划同一个词，观众投票谁更像",
     "用一句话推销桌上任意物品，更想买者胜",
     "限时互问三个问题，回答更精彩者胜",
-    "数到 30，逢 3 的倍数拍手，先错者负",
+    "数到 30，逢 3 的倍数轻拍手，先错者负",
     "用表情演「尴尬」「得意」「震惊」，观众点赞更多者胜",
     "各讲一个 20 秒冷笑话，笑场更大者胜",
-    "背对背猜对方今天穿的鞋子颜色，猜对者胜",
+    "闭眼猜对方今天上衣主色，猜对者胜",
     "用非中文发音模仿对方说一句话，更像者胜",
-    "同时做 10 个开合跳，姿态更稳者胜",
+    "坐着同时做 10 次「肩部耸耸」，节奏更稳者胜",
     "限时说出对方名字的三个谐音梗，更损且友善者胜",
-    "石头剪刀布三局两胜，外加败者表演胜利姿势",
+    "石头剪刀布三局两胜，败者坐着做胜利手势",
     "各用三个词总结今天课程，更精准者胜",
     "对视 15 秒先笑者负",
     "轮流夸班级，不能重复，卡壳者负",
     "比谁能用更少的字讲清「什么是光影盟」",
-    "各演示一个「超级英雄登场」动作，气场更强者胜",
+    "各做一个坐着的「超级英雄」手势定格，气场更强者胜",
     "限时互相指出对方一个值得学习的点，更具体者胜",
     "同时说绕口令「四是四，十是十」，更清楚者胜",
-    "用肢体语言表达同一情绪，观众秒懂者胜",
+    "只用手部和表情表达同一情绪，观众秒懂者胜",
     "比谁先想出 5 个以「光」开头的词",
     "即兴编一句队歌副歌，更好记的胜",
     "各做一个 10 秒广告口播，更有感染力者胜",
-    "闭眼转三圈后走直线，歪得少者胜",
+    "坐着闭眼数 5 秒后指向前方，偏得少者胜",
     "互相反驳对方一个无厘头观点，逻辑更稳者胜",
     "用「然而」开头接对方的话，接得妙者胜"
   ];
@@ -5653,31 +5653,31 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "说一件你其实很在意却装作不在意的事"
   ];
   const ICE_DARE_DARES = [
-    "用播音腔朗读黑板上/屏幕上任意一句话",
+    "用播音腔朗读黑板上/屏幕上任意一句话（坐着即可）",
     "对邻座做 10 秒夸张的「颁奖感言」",
-    "带领全班做一套 5 秒热身操",
+    "带领全班做一套 5 秒坐姿「肩颈唤醒」：耸肩→放松",
     "用表情包脸演「震惊」「无语」「得意」三连",
     "即兴编一句班级口号并喊出来",
-    "闭眼转两圈后指出教室前方",
-    "用三种动物叫声表达「我来了」",
-    "和随机一位同学击掌三次并齐喊「冲」",
-    "用慢动作走到门口再走回来",
+    "闭眼 3 秒后指出教室前方（不用站起来）",
+    "用三种语气说「我来了」（小声/正常/播音腔）",
+    "和邻座轻碰拳或轻击掌一次并齐喊「冲」",
+    "用慢动作把文具「隆重」放到桌上再拿起",
     "即兴给今天课程起一个电影片名",
     "用夸张广告腔推销自己的文具",
-    "当 20 秒「气氛组」，带大家鼓掌加速",
+    "当 15 秒「气氛组」，带大家轻拍手加速",
     "用一句歌词形容现在的你（可改词）",
-    "做个超级英雄登场 pose，定格 3 秒",
+    "坐着做个超级英雄手势 pose，定格 3 秒",
     "用绕口令自我介绍一遍",
-    "请一位同学当你的「专访主持」互问一轮",
-    "用肢体语言表演「赶作业」",
-    "带全班同步做一个同步拍手节奏",
+    "请邻座当你的「专访主持」互问一轮",
+    "只用手部和表情表演「赶作业」",
+    "带全班同步轻拍两下桌面当鼓点",
     "用天气预报口吻播报「今日课堂天气」",
-    "发明一个握手暗号并教给邻座",
+    "发明一个座上握手/碰拳暗号并教给邻座",
     "用「然而」开头连续说三句关于自己的话",
     "即兴颁一个「本场勇气奖」给在场某人",
     "用夸张惊讶脸听别人说完一句话",
     "带领大家齐声倒计时 5 到 1",
-    "用舞蹈感走秀 5 步（可很短）"
+    "坐着做 5 秒「镜头感」左右微侧头定格"
   ];
   const ICE_SPY_PAIRS = [
     { civ: "牛奶", spy: "豆浆" },
@@ -5707,31 +5707,31 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { civ: "黑板", spy: "白板" }
   ];
   const ICE_POSE_PROMPTS = [
-    "全体起立，原地转三圈后坐下",
-    "和左右邻居各击掌两次",
+    "全班同步深呼吸一次，再轻轻呼气",
+    "和左右邻居各轻碰拳一次（够不到就挥手致意）",
     "用夸张表情做「震惊」三秒",
-    "全体举手假装抢答五秒",
+    "全体举手假装抢答五秒，再放下",
     "用手指在空中写自己名字",
-    "全班同步拍三下手，越齐越好",
-    "假装镜头前走秀五步",
-    "双手比「耶」并对镜头微笑",
-    "用肩膀碰碰旁边同学的肩膀",
-    "全体做「思考者」造型定格",
+    "全班同步轻拍三下手，越齐越好",
+    "坐着做「镜头前微笑」定格三秒",
+    "双手比「耶」并对前方微笑",
+    "轻轻碰碰旁边同学的手肘或桌角示意",
+    "全体做「思考者」造型（托腮）定格",
     "假装打字飞快十秒",
     "用嘴型无声喊「光影盟」",
-    "全体换一个座位方向扭身再回来",
-    "右手画圈、左手拍腿，坚持五秒",
+    "上半身微微转向邻座再转回前方",
+    "右手画小圈、左手轻拍桌沿，坚持五秒",
     "全体假装被点名紧张三秒",
-    "对天花板比个大拇指",
-    "用两秒完成「超级英雄登场」姿势",
-    "全班同步深呼吸一次",
-    "假装接住从天而降的麦克风",
-    "用脚步踩出三拍节奏",
-    "互相指对方说「就是你」",
+    "对前方比个大拇指",
+    "坐着两秒完成「超级英雄」手势定格",
+    "全班同步耸肩一次再放松",
+    "假装接住从天而降的麦克风（手部动作）",
+    "脚尖在原地轻点三拍节奏（可不发声）",
+    "互相指对方轻声说「就是你」",
     "全体低头再抬头，像开机动画",
     "假装打哈欠被老师抓包",
-    "用掌心拍桌两下当鼓点",
-    "全体站起，数到三再坐下"
+    "用掌心轻拍桌两下当鼓点",
+    "双手交叠放桌上，数到三再摊开"
   ];
   const ICE_CHOICE_QUESTIONS = [
     { q: "周末更想？", a: "宅家", b: "出门" },
@@ -5756,34 +5756,34 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { q: "更想要的夸奖？", a: "有想法", b: "靠谱" }
   ];
   const ICE_TIMER_CHALLENGES = [
-    { text: "全班一起喊出你们的队名 / 口号", sec: 8 },
-    { text: "十秒内和尽可能多的人击掌", sec: 10 },
-    { text: "全场同步拍出「哒哒哒—哒」节奏", sec: 12 },
-    { text: "每人找一个没说过话的人点头致意", sec: 15 },
-    { text: "用身体拼出「光」字（分组合作）", sec: 20 },
-    { text: "全班闭眼安静十秒，再睁眼欢呼", sec: 10 },
-    { text: "快速自我介绍：姓名 + 一个关键词", sec: 30 },
-    { text: "全场一起做三组开合跳", sec: 15 },
-    { text: "轮流报数，逢 7 拍手，看谁先乱", sec: 25 },
+    { text: "全班坐着一起喊出队名 / 口号", sec: 8 },
+    { text: "十秒内和左右邻座完成轻碰拳或挥手致意", sec: 10 },
+    { text: "全场同步轻拍出「哒哒哒—哒」节奏", sec: 12 },
+    { text: "和一位不太熟的同学对视点头致意", sec: 15 },
+    { text: "用手指在空中「写」出「光」字", sec: 12 },
+    { text: "全班闭眼安静八秒，再睁眼轻呼「好」", sec: 10 },
+    { text: "快速自我介绍：姓名 + 一个关键词（坐着说）", sec: 30 },
+    { text: "全场一起做三组坐姿耸肩放松", sec: 12 },
+    { text: "轮流报数，逢 7 轻拍手，看谁先乱", sec: 25 },
     { text: "用表情演完「尴尬→得意→震惊」", sec: 12 },
     { text: "全班用气声说「开始上课」", sec: 6 },
-    { text: "找同款颜色衣服的人组小圈", sec: 20 },
-    { text: "全场同步转身面向后门再转回", sec: 8 },
+    { text: "找同款颜色衣服的人互相举手示意", sec: 15 },
+    { text: "全场上半身微转向后门方向再转回", sec: 8 },
     { text: "每人想一句今日目标，举手示意想好了", sec: 15 },
     { text: "集体倒计时从 10 喊到 1，越齐越好", sec: 12 },
-    { text: "用掌声给老师「加血」十秒", sec: 10 },
+    { text: "用轻掌声给老师「加血」八秒", sec: 8 },
     { text: "全班假装按下快门，定格微笑", sec: 5 },
-    { text: "左右互换一个小物件再换回来", sec: 18 },
-    { text: "全场起立，按身高快速排成一排", sec: 25 },
-    { text: "一起做「超级英雄」登场姿势定格", sec: 8 }
+    { text: "和邻座互换一支笔再换回来", sec: 15 },
+    { text: "全场举手比身高：手举得更高代表更高（玩笑即可）", sec: 10 },
+    { text: "一起做坐着的「超级英雄」手势定格", sec: 8 }
   ];
   const ICE_CHAIN_PROMPTS = [
-    "词语接龙：上一词末字开头，重复或卡壳就过",
+    "词语接龙：上一词末字开头，重复或卡壳就过（坐着说）",
     "城市接龙：轮流说城市名，不能重复",
     "成语接龙：末字相同或谐音可接",
-    "电影/剧名接龙：末字开头，卡壳拍手过",
+    "电影/剧名接龙：末字开头，卡壳轻拍手过",
     "食物接龙：轮流说吃的，重复出局",
-    "颜色接龙：说一种颜色并指出教室里对应物",
+    "颜色接龙：说一种颜色并指出视野里对应物（手指指向即可）",
     "反义词接龙：上一人说词，下一人说反义",
     "职业接龙：轮流说职业，不能重复",
     "动物接龙：末字开头，卡住就换人",
@@ -5791,12 +5791,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "「光」字开头：每人说一个带「光」的词",
     "数字接龙：上一人报数，下一人 +2，说错重来",
     "夸奖接龙：轮流夸下一位同学一个优点",
-    "动作接龙：上一人做一个动作，下一人加一拍",
+    "手势接龙：上一人做一个小手势，下一人加一拍（坐着）",
     "同韵接龙：词尾押韵即可，卡壳过",
     "课堂关键词接龙：围绕今天主题说词",
     "表情接龙：上一人做表情，下一人升级夸张版",
     "队名接龙：每人补一个字，拼完整队名",
-    "水果接龙：末字开头，说不出就鼓掌过",
+    "水果接龙：末字开头，说不出就轻鼓掌过",
     "「然而」接龙：用「然而」接上一人的话续一句"
   ];
   let redeemTab = "shop";
@@ -10553,9 +10553,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (sub) {
       sub.textContent = open
-        ? "不依赖登录签到 · 炸弹/比划/站队/动作/左右/限时/接龙 · 纯投屏带动全场"
+        ? "坐着就能玩 · 炸弹/比划/举手/坐席互动/左右示意/限时/接龙 · 不大动作"
         : (iceLike
-          ? "需名册或签到池 · 传花/介绍/默契/对决/抢答/真心话/卧底"
+          ? "坐着就能玩 · 传花/介绍/默契/对决/抢答/真心话/卧底 · 以发言与小动作为主"
           : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分");
     }
     if (actions) {
@@ -10845,25 +10845,25 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">站队表决</div>
-          <div class="ice-stage-title">左 · 右 · 中间</div>
-          <div class="ice-stage-sub">出题后学生站位，老师点计数看阵营倾向</div>
+          <div class="ice-stage-kicker">举手表决</div>
+          <div class="ice-stage-title">举左手 · 举右手 · 双手平举</div>
+          <div class="ice-stage-sub">坐着示意即可 · 老师点数看倾向 · 不用离开座位</div>
         </div>`;
       return;
     }
     const L = st.left || 0, M = st.mid || 0, R = st.right || 0;
-    const lead = L === R && L >= M ? "左右胶着" : (L >= M && L >= R ? "左阵领先" : (R >= M && R >= L ? "右阵领先" : "中间派占优"));
+    const lead = L === R && L >= M ? "左右胶着" : (L >= M && L >= R ? "左手派领先" : (R >= M && R >= L ? "右手派领先" : "平举派占优"));
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">站队表决 · ${esc(lead)}</div>
+        <div class="ice-stage-kicker">举手表决 · ${esc(lead)}</div>
         <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-row">
-          <button type="button" data-ice-stand="left">左 +1（${L}）</button>
-          <button type="button" data-ice-stand="mid">中 +1（${M}）</button>
-          <button type="button" data-ice-stand="right">右 +1（${R}）</button>
+          <button type="button" data-ice-stand="left">举左手 +1（${L}）</button>
+          <button type="button" data-ice-stand="mid">双手平举 +1（${M}）</button>
+          <button type="button" data-ice-stand="right">举右手 +1（${R}）</button>
           <button type="button" data-ice-stand-reset="1">计数清零</button>
         </div>
-        <div class="ice-stage-sub">左 ${L} · 中 ${M} · 右 ${R}</div>
+        <div class="ice-stage-sub">左手 ${L} · 平举 ${M} · 右手 ${R}</div>
       </div>`;
     stage.querySelectorAll("[data-ice-stand]").forEach((b) => {
       b.onclick = () => {
@@ -10884,9 +10884,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const st = iceState;
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">全员动作 · 第 ${st.n || 0} 个</div>
-        <div class="ice-stage-big">${esc(st.prompt || "点开始抽动作")}</div>
-        <div class="ice-stage-sub">${st.prompt ? "全班一起做 · 做完点「换一个」" : "无需签到 · 投屏指令带全场动起来"}</div>
+        <div class="ice-stage-kicker">坐席互动 · 第 ${st.n || 0} 个</div>
+        <div class="ice-stage-big">${esc(st.prompt || "点开始抽指令")}</div>
+        <div class="ice-stage-sub">${st.prompt ? "坐着一起做 · 做完点「换一个」" : "座位上的小动作与表情 · 不用站起来"}</div>
       </div>`;
   }
 
@@ -10896,29 +10896,29 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">左右互搏</div>
-          <div class="ice-stage-title">二选一站队</div>
-          <div class="ice-stage-sub">无需签到 · 出题后左边 / 右边站队，老师点数看哪边人多</div>
+          <div class="ice-stage-kicker">左右示意</div>
+          <div class="ice-stage-title">二选一举手</div>
+          <div class="ice-stage-sub">坐着玩 · 举左手或举右手示意，老师点数看哪边人多</div>
         </div>`;
       return;
     }
     const L = st.left || 0, R = st.right || 0;
-    const lead = L === R ? "势均力敌" : (L > R ? `左阵领先 · ${esc(st.a)}` : `右阵领先 · ${esc(st.b)}`);
+    const lead = L === R ? "势均力敌" : (L > R ? `左手派领先 · ${esc(st.a)}` : `右手派领先 · ${esc(st.b)}`);
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">左右互搏 · ${lead}</div>
+        <div class="ice-stage-kicker">左右示意 · ${lead}</div>
         <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-big" style="font-size:clamp(1.4rem,3.2vw,2.1rem)">
-          <span style="color:#ffb0bd">左 · ${esc(st.a)}</span>
+          <span style="color:#ffb0bd">举左手 · ${esc(st.a)}</span>
           <span class="vs" style="opacity:.6;margin:0 .35rem">VS</span>
-          <span style="color:#9ec9ff">右 · ${esc(st.b)}</span>
+          <span style="color:#9ec9ff">举右手 · ${esc(st.b)}</span>
         </div>
         <div class="ice-stage-row">
-          <button type="button" data-ice-choice="left">左 +1（${L}）</button>
-          <button type="button" data-ice-choice="right">右 +1（${R}）</button>
+          <button type="button" data-ice-choice="left">举左手 +1（${L}）</button>
+          <button type="button" data-ice-choice="right">举右手 +1（${R}）</button>
           <button type="button" data-ice-choice-reset="1">计数清零</button>
         </div>
-        <div class="ice-stage-sub">左 ${L} · 右 ${R}</div>
+        <div class="ice-stage-sub">左手 ${L} · 右手 ${R}</div>
       </div>`;
     stage.querySelectorAll("[data-ice-choice]").forEach((b) => {
       b.onclick = () => {
@@ -10942,7 +10942,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ice-stage-card">
           <div class="ice-stage-kicker">限时挑战</div>
           <div class="ice-stage-title">倒计时暖场</div>
-          <div class="ice-stage-sub">无需签到 · 点开始给出全场挑战并倒计时，到点喊停</div>
+          <div class="ice-stage-sub">坐着玩 · 点开始给出口头/小动作挑战并倒计时，到点喊停</div>
         </div>`;
       return;
     }
@@ -10951,7 +10951,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ice-stage-kicker">限时挑战 · ${st.running ? "进行中" : "结束"}</div>
         <div class="ice-stage-title">${esc(st.text)}</div>
         <div class="ice-stage-timer" id="ice-timer-sec">${st.sec != null ? st.sec : st.total || "—"}</div>
-        <div class="ice-stage-sub">${st.running ? "全场一起完成 · 倒计时结束自动停" : "可点「换挑战」再来一轮"}</div>
+        <div class="ice-stage-sub">${st.running ? "坐着一起完成 · 倒计时结束自动停" : "可点「换挑战」再来一轮"}</div>
       </div>`;
   }
 
@@ -10962,7 +10962,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">接龙开场 · 第 ${st.round || 0} 条</div>
         <div class="ice-stage-title">${esc(st.prompt || "点开始抽取接龙规则")}</div>
-        <div class="ice-stage-sub">${st.prompt ? "从任意同学开始轮流接 · 卡壳就过到下一位" : "无需签到 · 纯规则投屏带动全场"}</div>
+        <div class="ice-stage-sub">${st.prompt ? "坐着轮流接 · 卡壳就过到下一位" : "口头接龙为主 · 不用离开座位"}</div>
       </div>`;
   }
 
@@ -11328,14 +11328,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const q = pickIce(ICE_STAND_QUESTIONS, "stand");
     iceState = { q, left: 0, mid: 0, right: 0 };
     renderIceStandStage();
-    playGameFx("start", { banner: "站队表决" });
+    playGameFx("start", { banner: "举手表决" });
   }
 
   function icePoseStart() {
     const prompt = pickIce(ICE_POSE_PROMPTS, "pose");
     iceState = { prompt, n: (iceState.n || 0) + 1 };
     renderIcePoseStage();
-    playGameFx("start", { banner: "全员动作" });
+    playGameFx("start", { banner: "坐席互动" });
     popGameText("#game-stage .ice-stage-title, #game-stage .ice-stage-big");
   }
 
@@ -11343,7 +11343,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const item = pickIce(ICE_CHOICE_QUESTIONS, "choice");
     iceState = { q: item.q, a: item.a, b: item.b, left: 0, right: 0 };
     renderIceChoiceStage();
-    playGameFx("start", { banner: "左右互搏" });
+    playGameFx("start", { banner: "左右示意" });
   }
 
   function iceTimerStart() {
@@ -12605,7 +12605,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   const PROP_ORACLE_LINES = [
-    "本回合：持有者起立朗读规则，全班鼓掌后生效",
+    "本回合：持有者坐着朗读规则，全班轻鼓掌后生效",
     "本回合：可指定一位同学接力回答，答对双方各记彩",
     "本回合：道具翻倍——效果描述里的数字临时 +1",
     "本回合：必须在 10 秒内说出使用理由，超时作废重抽",
