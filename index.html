@@ -4059,6 +4059,46 @@ body.play-mode-basic #rail-side-mode-tabs {
   background: linear-gradient(180deg, #3a4668, #1c2438);
   color: #ffe39a;
 }
+.ice-word-bank {
+  margin: 0 0 .55rem;
+  padding: .55rem .65rem .5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(240, 193, 75, .28);
+  background: rgba(0, 0, 0, .22);
+}
+.ice-word-bank.hidden { display: none !important; }
+.ice-word-bank .iwb-lab {
+  font-size: .78rem;
+  color: #ffe39a;
+  letter-spacing: .06em;
+  margin-bottom: .35rem;
+}
+.ice-word-bank .iwb-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+.ice-word-bank .iwb-tabs button {
+  min-height: 1.9rem !important;
+  padding: .25rem .55rem !important;
+  font-size: .78rem !important;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: var(--ink-soft);
+}
+.ice-word-bank .iwb-tabs button.on {
+  background: linear-gradient(180deg, #6a5414, #2e240c);
+  border-color: rgba(240,193,75,.65);
+  color: #ffe39a;
+  font-weight: 700;
+}
+.ice-word-bank .iwb-hint {
+  margin: .35rem 0 0;
+  font-size: .72rem;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
 .ice-stage-card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: .65rem; min-height: 18rem; text-align: center; padding: .5rem;
@@ -5093,6 +5133,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div id="games-ice-pane" class="hidden">
           <div class="ice-mode-tabs" id="ice-mode-tabs" role="tablist" aria-label="破冰小游戏"></div>
           <div class="muted" style="margin-bottom:.35rem" id="ice-mode-hint">暖场互动 · 不扣积分</div>
+          <div id="ice-word-bank" class="ice-word-bank hidden" aria-label="游戏词库"></div>
           <div id="team-battle-editor" class="hidden" aria-label="对抗小组设置">
             <div class="team-editor-bar">
               <span class="irm-lab" style="margin-right:.15rem">对抗小组</span>
@@ -6272,20 +6313,196 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "你的口头禅是什么", "最近一次帮助别人是什么", "如果中奖了第一件事",
     "最想学会的技能", "描述理想的周末一天", "课堂上最想坐的位置为什么",
     "一个别人不知道的小癖好", "你最容易被什么逗笑", "用数字介绍自己（年龄除外）",
-    "如果给小组起战队名会叫什么"
+    "如果给小组起战队名会叫什么",
+    "最近在追哪部番/剧，安利一句", "你的本命角色是谁", "单曲循环最久的歌是哪首",
+    "更像哪种人设：社恐 / 社牛 / 显眼包", "推荐一个让人破防的名场面", "如果穿越进动画世界你想当谁",
+    "最近一次被 BGM 杀到是什么时候", "你的电子榨菜是什么（边吃边刷的）", "用一句歌词形容本周状态",
+    "更想开黑上分还是躺平充电", "朋友圈最想发的三个滤镜词", "如果班级是综N代你想当什么定位"
   ];
-  const ICE_CHARADES_WORDS = [
-    "追光", "镜头", "剪辑", "配乐", "开场白", "掌声", "导演", "幕后",
-    "电风扇", "泡面", "地铁", "自拍", "迟到", "闹钟", "外卖", "雨伞",
-    "武侠", "擂台", "红蓝对抗", "签到", "投票", "转盘", "麦克风", "提词器",
-    "红绿灯", "电梯故障", "追剧熬夜", "抢红包", "拍照修图", "假装认真听课",
-    "打瞌睡", "举手发言", "分组撕名牌", "运动会短跑", "厨房翻车", "迷路",
-    "放风筝", "滑板", "演唱会应援", "拍立得", "咖啡续命", "图书馆占座",
-    "期末周", "答辩紧张", "团建烤肉", "雨中狂奔", "丢钥匙", "充电焦虑",
-    "网购退货", "开箱惊喜", "狼人杀发言", "剧本杀沉浸", "羽毛球杀球", "跳绳",
-    "哑剧表演", "口误现场", "同声传译", "慢动作回放", "片场喊卡", "灯光师",
-    "绿幕抠像", "分镜手稿", "花絮NG", "压轴登场", "冷场救场", "全场欢呼"
-  ];
+  const ICE_WORD_BANK_KEY = "gy_arena_ice_word_bank";
+  /** 你比我猜等出题游戏：分类词库（偏当下流行，课堂友好） */
+  const ICE_WORD_BANK_ORDER = ["mix", "anime_hot", "anime_jp", "anime_cn", "songs", "youth", "variety", "campus"];
+  const ICE_WORD_BANKS = {
+    mix: {
+      id: "mix", label: "综合热梗",
+      hint: "动漫 + 歌曲 + 年轻人都在聊的梗，随机混抽",
+      words: [
+        "原神启动", "二次元", "社恐发作", "已读不回", "CPU烧了", "绝绝子", "尊嘟假嘟", "哇塞",
+        "电子榨菜", "精神状态良好", "摸鱼时刻", "打工魂", "续杯自由", "显眼包", "搭子文化", "情绪价值",
+        "特种兵旅游", "city不city", "拿捏了", "破防了", "整活现场", "名场面", "名台词", "中二病",
+        "主角光环", "开大招", "回血包", "满级人类", "社牛发言", "冷场救场", "氛围组", "整蛊大师",
+        "追番补课", "单曲循环", "听歌识曲", "演唱会应援", "应援棒", "拍立得", "滤镜拉满", "出片了",
+        "抽象发言", "emo了", "摆烂一天", "满血复活", "打工人语录", "周末充电", "开黑上分", "躺平一秒"
+      ]
+    },
+    anime_hot: {
+      id: "anime_hot", label: "当下热番",
+      hint: "最近大家爱聊的番与角色名场面（课堂友好版）",
+      words: [
+        "鬼灭之刃", "炭治郎", "祢豆子", "炼狱杏寿郎", "水之呼吸", "咒术回战", "五条悟", "虎杖悠仁",
+        "领域展开", "进击的巨人", "艾伦", "调查兵团", "进击的自由", "间谍过家家", "阿尼亚", "黄昏",
+        "约尔", "电锯人", "玛奇玛", "电次", "蓝色监狱", "洁世一", "凪诚士郎", "葬送的芙莉莲",
+        "芙莉莲", "辛美尔", "药屋少女", "猫猫", "我推的孩子", "星野爱", "排球少年", "日向翔阳",
+        "影山飞雄", "海贼王", "路飞", "橡胶果实", "一拳超人", "埼玉老师", "无职转生", "转生异世界",
+        "推番安利", "补番通宵", "OP秒杀", "ED循环", "弹幕刷屏", "名场面截图"
+      ]
+    },
+    anime_jp: {
+      id: "anime_jp", label: "日漫经典",
+      hint: "经典日漫角色与名场面，好比划也好猜",
+      words: [
+        "火影忍者", "鸣人", "佐助", "螺旋丸", "查克拉", "死神", "黑崎一护", "斩月",
+        "海贼王", "索隆", "娜美", "千阳号", "龙珠", "悟空", "龟派气功", "变身超级赛亚人",
+        "名侦探柯南", "工藤新一", "灰原哀", "真相只有一个", "哆啦A梦", "竹蜻蜓", "任意门", "记忆面包",
+        "蜡笔小新", "动感超人", "美少女战士", "月野兔", "变身器", "犬夜叉", "杀生丸", "四魂之玉",
+        "钢之炼金术师", "等价交换", "全职猎人", "念能力", "死神果子", "数码宝贝", "进化进化", "皮卡丘",
+        "精灵球", "初音未来", "葱娘", "赛博朋克", "机甲变身", "结印手势", "黑板擦飞来", "迟到冲刺"
+      ]
+    },
+    anime_cn: {
+      id: "anime_cn", label: "国漫热血",
+      hint: "国产动漫与游戏向热梗，年轻人都听过",
+      words: [
+        "哪吒之魔童", "我命由我不由天", "敖丙", "姜子牙", "大圣归来", "斗罗大陆", "唐三", "小舞",
+        "武魂觉醒", "完美世界", "石昊", "柳神", "遮天", "叶凡", "仙逆", "王林",
+        "一人之下", "冯宝宝", "张楚岚", "罗小黑战记", "小黑", "无限", "雾山五行", "非人哉",
+        "狐妖小红娘", "白月初", "涂山苏苏", "秦时明月", "天行九歌", "刺客伍六七", "梅花十三", "镇魂街",
+        "曹焱兵", "灵笼", "凸变英雄", "国漫崛起", "二创鬼畜", "弹幕护体", "情怀杀", "配音名场面",
+        "原神", "钟离", "胡桃", "可莉炸弹", "王者荣耀", "李白", "瑶妹", "打野出装"
+      ]
+    },
+    songs: {
+      id: "songs", label: "流行歌曲",
+      hint: "歌名 / 歌词梗 / 听歌场景，适合比划与哼唱猜",
+      words: [
+        "晴天", "七里香", "稻香", "告白气球", "夜曲", "青花瓷", "演员", "消愁",
+        "起风了", "倒数", "体面", "说散就散", "大鱼", "孤勇者", "光亮", "热爱105度的你",
+        "可可托海的牧羊人", "白月光与朱砂痣", "踏山河", "嘉宾", "海底", "像我这样的人", "平凡之路", "成都",
+        "南山南", "理想三旬", "年少有为", "句号", "句号之后", "单曲循环", "听歌识曲", "耳机分你一边",
+        "K歌之王", "麦霸现场", "跑调自信", "副歌高音", "抖音神曲", "卡点舞蹈", "应援口号", "安可安可",
+        "歌词接龙", "哼歌猜曲", "BGM一响", "泪目杀", "破音现场", "合唱高潮"
+      ]
+    },
+    youth: {
+      id: "youth", label: "二十岁流行",
+      hint: "打工人 / 大学生活 / 社交热词，一听就会笑",
+      words: [
+        "打工人", "干饭人", "早八战士", "晚课续命", "咖啡续命", "奶茶续命", "外卖到了", "取快递",
+        "拼好饭", "宿舍夜谈", "熄灯卧谈", "抢课成功", "选课失败", "DDL恐惧", "小组划水", "摸鱼被抓",
+        "已读不回", "正在输入", "拍马屁未遂", "社交电量耗尽", "社恐出门", "社牛开麦", "搭子逛街", "情绪稳定",
+        "显眼包本包", "精神状态满分", "抽象发言", "整活失败", "破防瞬间", "拿捏全场", "氛围感拉满", "滤镜人生",
+        "特种兵一日游", "citywalk", "city不city", "拍照打卡", "出片了吗", "朋友圈三件套", "点赞之交", "双向奔赴",
+        "电子木鱼", "功德+1", "摆烂充电", "满级大佬", "新手教程", "外挂怀疑"
+      ]
+    },
+    variety: {
+      id: "variety", label: "影视综艺",
+      hint: "电影、剧集、综艺名场面，适合夸张表演",
+      words: [
+        "剧本杀", "狼人杀", "天黑请闭眼", "侦探推理", "密室逃脱", "沉浸式体验", "名场面重演", "反转剧情",
+        "开端", "狂飙", "安欣", "高启强", "繁花", "宝总", "甄嬛传名场面", "娘娘息怒",
+        "长相思", "庆余年", "范闲", "三体", "面壁者", "流浪地球", "吴京硬核", "封神第一部",
+        "热辣滚烫", "飞驰人生", "中国合伙人", "演员请就位", "哈哈哈哈哈", "奔跑吧", "极限挑战", "脱口秀大会",
+        "吐槽大会", "乐队的夏天", "歌手现场", "名场面截图", "名台词背诵", "泪目杀", "高能预警", "弹幕护体",
+        "二创鬼畜", "混剪杀", "片尾彩蛋", "导演喊卡"
+      ]
+    },
+    campus: {
+      id: "campus", label: "校园日常",
+      hint: "课堂、社团、宿舍经典场景，稳妥好猜",
+      words: [
+        "追光", "镜头", "剪辑", "配乐", "开场白", "掌声", "导演", "幕后",
+        "电风扇", "泡面", "地铁", "自拍", "迟到", "闹钟", "外卖", "雨伞",
+        "武侠", "擂台", "红蓝对抗", "签到", "投票", "转盘", "麦克风", "提词器",
+        "红绿灯", "电梯故障", "追剧熬夜", "抢红包", "拍照修图", "假装认真听课",
+        "打瞌睡", "举手发言", "分组撕名牌", "运动会短跑", "厨房翻车", "迷路",
+        "放风筝", "滑板", "演唱会应援", "拍立得", "咖啡续命", "图书馆占座",
+        "期末周", "答辩紧张", "团建烤肉", "雨中狂奔", "丢钥匙", "充电焦虑",
+        "网购退货", "开箱惊喜", "羽毛球杀球", "跳绳", "花絮NG", "压轴登场"
+      ]
+    }
+  };
+  function getIceWordBankId() {
+    const id = String(localStorage.getItem(ICE_WORD_BANK_KEY) || "mix").trim();
+    return ICE_WORD_BANKS[id] ? id : "mix";
+  }
+  function setIceWordBankId(id) {
+    const next = ICE_WORD_BANKS[id] ? id : "mix";
+    localStorage.setItem(ICE_WORD_BANK_KEY, next);
+    return next;
+  }
+  function getIceWordBank() {
+    return ICE_WORD_BANKS[getIceWordBankId()] || ICE_WORD_BANKS.mix;
+  }
+  function getIceCharadesWords() {
+    const bank = getIceWordBank();
+    if (bank.id === "mix") {
+      // 综合：从各库抽样拼成更大池，更有新鲜感
+      const pool = [];
+      ICE_WORD_BANK_ORDER.forEach((id) => {
+        if (id === "mix") return;
+        const b = ICE_WORD_BANKS[id];
+        if (!b || !b.words) return;
+        b.words.forEach((w, i) => { if (i % 2 === 0) pool.push(w); });
+      });
+      return pool.length ? pool : (bank.words || []);
+    }
+    return bank.words || ICE_WORD_BANKS.campus.words;
+  }
+
+  function getIceChainPrompts() {
+    const id = getIceWordBankId();
+    const base = ICE_CHAIN_PROMPTS.slice();
+    const boost = [];
+    if (id === "songs" || id === "mix") {
+      boost.push("歌名接龙：说歌名或哼副歌，末字接龙", "歌词接龙：接唱下一句（跑调加分）", "单曲循环安利：每人推荐一首并哼一句");
+    }
+    if (id === "anime_jp" || id === "anime_cn" || id === "anime_hot" || id === "mix") {
+      boost.push("番名接龙：末字开头", "角色接龙：不能重复", "名场面接龙：用动作演一个动画名场面");
+    }
+    if (id === "youth" || id === "mix") {
+      boost.push("热梗接龙：网络热词不能重复", "人设接龙：社恐/社牛/显眼包…每人一个");
+    }
+    if (id === "variety" || id === "mix") {
+      boost.push("影视剧名接龙", "综艺名场面：一句话演出来");
+    }
+    return boost.concat(base);
+  }
+
+  function iceUsesWordBank(mode) {
+    return mode === "charades" || mode === "chain";
+  }
+  function renderIceWordBankBar() {
+    const host = document.getElementById("ice-word-bank");
+    if (!host) return;
+    const show = isIceLikeCat(gamesCat) && iceUsesWordBank(iceMode);
+    host.classList.toggle("hidden", !show);
+    if (!show) return;
+    const cur = getIceWordBankId();
+    const bank = getIceWordBank();
+    host.innerHTML = `
+      <div class="iwb-lab">词库 · 选个流行主题更开心</div>
+      <div class="iwb-tabs" role="tablist">
+        ${ICE_WORD_BANK_ORDER.map((id) => {
+          const b = ICE_WORD_BANKS[id];
+          return `<button type="button" class="${id === cur ? "on" : ""}" data-word-bank="${id}">${esc(b.label)}</button>`;
+        }).join("")}
+      </div>
+      <p class="iwb-hint">${esc(bank.hint)} · 约 ${getIceCharadesWords().length} 条</p>`;
+    host.querySelectorAll("[data-word-bank]").forEach((btn) => {
+      btn.onclick = () => {
+        if (iceBusy) return;
+        setIceWordBankId(btn.dataset.wordBank);
+        iceLastPick.charades = "";
+        iceLastPick.chain = "";
+        renderIceWordBankBar();
+        if (iceMode === "charades") renderIceCharadesStage();
+        if (iceMode === "chain") renderIceChainStage();
+        showVoteToast(`词库：${getIceWordBank().label}`);
+      };
+    });
+  }
+
   const ICE_SYNC_QUESTIONS = [
     { q: "周末更想？", a: "宅家充电", b: "出门浪一浪" },
     { q: "创作时更靠？", a: "灵感爆发", b: "死磕打磨" },
@@ -6417,7 +6634,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { q: "「PPT」常被吐槽成？", a: "稿件投影仪 / 演示文稿" },
     { q: "「开诚布公」强调什么态度？", a: "坦诚公开" },
     { q: "「抖包袱」来自哪类表演？", a: "相声" },
-    { q: "「反转」剧情让观众感到？", a: "意外 / 预期被打破" }
+    { q: "「反转」剧情让观众感到？", a: "意外 / 预期被打破" },
+    { q: "「原神，启动！」是哪类流行梗？", a: "游戏 / 开玩口号" },
+    { q: "「绝绝子」通常用来表达？", a: "很棒 / 夸张赞美" },
+    { q: "「破防了」是什么意思？", a: "心态崩了 / 被戳中" },
+    { q: "「电子榨菜」一般指？", a: "边吃边刷的视频/节目" },
+    { q: "「BGM」一响常常意味着？", a: "名场面要来了 / 情绪高潮" },
+    { q: "动漫里常见的「OP」指？", a: "片头曲" },
+    { q: "「ED」通常指？", a: "片尾曲" },
+    { q: "「二创」是什么？", a: "二次创作" },
+    { q: "「弹幕」最早大火于哪类视频平台文化？", a: "弹幕视频 / 评论飘过屏幕" },
+    { q: "「city不city」用来调侃什么？", a: "城市感 / 时髦程度" },
+    { q: "「搭子」文化指什么？", a: "临时搭档 / 饭搭子等" },
+    { q: "「显眼包」形容人怎样？", a: "很会整活 / 很吸睛" },
+    { q: "「满级人类」夸张夸人什么？", a: "什么都会 / 很厉害" },
+    { q: "《孤勇者》常被用在什么场合？", a: "热血应援 / 激励场景" },
+    { q: "「名场面」截图通常为了？", a: "收藏经典镜头 / 安利" },
+    { q: "「补番」是什么意思？", a: "把没看过的番补完" },
+    { q: "游戏里「开大」指？", a: "放终极技能" },
+    { q: "「已读不回」让人最常见的情绪？", a: "焦虑 / 尴尬 / 无语（言之成理）" },
+    { q: "「社恐」反义词更接近？", a: "社牛" }
   ];
   const ICE_DARE_TRUTHS = [
     "最近一次不好意思承认的小骄傲是什么？",
@@ -6471,7 +6707,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "即兴颁一个「本场勇气奖」给在场某人",
     "用夸张惊讶脸听别人说完一句话",
     "带领大家齐声倒计时 5 到 1",
-    "坐着做 5 秒「镜头感」左右微侧头定格"
+    "坐着做 5 秒「镜头感」左右微侧头定格",
+    "用应援口号带大家喊一声「加油」",
+    "即兴哼一段大家都可能听过的副歌（跑调加分）",
+    "演「原神启动」夸张开机动作三秒",
+    "用弹幕体说一句「高能预警前方高能」",
+    "带全班做一次「破防了→满血复活」表情切换",
+    "发明一个班级专属热梗并喊出来"
   ];
   const ICE_SPY_PAIRS = [
     { civ: "牛奶", spy: "豆浆" },
@@ -6498,7 +6740,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { civ: "手套", spy: "连指手套" },
     { civ: "可乐", spy: "雪碧" },
     { civ: "耳机", spy: "音箱" },
-    { civ: "黑板", spy: "白板" }
+    { civ: "黑板", spy: "白板" },
+    { civ: "原神", spy: "崩坏星穹铁道" },
+    { civ: "王者荣耀", spy: "和平精英" },
+    { civ: "奶茶", spy: "咖啡" },
+    { civ: "社恐", spy: "社牛" },
+    { civ: "鬼灭之刃", spy: "咒术回战" },
+    { civ: "哪吒", spy: "悟空" },
+    { civ: "B站", spy: "抖音" },
+    { civ: "追剧", spy: "追番" },
+    { civ: "OP", spy: "ED" },
+    { civ: "演唱会", spy: "音乐节" },
+    { civ: "显眼包", spy: "气氛组" },
+    { civ: "开黑", spy: "单排" },
+    { civ: "弹幕", spy: "评论" },
+    { civ: "孤勇者", spy: "起风了" },
+    { civ: "剧本杀", spy: "狼人杀" },
+    { civ: "外卖", spy: "堂食" }
   ];
   const ICE_POSE_PROMPTS = [
     "全班同步深呼吸一次，再轻轻呼气",
@@ -6525,7 +6783,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "全体低头再抬头，像开机动画",
     "假装打哈欠被老师抓包",
     "用掌心轻拍桌两下当鼓点",
-    "双手交叠放桌上，数到三再摊开"
+    "双手交叠放桌上，数到三再摊开",
+    "用应援手势假装演唱会现场（坐着即可）",
+    "演一个「原神启动」夸张开机动作",
+    "做「破防了」的表情三连",
+    "假装被 BGM 杀到泪目，然后秒恢复",
+    "演「社恐突然被点名」全过程",
+    "做一个「显眼包」出场动作定格",
+    "用慢动作演「外卖小哥敲门」",
+    "假装开黑指挥：小声喊「集合！开大！」",
+    "演「听歌识曲成功」的得意脸",
+    "做一个二次元经典「中二」结印手势"
   ];
   const ICE_CHOICE_QUESTIONS = [
     { q: "周末更想？", a: "宅家", b: "出门" },
@@ -6547,7 +6815,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { q: "学习方式？", a: "听讲", b: "动手" },
     { q: "夜宵立场？", a: "必须吃", b: "忍住" },
     { q: "旅行打包？", a: "极简", b: "全带上" },
-    { q: "更想要的夸奖？", a: "有想法", b: "靠谱" }
+    { q: "更想要的夸奖？", a: "有想法", b: "靠谱" },
+    { q: "追番还是追剧？", a: "追番", b: "追剧" },
+    { q: "更爱国漫还是日漫？", a: "国漫", b: "日漫" },
+    { q: "听歌习惯？", a: "单曲循环", b: "随便听听" },
+    { q: "游戏开黑？", a: "指挥型", b: "躺平型" },
+    { q: "人设更像？", a: "社恐", b: "显眼包" },
+    { q: "周末充电？", a: "补番通宵", b: "早睡养生" },
+    { q: "续命饮料？", a: "咖啡", b: "奶茶" },
+    { q: "刷短视频？", a: "停不下来", b: "定时封禁" },
+    { q: "更怕哪种？", a: "已读不回", b: "突然开麦" },
+    { q: "安利作品？", a: "疯狂安利", b: "自己偷偷爽" }
   ];
   const ICE_TIMER_CHALLENGES = [
     { text: "全班坐着一起喊出队名 / 口号", sec: 8 },
@@ -6569,7 +6847,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { text: "全班假装按下快门，定格微笑", sec: 5 },
     { text: "和邻座互换一支笔再换回来", sec: 15 },
     { text: "全场举手比身高：手举得更高代表更高（玩笑即可）", sec: 10 },
-    { text: "一起做坐着的「超级英雄」手势定格", sec: 8 }
+    { text: "一起做坐着的「超级英雄」手势定格", sec: 8 },
+    { text: "全班同步做「应援手势」并轻声喊加油", sec: 8 },
+    { text: "十秒内想出一部最近在追的番/剧，举手示意", sec: 10 },
+    { text: "全场一起用气声说「名场面来了」", sec: 6 },
+    { text: "和邻座击掌并齐喊「开大」", sec: 8 }
   ];
   const ICE_CHAIN_PROMPTS = [
     "词语接龙：上一词末字开头，重复或卡壳就过（坐着说）",
@@ -6591,7 +6873,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "表情接龙：上一人做表情，下一人升级夸张版",
     "队名接龙：每人补一个字，拼完整队名",
     "水果接龙：末字开头，说不出就轻鼓掌过",
-    "「然而」接龙：用「然而」接上一人的话续一句"
+    "「然而」接龙：用「然而」接上一人的话续一句",
+    "番名接龙：动漫名末字开头，卡壳轻拍手过",
+    "角色接龙：轮流说动漫/游戏角色，不能重复",
+    "歌名接龙：说歌名或哼副歌，末字接龙",
+    "歌词接龙：接唱下一句（跑调也行）",
+    "热梗接龙：说一个网络热梗，不能重复",
+    "游戏接龙：轮流说游戏名，重复出局",
+    "综艺名场面接龙：用一句话演名场面",
+    "BGM接龙：哼一段大家熟悉的BGM让下一位接",
+    "人设接龙：每人补一个流行人设词（社恐/显眼包…）"
   ];
   const TEAM_BUZZ_QUESTIONS = [
     { q: "一年有几个月？", a: "12" },
@@ -6613,7 +6904,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { q: "冬天会下雪的常见气温特征？", a: "冷 / 低温" },
     { q: "书是用来？", a: "读 / 看" },
     { q: "班级里共有几组？（请看现场）", a: "按实际组数" },
-    { q: "举手发言前应该先？", a: "举手 / 被点到" }
+    { q: "举手发言前应该先？", a: "举手 / 被点到" },
+    { q: "「原神启动」是要你干嘛？", a: "开始玩游戏 / 整活口号" },
+    { q: "「绝绝子」夸的是好还是坏？", a: "好 / 很棒" },
+    { q: "「破防」是心态怎样？", a: "崩了 / 被戳中" },
+    { q: "「社恐」的人更怕什么？", a: "社交 / 当众表达（言之成理）" },
+    { q: "「BGM」是什么？", a: "背景音乐" },
+    { q: "「OP」在动漫里常指？", a: "片头曲" },
+    { q: "「打工人」口头禅常接？", a: "打工魂 / 干饭（言之成理）" },
+    { q: "「单曲循环」在干什么？", a: "反复听同一首歌" },
+    { q: "「名场面」是什么？", a: "经典镜头 / 难忘桥段" },
+    { q: "「开黑」一般指？", a: "组队打游戏" },
+    { q: "「续命」饮料常见是？", a: "咖啡 / 奶茶" },
+    { q: "「应援」是在做什么？", a: "支持偶像/队伍" },
+    { q: "「弹幕」飘在哪里？", a: "视频画面上" },
+    { q: "今天想整活还是躺平？", a: "都行 / 开心就好（言之成理）" }
   ];
   const TEAM_TURN_CHALLENGES = [
     "全组一起轻拍手 3 下，要整齐",
@@ -6630,7 +6935,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "派 1 人用一个词形容本组状态",
     "全组一起倒计时 3、2、1",
     "全组对邻组挥手示好",
-    "派 1 人做个搞笑表情，全组跟做"
+    "派 1 人做个搞笑表情，全组跟做",
+    "全组同步做「原神启动」手势三秒",
+    "全组用气声喊「绝绝子」",
+    "派 1 人安利一部番/歌，全组点头同意或摇头反对",
+    "全组一起做应援手势定格",
+    "全组用「破防了」表情定格两秒再笑出来"
   ];
   let redeemTab = "shop";
   /** 作品投票榜快照：用于追赶排序动效 */
@@ -12348,6 +12658,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const top = document.getElementById("game-spin-top");
     if (top && isIceLikeCat(gamesCat)) top.textContent = def.startLabel || "开始";
     renderIceMatchRulesBar();
+    renderIceWordBankBar();
     wireIceRoundMusicBar();
     renderIceStage();
   }
@@ -12602,11 +12913,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">你比我猜 · 仅表演者看题</div>
+        <div class="ice-stage-kicker">你比我猜 · ${esc(getIceWordBank().label)} · 仅表演者看题</div>
         ${iceMatchProgressHtml()}
         <div class="ice-stage-big">${esc(st.word || "点开始抽题")}</div>
         <div class="ice-scoreboard"><span class="red">猜对 ${score.ok}</span><span class="vs">·</span><span class="blue">跳过 ${score.skip}</span></div>
-        <div class="ice-stage-sub">${st.word ? "不能说原词 · 座位上比划或描述让大家猜" : "先在上方选赛制，再点开始抽题"}</div>
+        <div class="ice-stage-sub">${st.word ? "不能说原词 · 座位上比划或描述让大家猜" : "先选上方词库与赛制，再点开始抽题"}</div>
         ${st.word ? `<div class="ice-stage-row">
           <button type="button" class="primary" id="ice-charades-ok">猜对了</button>
           <button type="button" id="ice-charades-skip">跳过</button>
@@ -12837,9 +13148,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const st = iceState;
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">接龙开场 · 第 ${st.round || 0} 条</div>
+        <div class="ice-stage-kicker">接龙开场 · ${esc(getIceWordBank().label)} · 第 ${st.round || 0} 条</div>
         <div class="ice-stage-title">${esc(st.prompt || "点开始抽取接龙规则")}</div>
-        <div class="ice-stage-sub">${st.prompt ? "坐着轮流接 · 卡壳就过到下一位" : "口头接龙为主 · 不用离开座位"}</div>
+        <div class="ice-stage-sub">${st.prompt ? "坐着轮流接 · 卡壳就过到下一位" : "先选上方词库主题，再点开始抽规则"}</div>
       </div>`;
   }
 
@@ -14057,7 +14368,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const score = iceState.score || { ok: 0, skip: 0 };
     const next = iceOpenNextMatchRound({ score, word: "" });
     if (!next) return;
-    const word = pickIce(ICE_CHARADES_WORDS, "charades");
+    const word = pickIce(getIceCharadesWords(), "charades");
     iceState = { ...next, word, score };
     renderIceCharadesStage();
     startIceMatchClockIfNeeded();
@@ -14133,7 +14444,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function iceChainStart() {
-    const prompt = pickIce(ICE_CHAIN_PROMPTS, "chain");
+    const prompt = pickIce(getIceChainPrompts(), "chain");
     iceState = { prompt, round: (iceState.round || 0) + 1 };
     renderIceChainStage();
     playGameFx("start", { banner: "接龙开场" });
