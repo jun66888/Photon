@@ -7616,7 +7616,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (preview) preview.onclick = () => {
       ensureAudio();
       if (!sfxEnabled) setSfxEnabled(true, { preview: false });
-      playIceSfx("win");
+      playGameFx("win", { banner: "音效试听" });
     };
     const imp = root.querySelector("[data-sfx-import]");
     const file = root.querySelector("[data-sfx-file]");
