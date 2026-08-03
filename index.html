@@ -5434,83 +5434,85 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let gameWheelAngle = 0;
   let gameSnakeTimer = null;
   let gamesCat = "draw"; // draw | ice | open
-  let iceMode = "flower";
+  let iceMode = "buzz";
   let iceTimer = null;
   let iceBusy = false;
   let iceState = {};
   /** ice=需名册/签到池；open=无人登录签到，纯投屏暖场 */
-  const ICE_MODE_ORDER_ICE = ["flower", "intro", "sync", "duel", "buzz", "dare", "spy"];
-  const ICE_MODE_ORDER_OPEN = ["bomb", "charades", "stand", "pose", "choice", "timer", "chain"];
+  // 破冰：前半对抗有输赢（可发小奖品）→ 后半全员一起参与
+  const ICE_MODE_ORDER_ICE = ["buzz", "duel", "spy", "sync", "flower", "dare", "intro"];
+  // 暖场：前半有胜负 → 后半全班一起做
+  const ICE_MODE_ORDER_OPEN = ["bomb", "charades", "timer", "stand", "choice", "pose", "chain"];
   const ICE_MODE_ORDER = ICE_MODE_ORDER_ICE.concat(ICE_MODE_ORDER_OPEN);
   const ICE_MODE_DEFS = {
     flower: {
       name: "击鼓传花", group: "ice",
-      hint: "坐着玩 · 名单滚动停下即「接到花」· 座位上发言即可",
+      hint: "一起玩 · 名单滚动停下即「接到花」· 座位上发言即可",
       startLabel: "击鼓开始", nextLabel: "再来一轮"
     },
     bomb: {
       name: "数字炸弹", group: "open",
-      hint: "坐着玩 · 轮流口头猜数字 · 踩中即爆",
+      hint: "有输赢 · 轮流口头猜数字 · 踩中即爆，可发小奖/小惩罚",
       startLabel: "埋下炸弹", nextLabel: "新一局"
     },
     intro: {
       name: "闪电介绍", group: "ice",
-      hint: "坐着玩 · 抽人 + 题目 · 座位上限时回答",
+      hint: "一起玩 · 抽人 + 题目 · 座位上限时自我介绍",
       startLabel: "抽取上场", nextLabel: "换一位"
     },
     charades: {
       name: "你比我猜", group: "open",
-      hint: "坐着玩 · 投屏出题 · 座位上比划/描述，其他人猜",
+      hint: "有输赢 · 投屏出题 · 座位上比划/描述，猜对计分领奖",
       startLabel: "抽一道题", nextLabel: "下一题"
     },
     sync: {
       name: "红蓝默契", group: "ice",
-      hint: "坐着玩 · 两派举手数 A/B · 选一样计分",
+      hint: "对抗赛 · 两派举手数 A/B · 选一样计分，可发小奖品",
       startLabel: "出题", nextLabel: "下一题"
     },
     stand: {
       name: "举手表决", group: "open",
-      hint: "坐着玩 · 举左手 / 举右手 / 双手平举示意，不用离开座位",
+      hint: "一起玩 · 举左手 / 举右手 / 双手平举示意，不用离开座位",
       startLabel: "出题", nextLabel: "下一题"
     },
     duel: {
       name: "双人对决", group: "ice",
-      hint: "坐着玩 · 抽两人座位上比拼口才/反应，老师判定",
+      hint: "对抗赛 · 抽两人座位上比拼，老师判定胜负，可发小奖品",
       startLabel: "抽对手", nextLabel: "再抽一对"
     },
     buzz: {
       name: "红蓝抢答", group: "ice",
-      hint: "坐着玩 · 举手抢答 · 答对加分答错扣分",
+      hint: "对抗赛 · 举手抢答 · 答对加分答错扣分，可发小奖品",
       startLabel: "出题抢答", nextLabel: "下一题"
     },
     dare: {
       name: "真心话冒险", group: "ice",
-      hint: "坐着玩 · 真心话/小挑战，以说话与小动作为主",
+      hint: "一起玩 · 真心话/小挑战，以说话与小动作为主",
       startLabel: "抽挑战", nextLabel: "换一位"
     },
     spy: {
       name: "谁是卧底", group: "ice",
-      hint: "坐着玩 · 轮流口头描述 · 举手投票淘汰",
+      hint: "对抗赛 · 轮流口头描述 · 举手投票淘汰，平民/卧底分胜负",
       startLabel: "发牌开局", nextLabel: "新一局"
     },
     pose: {
       name: "坐席互动", group: "open",
-      hint: "坐着玩 · 座位上的小动作/表情指令，不大动",
+      hint: "一起玩 · 座位上的小动作/表情指令，全班同步做",
       startLabel: "抽指令", nextLabel: "换一个"
     },
     choice: {
       name: "左右示意", group: "open",
-      hint: "坐着玩 · 二选一举左手或举右手，看哪边人多",
+      hint: "一起玩 · 二选一举左手或举右手，看哪边人多",
       startLabel: "出题", nextLabel: "下一题"
     },
     timer: {
       name: "限时挑战", group: "open",
-      hint: "坐着玩 · 倒计时口头/小动作挑战，到点喊停",
+      hint: "有输赢 · 倒计时口头/小动作挑战，完成得好可领小奖",
       startLabel: "开始计时", nextLabel: "换挑战"
     },
     chain: {
       name: "接龙开场", group: "open",
-      hint: "坐着玩 · 口头接龙为主，轮流说即可",
+      hint: "一起玩 · 口头接龙为主，全班轮流说即可",
       startLabel: "抽规则", nextLabel: "换规则"
     }
   };
@@ -10620,13 +10622,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (title) {
       title.textContent = open ? "暖场投放 · 无人签到也能玩"
-        : (iceLike ? "破冰互动 · 名册对抗小游戏" : "课堂抽人 · 答题加分");
+        : (iceLike ? "破冰互动 · 先对抗后一起玩" : "课堂抽人 · 答题加分");
     }
     if (sub) {
       sub.textContent = open
-        ? "坐着就能玩 · 炸弹/比划/举手/坐席互动/左右示意/限时/接龙 · 不大动作"
+        ? "前半有输赢（炸弹/比划/限时）· 后半全班一起（举手/左右/坐席/接龙）"
         : (iceLike
-          ? "坐着就能玩 · 传花/介绍/默契/对决/抢答/真心话/卧底 · 以发言与小动作为主"
+          ? "前半对抗领小奖（抢答/对决/卧底/默契）· 后半一起玩（传花/真心话/介绍）"
           : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分");
     }
     if (actions) {
@@ -10661,7 +10663,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         // 切换大类时落到该类默认玩法
         const modes = iceModesForCat(gamesCat);
         if (isIceLikeCat(gamesCat) && (!ICE_MODE_DEFS[iceMode] || ICE_MODE_DEFS[iceMode].group !== gamesCat)) {
-          iceMode = modes[0] || (gamesCat === "open" ? "bomb" : "flower");
+          iceMode = modes[0] || (gamesCat === "open" ? "bomb" : "buzz");
           iceState = {};
         }
         renderGames();
