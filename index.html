@@ -11953,7 +11953,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">击鼓传花 · 可抽号码</div>
         <div class="ice-stage-big" id="ice-flower-name">${esc(name)}</div>
-        <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · ${iceBusy ? "音乐播放中 · 再点「停下」定号" : `点开始播乐并滚动 · ${esc(musicTip)}`}</div>
+        <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · ${iceBusy ? "范围内随机跳动 · 再点「停下」定号" : `点开始后在范围内随机出号 · ${esc(musicTip)}`}</div>
         ${renderIceNumberRangeRow(pool)}
       </div>`;
     bindIceNumberRangeControls();
