@@ -5690,7 +5690,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   /** 支持「共 N 题 / 倒计时」赛制的游戏 */
   const ICE_MATCH_GAMES = new Set(["buzz", "sync", "charades", "stand", "choice", "dare", "tbuzz", "tturn", "tpick", "tfast"]);
   // 分组对抗：可自定义组数，游戏均易上手
-  const ICE_MODE_ORDER_TEAM = ["tbuzz", "trace", "tturn", "tpick", "tduel", "tfast"];
+  const ICE_MODE_ORDER_TEAM = ["tbuzz", "tbomb", "trace", "tturn", "tpick", "tduel", "tfast"];
   // 破冰：前半对抗有输赢（可发小奖品）→ 后半全员一起参与
   const ICE_MODE_ORDER_ICE = ["buzz", "duel", "spy", "sync", "flower", "dare", "intro"];
   // 暖场：前半有胜负 → 后半全班一起做
@@ -5774,6 +5774,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       name: "分组抢答", group: "team",
       hint: "最简单 · 出题后哪组答对就点哪组 · 可发小奖品",
       startLabel: "出题", nextLabel: "下一题"
+    },
+    tbomb: {
+      name: "分组埋雷", group: "team",
+      hint: "各组轮流报数 · 范围逐渐缩小 · 踩中炸弹的组其他人加分",
+      startLabel: "埋下炸弹", nextLabel: "再来一局"
     },
     trace: {
       name: "积分冲刺", group: "team",
@@ -11587,7 +11592,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (sub) {
       sub.textContent = team
-        ? "可增减小组并改名 · 抢答/冲刺/轮流/抽组/对决/抢手 · 点一下就会"
+        ? "可增减小组并改名 · 抢答/埋雷/冲刺/轮流/抽组/对决/抢手 · 点一下就会"
         : (open
           ? "题目类可设共 N 题/倒计时 · 前半有输赢，后半全班一起"
           : (iceLike
@@ -11793,6 +11798,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else if (iceMode === "timer") renderIceTimerStage();
     else if (iceMode === "chain") renderIceChainStage();
     else if (iceMode === "tbuzz") renderTeamBuzzStage();
+    else if (iceMode === "tbomb") renderTeamBombStage();
     else if (iceMode === "trace") renderTeamRaceStage();
     else if (iceMode === "tturn") renderTeamTurnStage();
     else if (iceMode === "tpick") renderTeamPickStage();
@@ -11967,7 +11973,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ice-stage-card">
           <div class="ice-stage-kicker">数字炸弹</div>
           <div class="ice-stage-title">埋下一颗炸弹</div>
-          <div class="ice-stage-sub">默认范围 1–100 · 学生轮流猜数字，猜中即爆炸</div>
+          <div class="ice-stage-sub">学生轮流报数 · 范围会逐渐缩小 · 踩中即爆</div>
           <div class="ice-stage-row">
             <label class="tool-inline"><span>最小</span><input id="ice-bomb-min" type="number" value="1" min="0" max="999" style="width:4.5rem" /></label>
             <label class="tool-inline"><span>最大</span><input id="ice-bomb-max" type="number" value="100" min="1" max="999" style="width:4.5rem" /></label>
@@ -11975,18 +11981,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>`;
       return;
     }
+    const curMin = st.curMin != null ? st.curMin : st.min;
+    const curMax = st.curMax != null ? st.curMax : st.max;
     const log = (st.guesses || []).slice(-8).map((g) =>
-      `${esc(g.by || "猜")} ${g.n} → ${g.n === st.answer ? "💥 爆炸" : (g.n < st.answer ? "太小" : "太大")}`
+      `${esc(g.by || "猜")} ${g.n} → ${g.result === "boom" ? "💥 爆炸" : (g.result === "low" ? "太小 · 范围缩小" : "太大 · 范围缩小")}`
     ).join("<br>") || "还没有人猜";
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">数字炸弹 · ${st.min}–${st.max}</div>
-        <div class="ice-stage-title">${st.boom ? "💥 炸了！" : "危险靠近中"}</div>
-        <div class="ice-stage-sub">${st.boom ? `炸弹是 ${st.answer}` : "让学生报数字，老师点记录"}</div>
-        <div class="ice-stage-row">
-          <input id="ice-bomb-guess" type="number" min="${st.min}" max="${st.max}" placeholder="输入猜测" style="width:7rem" ${st.boom ? "disabled" : ""} />
-          <button type="button" class="primary" id="ice-bomb-submit" ${st.boom ? "disabled" : ""}>记录</button>
-        </div>
+        <div class="ice-stage-kicker">数字炸弹 · 初始 ${st.min}–${st.max}</div>
+        <div class="ice-stage-title">${st.boom ? "💥 炸了！" : "当前范围"}</div>
+        <div class="ice-stage-big" style="font-size:clamp(2rem,5vw,3rem)">${st.boom ? esc(String(st.answer)) : `${curMin} — ${curMax}`}</div>
+        <div class="ice-stage-sub">${st.boom ? `炸弹是 ${st.answer}` : "学生报一个范围内的数 · 老师记录后范围自动缩小"}</div>
+        ${st.boom ? "" : `<div class="ice-stage-row">
+          <input id="ice-bomb-guess" type="number" min="${curMin}" max="${curMax}" placeholder="${curMin}–${curMax}" style="width:7rem" />
+          <button type="button" class="primary" id="ice-bomb-submit">记录</button>
+        </div>`}
         <div class="ice-guess-log">${log}</div>
       </div>`;
     const submit = document.getElementById("ice-bomb-submit");
@@ -12628,6 +12637,209 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     renderTeamBuzzStage();
   }
 
+  /* -------- 分组埋雷：范围缩小，踩中者其他组加分 -------- */
+  function renderTeamBombStage() {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return;
+    const teams = iceState.teams || getTeamBattleTeams();
+    const score = iceState.score || blankTeamScores(teams);
+    if (!iceState.answer) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">分组埋雷 · 点一下就会</div>
+          <div class="ice-stage-title">埋雷后各组轮流报数</div>
+          <div class="ice-stage-sub">范围逐渐缩小 · 踩中炸弹的组不加分，其他组各 +1<br>当前组：${esc(teams.map((t) => t.name).join(" / "))}</div>
+          <div class="ice-stage-row">
+            <label class="tool-inline"><span>最小</span><input id="team-bomb-min" type="number" value="1" min="0" max="999" style="width:4.5rem" /></label>
+            <label class="tool-inline"><span>最大</span><input id="team-bomb-max" type="number" value="100" min="1" max="999" style="width:4.5rem" /></label>
+          </div>
+          ${renderTeamScoreGrid(teams, score, { showPlus: false, leadIds: teamLeadIds(score, teams) })}
+        </div>`;
+      return;
+    }
+    const curMin = iceState.curMin != null ? iceState.curMin : iceState.min;
+    const curMax = iceState.curMax != null ? iceState.curMax : iceState.max;
+    const boomTeam = iceState.boomTeamId
+      ? (teams.find((t) => t.id === iceState.boomTeamId) || null)
+      : null;
+    const log = (iceState.guesses || []).slice(-10).map((g) => {
+      const tn = (teams.find((t) => t.id === g.teamId) || {}).name || g.by || "组";
+      const tip = g.result === "boom" ? "💥 踩中"
+        : (g.result === "low" ? `太小 → ${g.afterMin}–${g.afterMax}` : `太大 → ${g.afterMin}–${g.afterMax}`);
+      return `${esc(tn)} 报 ${g.n} · ${tip}`;
+    }).join("<br>") || "还没有人报数";
+
+    if (iceState.boom && iceState.scored) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">分组埋雷 · 本局结束</div>
+          <div class="ice-stage-title">💥 ${esc(boomTeam ? boomTeam.name : "一组")} 踩中 ${iceState.answer}</div>
+          <div class="ice-stage-sub">其余小组各 +1 · 可点「再来一局」继续</div>
+          ${renderTeamScoreGrid(teams, score, { showPlus: false, leadIds: teamLeadIds(score, teams) })}
+          <div class="ice-guess-log">${log}</div>
+          <div class="ice-stage-row">
+            <button type="button" class="primary" id="team-bomb-again">再来一局</button>
+          </div>
+        </div>`;
+      const again = document.getElementById("team-bomb-again");
+      if (again) again.onclick = () => iceTeamBombStart(true);
+      return;
+    }
+
+    if (iceState.boom && !iceState.scored) {
+      // 容错：若未记下是谁踩中，老师补选
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">分组埋雷 · 炸了</div>
+          <div class="ice-stage-title">💥 炸弹是 ${iceState.answer}</div>
+          <div class="ice-stage-sub">请点出踩中的小组 · 其余组各 +1</div>
+          ${renderTeamScoreGrid(teams, score, { showPlus: false, showOk: true, showBad: false, leadIds: [] })}
+          <div class="ice-guess-log">${log}</div>
+        </div>`;
+      bindTeamScoreActions(stage, null, (id) => iceTeamBombMarkBoom(id), null);
+      // 把「答对」按钮文案改成「踩中」
+      stage.querySelectorAll("[data-team-ok]").forEach((b) => { b.textContent = "踩中"; });
+      return;
+    }
+
+    const turn = iceState.turnId ? teams.find((t) => t.id === iceState.turnId) : null;
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">分组埋雷 · 初始 ${iceState.min}–${iceState.max}</div>
+        <div class="ice-stage-title">当前范围</div>
+        <div class="ice-stage-big" style="font-size:clamp(2rem,5vw,3rem)">${curMin} — ${curMax}</div>
+        <div class="ice-stage-sub">${turn
+          ? `本轮由 <b style="color:${esc(turn.color)}">${esc(turn.name)}</b> 报数 · 也可点下方换组`
+          : "先点一组表示谁报数，再输入数字"}</div>
+        ${renderTeamScoreGrid(teams, score, {
+          showPlus: false,
+          showOk: true,
+          showBad: false,
+          turnId: iceState.turnId || "",
+          leadIds: teamLeadIds(score, teams)
+        })}
+        <div class="ice-stage-row" style="margin-top:.4rem">
+          <input id="team-bomb-guess" type="number" min="${curMin}" max="${curMax}" placeholder="${curMin}–${curMax}" style="width:7rem" ${iceState.turnId ? "" : "disabled"} />
+          <button type="button" class="primary" id="team-bomb-submit" ${iceState.turnId ? "" : "disabled"}>记录报数</button>
+        </div>
+        <div class="ice-guess-log">${log}</div>
+      </div>`;
+    // 「答对」按钮改作「该组报数」
+    stage.querySelectorAll("[data-team-ok]").forEach((b) => { b.textContent = "轮到"; });
+    bindTeamScoreActions(stage, null, (id) => {
+      iceState.turnId = id;
+      renderTeamBombStage();
+      const t = teams.find((x) => x.id === id);
+      showVoteToast(`${t ? t.name : "该组"} 报数`);
+    }, null);
+    const submit = document.getElementById("team-bomb-submit");
+    if (submit) submit.onclick = () => iceTeamBombGuess();
+  }
+  function iceTeamBombStart(keepScore = false) {
+    const teams = getTeamBattleTeams();
+    if (teams.length < 2) { showVoteToast("至少需要 2 组"); return; }
+    let min = 1, max = 100;
+    const minEl = document.getElementById("team-bomb-min");
+    const maxEl = document.getElementById("team-bomb-max");
+    if (minEl) min = Number(minEl.value) || 1;
+    if (maxEl) max = Number(maxEl.value) || 100;
+    // 再来一局时沿用上局初始范围
+    if (keepScore && iceState.min != null && iceState.max != null) {
+      min = iceState.min;
+      max = iceState.max;
+    }
+    if (max < min) { const t = min; min = max; max = t; }
+    if (max - min < 2) { showVoteToast("范围至少相差 2"); return; }
+    const answer = min + Math.floor(Math.random() * (max - min + 1));
+    const score = (keepScore && iceState.score) ? iceState.score : blankTeamScores(teams);
+    // 补全新组分数位
+    teams.forEach((t) => { if (score[t.id] == null) score[t.id] = 0; });
+    iceState = {
+      teams,
+      score,
+      min,
+      max,
+      curMin: min,
+      curMax: max,
+      answer,
+      guesses: [],
+      boom: false,
+      boomTeamId: "",
+      scored: false,
+      turnId: teams[0].id,
+      round: (keepScore ? (iceState.round || 0) : 0) + 1
+    };
+    renderTeamBombStage();
+    playGameFx("start", { banner: "分组埋雷" });
+    showVoteToast(`炸弹已埋 · 范围 ${min}–${max} · 先由 ${teams[0].name} 报`);
+  }
+  function iceTeamBombGuess() {
+    if (!iceState.answer || iceState.boom || !iceState.turnId) return;
+    const teams = iceState.teams || getTeamBattleTeams();
+    const curMin = iceState.curMin != null ? iceState.curMin : iceState.min;
+    const curMax = iceState.curMax != null ? iceState.curMax : iceState.max;
+    const input = document.getElementById("team-bomb-guess");
+    const n = Number(input && input.value);
+    if (!Number.isFinite(n)) { showVoteToast("请输入数字"); return; }
+    if (n < curMin || n > curMax) {
+      showVoteToast(`请报当前范围 ${curMin}–${curMax} 内的数`);
+      return;
+    }
+    const team = teams.find((t) => t.id === iceState.turnId);
+    const name = team ? team.name : "该组";
+    iceState.guesses = iceState.guesses || [];
+    if (n === iceState.answer) {
+      iceState.guesses.push({
+        n, teamId: iceState.turnId, by: name, result: "boom",
+        afterMin: curMin, afterMax: curMax
+      });
+      iceState.boom = true;
+      iceState.boomTeamId = iceState.turnId;
+      playGameFx("boom", { banner: `${name} 踩中` });
+      // 其余组各 +1
+      iceTeamBombMarkBoom(iceState.turnId);
+      return;
+    }
+    if (n < iceState.answer) {
+      iceState.curMin = n + 1;
+      iceState.guesses.push({
+        n, teamId: iceState.turnId, by: name, result: "low",
+        afterMin: iceState.curMin, afterMax: curMax
+      });
+      playGameFx("tick");
+      showVoteToast(`${name} ${n} 太小 · 范围 ${iceState.curMin}–${curMax}`);
+    } else {
+      iceState.curMax = n - 1;
+      iceState.guesses.push({
+        n, teamId: iceState.turnId, by: name, result: "high",
+        afterMin: curMin, afterMax: iceState.curMax
+      });
+      playGameFx("tick");
+      showVoteToast(`${name} ${n} 太大 · 范围 ${curMin}–${iceState.curMax}`);
+    }
+    // 自动轮到下一组
+    const idx = teams.findIndex((t) => t.id === iceState.turnId);
+    iceState.turnId = teams[(idx + 1) % teams.length].id;
+    renderTeamBombStage();
+  }
+  function iceTeamBombMarkBoom(boomTeamId) {
+    if (!iceState.boom || iceState.scored) return;
+    const teams = iceState.teams || getTeamBattleTeams();
+    iceState.boomTeamId = boomTeamId;
+    iceState.score = iceState.score || blankTeamScores(teams);
+    let gained = 0;
+    teams.forEach((t) => {
+      if (t.id === boomTeamId) return;
+      iceState.score[t.id] = (Number(iceState.score[t.id]) || 0) + 1;
+      gained += 1;
+    });
+    iceState.scored = true;
+    const boom = teams.find((t) => t.id === boomTeamId);
+    playGameFx("win", { banner: `其余 ${gained} 组各 +1` });
+    showVoteToast(`${boom ? boom.name : "该组"} 踩雷 · 其余组各 +1`);
+    renderTeamBombStage();
+  }
+
   function renderTeamRaceStage() {
     const stage = document.getElementById("game-stage");
     if (!stage) return;
@@ -13061,6 +13273,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "timer") return iceTimerStart();
     if (iceMode === "chain") return iceChainStart();
     if (iceMode === "tbuzz") return iceTeamBuzzStart();
+    if (iceMode === "tbomb") return iceTeamBombStart(false);
     if (iceMode === "trace") return iceTeamRaceStart();
     if (iceMode === "tturn") return iceTeamTurnStart();
     if (iceMode === "tpick") return iceTeamPickStart();
@@ -13089,6 +13302,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "timer") return iceTimerStart();
     if (iceMode === "chain") return iceChainStart();
     if (iceMode === "tbuzz") return iceTeamBuzzStart();
+    if (iceMode === "tbomb") return iceTeamBombStart(true);
     if (iceMode === "trace") return iceTeamRaceStart(true);
     if (iceMode === "tturn") return iceTeamTurnStart();
     if (iceMode === "tpick") return iceTeamPickStart();
@@ -13100,7 +13314,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     clearIceMatchClock();
     stopIceRoundMusic();
     iceBusy = false;
-    if (iceMode === "trace" || iceMode === "tduel") {
+    if (iceMode === "trace" || iceMode === "tduel" || iceMode === "tbomb") {
       const teams = getTeamBattleTeams();
       iceState = iceMode === "trace"
         ? { teams, score: blankTeamScores(teams), target: Number(iceState.target) || 10, started: false, winner: "" }
@@ -13205,29 +13419,38 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (max < min) { const t = min; min = max; max = t; }
     if (max - min < 2) { showVoteToast("范围至少相差 2"); return; }
     const answer = min + Math.floor(Math.random() * (max - min + 1));
-    iceState = { min, max, answer, guesses: [], boom: false };
+    iceState = { min, max, curMin: min, curMax: max, answer, guesses: [], boom: false };
     renderIceBombStage();
     playGameFx("start", { banner: "炸弹已埋下" });
-    showVoteToast("炸弹已埋好，开始猜吧");
+    showVoteToast(`炸弹已埋 · 当前范围 ${min}–${max}`);
   }
   function iceBombGuess() {
     if (!iceState.answer || iceState.boom) return;
+    const curMin = iceState.curMin != null ? iceState.curMin : iceState.min;
+    const curMax = iceState.curMax != null ? iceState.curMax : iceState.max;
     const input = document.getElementById("ice-bomb-guess");
     const n = Number(input && input.value);
     if (!Number.isFinite(n)) { showVoteToast("请输入数字"); return; }
-    if (n < iceState.min || n > iceState.max) {
-      showVoteToast(`请猜 ${iceState.min}–${iceState.max}`);
+    if (n < curMin || n > curMax) {
+      showVoteToast(`请猜当前范围 ${curMin}–${curMax}`);
       return;
     }
     iceState.guesses = iceState.guesses || [];
-    iceState.guesses.push({ n, by: "课堂" });
     if (n === iceState.answer) {
+      iceState.guesses.push({ n, by: "课堂", result: "boom" });
       iceState.boom = true;
       playGameFx("boom", { banner: `踩中 · ${n}` });
       showVoteToast(`💥 ${n} 踩中炸弹！`);
-    } else {
+    } else if (n < iceState.answer) {
+      iceState.guesses.push({ n, by: "课堂", result: "low" });
+      iceState.curMin = n + 1;
       playGameFx("tick");
-      showVoteToast(n < iceState.answer ? `${n} 太小` : `${n} 太大`);
+      showVoteToast(`${n} 太小 · 范围变为 ${iceState.curMin}–${curMax}`);
+    } else {
+      iceState.guesses.push({ n, by: "课堂", result: "high" });
+      iceState.curMax = n - 1;
+      playGameFx("tick");
+      showVoteToast(`${n} 太大 · 范围变为 ${curMin}–${iceState.curMax}`);
     }
     renderIceBombStage();
   }
