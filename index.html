@@ -3668,7 +3668,7 @@ body.play-mode-basic #rail-side-mode-tabs {
 }
 .ice-mode-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(6.2rem, 1fr));
   gap: .35rem;
   margin-bottom: .75rem;
 }
@@ -4458,6 +4458,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="game-cat-tabs" id="game-cat-tabs" role="tablist" aria-label="互动分类">
           <button type="button" class="on" data-games-cat="draw">抽人答题</button>
           <button type="button" data-games-cat="ice">破冰互动</button>
+          <button type="button" data-games-cat="open">暖场投放</button>
         </div>
         <div id="games-draw-pane">
           <div class="game-mode-tabs" id="game-mode-tabs" role="tablist">
@@ -4469,18 +4470,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="game-pool-bar" id="game-pool-bar"></div>
         </div>
         <div id="games-ice-pane" class="hidden">
-          <div class="ice-mode-tabs" id="ice-mode-tabs" role="tablist" aria-label="破冰小游戏">
-            <button type="button" class="on" data-ice-mode="flower">击鼓传花</button>
-            <button type="button" data-ice-mode="bomb">数字炸弹</button>
-            <button type="button" data-ice-mode="intro">闪电介绍</button>
-            <button type="button" data-ice-mode="charades">你比我猜</button>
-            <button type="button" data-ice-mode="sync">红蓝默契</button>
-            <button type="button" data-ice-mode="stand">站队表决</button>
-            <button type="button" data-ice-mode="duel">双人对决</button>
-            <button type="button" data-ice-mode="buzz">红蓝抢答</button>
-            <button type="button" data-ice-mode="dare">真心话冒险</button>
-            <button type="button" data-ice-mode="spy">谁是卧底</button>
-          </div>
+          <div class="ice-mode-tabs" id="ice-mode-tabs" role="tablist" aria-label="破冰小游戏"></div>
           <div class="muted" style="margin-bottom:.35rem" id="ice-mode-hint">暖场互动 · 不扣积分</div>
         </div>
         <div class="game-sfx-bar" id="game-sfx-bar" aria-label="音效调节"></div>
@@ -5372,74 +5362,95 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let gameSpinning = false;
   let gameWheelAngle = 0;
   let gameSnakeTimer = null;
-  let gamesCat = "draw"; // draw | ice
+  let gamesCat = "draw"; // draw | ice | open
   let iceMode = "flower";
   let iceTimer = null;
   let iceBusy = false;
   let iceState = {};
-  const ICE_MODE_ORDER = ["flower", "bomb", "intro", "charades", "sync", "stand", "duel", "buzz", "dare", "spy"];
+  /** ice=需名册/签到池；open=无人登录签到，纯投屏暖场 */
+  const ICE_MODE_ORDER_ICE = ["flower", "intro", "sync", "duel", "buzz", "dare", "spy"];
+  const ICE_MODE_ORDER_OPEN = ["bomb", "charades", "stand", "pose", "choice", "timer", "chain"];
+  const ICE_MODE_ORDER = ICE_MODE_ORDER_ICE.concat(ICE_MODE_ORDER_OPEN);
   const ICE_MODE_DEFS = {
     flower: {
-      name: "击鼓传花",
+      name: "击鼓传花", group: "ice",
       hint: "点开始后名单快速滚动，再点停下 · 谁停谁上场",
-      startLabel: "击鼓开始",
-      nextLabel: "再来一轮"
+      startLabel: "击鼓开始", nextLabel: "再来一轮"
     },
     bomb: {
-      name: "数字炸弹",
-      hint: "系统藏一个炸弹数 · 学生猜大小 · 踩中即爆",
-      startLabel: "埋下炸弹",
-      nextLabel: "新一局"
+      name: "数字炸弹", group: "open",
+      hint: "无需签到 · 系统藏一个炸弹数 · 全场轮流猜大小",
+      startLabel: "埋下炸弹", nextLabel: "新一局"
     },
     intro: {
-      name: "闪电介绍",
+      name: "闪电介绍", group: "ice",
       hint: "随机抽人 + 题目 · 限时自我介绍 / 回答",
-      startLabel: "抽取上场",
-      nextLabel: "换一位"
+      startLabel: "抽取上场", nextLabel: "换一位"
     },
     charades: {
-      name: "你比我猜",
-      hint: "投屏出题给表演者 · 其他人猜 · 老师点对错",
-      startLabel: "抽一道题",
-      nextLabel: "下一题"
+      name: "你比我猜", group: "open",
+      hint: "无需签到 · 投屏出题给表演者 · 其他人猜",
+      startLabel: "抽一道题", nextLabel: "下一题"
     },
     sync: {
-      name: "红蓝默契",
+      name: "红蓝默契", group: "ice",
       hint: "同一道题 · 两派各选 A/B · 选一样计分 · 比默契连击",
-      startLabel: "出题",
-      nextLabel: "下一题"
+      startLabel: "出题", nextLabel: "下一题"
     },
     stand: {
-      name: "站队表决",
-      hint: "抛出问题 · 学生站左/右/中间 · 老师点计数看阵营",
-      startLabel: "出题",
-      nextLabel: "下一题"
+      name: "站队表决", group: "open",
+      hint: "无需签到 · 抛出问题 · 学生站左/右/中间 · 老师点数",
+      startLabel: "出题", nextLabel: "下一题"
     },
     duel: {
-      name: "双人对决",
+      name: "双人对决", group: "ice",
       hint: "随机抽两人上场 · 限时挑战 · 老师判定胜负计分",
-      startLabel: "抽对手",
-      nextLabel: "再抽一对"
+      startLabel: "抽对手", nextLabel: "再抽一对"
     },
     buzz: {
-      name: "红蓝抢答",
+      name: "红蓝抢答", group: "ice",
       hint: "出题后红蓝抢答 · 答对加分答错扣分 · 比谁更猛",
-      startLabel: "出题抢答",
-      nextLabel: "下一题"
+      startLabel: "出题抢答", nextLabel: "下一题"
     },
     dare: {
-      name: "真心话冒险",
+      name: "真心话冒险", group: "ice",
       hint: "抽人 + 真心话/大冒险 · 完成或换题 · 对抗气氛拉满",
-      startLabel: "抽挑战",
-      nextLabel: "换一位"
+      startLabel: "抽挑战", nextLabel: "换一位"
     },
     spy: {
-      name: "谁是卧底",
+      name: "谁是卧底", group: "ice",
       hint: "发词后轮流描述 · 投票淘汰 · 揪出卧底即平民胜",
-      startLabel: "发牌开局",
-      nextLabel: "新一局"
+      startLabel: "发牌开局", nextLabel: "新一局"
+    },
+    pose: {
+      name: "全员动作", group: "open",
+      hint: "无需签到 · 投屏随机动作指令 · 全班一起做",
+      startLabel: "抽动作", nextLabel: "换一个"
+    },
+    choice: {
+      name: "左右互搏", group: "open",
+      hint: "无需签到 · 二选一站队 · 看哪边人多",
+      startLabel: "出题", nextLabel: "下一题"
+    },
+    timer: {
+      name: "限时挑战", group: "open",
+      hint: "无需签到 · 全场倒计时挑战 · 到点喊停",
+      startLabel: "开始计时", nextLabel: "换挑战"
+    },
+    chain: {
+      name: "接龙开场", group: "open",
+      hint: "无需签到 · 投屏接龙规则 · 全场轮流接",
+      startLabel: "抽规则", nextLabel: "换规则"
     }
   };
+  function iceModesForCat(cat) {
+    const group = cat === "open" ? "open" : "ice";
+    const order = group === "open" ? ICE_MODE_ORDER_OPEN : ICE_MODE_ORDER_ICE;
+    return order.filter((id) => ICE_MODE_DEFS[id]);
+  }
+  function isIceLikeCat(cat) {
+    return cat === "ice" || cat === "open";
+  }
   let iceLastPick = {};
   function pickIce(arr, key) {
     if (!arr || !arr.length) return null;
@@ -5694,6 +5705,99 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     { civ: "可乐", spy: "雪碧" },
     { civ: "耳机", spy: "音箱" },
     { civ: "黑板", spy: "白板" }
+  ];
+  const ICE_POSE_PROMPTS = [
+    "全体起立，原地转三圈后坐下",
+    "和左右邻居各击掌两次",
+    "用夸张表情做「震惊」三秒",
+    "全体举手假装抢答五秒",
+    "用手指在空中写自己名字",
+    "全班同步拍三下手，越齐越好",
+    "假装镜头前走秀五步",
+    "双手比「耶」并对镜头微笑",
+    "用肩膀碰碰旁边同学的肩膀",
+    "全体做「思考者」造型定格",
+    "假装打字飞快十秒",
+    "用嘴型无声喊「光影盟」",
+    "全体换一个座位方向扭身再回来",
+    "右手画圈、左手拍腿，坚持五秒",
+    "全体假装被点名紧张三秒",
+    "对天花板比个大拇指",
+    "用两秒完成「超级英雄登场」姿势",
+    "全班同步深呼吸一次",
+    "假装接住从天而降的麦克风",
+    "用脚步踩出三拍节奏",
+    "互相指对方说「就是你」",
+    "全体低头再抬头，像开机动画",
+    "假装打哈欠被老师抓包",
+    "用掌心拍桌两下当鼓点",
+    "全体站起，数到三再坐下"
+  ];
+  const ICE_CHOICE_QUESTIONS = [
+    { q: "周末更想？", a: "宅家", b: "出门" },
+    { q: "甜咸大战？", a: "甜党", b: "咸党" },
+    { q: "座位偏好？", a: "前排", b: "后排" },
+    { q: "更怕哪种？", a: "突然点名", b: "突然加戏" },
+    { q: "创作更靠？", a: "灵感", b: "死磕" },
+    { q: "午饭决策？", a: "秒选", b: "纠结" },
+    { q: "看作品先看？", a: "画面", b: "故事" },
+    { q: "手机 10%？", a: "苟着", b: "找充电" },
+    { q: "聊天风格？", a: "秒回", b: "已读不回" },
+    { q: "deadline 前夜？", a: "通宵", b: "早交" },
+    { q: "拍照出镜？", a: "抢镜", b: "躲镜" },
+    { q: "胜利庆祝？", a: "大喊", b: "窃喜" },
+    { q: "队名风格？", a: "霸气", b: "搞笑" },
+    { q: "咖啡还是茶？", a: "咖啡", b: "茶" },
+    { q: "更信哪种？", a: "直觉", b: "数据" },
+    { q: "冲突处理？", a: "当场说开", b: "冷处理" },
+    { q: "学习方式？", a: "听讲", b: "动手" },
+    { q: "夜宵立场？", a: "必须吃", b: "忍住" },
+    { q: "旅行打包？", a: "极简", b: "全带上" },
+    { q: "更想要的夸奖？", a: "有想法", b: "靠谱" }
+  ];
+  const ICE_TIMER_CHALLENGES = [
+    { text: "全班一起喊出你们的队名 / 口号", sec: 8 },
+    { text: "十秒内和尽可能多的人击掌", sec: 10 },
+    { text: "全场同步拍出「哒哒哒—哒」节奏", sec: 12 },
+    { text: "每人找一个没说过话的人点头致意", sec: 15 },
+    { text: "用身体拼出「光」字（分组合作）", sec: 20 },
+    { text: "全班闭眼安静十秒，再睁眼欢呼", sec: 10 },
+    { text: "快速自我介绍：姓名 + 一个关键词", sec: 30 },
+    { text: "全场一起做三组开合跳", sec: 15 },
+    { text: "轮流报数，逢 7 拍手，看谁先乱", sec: 25 },
+    { text: "用表情演完「尴尬→得意→震惊」", sec: 12 },
+    { text: "全班用气声说「开始上课」", sec: 6 },
+    { text: "找同款颜色衣服的人组小圈", sec: 20 },
+    { text: "全场同步转身面向后门再转回", sec: 8 },
+    { text: "每人想一句今日目标，举手示意想好了", sec: 15 },
+    { text: "集体倒计时从 10 喊到 1，越齐越好", sec: 12 },
+    { text: "用掌声给老师「加血」十秒", sec: 10 },
+    { text: "全班假装按下快门，定格微笑", sec: 5 },
+    { text: "左右互换一个小物件再换回来", sec: 18 },
+    { text: "全场起立，按身高快速排成一排", sec: 25 },
+    { text: "一起做「超级英雄」登场姿势定格", sec: 8 }
+  ];
+  const ICE_CHAIN_PROMPTS = [
+    "词语接龙：上一词末字开头，重复或卡壳就过",
+    "城市接龙：轮流说城市名，不能重复",
+    "成语接龙：末字相同或谐音可接",
+    "电影/剧名接龙：末字开头，卡壳拍手过",
+    "食物接龙：轮流说吃的，重复出局",
+    "颜色接龙：说一种颜色并指出教室里对应物",
+    "反义词接龙：上一人说词，下一人说反义",
+    "职业接龙：轮流说职业，不能重复",
+    "动物接龙：末字开头，卡住就换人",
+    "歌名接龙：哼一句或说歌名，末字接龙",
+    "「光」字开头：每人说一个带「光」的词",
+    "数字接龙：上一人报数，下一人 +2，说错重来",
+    "夸奖接龙：轮流夸下一位同学一个优点",
+    "动作接龙：上一人做一个动作，下一人加一拍",
+    "同韵接龙：词尾押韵即可，卡壳过",
+    "课堂关键词接龙：围绕今天主题说词",
+    "表情接龙：上一人做表情，下一人升级夸张版",
+    "队名接龙：每人补一个字，拼完整队名",
+    "水果接龙：末字开头，说不出就鼓掌过",
+    "「然而」接龙：用「然而」接上一人的话续一句"
   ];
   let redeemTab = "shop";
   /** 作品投票榜快照：用于追赶排序动效 */
@@ -10436,22 +10540,35 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const title = document.getElementById("games-hero-title");
     const sub = document.getElementById("games-hero-sub");
     const actions = document.getElementById("games-hero-actions");
-    const ice = gamesCat === "ice";
-    if (seal) seal.textContent = ice ? "冰" : "转";
-    if (kicker) kicker.textContent = ice ? "COURSE · ICEBREAKER" : "COURSE · DRAW";
-    if (title) title.textContent = ice ? "破冰互动 · 十个小游戏" : "课堂抽人 · 答题加分";
+    const iceLike = isIceLikeCat(gamesCat);
+    const open = gamesCat === "open";
+    if (seal) seal.textContent = open ? "暖" : (iceLike ? "冰" : "转");
+    if (kicker) {
+      kicker.textContent = open ? "COURSE · WARMUP"
+        : (iceLike ? "COURSE · ICEBREAKER" : "COURSE · DRAW");
+    }
+    if (title) {
+      title.textContent = open ? "暖场投放 · 无人签到也能玩"
+        : (iceLike ? "破冰互动 · 名册对抗小游戏" : "课堂抽人 · 答题加分");
+    }
     if (sub) {
-      sub.textContent = ice
-        ? "暖场对抗 · 传花/炸弹/介绍/比划/默契/站队/对决/抢答/真心话/卧底"
-        : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分";
+      sub.textContent = open
+        ? "不依赖登录签到 · 炸弹/比划/站队/动作/左右/限时/接龙 · 纯投屏带动全场"
+        : (iceLike
+          ? "需名册或签到池 · 传花/介绍/默契/对决/抢答/真心话/卧底"
+          : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分");
     }
     if (actions) {
-      actions.innerHTML = ice
-        ? `<button type="button" data-action="goto-checkin">去签到</button>
-           <button type="button" class="primary" data-action="ice-start" id="game-spin-top">${esc(iceDef().startLabel || "开始")}</button>`
-        : `<button type="button" data-action="goto-checkin">去签到</button>
+      if (iceLike) {
+        actions.innerHTML = open
+          ? `<button type="button" class="primary" data-action="ice-start" id="game-spin-top">${esc(iceDef().startLabel || "开始")}</button>`
+          : `<button type="button" data-action="goto-checkin">去签到</button>
+             <button type="button" class="primary" data-action="ice-start" id="game-spin-top">${esc(iceDef().startLabel || "开始")}</button>`;
+      } else {
+        actions.innerHTML = `<button type="button" data-action="goto-checkin">去签到</button>
            <button type="button" data-action="edit-draw-actions" title="配置抽中后的积分特权小按钮">特权设置</button>
            <button type="button" class="primary" data-action="game-spin" id="game-spin-top">开始抽取</button>`;
+      }
     }
   }
 
@@ -10466,19 +10583,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       b.classList.toggle("on", b.dataset.gamesCat === gamesCat);
       b.onclick = () => {
         if (gameSpinning || iceBusy) return;
-        gamesCat = b.dataset.gamesCat === "ice" ? "ice" : "draw";
+        const next = b.dataset.gamesCat;
+        gamesCat = next === "ice" || next === "open" ? next : "draw";
         clearIceTimer();
+        iceBusy = false;
+        // 切换大类时落到该类默认玩法
+        const modes = iceModesForCat(gamesCat);
+        if (isIceLikeCat(gamesCat) && (!ICE_MODE_DEFS[iceMode] || ICE_MODE_DEFS[iceMode].group !== gamesCat)) {
+          iceMode = modes[0] || (gamesCat === "open" ? "bomb" : "flower");
+          iceState = {};
+        }
         renderGames();
       };
     });
+    const iceLike = isIceLikeCat(gamesCat);
     if (drawPane) drawPane.classList.toggle("hidden", gamesCat !== "draw");
-    if (icePane) icePane.classList.toggle("hidden", gamesCat !== "ice");
+    if (icePane) icePane.classList.toggle("hidden", !iceLike);
     if (drawActions) drawActions.classList.toggle("hidden", gamesCat !== "draw");
-    if (iceActions) iceActions.classList.toggle("hidden", gamesCat !== "ice");
+    if (iceActions) iceActions.classList.toggle("hidden", !iceLike);
     syncGamesHero();
     try { renderGameSfxBar(); } catch (e) { /* ignore */ }
 
-    if (gamesCat === "ice") {
+    if (iceLike) {
       renderIceGames();
       return;
     }
@@ -10520,20 +10646,33 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function renderIceGames() {
-    if (!ICE_MODE_DEFS[iceMode]) iceMode = "flower";
+    const modes = iceModesForCat(gamesCat);
+    if (!ICE_MODE_DEFS[iceMode] || !modes.includes(iceMode)) {
+      iceMode = modes[0] || "flower";
+    }
     const def = iceDef();
     const hint = document.getElementById("ice-mode-hint");
-    if (hint) hint.textContent = `${def.name} · ${def.hint}`;
-    document.querySelectorAll("#ice-mode-tabs [data-ice-mode]").forEach((b) => {
-      b.classList.toggle("on", b.dataset.iceMode === iceMode);
-      b.onclick = () => {
-        if (iceBusy) return;
-        clearIceTimer();
-        iceMode = b.dataset.iceMode;
-        iceState = {};
-        renderGames();
-      };
-    });
+    if (hint) {
+      hint.textContent = gamesCat === "open"
+        ? `${def.name} · ${def.hint}（无需登录签到）`
+        : `${def.name} · ${def.hint}`;
+    }
+    const tabs = document.getElementById("ice-mode-tabs");
+    if (tabs) {
+      tabs.innerHTML = modes.map((id) => {
+        const d = ICE_MODE_DEFS[id];
+        return `<button type="button" class="${id === iceMode ? "on" : ""}" data-ice-mode="${id}">${esc(d.name)}</button>`;
+      }).join("");
+      tabs.querySelectorAll("[data-ice-mode]").forEach((b) => {
+        b.onclick = () => {
+          if (iceBusy) return;
+          clearIceTimer();
+          iceMode = b.dataset.iceMode;
+          iceState = {};
+          renderGames();
+        };
+      });
+    }
     const startBtn = document.getElementById("ice-start-btn");
     const nextBtn = document.getElementById("ice-next-btn");
     const resetBtn = document.getElementById("ice-reset-btn");
@@ -10541,7 +10680,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (nextBtn) nextBtn.textContent = def.nextLabel || "下一题";
     if (resetBtn) resetBtn.textContent = "重置";
     const top = document.getElementById("game-spin-top");
-    if (top && gamesCat === "ice") top.textContent = def.startLabel || "开始";
+    if (top && isIceLikeCat(gamesCat)) top.textContent = def.startLabel || "开始";
     renderIceStage();
   }
 
@@ -10558,6 +10697,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else if (iceMode === "buzz") renderIceBuzzStage();
     else if (iceMode === "dare") renderIceDareStage();
     else if (iceMode === "spy") renderIceSpyStage();
+    else if (iceMode === "pose") renderIcePoseStage();
+    else if (iceMode === "choice") renderIceChoiceStage();
+    else if (iceMode === "timer") renderIceTimerStage();
+    else if (iceMode === "chain") renderIceChainStage();
     else renderIceFlowerStage();
   }
 
@@ -10734,6 +10877,93 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     });
     const rz = stage.querySelector("[data-ice-stand-reset]");
     if (rz) rz.onclick = () => { iceState.left = iceState.mid = iceState.right = 0; renderIceStandStage(); };
+  }
+
+  function renderIcePoseStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">全员动作 · 第 ${st.n || 0} 个</div>
+        <div class="ice-stage-big">${esc(st.prompt || "点开始抽动作")}</div>
+        <div class="ice-stage-sub">${st.prompt ? "全班一起做 · 做完点「换一个」" : "无需签到 · 投屏指令带全场动起来"}</div>
+      </div>`;
+  }
+
+  function renderIceChoiceStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    if (!st.q) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">左右互搏</div>
+          <div class="ice-stage-title">二选一站队</div>
+          <div class="ice-stage-sub">无需签到 · 出题后左边 / 右边站队，老师点数看哪边人多</div>
+        </div>`;
+      return;
+    }
+    const L = st.left || 0, R = st.right || 0;
+    const lead = L === R ? "势均力敌" : (L > R ? `左阵领先 · ${esc(st.a)}` : `右阵领先 · ${esc(st.b)}`);
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">左右互搏 · ${lead}</div>
+        <div class="ice-stage-title">${esc(st.q)}</div>
+        <div class="ice-stage-big" style="font-size:clamp(1.4rem,3.2vw,2.1rem)">
+          <span style="color:#ffb0bd">左 · ${esc(st.a)}</span>
+          <span class="vs" style="opacity:.6;margin:0 .35rem">VS</span>
+          <span style="color:#9ec9ff">右 · ${esc(st.b)}</span>
+        </div>
+        <div class="ice-stage-row">
+          <button type="button" data-ice-choice="left">左 +1（${L}）</button>
+          <button type="button" data-ice-choice="right">右 +1（${R}）</button>
+          <button type="button" data-ice-choice-reset="1">计数清零</button>
+        </div>
+        <div class="ice-stage-sub">左 ${L} · 右 ${R}</div>
+      </div>`;
+    stage.querySelectorAll("[data-ice-choice]").forEach((b) => {
+      b.onclick = () => {
+        const k = b.dataset.iceChoice;
+        iceState[k] = (iceState[k] || 0) + 1;
+        playGameFx("tick");
+        const r = b.getBoundingClientRect();
+        spawnParticles(r.left + r.width / 2, r.top + r.height / 2, k === "left" ? "#ffb0bd" : "#9ec9ff", 10, 4, { starRatio: 0.2, modes: ["dot", "ember"] });
+        renderIceChoiceStage();
+      };
+    });
+    const rz = stage.querySelector("[data-ice-choice-reset]");
+    if (rz) rz.onclick = () => { iceState.left = iceState.right = 0; renderIceChoiceStage(); };
+  }
+
+  function renderIceTimerStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    if (!st.text) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">限时挑战</div>
+          <div class="ice-stage-title">倒计时暖场</div>
+          <div class="ice-stage-sub">无需签到 · 点开始给出全场挑战并倒计时，到点喊停</div>
+        </div>`;
+      return;
+    }
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">限时挑战 · ${st.running ? "进行中" : "结束"}</div>
+        <div class="ice-stage-title">${esc(st.text)}</div>
+        <div class="ice-stage-timer" id="ice-timer-sec">${st.sec != null ? st.sec : st.total || "—"}</div>
+        <div class="ice-stage-sub">${st.running ? "全场一起完成 · 倒计时结束自动停" : "可点「换挑战」再来一轮"}</div>
+      </div>`;
+  }
+
+  function renderIceChainStage() {
+    const stage = document.getElementById("game-stage");
+    const st = iceState;
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">接龙开场 · 第 ${st.round || 0} 条</div>
+        <div class="ice-stage-title">${esc(st.prompt || "点开始抽取接龙规则")}</div>
+        <div class="ice-stage-sub">${st.prompt ? "从任意同学开始轮流接 · 卡壳就过到下一位" : "无需签到 · 纯规则投屏带动全场"}</div>
+      </div>`;
   }
 
   function renderIceDuelStage() {
@@ -10936,7 +11166,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   async function iceStart() {
-    if (gamesCat !== "ice") return;
+    if (!isIceLikeCat(gamesCat)) return;
     if (iceMode === "flower") return iceFlowerToggle();
     if (iceMode === "bomb") return iceBombStart();
     if (iceMode === "intro") return iceIntroStart();
@@ -10947,6 +11177,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "buzz") return iceBuzzStart();
     if (iceMode === "dare") return iceDareStart();
     if (iceMode === "spy") return iceSpyStart();
+    if (iceMode === "pose") return icePoseStart();
+    if (iceMode === "choice") return iceChoiceStart();
+    if (iceMode === "timer") return iceTimerStart();
+    if (iceMode === "chain") return iceChainStart();
   }
   function iceNext() {
     if (iceMode === "flower") {
@@ -10964,6 +11198,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "buzz") return iceBuzzStart();
     if (iceMode === "dare") return iceDareStart();
     if (iceMode === "spy") return iceSpyStart();
+    if (iceMode === "pose") return icePoseStart();
+    if (iceMode === "choice") return iceChoiceStart();
+    if (iceMode === "timer") return iceTimerStart();
+    if (iceMode === "chain") return iceChainStart();
   }
   function iceReset() {
     clearIceTimer();
@@ -10978,7 +11216,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const startBtn = document.getElementById("ice-start-btn");
     const top = document.getElementById("game-spin-top");
     if (startBtn) startBtn.textContent = text;
-    if (top && gamesCat === "ice") top.textContent = text;
+    if (top && isIceLikeCat(gamesCat)) top.textContent = text;
   }
   function iceFlowerToggle() {
     const pool = getIcePool();
@@ -11091,6 +11329,51 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     iceState = { q, left: 0, mid: 0, right: 0 };
     renderIceStandStage();
     playGameFx("start", { banner: "站队表决" });
+  }
+
+  function icePoseStart() {
+    const prompt = pickIce(ICE_POSE_PROMPTS, "pose");
+    iceState = { prompt, n: (iceState.n || 0) + 1 };
+    renderIcePoseStage();
+    playGameFx("start", { banner: "全员动作" });
+    popGameText("#game-stage .ice-stage-title, #game-stage .ice-stage-big");
+  }
+
+  function iceChoiceStart() {
+    const item = pickIce(ICE_CHOICE_QUESTIONS, "choice");
+    iceState = { q: item.q, a: item.a, b: item.b, left: 0, right: 0 };
+    renderIceChoiceStage();
+    playGameFx("start", { banner: "左右互搏" });
+  }
+
+  function iceTimerStart() {
+    clearIceTimer();
+    const item = pickIce(ICE_TIMER_CHALLENGES, "timer");
+    iceState = { text: item.text, sec: item.sec, total: item.sec, running: true };
+    renderIceTimerStage();
+    playGameFx("start", { banner: "限时挑战" });
+    iceTimer = setInterval(() => {
+      iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
+      const el = document.getElementById("ice-timer-sec");
+      if (el) el.textContent = String(iceState.sec);
+      if (iceState.sec <= 0) {
+        clearIceTimer();
+        iceState.running = false;
+        playGameFx("fail", { banner: "时间到" });
+        showVoteToast("时间到 · 看全场完成度");
+        renderIceTimerStage();
+      } else if (iceState.sec <= 3) {
+        playGameFx("countdown");
+      }
+    }, 1000);
+  }
+
+  function iceChainStart() {
+    const prompt = pickIce(ICE_CHAIN_PROMPTS, "chain");
+    iceState = { prompt, round: (iceState.round || 0) + 1 };
+    renderIceChainStage();
+    playGameFx("start", { banner: "接龙开场" });
+    popGameText("#game-stage .ice-stage-title");
   }
 
   function iceDuelStart() {
