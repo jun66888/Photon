@@ -23,29 +23,42 @@ fi
 
 chmod +x "$ROOT"/*.sh "$ROOT"/*.command 2>/dev/null || true
 
-# ★ 主入口：一键上课（更新 + 启动环境 + 打开启动台）
-# 同时保留旧名「启动环境 / 开始上课 / GY-Start」，都指向同一套流程
-ONECLICK_SRC=""
-if [[ -f "$ROOT/光影盟-一键上课.command" ]]; then
-  ONECLICK_SRC="$ROOT/光影盟-一键上课.command"
-elif [[ -f "$ROOT/一键上课.sh" ]]; then
+# ★ 主入口：上课 / 开始上课（更新 + 启动环境 + 打开启动台）
+# 每次强制重建多个别名，避免找不到
+if [[ ! -f "$ROOT/光影盟-一键上课.command" ]]; then
   cat > "$ROOT/光影盟-一键上课.command" <<EOF
 #!/bin/bash
-cd "$PHOTON_HOME" || exit 1
-exec "$PHOTON_HOME/一键上课.sh"
+set -euo pipefail
+PHOTON_HOME="$PHOTON_HOME"
+cd "\$PHOTON_HOME" || {
+  echo "找不到 \$PHOTON_HOME"
+  read -r -p "按回车关闭…" _
+  exit 1
+}
+chmod +x 一键上课.sh start.sh 2>/dev/null || true
+if [[ -x "\$PHOTON_HOME/一键上课.sh" ]]; then
+  exec "\$PHOTON_HOME/一键上课.sh"
+fi
+if [[ -x "\$PHOTON_HOME/start.sh" ]]; then
+  exec "\$PHOTON_HOME/start.sh"
+fi
+echo "找不到上课脚本"
+read -r -p "按回车关闭…" _
+exit 1
 EOF
-  chmod +x "$ROOT/光影盟-一键上课.command"
-  ONECLICK_SRC="$ROOT/光影盟-一键上课.command"
-elif [[ -f "$ROOT/光影盟-启动环境.command" ]]; then
-  ONECLICK_SRC="$ROOT/光影盟-启动环境.command"
 fi
-
-if [[ -n "$ONECLICK_SRC" ]]; then
-  cp -f "$ONECLICK_SRC" "$DESKTOP/光影盟-一键上课.command"
-  cp -f "$ONECLICK_SRC" "$DESKTOP/光影盟-开始上课.command"
-  cp -f "$ONECLICK_SRC" "$DESKTOP/光影盟-启动环境.command"
-  cp -f "$ONECLICK_SRC" "$DESKTOP/GY-Start.command"
-fi
+chmod +x "$ROOT/光影盟-一键上课.command" "$ROOT/一键上课.sh" 2>/dev/null || true
+for name in \
+  "上课.command" \
+  "开始上课.command" \
+  "光影盟-一键上课.command" \
+  "光影盟-开始上课.command" \
+  "GY-Start.command" \
+  "光影盟-启动环境.command"
+do
+  cp -f "$ROOT/光影盟-一键上课.command" "$DESKTOP/$name"
+  chmod +x "$DESKTOP/$name"
+done
 
 # 打开老师端：服务没开则自动走一键上课
 if [[ -f "$ROOT/打开老师端.command" ]]; then
@@ -130,15 +143,17 @@ cat > "$DESKTOP/光影盟-收藏地址.txt" <<EOF
 老师端：http://127.0.0.1:3000/?mode=teacher
 启动台：http://127.0.0.1:3000/launcher.html
 
-【只需这一个】
-双击桌面「光影盟-一键上课」（或「开始上课」/ GY-Start）
+【打开 / 开始上课】点下面任一：
+上课.command / 开始上课.command / 光影盟-一键上课.command / GY-Start
 → 自动：更新代码 + 启动服务/隧道 + 打开启动台与老师端
 → 上课期间不要关黑色终端窗口
 
 启动台里可点：老师端 / 签到入口 / 重建公网隧道 / 看状态
 
+【只更新、不开课】
+更新.command / 光影盟-更新.command / GY-Update
+
 可选：
-• 更新 / 光影盟-更新 / GY-Update：只更新、不开课
 • 光影盟-打开老师端：只开浏览器
 • 光影盟-诊断：排查问题
 
@@ -151,7 +166,9 @@ cat > "$DESKTOP/光影盟-老师端.url" <<EOF
 URL=http://127.0.0.1:3000/?mode=teacher
 EOF
 
-chmod +x "$DESKTOP/光影盟-一键上课.command" \
+chmod +x "$DESKTOP/上课.command" \
+         "$DESKTOP/开始上课.command" \
+         "$DESKTOP/光影盟-一键上课.command" \
          "$DESKTOP/光影盟-启动环境.command" \
          "$DESKTOP/光影盟-开始上课.command" \
          "$DESKTOP/GY-Start.command" \
@@ -166,11 +183,14 @@ chmod +x "$DESKTOP/光影盟-一键上课.command" \
          "$PHOTON_HOME/一键上课.sh" \
          "$PHOTON_HOME/光影盟-更新.command" \
          "$PHOTON_HOME/重建桌面更新按钮.sh" \
+         "$PHOTON_HOME/重建桌面上课按钮.sh" \
          "$PHOTON_HOME/光影盟-启动环境.command" \
          "$PHOTON_HOME/打开老师端.command" 2>/dev/null || true
 
 # 去掉 macOS 隔离属性，方便双击
-xattr -cr "$DESKTOP/光影盟-一键上课.command" \
+xattr -cr \
+  "$DESKTOP/上课.command" "$DESKTOP/开始上课.command" \
+  "$DESKTOP/光影盟-一键上课.command" \
   "$DESKTOP/更新.command" \
   "$DESKTOP/光影盟-更新.command" "$DESKTOP/GY-Update.command" \
   "$DESKTOP/光影盟-更新代码.command" \
@@ -179,11 +199,12 @@ xattr -cr "$DESKTOP/光影盟-一键上课.command" \
 
 echo ""
 echo "  [完成] 已放到桌面：$DESKTOP"
-echo "    光影盟-一键上课.command  ← 上课：更新+启动+启动台"
-echo "    更新.command             ← ★ 只更新（最短名）"
-echo "    光影盟-更新.command      ← 只更新"
-echo "    GY-Update.command        ← 只更新（英文名）"
-echo "    光影盟-更新代码.command  ← 只更新（备用名）"
+echo "    上课.command             ← ★ 打开/开始上课（最短名）"
+echo "    开始上课.command         ← 打开/开始上课"
+echo "    光影盟-一键上课.command  ← 打开/开始上课"
+echo "    GY-Start.command         ← 打开/开始上课（英文）"
+echo "    更新.command             ← 只更新，不开课"
+echo "    光影盟-更新.command      ← 只更新，不开课"
 echo "    光影盟-打开老师端.command← 只开浏览器"
 echo "    光影盟-诊断.command      ← 检查路径/版本"
 echo ""

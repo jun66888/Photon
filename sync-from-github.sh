@@ -80,6 +80,7 @@ chmod +x \
   打开老师端.command 第一次安装-Mac.command \
   诊断本机.command 光影盟-更新.command \
   重建桌面更新按钮.sh 重建桌面更新按钮.command \
+  重建桌面上课按钮.sh 重建桌面上课按钮.command \
   光影盟-一键上课.command 一键上课.sh 2>/dev/null || true
 
 HEAD="$(git rev-parse --short HEAD)"

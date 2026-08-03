@@ -71,7 +71,8 @@ cd "$PHOTON_HOME"
 chmod +x sync-from-github.sh start.sh 一键上课.sh 更新本地.sh 更新本地.command \
   一键放到桌面.sh 一键放到桌面.command 诊断本机.command \
   光影盟-一键上课.command 光影盟-启动环境.command 打开老师端.command \
-  光影盟-更新.command 重建桌面更新按钮.sh 重建桌面更新按钮.command 2>/dev/null || true
+  光影盟-更新.command 重建桌面更新按钮.sh 重建桌面更新按钮.command \
+  重建桌面上课按钮.sh 重建桌面上课按钮.command 2>/dev/null || true
 
 # 写版本戳
 HEAD="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -99,14 +100,19 @@ fi
 
 rm -rf "$BACKUP_DIR" 2>/dev/null || true
 
-# 自动把「更新」等按钮刷到桌面（强制重建，避免刷新后按钮消失）
+# 自动把「上课 / 更新」等按钮刷到桌面（强制重建，避免刷新后按钮消失）
 if [[ -x ./一键放到桌面.sh ]]; then
   bash ./一键放到桌面.sh || true
+fi
+if [[ -x ./重建桌面上课按钮.sh ]]; then
+  bash ./重建桌面上课按钮.sh || true
 fi
 if [[ -x ./重建桌面更新按钮.sh ]]; then
   bash ./重建桌面更新按钮.sh || true
 fi
 
 echo ""
-echo "桌面已重建更新按钮：更新.command / 光影盟-更新.command / GY-Update.command"
+echo "桌面已重建："
+echo "  上课按钮：上课.command / 开始上课.command / 光影盟-一键上课.command"
+echo "  更新按钮：更新.command / 光影盟-更新.command / GY-Update.command"
 echo "现在也可执行：./start.sh"
