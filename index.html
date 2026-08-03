@@ -3804,6 +3804,48 @@ body.play-mode-basic #rail-side-mode-tabs {
   border-radius: 8px;
   background: rgba(8, 12, 22, .45);
 }
+.ice-round-music-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem;
+  margin: 0 0 .55rem;
+  padding: .45rem .65rem;
+  border: 1px solid rgba(240,193,75,.22);
+  border-radius: 8px;
+  background: rgba(24, 20, 10, .4);
+  font-size: .84rem;
+}
+.ice-round-music-bar.hidden { display: none !important; }
+.ice-round-music-bar .irm-lab {
+  color: #ffe39a;
+  font-family: var(--font-brush);
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+.ice-round-music-bar .irm-name {
+  color: var(--ink-soft);
+  max-width: min(16rem, 48vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ice-round-music-bar .irm-name.has-file { color: #9dffc0; }
+.ice-round-music-bar label.irm-check {
+  display: inline-flex; align-items: center; gap: .28rem;
+  color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+}
+.ice-round-music-bar button,
+.ice-round-music-bar label.irm-pick {
+  min-height: 1.85rem !important;
+  padding: .2rem .55rem !important;
+  font-size: .74rem !important;
+}
+.ice-round-music-bar label.irm-pick {
+  display: inline-flex; align-items: center;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 6px;
+  cursor: pointer;
+  background: rgba(0,0,0,.28);
+}
+.ice-round-music-bar label.irm-pick input { display: none; }
 .game-sfx-bar .sfx-lab {
   font-size: .78rem; color: var(--ink-soft); letter-spacing: .06em; white-space: nowrap;
 }
@@ -4667,6 +4709,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="ice-mode-tabs" id="ice-mode-tabs" role="tablist" aria-label="破冰小游戏"></div>
           <div class="muted" style="margin-bottom:.35rem" id="ice-mode-hint">暖场互动 · 不扣积分</div>
           <div id="ice-match-rules" class="ice-match-rules hidden" aria-label="游戏赛制"></div>
+          <div id="ice-round-music-bar" class="ice-round-music-bar hidden" aria-label="回合音乐">
+            <span class="irm-lab">回合音乐</span>
+            <label class="irm-pick">选择音频<input type="file" id="ice-round-music-file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" /></label>
+            <span class="irm-name" id="ice-round-music-name">未选择 · 开始时不播音乐</span>
+            <label class="irm-check"><input type="checkbox" id="ice-round-music-loop" checked />循环</label>
+            <button type="button" id="ice-round-music-preview">试听</button>
+            <button type="button" id="ice-round-music-clear">清除</button>
+          </div>
         </div>
         <div class="game-sfx-bar" id="game-sfx-bar" aria-label="音效调节"></div>
         <div class="game-stage" id="game-stage"></div>
@@ -5567,6 +5617,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const ICE_NUM_RANGE_KEY = "gy_arena_ice_num_range";
   const ICE_POOL_MODE_KEY = "gy_arena_ice_pool_mode"; // numbers | roster
   const ICE_MATCH_RULES_KEY = "gy_arena_ice_match_rules";
+  const ICE_ROUND_MUSIC_LOOP_KEY = "gy_arena_ice_round_music_loop";
+  /** 有「开始→进行→结束」过程、适合播回合音乐的游戏 */
+  const ICE_ROUND_MUSIC_GAMES = new Set(["flower", "timer", "intro", "duel", "tturn"]);
+  let iceRoundMusic = {
+    name: "",
+    url: "",
+    objectUrl: "",
+    audio: null,
+    loop: localStorage.getItem(ICE_ROUND_MUSIC_LOOP_KEY) !== "0",
+    previewing: false
+  };
   /** 支持「共 N 题 / 倒计时」赛制的游戏 */
   const ICE_MATCH_GAMES = new Set(["buzz", "sync", "charades", "stand", "choice", "dare", "tbuzz", "tturn"]);
   // 分组对抗：四组轻松上手
@@ -5579,7 +5640,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const ICE_MODE_DEFS = {
     flower: {
       name: "击鼓传花", group: "ice",
-      hint: "一起玩 · 名单滚动停下即「接到花」· 座位上发言即可",
+      hint: "一起玩 · 可自选回合音乐 · 名单滚动停下即「接到花」",
       startLabel: "击鼓开始", nextLabel: "再来一轮"
     },
     bomb: {
@@ -5589,7 +5650,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     },
     intro: {
       name: "闪电介绍", group: "ice",
-      hint: "一起玩 · 抽人 + 题目 · 座位上限时自我介绍",
+      hint: "一起玩 · 可自选回合音乐 · 抽人限时自我介绍",
       startLabel: "抽取上场", nextLabel: "换一位"
     },
     charades: {
@@ -5609,7 +5670,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     },
     duel: {
       name: "双人对决", group: "ice",
-      hint: "对抗赛 · 抽两人座位上比拼，老师判定胜负，可发小奖品",
+      hint: "对抗赛 · 可自选回合音乐 · 座位比拼后判定胜负",
       startLabel: "抽对手", nextLabel: "再抽一对"
     },
     buzz: {
@@ -5639,7 +5700,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     },
     timer: {
       name: "限时挑战", group: "open",
-      hint: "有输赢 · 倒计时口头/小动作挑战，完成得好可领小奖",
+      hint: "有输赢 · 可自选回合音乐 · 倒计时挑战，到点停乐",
       startLabel: "开始计时", nextLabel: "换挑战"
     },
     chain: {
@@ -5659,7 +5720,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     },
     tturn: {
       name: "轮流挑战", group: "team",
-      hint: "最简单 · 随机抽一组上场做小挑战 · 成功加分",
+      hint: "最简单 · 可自选回合音乐 · 随机抽组做小挑战",
       startLabel: "抽组上场", nextLabel: "下一组"
     }
   };
@@ -10414,7 +10475,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       renderTeacherVote();
     }
     if (view === "games") renderGames();
-    else { clearIceTimer(); iceBusy = false; }
+    else { clearIceTimer(); clearIceMatchClock(); stopIceRoundMusic(); iceBusy = false; }
     if (view === "redeem") renderRedeem();
     if (view === "logs") { logsPage = 1; renderLogs(); }
     if (view === "settings") renderSettings();
@@ -10876,6 +10937,183 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function clearIceMatchClock() {
     if (iceMatchClock) { clearInterval(iceMatchClock); iceMatchClock = null; }
   }
+  function iceModeUsesRoundMusic(mode = iceMode) {
+    return ICE_ROUND_MUSIC_GAMES.has(mode);
+  }
+  function openIceRoundMusicIdb() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open("gy_arena_ice_round_music", 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains("files")) db.createObjectStore("files");
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function saveIceRoundMusicIdb(file) {
+    try {
+      const db = await openIceRoundMusicIdb();
+      const ab = await file.arrayBuffer();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction("files", "readwrite");
+        tx.objectStore("files").put({ name: file.name || "music", type: file.type || "audio/mpeg", buf: ab }, "round");
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { /* ignore persist errors */ }
+  }
+  async function clearIceRoundMusicIdb() {
+    try {
+      const db = await openIceRoundMusicIdb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction("files", "readwrite");
+        tx.objectStore("files").delete("round");
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { /* ignore */ }
+  }
+  async function loadIceRoundMusicFromIdb() {
+    if (iceRoundMusic.url) return;
+    try {
+      const db = await openIceRoundMusicIdb();
+      const row = await new Promise((resolve) => {
+        const tx = db.transaction("files", "readonly");
+        const req = tx.objectStore("files").get("round");
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+      if (!row || !row.buf) return;
+      const blob = new Blob([row.buf], { type: row.type || "audio/mpeg" });
+      const url = URL.createObjectURL(blob);
+      iceRoundMusic.objectUrl = url;
+      iceRoundMusic.url = url;
+      iceRoundMusic.name = row.name || "已保存音乐";
+      syncIceRoundMusicBar();
+    } catch (e) { /* ignore */ }
+  }
+  function stopIceRoundMusic() {
+    iceRoundMusic.previewing = false;
+    const a = iceRoundMusic.audio;
+    if (!a) return;
+    try { a.pause(); a.currentTime = 0; } catch (e) { /* ignore */ }
+    iceRoundMusic.audio = null;
+  }
+  function startIceRoundMusic() {
+    stopIceRoundMusic();
+    if (!iceModeUsesRoundMusic()) return false;
+    if (!iceRoundMusic.url) return false;
+    try {
+      const a = new Audio(iceRoundMusic.url);
+      a.loop = !!iceRoundMusic.loop;
+      a.volume = Math.max(0.18, Math.min(1, (typeof sfxGainValue === "function" ? sfxGainValue() : 0.6) * 0.9));
+      iceRoundMusic.audio = a;
+      a.play().catch(() => {
+        showVoteToast("音乐播放被拦截，请再点一次开始");
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  async function setIceRoundMusicFile(file) {
+    stopIceRoundMusic();
+    if (iceRoundMusic.objectUrl) {
+      try { URL.revokeObjectURL(iceRoundMusic.objectUrl); } catch (e) { /* ignore */ }
+      iceRoundMusic.objectUrl = "";
+    }
+    if (!file) {
+      iceRoundMusic.name = "";
+      iceRoundMusic.url = "";
+      await clearIceRoundMusicIdb();
+      syncIceRoundMusicBar();
+      showVoteToast("已清除回合音乐");
+      return;
+    }
+    if (!/^audio\//i.test(file.type || "") && !/\.(mp3|wav|ogg|m4a|aac)$/i.test(file.name || "")) {
+      showVoteToast("请选择音频文件（mp3 / wav / ogg 等）");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    iceRoundMusic.objectUrl = url;
+    iceRoundMusic.url = url;
+    iceRoundMusic.name = file.name || "自定义音乐";
+    await saveIceRoundMusicIdb(file);
+    syncIceRoundMusicBar();
+    showVoteToast(`已选：${iceRoundMusic.name}`);
+  }
+  function syncIceRoundMusicBar() {
+    const bar = document.getElementById("ice-round-music-bar");
+    if (!bar) return;
+    const show = isIceLikeCat(gamesCat) && iceModeUsesRoundMusic();
+    bar.classList.toggle("hidden", !show);
+    if (!show) return;
+    const nameEl = document.getElementById("ice-round-music-name");
+    const loopEl = document.getElementById("ice-round-music-loop");
+    if (nameEl) {
+      nameEl.textContent = iceRoundMusic.name
+        ? `已选：${iceRoundMusic.name}`
+        : "未选择 · 开始时不播音乐";
+      nameEl.classList.toggle("has-file", !!iceRoundMusic.name);
+      nameEl.title = iceRoundMusic.name || "";
+    }
+    if (loopEl) loopEl.checked = !!iceRoundMusic.loop;
+  }
+  function wireIceRoundMusicBar() {
+    const bar = document.getElementById("ice-round-music-bar");
+    if (!bar || bar.dataset.wired === "1") {
+      syncIceRoundMusicBar();
+      return;
+    }
+    bar.dataset.wired = "1";
+    const fileEl = document.getElementById("ice-round-music-file");
+    const loopEl = document.getElementById("ice-round-music-loop");
+    const clearBtn = document.getElementById("ice-round-music-clear");
+    const previewBtn = document.getElementById("ice-round-music-preview");
+    if (fileEl) {
+      fileEl.onchange = () => {
+        const f = fileEl.files && fileEl.files[0];
+        setIceRoundMusicFile(f || null);
+        fileEl.value = "";
+      };
+    }
+    if (loopEl) {
+      loopEl.onchange = () => {
+        iceRoundMusic.loop = !!loopEl.checked;
+        localStorage.setItem(ICE_ROUND_MUSIC_LOOP_KEY, iceRoundMusic.loop ? "1" : "0");
+        if (iceRoundMusic.audio) iceRoundMusic.audio.loop = iceRoundMusic.loop;
+      };
+    }
+    if (clearBtn) clearBtn.onclick = () => setIceRoundMusicFile(null);
+    if (previewBtn) {
+      previewBtn.onclick = () => {
+        if (!iceRoundMusic.url) {
+          showVoteToast("请先选择一段音乐");
+          return;
+        }
+        if (iceRoundMusic.audio && iceRoundMusic.previewing) {
+          stopIceRoundMusic();
+          showVoteToast("已停止试听");
+          return;
+        }
+        stopIceRoundMusic();
+        try {
+          const a = new Audio(iceRoundMusic.url);
+          a.loop = !!iceRoundMusic.loop;
+          a.volume = Math.max(0.18, Math.min(1, sfxGainValue() * 0.9));
+          iceRoundMusic.audio = a;
+          iceRoundMusic.previewing = true;
+          a.play().catch(() => showVoteToast("试听被拦截，请再点一次"));
+          showVoteToast("试听中 · 再点可停");
+        } catch (e) {
+          showVoteToast("无法试听此文件");
+        }
+      };
+    }
+    loadIceRoundMusicFromIdb();
+    syncIceRoundMusicBar();
+  }
   function getIceMatchRules() {
     const defaults = { mode: "count", totalQ: 10, matchSec: 180, qSec: 20 };
     try {
@@ -11001,6 +11239,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           showVoteToast("时间到 · 可点下一题");
           renderTeamBuzzStage();
         } else if (iceMode === "tturn") {
+          stopIceRoundMusic();
           showVoteToast("时间到 · 点「没完成」或「下一组」");
           renderTeamTurnStage();
         } else if (iceMode === "sync") {
@@ -11214,6 +11453,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         gamesCat = (next === "ice" || next === "open" || next === "team") ? next : "draw";
         clearIceTimer();
         clearIceMatchClock();
+        stopIceRoundMusic();
         iceBusy = false;
         // 切换大类时落到该类默认玩法
         const modes = iceModesForCat(gamesCat);
@@ -11298,6 +11538,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           if (iceBusy) return;
           clearIceTimer();
           clearIceMatchClock();
+          stopIceRoundMusic();
           iceMode = b.dataset.iceMode;
           iceState = iceSupportsMatchRules(iceMode) ? { ...iceMatchMetaFromRules() } : {};
           renderGames();
@@ -11313,6 +11554,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const top = document.getElementById("game-spin-top");
     if (top && isIceLikeCat(gamesCat)) top.textContent = def.startLabel || "开始";
     renderIceMatchRulesBar();
+    wireIceRoundMusicBar();
     renderIceStage();
   }
 
@@ -11389,11 +11631,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const stage = document.getElementById("game-stage");
     const pool = getIcePool();
     const name = iceState.winner || (iceBusy ? (iceState.flash || "…") : "准备传花");
+    const musicTip = iceRoundMusic.name
+      ? `音乐：${iceRoundMusic.name}`
+      : "可先在上方选一段回合音乐";
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">击鼓传花 · 可抽号码</div>
         <div class="ice-stage-big" id="ice-flower-name">${esc(name)}</div>
-        <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · ${iceBusy ? "再点「停下」定号" : "点开始后滚动，再点停下"}</div>
+        <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · ${iceBusy ? "音乐播放中 · 再点「停下」定号" : `点开始播乐并滚动 · ${esc(musicTip)}`}</div>
         ${renderIceNumberRangeRow(pool)}
       </div>`;
     bindIceNumberRangeControls();
@@ -12201,6 +12446,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const score = iceState.score || blankTeamScores(teams);
     const next = iceOpenNextMatchRound({ teams, score });
     if (!next) return;
+    stopIceRoundMusic();
     const turn = teams[Math.floor(Math.random() * teams.length)];
     const challenge = pickIce(TEAM_TURN_CHALLENGES, "tturn");
     iceState = {
@@ -12215,6 +12461,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     startIceMatchClockIfNeeded();
     startIceQuestionClockIfNeeded();
     playGameFx("draw", { banner: `${turn.name} 上场` });
+    startIceRoundMusic();
     showVoteToast(`${turn.name} 上场`);
   }
   function iceTeamTurnAct(act) {
@@ -12234,6 +12481,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (iceState.locked) return;
     clearIceTimer();
+    stopIceRoundMusic();
     iceState.score = iceState.score || blankTeamScores(teams);
     if (act === "ok") {
       iceState.score[iceState.turnId] = (Number(iceState.score[iceState.turnId]) || 0) + 2;
@@ -12277,6 +12525,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState = {};
       iceBusy = false;
       clearIceTimer();
+      stopIceRoundMusic();
       return iceFlowerToggle();
     }
     if (iceMode === "bomb") return iceBombStart();
@@ -12299,6 +12548,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function iceReset() {
     clearIceTimer();
     clearIceMatchClock();
+    stopIceRoundMusic();
     iceBusy = false;
     if (iceMode === "trace") {
       const teams = getTeamBattleTeams();
@@ -12307,6 +12557,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState = iceSupportsMatchRules() ? { ...iceMatchMetaFromRules() } : {};
     }
     renderIceMatchRulesBar();
+    syncIceRoundMusicBar();
     renderIceStage();
     playGameFx("tick");
     showVoteToast("已重置");
@@ -12346,6 +12597,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!pool.length) { showVoteToast("号码池为空，请设定数字范围"); return; }
     if (iceBusy) {
       clearIceTimer();
+      stopIceRoundMusic();
       iceBusy = false;
       const winner = pool[Math.floor(Math.random() * pool.length)];
       iceState = { winner: winner.name };
@@ -12361,14 +12613,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     let i = 0;
     let tick = 0;
     clearIceTimer();
-    playGameFx("start", { banner: "击鼓传花" });
+    const musicOn = startIceRoundMusic();
+    playGameFx("start", { banner: musicOn ? "击鼓传花 · 音乐起" : "击鼓传花" });
+    if (!musicOn && !iceRoundMusic.url) showVoteToast("未选音乐也可玩 · 上方可随时选择");
     iceTimer = setInterval(() => {
       i = (i + 1) % pool.length;
       iceState.flash = pool[i].name;
       const el = document.getElementById("ice-flower-name");
       if (el) el.textContent = pool[i].name;
       tick++;
-      if (tick % 3 === 0) playGameFx("spin");
+      // 有自定义音乐时不再叠加快节奏 spin 音效
+      if (!iceRoundMusic.audio && tick % 3 === 0) playGameFx("spin");
     }, 70);
     syncIceStartLabels("停下");
   }
@@ -12413,17 +12668,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const pool = getIcePool();
     if (!pool.length) { showVoteToast("号码池为空，请设定数字范围"); return; }
     clearIceTimer();
+    stopIceRoundMusic();
     const person = pool[Math.floor(Math.random() * pool.length)];
     const topic = pickIce(ICE_INTRO_TOPICS, "intro");
     iceState = { name: person.name, topic, sec: 15 };
     renderIceIntroStage();
     playGameFx("draw", { banner: person.name });
+    startIceRoundMusic();
     iceTimer = setInterval(() => {
       iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
       const el = document.getElementById("ice-intro-timer");
       if (el) el.textContent = String(iceState.sec);
       if (iceState.sec <= 0) {
         clearIceTimer();
+        stopIceRoundMusic();
         playGameFx("fail", { banner: "时间到" });
         showVoteToast("时间到");
       } else if (iceState.sec <= 3) {
@@ -12488,16 +12746,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function iceTimerStart() {
     clearIceTimer();
+    stopIceRoundMusic();
     const item = pickIce(ICE_TIMER_CHALLENGES, "timer");
     iceState = { text: item.text, sec: item.sec, total: item.sec, running: true };
     renderIceTimerStage();
     playGameFx("start", { banner: "限时挑战" });
+    startIceRoundMusic();
     iceTimer = setInterval(() => {
       iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
       const el = document.getElementById("ice-timer-sec");
       if (el) el.textContent = String(iceState.sec);
       if (iceState.sec <= 0) {
         clearIceTimer();
+        stopIceRoundMusic();
         iceState.running = false;
         playGameFx("fail", { banner: "时间到" });
         showVoteToast("时间到 · 看全场完成度");
@@ -12520,6 +12781,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const pool = getIcePool();
     if (pool.length < 2) { showVoteToast("至少需要 2 个号码才能对决（请扩大数字范围）"); return; }
     clearIceTimer();
+    stopIceRoundMusic();
     const shuffled = pool.slice().sort(() => Math.random() - 0.5);
     const left = shuffled[0].name;
     const right = shuffled[1].name;
@@ -12528,12 +12790,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     iceState = { left, right, challenge, sec: 30, score, judged: false };
     renderIceDuelStage();
     playGameFx("start", { banner: `${left} VS ${right}` });
+    startIceRoundMusic();
     iceTimer = setInterval(() => {
       iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
       const el = document.getElementById("ice-duel-timer");
       if (el) el.textContent = String(iceState.sec);
       if (iceState.sec <= 0) {
         clearIceTimer();
+        stopIceRoundMusic();
         playGameFx("fail", { banner: "时间到" });
         showVoteToast("时间到 · 请判定胜负");
       } else if (iceState.sec <= 5) {
@@ -12545,6 +12809,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!iceState.left || iceState.judged) return;
     iceState.score = iceState.score || { a: 0, b: 0 };
     clearIceTimer();
+    stopIceRoundMusic();
     if (side === "left") {
       iceState.score.a += 1;
       iceState.judged = true;
