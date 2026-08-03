@@ -13,7 +13,6 @@
       --soft: #9aa8c3;
       --gold: #f0c14b;
       --gold2: #ffe39a;
-      --ok: #7dffb2;
       --warn: #ffb0bd;
       --line: rgba(240, 193, 75, .28);
       --font-brush: "ZCOOL XiaoWei", "STKaiti", "KaiTi", serif;
@@ -50,9 +49,36 @@
       font-size: .95rem;
       line-height: 1.5;
     }
-    .toolbar {
-      display: flex; flex-wrap: wrap; gap: .5rem;
-      margin-bottom: .9rem;
+    .pick-bar {
+      display: grid;
+      gap: .65rem;
+      margin-bottom: 1rem;
+      padding: 1rem 1.05rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(106, 84, 20, .28), rgba(8, 12, 22, .55));
+    }
+    .pick-bar .lab {
+      font-size: .9rem;
+      color: var(--gold2);
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .pick-bar .cur {
+      font-family: var(--font-num);
+      font-size: .8rem;
+      color: var(--soft);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+    .pick-bar .cur strong { color: var(--ink); font-weight: 600; }
+    .pick-actions {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr;
+      gap: .5rem;
+    }
+    @media (max-width: 640px) {
+      .pick-actions { grid-template-columns: 1fr; }
     }
     button, a.btn {
       appearance: none;
@@ -60,11 +86,21 @@
       background: linear-gradient(180deg, #2a3350, #171e30);
       color: var(--ink);
       border-radius: 10px;
-      padding: .65rem .9rem;
-      font-size: .92rem;
+      padding: .75rem .9rem;
+      font-size: .95rem;
       font-weight: 700;
       cursor: pointer;
       text-decoration: none;
+      text-align: center;
+    }
+    button.pick-main {
+      background: linear-gradient(180deg, #8a6a12, #3a2c0a);
+      border-color: rgba(240,193,75,.85);
+      color: var(--gold2);
+      font-size: 1.12rem;
+      min-height: 3.4rem;
+      letter-spacing: .06em;
+      box-shadow: 0 0 0 1px rgba(240,193,75,.2), 0 8px 24px rgba(0,0,0,.25);
     }
     button.primary, a.btn.primary {
       background: linear-gradient(180deg, #6a5414, #2e240c);
@@ -72,39 +108,19 @@
       color: var(--gold2);
     }
     button:disabled { opacity: .45; cursor: not-allowed; }
-    .manage {
-      display: none;
-      margin-bottom: 1rem;
-      padding: .9rem 1rem;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: rgba(8, 12, 22, .55);
-    }
-    .manage.on { display: block; }
-    .manage .lab {
-      font-size: .8rem;
+    .hint-local {
+      font-size: .78rem;
       color: var(--soft);
-      margin-bottom: .45rem;
+      line-height: 1.45;
     }
-    .manage .path-row {
-      display: flex; flex-wrap: wrap; gap: .45rem;
-      align-items: center;
+    .hint-local.bad { color: var(--warn); }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      margin-bottom: .9rem;
     }
-    .manage input[type="text"] {
-      flex: 1 1 220px;
-      min-width: 0;
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(0,0,0,.35);
-      color: var(--ink);
-      border-radius: 8px;
-      padding: .55rem .7rem;
-      font-size: .86rem;
-      font-family: var(--font-num);
-    }
-    .manage .mini {
-      padding: .5rem .7rem;
-      font-size: .82rem;
-      border-radius: 8px;
+    .toolbar button, .toolbar a.btn {
+      padding: .55rem .8rem;
+      font-size: .88rem;
     }
     .crumbs {
       display: flex; flex-wrap: wrap; gap: .35rem;
@@ -129,7 +145,6 @@
       font-size: .8rem;
       letter-spacing: .08em;
       color: var(--soft);
-      text-transform: uppercase;
     }
     .folders {
       display: grid;
@@ -189,7 +204,6 @@
     }
     .item a {
       flex: 0 0 auto;
-      appearance: none;
       border: 1px solid rgba(240,193,75,.55);
       background: linear-gradient(180deg, #6a5414, #2e240c);
       color: var(--gold2);
@@ -215,6 +229,7 @@
       color: var(--gold2); padding: .55rem 1rem; border-radius: 999px;
       font-size: .85rem; opacity: 0; pointer-events: none;
       transition: opacity .2s ease; z-index: 20;
+      max-width: 90vw; text-align: center;
     }
     .toast.on { opacity: 1; }
     .foot {
@@ -228,34 +243,35 @@
 <body>
   <div class="wrap">
     <h1 class="brand">光影盟</h1>
-    <p class="tagline">课堂资料下载 · 先选文件夹，再下载其中的文件</p>
+    <p class="tagline">课堂资料下载 · 老师选文件夹，学生点文件下载</p>
+
+    <section class="pick-bar" aria-label="选择共享文件夹">
+      <div class="lab">① 老师先选共享文件夹</div>
+      <div class="cur">当前：<strong id="cur-folder">检测中…</strong></div>
+      <div class="pick-actions">
+        <button type="button" class="pick-main" id="btn-pick-folder">选择文件夹</button>
+        <button type="button" id="btn-share-open">打开当前文件夹</button>
+        <button type="button" id="btn-share-default">用默认「课堂资料」</button>
+      </div>
+      <div class="hint-local" id="pick-hint">点「选择文件夹」会弹出系统窗口，选中后下方自动列出文件。</div>
+    </section>
 
     <div class="toolbar">
-      <button type="button" class="primary" id="btn-refresh">刷新</button>
+      <button type="button" class="primary" id="btn-refresh">刷新列表</button>
       <button type="button" id="btn-up" disabled>上一级</button>
       <a class="btn" href="/launcher.html">返回启动台</a>
     </div>
 
-    <section class="manage" id="manage-panel">
-      <div class="lab">老师本机：指定共享根文件夹（学生只能浏览此目录内的内容）</div>
-      <div class="path-row">
-        <input type="text" id="share-folder-input" placeholder="/Users/你/Desktop/课件" autocomplete="off" spellcheck="false" />
-        <button type="button" class="mini primary" id="btn-share-save">保存</button>
-        <button type="button" class="mini" id="btn-share-default">默认</button>
-        <button type="button" class="mini" id="btn-share-open">打开</button>
-      </div>
-    </section>
-
     <nav class="crumbs" id="crumbs" aria-label="当前路径"></nav>
     <div class="meta" id="meta">正在读取…</div>
 
-    <div class="section-title" id="dirs-title" hidden>选择文件夹</div>
+    <div class="section-title" id="dirs-title" hidden>子文件夹（点进去查看）</div>
     <div class="folders" id="dirs"></div>
 
-    <div class="section-title" id="files-title" hidden>文件 · 点击下载</div>
+    <div class="section-title" id="files-title" hidden>② 文件列表 · 点击下载</div>
     <div class="list" id="list"></div>
 
-    <p class="foot">点文件夹进入后，下方会自动列出该目录里的文件。若打不开，请确认老师已开「一键上课」。</p>
+    <p class="foot">老师请用本机地址打开本页再选文件夹：http://127.0.0.1:3000/share.html<br>学生用启动台上的下载链接即可。</p>
   </div>
   <div class="toast" id="toast" role="status"></div>
 
@@ -267,17 +283,20 @@
     const dirsTitle = document.getElementById("dirs-title");
     const filesTitle = document.getElementById("files-title");
     const btnUp = document.getElementById("btn-up");
-    const managePanel = document.getElementById("manage-panel");
+    const curFolderEl = document.getElementById("cur-folder");
+    const pickHint = document.getElementById("pick-hint");
+    const btnPick = document.getElementById("btn-pick-folder");
     const toastEl = document.getElementById("toast");
     let currentPath = "";
     let parentPath = null;
+    let canManage = false;
     let toastTimer = null;
 
     function toast(msg) {
       toastEl.textContent = msg;
       toastEl.classList.add("on");
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toastEl.classList.remove("on"), 2400);
+      toastTimer = setTimeout(() => toastEl.classList.remove("on"), 2800);
     }
 
     function esc(s) {
@@ -309,6 +328,19 @@
       });
     }
 
+    function syncManageUi() {
+      btnPick.disabled = false;
+      document.getElementById("btn-share-open").disabled = false;
+      document.getElementById("btn-share-default").disabled = false;
+      if (canManage) {
+        pickHint.classList.remove("bad");
+        pickHint.textContent = "点「选择文件夹」会弹出系统窗口，选中后下方自动列出文件。";
+      } else {
+        pickHint.classList.add("bad");
+        pickHint.textContent = "当前不是老师本机。请在老师电脑浏览器打开 http://127.0.0.1:3000/share.html 再点「选择文件夹」。";
+      }
+    }
+
     async function loadList() {
       metaEl.textContent = "正在读取…";
       dirsEl.innerHTML = "";
@@ -319,20 +351,21 @@
         const q = currentPath ? `?path=${encodeURIComponent(currentPath)}` : "";
         const res = await fetch("/__gy/share/list" + q, { cache: "no-store" });
         const data = await res.json();
+        canManage = !!data.can_manage;
+        syncManageUi();
+        if (data.folder) curFolderEl.textContent = data.folder;
+
         if (!data.enabled) {
           metaEl.textContent = "共享已关闭";
-          listEl.innerHTML = '<div class="err">老师暂未开启课堂资料共享</div>';
+          listEl.innerHTML = '<div class="err">请先点上方「选择文件夹」开启共享</div>';
           btnUp.disabled = true;
           return;
         }
         if (data.ok === false) {
           metaEl.textContent = data.error || "读取失败";
-          listEl.innerHTML = `<div class="err">${esc(data.error || "无法打开该文件夹")}</div>`;
-          btnUp.disabled = data.parent == null && !currentPath;
-          if (data.parent != null || currentPath) {
-            parentPath = data.parent;
-            btnUp.disabled = false;
-          }
+          listEl.innerHTML = `<div class="err">${esc(data.error || "无法打开该文件夹")}<br>请重新点「选择文件夹」</div>`;
+          parentPath = data.parent;
+          btnUp.disabled = parentPath == null && !currentPath;
           renderCrumbs(currentPath);
           return;
         }
@@ -342,18 +375,10 @@
         btnUp.disabled = parentPath == null && !currentPath;
         renderCrumbs(currentPath);
 
-        if (data.can_manage) {
-          managePanel.classList.add("on");
-          const input = document.getElementById("share-folder-input");
-          if (input && document.activeElement !== input) input.value = data.folder || "";
-        } else {
-          managePanel.classList.remove("on");
-        }
-
         const dirs = data.dirs || [];
         const files = data.files || [];
         const here = currentPath ? currentPath : "根目录";
-        metaEl.innerHTML = `当前：<strong>${esc(here)}</strong> · 文件夹 <strong>${dirs.length}</strong> · 文件 <strong>${files.length}</strong>`;
+        metaEl.innerHTML = `当前浏览：<strong>${esc(here)}</strong> · 文件夹 <strong>${dirs.length}</strong> · 文件 <strong>${files.length}</strong>`;
 
         if (dirs.length) {
           dirsTitle.hidden = false;
@@ -371,8 +396,8 @@
         filesTitle.hidden = false;
         if (!files.length) {
           listEl.innerHTML = dirs.length
-            ? '<div class="empty">此文件夹下没有直接文件<br>请点上方文件夹进入查看</div>'
-            : '<div class="empty">这里还是空的<br>请老师把课件放进当前共享文件夹</div>';
+            ? '<div class="empty">此文件夹下没有直接文件<br>请点上方子文件夹进入，或点「选择文件夹」换一个目录</div>'
+            : '<div class="empty">这里还没有文件<br>请点上方金色按钮「选择文件夹」，或把课件放进当前目录后点刷新</div>';
         } else {
           listEl.innerHTML = files.map((f) => {
             const href = f.url || (`/__gy/share/download?path=${encodeURIComponent(f.path)}`);
@@ -403,20 +428,39 @@
       return data;
     }
 
+    btnPick.onclick = async () => {
+      btnPick.disabled = true;
+      btnPick.textContent = "请在弹出窗口里选择…";
+      toast("正在打开系统选文件夹窗口…");
+      try {
+        const res = await fetch("/__gy/share/pick", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 403) {
+          toast(data.error || "请用本机 127.0.0.1 打开本页");
+          return;
+        }
+        if (data.cancelled) {
+          toast("已取消选择");
+          return;
+        }
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "选择失败");
+        currentPath = "";
+        if (data.folder) curFolderEl.textContent = data.folder;
+        await loadList();
+        toast("已选择文件夹，文件列表已更新");
+      } catch (e) {
+        toast(String(e.message || e));
+      } finally {
+        btnPick.disabled = false;
+        btnPick.textContent = "选择文件夹";
+        syncManageUi();
+      }
+    };
+
     document.getElementById("btn-refresh").onclick = () => loadList();
     btnUp.onclick = () => {
       if (parentPath == null && !currentPath) return;
       setPath(parentPath == null ? "" : parentPath);
-    };
-    document.getElementById("btn-share-save").onclick = async () => {
-      const folder = (document.getElementById("share-folder-input").value || "").trim();
-      if (!folder) { toast("请填写本机文件夹绝对路径"); return; }
-      try {
-        await postShare({ folder });
-        currentPath = "";
-        await loadList();
-        toast("已保存共享文件夹");
-      } catch (e) { toast(String(e.message || e)); }
     };
     document.getElementById("btn-share-default").onclick = async () => {
       try {
@@ -431,7 +475,7 @@
         const res = await fetch("/__gy/share/open", { method: "POST" });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) throw new Error((data && data.error) || "无法打开");
-        toast("已打开文件夹");
+        toast("已打开当前文件夹");
       } catch (e) { toast(String(e.message || e)); }
     };
 

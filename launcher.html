@@ -216,6 +216,26 @@
     .share-actions a.btn, .share-actions button {
       min-height: 4.2rem;
     }
+    .share-panel .pick-main {
+      width: 100%;
+      margin-bottom: .65rem;
+      min-height: 3.6rem !important;
+      font-size: 1.15rem !important;
+      letter-spacing: .06em;
+      background: linear-gradient(180deg, #8a6a12, #3a2c0a) !important;
+      border-color: rgba(240,193,75,.85) !important;
+      color: var(--gold2) !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: .2rem;
+    }
+    .share-panel .pick-main .sub {
+      font-size: .75rem;
+      font-weight: 500;
+      color: rgba(255,227,154,.75);
+    }
   </style>
 </head>
 <body>
@@ -232,7 +252,11 @@
 
     <section class="share-panel" aria-label="课堂资料下载">
       <h2>课堂资料下载</h2>
-      <p class="hint">在下面指定本机文件夹（默认是项目里的「课堂资料」），把课件放进去；学生打开链接即可下载。</p>
+      <p class="hint">点金色大按钮选本机文件夹；选中后学生打开下方链接就能看到文件并下载。</p>
+      <button type="button" class="pick-main" id="btn-share-pick">
+        选择文件夹
+        <span class="sub">弹出系统窗口 · 选好后自动共享</span>
+      </button>
       <div class="path-row">
         <input type="text" id="share-folder-input" placeholder="/Users/你/Desktop/课件" autocomplete="off" spellcheck="false" />
         <button type="button" class="mini primary" id="btn-share-save">保存路径</button>
@@ -402,10 +426,34 @@
       return data;
     }
 
+    document.getElementById("btn-share-pick").onclick = async () => {
+      const btn = document.getElementById("btn-share-pick");
+      btn.disabled = true;
+      toast("正在打开系统选文件夹窗口…");
+      try {
+        const res = await fetch("/__gy/share/pick", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 403) {
+          toast(data.error || "请用本机 127.0.0.1 打开启动台");
+          return;
+        }
+        if (data.cancelled) {
+          toast("已取消选择");
+          return;
+        }
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "选择失败");
+        await refreshShare();
+        toast("已选择文件夹：" + (data.folder || ""));
+      } catch (e) {
+        toast(String(e.message || e));
+      } finally {
+        btn.disabled = false;
+      }
+    };
     document.getElementById("btn-share-save").onclick = async () => {
       const folder = (document.getElementById("share-folder-input").value || "").trim();
       if (!folder) {
-        toast("请填写本机文件夹绝对路径");
+        toast("请填写本机文件夹绝对路径，或点上方「选择文件夹」");
         return;
       }
       try {

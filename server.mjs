@@ -1121,6 +1121,57 @@ function openFolderInOs(folder) {
   else spawn("xdg-open", [dir], { detached: true, stdio: "ignore" }).unref();
 }
 
+/** 弹出系统「选择文件夹」对话框（仅老师本机） */
+function pickFolderNative() {
+  const plat = process.platform;
+  if (plat === "darwin") {
+    const script = [
+      'try',
+      '  set theFolder to choose folder with prompt "选择要分享给学生下载的文件夹"',
+      '  return POSIX path of theFolder',
+      'on error',
+      '  return ""',
+      'end try'
+    ].join("\n");
+    const out = execFileSync("osascript", ["-e", script], {
+      encoding: "utf8",
+      timeout: 300000,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    return String(out || "").trim().replace(/\/+$/, "");
+  }
+  if (plat === "win32") {
+    const ps = [
+      "Add-Type -AssemblyName System.Windows.Forms;",
+      "$d = New-Object System.Windows.Forms.FolderBrowserDialog;",
+      "$d.Description = '选择要分享给学生下载的文件夹';",
+      "$d.ShowNewFolderButton = $true;",
+      "if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $d.SelectedPath } else { '' }"
+    ].join(" ");
+    const out = execFileSync("powershell.exe", ["-NoProfile", "-Command", ps], {
+      encoding: "utf8",
+      timeout: 300000,
+      windowsHide: false
+    });
+    return String(out || "").trim().replace(/[\\/]+$/, "");
+  }
+  // Linux：优先 zenity，其次 kdialog
+  const tryCmd = (bin, args) => {
+    try {
+      const out = execFileSync(bin, args, { encoding: "utf8", timeout: 300000 });
+      return String(out || "").trim();
+    } catch (e) {
+      return "";
+    }
+  };
+  let picked = tryCmd("zenity", ["--file-selection", "--directory", "--title=选择要分享给学生下载的文件夹"]);
+  if (!picked) picked = tryCmd("kdialog", ["--getexistingdirectory", os.homedir(), "选择要分享给学生下载的文件夹"]);
+  if (!picked) {
+    throw new Error("当前系统没有可用的文件夹选择器（请安装 zenity，或手动填写路径）");
+  }
+  return picked.replace(/\/+$/, "");
+}
+
 function sharePublicInfo(hint) {
   const listed = listShareFiles();
   const base = (hint && (hint.phone_origin || hint.tunnel_origin || hint.fixed_origin))
@@ -1567,6 +1618,32 @@ const server = http.createServer(async (req, res) => {
       const cfg = loadShareConfig();
       openFolderInOs(cfg.folder);
       sendJson(res, 200, { ok: true, folder: cfg.folder });
+    } catch (e) {
+      sendJson(res, 400, { ok: false, error: String(e.message || e) });
+    }
+    return;
+  }
+
+  if (u.pathname === "/__gy/share/pick" && (req.method === "POST" || req.method === "GET")) {
+    if (!isLocalAdmin(req)) {
+      sendJson(res, 403, {
+        ok: false,
+        error: "请用老师电脑本机打开：http://127.0.0.1:" + PORT + "/share.html ，再点「选择文件夹」"
+      });
+      return;
+    }
+    try {
+      const picked = pickFolderNative();
+      if (!picked) {
+        sendJson(res, 200, { ok: false, cancelled: true, error: "已取消选择" });
+        return;
+      }
+      const cfg = saveShareConfig({ folder: picked, enabled: true });
+      sendJson(res, 200, {
+        ok: true,
+        folder: cfg.folder,
+        ...sharePublicInfo(writeOriginHint())
+      });
     } catch (e) {
       sendJson(res, 400, { ok: false, error: String(e.message || e) });
     }
