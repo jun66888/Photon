@@ -14497,8 +14497,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (saved && saved >= 160) return Math.min(720, saved);
     return defaultQrSize();
   }
+  function qrGraphicPresent(host) {
+    if (!host) return false;
+    return !!(host.querySelector("canvas, img, svg, table"));
+  }
   function paintQrInto(canvasHost, url, px) {
     canvasHost.innerHTML = "";
+    const text = String(url || "").trim();
+    if (!text) {
+      canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#333;line-height:1.5">地址为空，无法生成二维码</div>`;
+      return Promise.resolve(false);
+    }
     const drawPx = Math.max(180, Math.floor(Number(px) || 280));
     const opts = {
       width: drawPx,
@@ -14506,20 +14515,47 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       errorCorrectionLevel: "M",
       color: { dark: "#000000", light: "#ffffff" }
     };
+    const finishOk = () => {
+      const img = canvasHost.querySelector("img");
+      const cvs = canvasHost.querySelector("canvas");
+      if (img && cvs) { cvs.style.display = "none"; img.style.display = "block"; }
+      return qrGraphicPresent(canvasHost);
+    };
     // 优先本地 npm qrcode UMD（toCanvas / toDataURL）
     const qrNpm = (window.QRCode && typeof window.QRCode.toCanvas === "function")
       ? window.QRCode
       : null;
+    const paintWithCtor = () => {
+      const QRCodeCtor = window.QRCodeJS
+        || ((typeof window.QRCode === "function" && window.QRCode.CorrectLevel) ? window.QRCode : null);
+      if (!QRCodeCtor || !QRCodeCtor.CorrectLevel) return Promise.resolve(false);
+      try {
+        canvasHost.innerHTML = "";
+        // eslint-disable-next-line no-new
+        new QRCodeCtor(canvasHost, {
+          text,
+          width: drawPx,
+          height: drawPx,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCodeCtor.CorrectLevel.M
+        });
+        return Promise.resolve(finishOk());
+      } catch (err) {
+        console.warn("QRCodejs failed", err);
+        return Promise.resolve(false);
+      }
+    };
     if (qrNpm) {
       const canvas = document.createElement("canvas");
       canvas.width = drawPx;
       canvas.height = drawPx;
       canvasHost.appendChild(canvas);
-      return qrNpm.toCanvas(canvas, url, opts).then(() => true).catch((err) => {
+      return qrNpm.toCanvas(canvas, text, opts).then(() => true).catch((err) => {
         console.warn("QR toCanvas failed", err);
-        canvas.remove();
+        try { canvas.remove(); } catch (e) { /* ignore */ }
         if (typeof qrNpm.toDataURL === "function") {
-          return qrNpm.toDataURL(url, opts).then((dataUrl) => {
+          return qrNpm.toDataURL(text, opts).then((dataUrl) => {
             const img = document.createElement("img");
             img.alt = "二维码";
             img.width = drawPx;
@@ -14527,13 +14563,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             img.src = dataUrl;
             canvasHost.appendChild(img);
             return true;
-          }).catch(() => false);
+          }).catch(() => paintWithCtor());
         }
-        return false;
+        return paintWithCtor();
       });
     }
-    if (window.QRCode && typeof window.QRCode.toDataURL === "function") {
-      return window.QRCode.toDataURL(url, opts).then((dataUrl) => {
+    if (window.QRCode && typeof window.QRCode.toDataURL === "function" && !window.QRCode.CorrectLevel) {
+      return window.QRCode.toDataURL(text, opts).then((dataUrl) => {
         const img = document.createElement("img");
         img.alt = "二维码";
         img.width = drawPx;
@@ -14543,37 +14579,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         return true;
       }).catch((err) => {
         console.warn("QR toDataURL failed", err);
-        return false;
+        return paintWithCtor();
       });
     }
-    // 回退 davidshimjs/qrcodejs（加载时保存在 QRCodeJS）
-    const QRCodeCtor = window.QRCodeJS
-      || ((typeof window.QRCode === "function" && window.QRCode.CorrectLevel) ? window.QRCode : null);
-    if (QRCodeCtor && QRCodeCtor.CorrectLevel) {
-      try {
-        // eslint-disable-next-line no-new
-        new QRCodeCtor(canvasHost, {
-          text: url,
-          width: drawPx,
-          height: drawPx,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCodeCtor.CorrectLevel.M
-        });
-        const img = canvasHost.querySelector("img");
-        const cvs = canvasHost.querySelector("canvas");
-        if (img && cvs) { cvs.style.display = "none"; img.style.display = "block"; }
-        return Promise.resolve(true);
-      } catch (err) {
-        console.warn("QRCodejs failed", err);
-        return Promise.resolve(false);
-      }
-    }
-    // 本地库均失败时：不请求外网，提示手输 6 位码
-    canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#333;line-height:1.5">
-      本地二维码库未能绘制<br>请学生手输投屏上的 <b>6 位签到码</b>
-    </div>`;
-    return Promise.resolve(false);
+    return paintWithCtor().then((ok) => {
+      if (ok) return true;
+      // 本地库均失败时：不请求外网，提示手输 6 位码
+      canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#333;line-height:1.5">
+        本地二维码库未能绘制<br>请学生手输投屏上的 <b>6 位签到码</b>
+      </div>`;
+      return false;
+    });
   }
 
   function renderQr(host, url, sizeOrKey) {
@@ -14714,9 +14730,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (input) input.value = getPublicOriginOverride() || "";
       paint(size);
     };
-    const showWaitCard = (html) => {
-      canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#333;line-height:1.55;max-width:22rem">${html}</div>`;
+    /** 只更新提示，绝不擦掉已画出的二维码 */
+    const setBindStatus = (htmlOrText, isOk = false) => {
+      if (hintEl) {
+        hintEl.className = "qr-public-hint" + (isOk ? " ok" : "");
+        hintEl.innerHTML = htmlOrText;
+      }
       fail.style.display = "none";
+    };
+    /** 立刻画出当前地址的二维码（公网未就绪时也先显示，避免白屏） */
+    const paintNow = () => {
+      link.href = currentUrl;
+      link.textContent = currentUrl;
+      if (input && !input.matches(":focus")) input.value = getPublicOriginOverride() || "";
+      return paint(size);
     };
     const applyOrigin = (origin, note) => {
       if (!origin || !isPhoneReachableOrigin(origin)) return false;
@@ -14766,12 +14793,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       setQrBindMode("public");
       syncModeButtons();
       stopTunnelPoll();
-      setPublicOriginOverride("");
-      showWaitCard("正在绑定公网隧道…<br>约 15–45 秒<br><span style='font-size:.85em;opacity:.8'>老师电脑需能上网；失败会自动换备用通道</span>");
-      if (hintEl) {
-        hintEl.className = "qr-public-hint";
-        hintEl.textContent = "正在绑定公网…";
-      }
+      // 先保留并画出当前码，再后台换公网——避免「一直空白」
+      paintNow();
+      setBindStatus("正在绑定公网隧道（约 15–45 秒）…下方先显示当前码，就绪后自动换成流量地址");
       try {
         // 每次点「绑定公网」都主动重建，避免卡在半失败状态
         if (restart) {
@@ -14781,14 +14805,25 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             body: JSON.stringify({ restart: true })
           }).then((r) => r.json()).catch(() => ({}));
           const d0 = tunnelDetailText(restarted);
-          if (d0 && hintEl) hintEl.textContent = d0;
+          if (d0) setBindStatus(esc(d0));
         }
+        // 绑定过程中先尝试画局域网码，保证投屏上始终有码
+        try {
+          _netHintCache = null;
+          const hint = await fetchNetOriginHint();
+          const lan = pickLanOriginFromHint(hint) || (isLanHttpOrigin(location.origin) ? location.origin.replace(/\/$/, "") : "");
+          if (lan && !isPublicTunnelHost(originHostname(getPublicOriginOverride() || currentUrl))) {
+            currentUrl = lan.replace(/\/$/, "") + "/?mode=checkin&entry=1";
+            paintNow();
+          }
+        } catch (e) { /* ignore */ }
+
         const origin = await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 50000 });
         if (applyOrigin(origin, "已绑定公网：")) {
           persistOrigin(origin);
           return;
         }
-        // 继续轮询，并展示服务端隧道进度
+        // 继续轮询，并展示服务端隧道进度（不再擦掉二维码）
         let n = 0;
         let lastDetail = "";
         tunnelTimer = setInterval(() => {
@@ -14797,13 +14832,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             const d = tunnelDetailText(st);
             if (d && d !== lastDetail) {
               lastDetail = d;
-              if (hintEl) {
-                hintEl.className = "qr-public-hint";
-                hintEl.textContent = d;
-              }
-              if (st && st.tunnel_status && /downloading|starting|restarting/i.test(String(st.tunnel_status.state || ""))) {
-                showWaitCard("正在建立公网地址…<br><span style='font-size:.85em;opacity:.85'>" + esc(d) + "</span>");
-              }
+              setBindStatus("建立中：" + esc(d));
             }
             const o = pickTunnelOriginFromHint(st) || pickTunnelOriginFromHint(st && st.hint);
             if (o && applyOrigin(o, "已绑定公网：")) {
@@ -14814,26 +14843,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           if (n > 40) {
             stopTunnelPoll();
             const tip = lastDetail
-              ? ("公网仍未就绪：" + lastDetail)
-              : "公网仍未就绪。请确认电脑能上网后再点「绑定公网」。学生可先手输 6 位码。";
-            if (hintEl) hintEl.textContent = tip;
-            showWaitCard("公网地址未就绪<br>请再点「绑定公网」<br>或改用「绑定局域网」/ 手输 <b>6 位签到码</b>");
+              ? ("公网仍未就绪：" + lastDetail + " · 可改用「绑定局域网」或手输 6 位码")
+              : "公网仍未就绪。可再点「绑定公网」，或改用「绑定局域网」/ 手输 6 位码。";
+            setBindStatus(esc(tip));
+            paintNow();
           }
         }, 2000);
       } catch (e) {
-        if (hintEl) hintEl.textContent = "绑定公网失败：请确认「启动环境」窗口开着且电脑能上网";
-        showWaitCard("绑定失败<br>请重启「启动环境」后再点「绑定公网」");
+        setBindStatus("绑定公网失败：请确认「启动环境」窗口开着且电脑能上网");
+        paintNow();
       }
     };
     const bindLan = async () => {
       setQrBindMode("lan");
       syncModeButtons();
       stopTunnelPoll();
-      if (hintEl) {
-        hintEl.className = "qr-public-hint";
-        hintEl.textContent = "正在绑定局域网地址…";
-      }
-      showWaitCard("正在读取教室网卡地址…");
+      setBindStatus("正在绑定局域网地址…");
+      paintNow();
       try {
         // 先尝试服务端重绑当前网卡
         const reb = await fetch("/__gy/classroom", {
@@ -14855,23 +14881,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           persistOrigin(origin);
           return;
         }
-        if (hintEl) hintEl.textContent = "未检测到局域网（192.168/10）。请先连教室 Wi‑Fi，再点「绑定局域网」。";
-        showWaitCard("未检测到局域网地址<br>请连教室 Wi‑Fi 后重试");
+        setBindStatus("未检测到局域网（192.168/10）。请先连教室 Wi‑Fi，再点「绑定局域网」。");
+        paintNow();
       } catch (e) {
-        if (hintEl) hintEl.textContent = "绑定局域网失败：请确认「启动环境」已运行";
+        setBindStatus("绑定局域网失败：请确认「启动环境」已运行");
+        paintNow();
       }
     };
 
-    // 按当前模式初始化
+    // 先立刻画码，再按模式后台绑定——杜绝空白等待
     syncModeButtons();
+    paintNow();
     if (bindMode === "public") {
       if (isPublicTunnelHost(originHostname(currentUrl)) || isPublicTunnelHost(originHostname(overrideNow))) {
         if (overrideNow) setPublicOriginOverride(overrideNow);
         rebuildFromOrigin();
-        // 若其实还不是公网，再走绑定
-        if (!isPublicTunnelHost(originHostname(getPublicOriginOverride() || currentUrl))) bindPublic();
+        if (!isPublicTunnelHost(originHostname(getPublicOriginOverride() || currentUrl))) {
+          bindPublic({ restart: false });
+        }
       } else {
-        bindPublic();
+        bindPublic({ restart: false });
       }
     } else {
       const lanNow = (overrideNow && isLanHttpOrigin(overrideNow)) ? overrideNow : "";
@@ -15112,12 +15141,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const qrHost = document.getElementById("checkin-qr");
       if (!qrHost) return;
       if (active && code !== "------") {
-        const origin = getPublicOriginOverride();
-        const q = `?mode=checkin&code=${code}`;
-        const url = origin ? publicPageUrl(q) : `${location.origin.replace(/\/$/, "")}/${q}`;
+        const url = publicPageUrl(`?mode=checkin&code=${code}`);
         // 本场直达码：只画图，不再重复绑定条
         paintBareCheckinQr(qrHost, url, "checkin-qr");
       } else {
+        _bareQrUrlPainted = "";
         qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333;text-align:center;line-height:1.5">开启签到后生成本场直达码<br><span style="opacity:.8">也可只用左侧固定入口 + 手输签到码</span></div>';
       }
     });
@@ -15127,7 +15155,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function paintBareCheckinQr(host, url, key) {
     if (!host) return;
     const link0 = host.querySelector(".qr-link-line");
-    if (_bareQrUrlPainted === url && link0 && host.querySelector("canvas, img")) return;
+    if (_bareQrUrlPainted === url && link0 && qrGraphicPresent(host)) return;
     _bareQrUrlPainted = url;
     const size = getQrSize(key);
     host.classList.add("qr-stage");
@@ -15146,7 +15174,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     link.rel = "noopener";
     link.textContent = url;
     host.appendChild(link);
-    paintQrInto(canvasHost, url, size);
+    paintQrInto(canvasHost, url, size).then((ok) => {
+      if (!ok) _bareQrUrlPainted = ""; // 失败时允许下次重试
+    });
   }
 
   function peakWorkTitle(p) {
@@ -16832,11 +16862,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ? "固定入口（公网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用"
         : isLanHttpOrigin(origin)
           ? "固定入口（局域网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用"
-          : "请先点「绑定公网」或「绑定局域网」，固定入口才会指向手机可达地址";
+          : "下方会先显示当前码；点「绑定公网/局域网」后地址会换成手机可扫的";
     }
-    // 同一地址且已有完整绑定条/画布时不重绘，避免名单刷新时闪烁
+    // 同一地址且已真正画出二维码时不重绘；若只有绑定条没有图形，必须重画
     const link0 = host.querySelector(".qr-link-line");
-    if (_fixedQrUrlPainted === url && link0 && host.querySelector("#qr-bind-public")) return;
+    if (_fixedQrUrlPainted === url && link0 && host.querySelector("#qr-bind-public") && qrGraphicPresent(host)) return;
     _fixedQrUrlPainted = url;
     renderQr(host, url, "checkin-fixed-qr");
   }
@@ -17217,7 +17247,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (act === "camp-attrs") { openCampAttrsModal(btn?.dataset?.camp || "red"); return; }
     if (act === "insert-edit-box") { insertEditBox(); return; }
-    if (act === "goto-checkin") { showScreen("teacher"); setTeacherView("checkin"); startCheckinRefreshLoop(); return; }
+    if (act === "goto-checkin") {
+      showScreen("teacher");
+      // 强制允许重绘，避免上次绑定等待把二维码卡成空白
+      _fixedQrUrlPainted = "";
+      _bareQrUrlPainted = "";
+      setTeacherView("checkin");
+      startCheckinRefreshLoop();
+      return;
+    }
     if (act === "goto-vote") {
       if (!guardPlayFeature("standard", "投票")) return;
       showScreen("teacher"); setTeacherView("vote"); startVoteLiveLoop(); return;
