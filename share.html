@@ -31,7 +31,7 @@
         linear-gradient(165deg, var(--bg1), var(--bg0) 55%, #070a12);
     }
     .wrap {
-      width: min(720px, 94vw);
+      width: min(760px, 94vw);
       margin: 0 auto;
       padding: 1.8rem 0 3rem;
     }
@@ -45,14 +45,14 @@
       line-height: 1.1;
     }
     .tagline {
-      margin: .5rem 0 1.2rem;
+      margin: .5rem 0 1.1rem;
       color: var(--soft);
       font-size: .95rem;
       line-height: 1.5;
     }
     .toolbar {
       display: flex; flex-wrap: wrap; gap: .5rem;
-      margin-bottom: 1rem;
+      margin-bottom: .9rem;
     }
     button, a.btn {
       appearance: none;
@@ -71,16 +71,101 @@
       border-color: rgba(240,193,75,.65);
       color: var(--gold2);
     }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .manage {
+      display: none;
+      margin-bottom: 1rem;
+      padding: .9rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(8, 12, 22, .55);
+    }
+    .manage.on { display: block; }
+    .manage .lab {
+      font-size: .8rem;
+      color: var(--soft);
+      margin-bottom: .45rem;
+    }
+    .manage .path-row {
+      display: flex; flex-wrap: wrap; gap: .45rem;
+      align-items: center;
+    }
+    .manage input[type="text"] {
+      flex: 1 1 220px;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.35);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: .55rem .7rem;
+      font-size: .86rem;
+      font-family: var(--font-num);
+    }
+    .manage .mini {
+      padding: .5rem .7rem;
+      font-size: .82rem;
+      border-radius: 8px;
+    }
+    .crumbs {
+      display: flex; flex-wrap: wrap; gap: .35rem;
+      align-items: center;
+      margin-bottom: .75rem;
+      font-size: .86rem;
+    }
+    .crumbs button {
+      padding: .35rem .65rem;
+      font-size: .82rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+    }
+    .crumbs button.on {
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      border-color: rgba(240,193,75,.65);
+      color: var(--gold2);
+    }
+    .crumbs .sep { color: var(--soft); opacity: .7; }
+    .section-title {
+      margin: .35rem 0 .55rem;
+      font-size: .8rem;
+      letter-spacing: .08em;
+      color: var(--soft);
+      text-transform: uppercase;
+    }
+    .folders {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .folder {
+      appearance: none;
+      border: 1px solid rgba(94, 200, 255, .35);
+      background: linear-gradient(180deg, rgba(40, 90, 120, .42), rgba(8, 14, 26, .55));
+      color: #cfe8ff;
+      border-radius: 12px;
+      padding: .85rem .8rem;
+      text-align: left;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 3.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+    .folder:hover { border-color: rgba(240,193,75,.55); }
+    .folder .sub {
+      font-size: .72rem;
+      font-weight: 500;
+      color: var(--soft);
+    }
     .meta {
       color: var(--soft);
       font-size: .82rem;
       margin-bottom: .85rem;
     }
     .meta strong { color: var(--gold2); font-weight: 600; }
-    .list {
-      display: grid;
-      gap: .55rem;
-    }
+    .list { display: grid; gap: .55rem; }
     .item {
       display: flex;
       align-items: center;
@@ -116,7 +201,7 @@
       white-space: nowrap;
     }
     .empty, .err {
-      padding: 1.4rem 1rem;
+      padding: 1.2rem 1rem;
       border: 1px dashed rgba(255,255,255,.18);
       border-radius: 12px;
       color: var(--soft);
@@ -124,6 +209,14 @@
       line-height: 1.55;
     }
     .err { color: var(--warn); border-color: rgba(255,176,189,.35); }
+    .toast {
+      position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%);
+      background: rgba(10,14,24,.92); border: 1px solid var(--line);
+      color: var(--gold2); padding: .55rem 1rem; border-radius: 999px;
+      font-size: .85rem; opacity: 0; pointer-events: none;
+      transition: opacity .2s ease; z-index: 20;
+    }
+    .toast.on { opacity: 1; }
     .foot {
       margin-top: 1.2rem;
       color: var(--soft);
@@ -135,18 +228,57 @@
 <body>
   <div class="wrap">
     <h1 class="brand">光影盟</h1>
-    <p class="tagline">课堂资料下载 · 点文件即可保存到手机或电脑</p>
+    <p class="tagline">课堂资料下载 · 先选文件夹，再下载其中的文件</p>
+
     <div class="toolbar">
-      <button type="button" class="primary" id="btn-refresh">刷新列表</button>
+      <button type="button" class="primary" id="btn-refresh">刷新</button>
+      <button type="button" id="btn-up" disabled>上一级</button>
       <a class="btn" href="/launcher.html">返回启动台</a>
     </div>
-    <div class="meta" id="meta">正在读取资料列表…</div>
+
+    <section class="manage" id="manage-panel">
+      <div class="lab">老师本机：指定共享根文件夹（学生只能浏览此目录内的内容）</div>
+      <div class="path-row">
+        <input type="text" id="share-folder-input" placeholder="/Users/你/Desktop/课件" autocomplete="off" spellcheck="false" />
+        <button type="button" class="mini primary" id="btn-share-save">保存</button>
+        <button type="button" class="mini" id="btn-share-default">默认</button>
+        <button type="button" class="mini" id="btn-share-open">打开</button>
+      </div>
+    </section>
+
+    <nav class="crumbs" id="crumbs" aria-label="当前路径"></nav>
+    <div class="meta" id="meta">正在读取…</div>
+
+    <div class="section-title" id="dirs-title" hidden>选择文件夹</div>
+    <div class="folders" id="dirs"></div>
+
+    <div class="section-title" id="files-title" hidden>文件 · 点击下载</div>
     <div class="list" id="list"></div>
-    <p class="foot">若打不开，请确认老师已开「一键上课」，并尽量连教室 Wi‑Fi；也可用老师投屏上的扫码/公网地址打开本页。</p>
+
+    <p class="foot">点文件夹进入后，下方会自动列出该目录里的文件。若打不开，请确认老师已开「一键上课」。</p>
   </div>
+  <div class="toast" id="toast" role="status"></div>
+
   <script>
     const listEl = document.getElementById("list");
+    const dirsEl = document.getElementById("dirs");
     const metaEl = document.getElementById("meta");
+    const crumbsEl = document.getElementById("crumbs");
+    const dirsTitle = document.getElementById("dirs-title");
+    const filesTitle = document.getElementById("files-title");
+    const btnUp = document.getElementById("btn-up");
+    const managePanel = document.getElementById("manage-panel");
+    const toastEl = document.getElementById("toast");
+    let currentPath = "";
+    let parentPath = null;
+    let toastTimer = null;
+
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("on");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("on"), 2400);
+    }
 
     function esc(s) {
       return String(s ?? "").replace(/[&<>"']/g, (c) => ({
@@ -154,44 +286,160 @@
       })[c]);
     }
 
+    function setPath(path) {
+      currentPath = path == null ? "" : String(path);
+      const url = new URL(location.href);
+      if (currentPath) url.searchParams.set("path", currentPath);
+      else url.searchParams.delete("path");
+      history.replaceState(null, "", url.pathname + url.search);
+      loadList();
+    }
+
+    function renderCrumbs(path) {
+      const parts = String(path || "").split("/").filter(Boolean);
+      let html = `<button type="button" data-path="" class="${parts.length ? "" : "on"}">全部</button>`;
+      let acc = "";
+      parts.forEach((p, i) => {
+        acc = acc ? `${acc}/${p}` : p;
+        html += `<span class="sep">/</span><button type="button" data-path="${esc(acc)}" class="${i === parts.length - 1 ? "on" : ""}">${esc(p)}</button>`;
+      });
+      crumbsEl.innerHTML = html;
+      crumbsEl.querySelectorAll("button[data-path]").forEach((btn) => {
+        btn.onclick = () => setPath(btn.getAttribute("data-path") || "");
+      });
+    }
+
     async function loadList() {
-      metaEl.textContent = "正在读取资料列表…";
+      metaEl.textContent = "正在读取…";
+      dirsEl.innerHTML = "";
       listEl.innerHTML = "";
+      dirsTitle.hidden = true;
+      filesTitle.hidden = true;
       try {
-        const res = await fetch("/__gy/share/list", { cache: "no-store" });
+        const q = currentPath ? `?path=${encodeURIComponent(currentPath)}` : "";
+        const res = await fetch("/__gy/share/list" + q, { cache: "no-store" });
         const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error((data && data.error) || "读取失败");
         if (!data.enabled) {
-          metaEl.innerHTML = "共享已关闭";
+          metaEl.textContent = "共享已关闭";
           listEl.innerHTML = '<div class="err">老师暂未开启课堂资料共享</div>';
+          btnUp.disabled = true;
           return;
         }
+        if (data.ok === false) {
+          metaEl.textContent = data.error || "读取失败";
+          listEl.innerHTML = `<div class="err">${esc(data.error || "无法打开该文件夹")}</div>`;
+          btnUp.disabled = data.parent == null && !currentPath;
+          if (data.parent != null || currentPath) {
+            parentPath = data.parent;
+            btnUp.disabled = false;
+          }
+          renderCrumbs(currentPath);
+          return;
+        }
+
+        currentPath = data.path || "";
+        parentPath = data.parent;
+        btnUp.disabled = parentPath == null && !currentPath;
+        renderCrumbs(currentPath);
+
+        if (data.can_manage) {
+          managePanel.classList.add("on");
+          const input = document.getElementById("share-folder-input");
+          if (input && document.activeElement !== input) input.value = data.folder || "";
+        } else {
+          managePanel.classList.remove("on");
+        }
+
+        const dirs = data.dirs || [];
         const files = data.files || [];
-        metaEl.innerHTML = `共 <strong>${files.length}</strong> 个文件` +
-          (data.is_default ? " · 默认文件夹「课堂资料」" : "");
-        if (!files.length) {
-          listEl.innerHTML = '<div class="empty">文件夹还是空的<br>请老师把课件放进共享文件夹后再刷新</div>';
-          return;
+        const here = currentPath ? currentPath : "根目录";
+        metaEl.innerHTML = `当前：<strong>${esc(here)}</strong> · 文件夹 <strong>${dirs.length}</strong> · 文件 <strong>${files.length}</strong>`;
+
+        if (dirs.length) {
+          dirsTitle.hidden = false;
+          dirsEl.innerHTML = dirs.map((d) =>
+            `<button type="button" class="folder" data-path="${esc(d.path)}">
+              <span>${esc(d.name)}</span>
+              <span class="sub">进入查看文件</span>
+            </button>`
+          ).join("");
+          dirsEl.querySelectorAll("button.folder").forEach((btn) => {
+            btn.onclick = () => setPath(btn.getAttribute("data-path") || "");
+          });
         }
-        listEl.innerHTML = files.map((f) => {
-          const href = f.url || (`/__gy/share/download?path=${encodeURIComponent(f.path)}`);
-          return `<div class="item">
-            <div>
-              <div class="name">${esc(f.path)}</div>
-              <div class="sub">${esc(f.size_label || "")}</div>
-            </div>
-            <a href="${esc(href)}" download="${esc(f.name)}">下载</a>
-          </div>`;
-        }).join("");
+
+        filesTitle.hidden = false;
+        if (!files.length) {
+          listEl.innerHTML = dirs.length
+            ? '<div class="empty">此文件夹下没有直接文件<br>请点上方文件夹进入查看</div>'
+            : '<div class="empty">这里还是空的<br>请老师把课件放进当前共享文件夹</div>';
+        } else {
+          listEl.innerHTML = files.map((f) => {
+            const href = f.url || (`/__gy/share/download?path=${encodeURIComponent(f.path)}`);
+            return `<div class="item">
+              <div>
+                <div class="name">${esc(f.name)}</div>
+                <div class="sub">${esc(f.size_label || "")}</div>
+              </div>
+              <a href="${esc(href)}" download="${esc(f.name)}">下载</a>
+            </div>`;
+          }).join("");
+        }
       } catch (e) {
         metaEl.textContent = "无法连接课堂服务";
         listEl.innerHTML = '<div class="err">请确认老师电脑上「一键上课」窗口仍开着，然后点刷新</div>';
+        btnUp.disabled = true;
       }
     }
 
-    document.getElementById("btn-refresh").onclick = loadList;
+    async function postShare(body) {
+      const res = await fetch("/__gy/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {})
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error((data && data.error) || "保存失败");
+      return data;
+    }
+
+    document.getElementById("btn-refresh").onclick = () => loadList();
+    btnUp.onclick = () => {
+      if (parentPath == null && !currentPath) return;
+      setPath(parentPath == null ? "" : parentPath);
+    };
+    document.getElementById("btn-share-save").onclick = async () => {
+      const folder = (document.getElementById("share-folder-input").value || "").trim();
+      if (!folder) { toast("请填写本机文件夹绝对路径"); return; }
+      try {
+        await postShare({ folder });
+        currentPath = "";
+        await loadList();
+        toast("已保存共享文件夹");
+      } catch (e) { toast(String(e.message || e)); }
+    };
+    document.getElementById("btn-share-default").onclick = async () => {
+      try {
+        await postShare({ use_default: true });
+        currentPath = "";
+        await loadList();
+        toast("已改回默认「课堂资料」");
+      } catch (e) { toast(String(e.message || e)); }
+    };
+    document.getElementById("btn-share-open").onclick = async () => {
+      try {
+        const res = await fetch("/__gy/share/open", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "无法打开");
+        toast("已打开文件夹");
+      } catch (e) { toast(String(e.message || e)); }
+    };
+
+    try {
+      currentPath = new URL(location.href).searchParams.get("path") || "";
+    } catch (e) { currentPath = ""; }
     loadList();
-    setInterval(loadList, 15000);
+    setInterval(() => loadList(), 20000);
   </script>
 </body>
 </html>

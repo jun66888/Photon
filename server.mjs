@@ -914,15 +914,16 @@ function resolveUnderShareRoot(relPath) {
   const cfg = loadShareConfig();
   if (!cfg.enabled) return null;
   const root = path.resolve(cfg.folder);
-  const raw = String(relPath || "").replace(/\\/g, "/");
-  if (!raw || raw.includes("\0")) return null;
+  const raw = String(relPath || "").replace(/\\/g, "/").trim();
+  if (raw.includes("\0")) return null;
   const parts = raw.split("/").filter((p) => p && p !== ".");
   if (parts.some((p) => p === "..")) return null;
-  const abs = path.normalize(path.join(root, ...parts));
+  const abs = parts.length ? path.normalize(path.join(root, ...parts)) : root;
   if (abs !== root && !abs.startsWith(root + path.sep)) return null;
-  return { root, abs, rel: parts.join("/") };
+  return { root, abs, rel: parts.join("/"), enabled: cfg.enabled, is_default: cfg.is_default };
 }
 
+/** 递归统计共享根下文件数（启动台徽标用） */
 function listShareFiles(maxDepth = 3) {
   const cfg = loadShareConfig();
   const root = path.resolve(cfg.folder);
@@ -953,6 +954,121 @@ function listShareFiles(maxDepth = 3) {
   };
   if (cfg.enabled) walk(root, "", 0);
   return { folder: root, enabled: cfg.enabled, is_default: cfg.is_default, files };
+}
+
+/** 列出某一层目录：子文件夹 + 当前层文件（供下载页点选文件夹） */
+function listShareDir(relPath = "") {
+  const cfg = loadShareConfig();
+  if (!cfg.enabled) {
+    return {
+      ok: false,
+      enabled: false,
+      folder: cfg.folder,
+      is_default: cfg.is_default,
+      path: "",
+      parent: null,
+      dirs: [],
+      files: [],
+      error: "共享未开启"
+    };
+  }
+  const resolved = resolveUnderShareRoot(relPath);
+  if (!resolved) {
+    return {
+      ok: false,
+      enabled: true,
+      folder: cfg.folder,
+      is_default: cfg.is_default,
+      path: String(relPath || ""),
+      parent: null,
+      dirs: [],
+      files: [],
+      error: "路径无效"
+    };
+  }
+  let st;
+  try { st = fs.statSync(resolved.abs); } catch (e) {
+    return {
+      ok: false,
+      enabled: true,
+      folder: cfg.folder,
+      is_default: cfg.is_default,
+      path: resolved.rel,
+      parent: null,
+      dirs: [],
+      files: [],
+      error: "文件夹不存在"
+    };
+  }
+  if (!st.isDirectory()) {
+    return {
+      ok: false,
+      enabled: true,
+      folder: cfg.folder,
+      is_default: cfg.is_default,
+      path: resolved.rel,
+      parent: null,
+      dirs: [],
+      files: [],
+      error: "不是文件夹"
+    };
+  }
+  let entries = [];
+  try { entries = fs.readdirSync(resolved.abs, { withFileTypes: true }); } catch (e) {
+    return {
+      ok: false,
+      enabled: true,
+      folder: cfg.folder,
+      is_default: cfg.is_default,
+      path: resolved.rel,
+      parent: parentRel(resolved.rel),
+      dirs: [],
+      files: [],
+      error: "无法读取文件夹"
+    };
+  }
+  entries.sort((a, b) => {
+    if (a.isDirectory() !== b.isDirectory()) return a.isDirectory() ? -1 : 1;
+    return a.name.localeCompare(b.name, "zh");
+  });
+  const dirs = [];
+  const files = [];
+  for (const ent of entries) {
+    if (ent.name.startsWith(".")) continue;
+    const childRel = resolved.rel ? `${resolved.rel}/${ent.name}` : ent.name;
+    const childAbs = path.join(resolved.abs, ent.name);
+    let cst;
+    try { cst = fs.statSync(childAbs); } catch (e) { continue; }
+    if (cst.isDirectory()) {
+      dirs.push({ name: ent.name, path: childRel });
+    } else if (cst.isFile()) {
+      files.push({
+        name: ent.name,
+        path: childRel,
+        size: cst.size,
+        mtime: cst.mtimeMs,
+        size_label: formatBytes(cst.size),
+        url: `/__gy/share/download?path=${encodeURIComponent(childRel)}`
+      });
+    }
+  }
+  return {
+    ok: true,
+    enabled: true,
+    folder: cfg.folder,
+    is_default: cfg.is_default,
+    path: resolved.rel,
+    parent: parentRel(resolved.rel),
+    dirs,
+    files
+  };
+}
+
+function parentRel(rel) {
+  const parts = String(rel || "").split("/").filter(Boolean);
+  if (!parts.length) return null;
+  parts.pop();
+  return parts.join("/");
 }
 
 function formatBytes(n) {
@@ -1378,7 +1494,10 @@ const server = http.createServer(async (req, res) => {
   // ---- 课堂资料共享：老师指定本机文件夹，学生下载 ----
   if (u.pathname === "/__gy/share") {
     if (req.method === "GET") {
-      sendJson(res, 200, sharePublicInfo(writeOriginHint()));
+      sendJson(res, 200, {
+        ...sharePublicInfo(writeOriginHint()),
+        can_manage: isLocalAdmin(req)
+      });
       return;
     }
     if (req.method === "POST" || req.method === "PUT") {
@@ -1410,17 +1529,31 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (u.pathname === "/__gy/share/list" && req.method === "GET") {
-    const listed = listShareFiles();
-    sendJson(res, 200, {
-      ok: true,
-      enabled: listed.enabled,
-      folder: listed.folder,
-      is_default: listed.is_default,
-      files: listed.files.map((f) => ({
-        ...f,
-        size_label: formatBytes(f.size),
-        url: `/__gy/share/download?path=${encodeURIComponent(f.path)}`
-      }))
+    // flat=1：递归全部文件（兼容旧逻辑）；默认按 path 浏览当前层文件夹
+    if (u.searchParams.get("flat") === "1") {
+      const listed = listShareFiles();
+      sendJson(res, 200, {
+        ok: true,
+        enabled: listed.enabled,
+        folder: listed.folder,
+        is_default: listed.is_default,
+        path: "",
+        parent: null,
+        dirs: [],
+        files: listed.files.map((f) => ({
+          ...f,
+          size_label: formatBytes(f.size),
+          url: `/__gy/share/download?path=${encodeURIComponent(f.path)}`
+        })),
+        can_manage: isLocalAdmin(req)
+      });
+      return;
+    }
+    const dirPath = u.searchParams.get("path") || "";
+    const listed = listShareDir(dirPath);
+    sendJson(res, listed.ok === false && listed.error === "共享未开启" ? 200 : 200, {
+      ...listed,
+      can_manage: isLocalAdmin(req)
     });
     return;
   }
