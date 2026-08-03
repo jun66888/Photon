@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>光影盟 · 课堂资料下载</title>
+  <link rel="stylesheet" href="./vendor/fonts.css" />
+  <style>
+    :root {
+      --bg0: #0b0f18;
+      --bg1: #151c2e;
+      --ink: #e8eef8;
+      --soft: #9aa8c3;
+      --gold: #f0c14b;
+      --gold2: #ffe39a;
+      --ok: #7dffb2;
+      --warn: #ffb0bd;
+      --line: rgba(240, 193, 75, .28);
+      --font-brush: "ZCOOL XiaoWei", "STKaiti", "KaiTi", serif;
+      --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-num: "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(1100px 520px at 8% -8%, rgba(240,193,75,.15), transparent 55%),
+        radial-gradient(800px 420px at 100% 0%, rgba(80,140,255,.1), transparent 50%),
+        linear-gradient(165deg, var(--bg1), var(--bg0) 55%, #070a12);
+    }
+    .wrap {
+      width: min(720px, 94vw);
+      margin: 0 auto;
+      padding: 1.8rem 0 3rem;
+    }
+    .brand {
+      font-family: var(--font-brush);
+      font-size: clamp(2.2rem, 6vw, 3.2rem);
+      letter-spacing: .16em;
+      color: var(--gold2);
+      text-shadow: 0 0 24px rgba(240,193,75,.28);
+      margin: 0;
+      line-height: 1.1;
+    }
+    .tagline {
+      margin: .5rem 0 1.2rem;
+      color: var(--soft);
+      font-size: .95rem;
+      line-height: 1.5;
+    }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    button, a.btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, #2a3350, #171e30);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: .65rem .9rem;
+      font-size: .92rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    button.primary, a.btn.primary {
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      border-color: rgba(240,193,75,.65);
+      color: var(--gold2);
+    }
+    .meta {
+      color: var(--soft);
+      font-size: .82rem;
+      margin-bottom: .85rem;
+    }
+    .meta strong { color: var(--gold2); font-weight: 600; }
+    .list {
+      display: grid;
+      gap: .55rem;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      padding: .85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(8, 12, 22, .55);
+    }
+    .item .name {
+      font-weight: 700;
+      word-break: break-all;
+      line-height: 1.35;
+    }
+    .item .sub {
+      margin-top: .25rem;
+      color: var(--soft);
+      font-size: .78rem;
+      font-family: var(--font-num);
+    }
+    .item a {
+      flex: 0 0 auto;
+      appearance: none;
+      border: 1px solid rgba(240,193,75,.55);
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      color: var(--gold2);
+      border-radius: 8px;
+      padding: .55rem .85rem;
+      font-size: .88rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .empty, .err {
+      padding: 1.4rem 1rem;
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: 12px;
+      color: var(--soft);
+      text-align: center;
+      line-height: 1.55;
+    }
+    .err { color: var(--warn); border-color: rgba(255,176,189,.35); }
+    .foot {
+      margin-top: 1.2rem;
+      color: var(--soft);
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="brand">光影盟</h1>
+    <p class="tagline">课堂资料下载 · 点文件即可保存到手机或电脑</p>
+    <div class="toolbar">
+      <button type="button" class="primary" id="btn-refresh">刷新列表</button>
+      <a class="btn" href="/launcher.html">返回启动台</a>
+    </div>
+    <div class="meta" id="meta">正在读取资料列表…</div>
+    <div class="list" id="list"></div>
+    <p class="foot">若打不开，请确认老师已开「一键上课」，并尽量连教室 Wi‑Fi；也可用老师投屏上的扫码/公网地址打开本页。</p>
+  </div>
+  <script>
+    const listEl = document.getElementById("list");
+    const metaEl = document.getElementById("meta");
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+
+    async function loadList() {
+      metaEl.textContent = "正在读取资料列表…";
+      listEl.innerHTML = "";
+      try {
+        const res = await fetch("/__gy/share/list", { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "读取失败");
+        if (!data.enabled) {
+          metaEl.innerHTML = "共享已关闭";
+          listEl.innerHTML = '<div class="err">老师暂未开启课堂资料共享</div>';
+          return;
+        }
+        const files = data.files || [];
+        metaEl.innerHTML = `共 <strong>${files.length}</strong> 个文件` +
+          (data.is_default ? " · 默认文件夹「课堂资料」" : "");
+        if (!files.length) {
+          listEl.innerHTML = '<div class="empty">文件夹还是空的<br>请老师把课件放进共享文件夹后再刷新</div>';
+          return;
+        }
+        listEl.innerHTML = files.map((f) => {
+          const href = f.url || (`/__gy/share/download?path=${encodeURIComponent(f.path)}`);
+          return `<div class="item">
+            <div>
+              <div class="name">${esc(f.path)}</div>
+              <div class="sub">${esc(f.size_label || "")}</div>
+            </div>
+            <a href="${esc(href)}" download="${esc(f.name)}">下载</a>
+          </div>`;
+        }).join("");
+      } catch (e) {
+        metaEl.textContent = "无法连接课堂服务";
+        listEl.innerHTML = '<div class="err">请确认老师电脑上「一键上课」窗口仍开着，然后点刷新</div>';
+      }
+    }
+
+    document.getElementById("btn-refresh").onclick = loadList;
+    loadList();
+    setInterval(loadList, 15000);
+  </script>
+</body>
+</html>

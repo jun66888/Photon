@@ -2,6 +2,7 @@
 /**
  * 光影盟本地服务：静态站 + 局域网地址 + DEMO 跨设备共享库
  * 手机签到 / 老师投屏共用 /__gy/demo-db，实现实时同步（无需 Firebase）
+ * 课堂资料：老师指定本机文件夹，学生经 /share.html 下载
  */
 import http from "node:http";
 import https from "node:https";
@@ -10,7 +11,7 @@ import path from "node:path";
 import os from "node:os";
 import { spawn, execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, createReadStream } from "node:fs";
 import { pipeline } from "node:stream/promises";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,10 +22,13 @@ const HOST = process.env.HOST || "0.0.0.0";
 const DEMO_DB_FILE = path.join(ROOT, "gy-demo-db.json");
 const CLASSROOM_FILE = path.join(ROOT, "gy-classroom.json");
 const TUNNEL_FILE = path.join(ROOT, "gy-tunnel-origin.json");
+const SHARE_CFG_FILE = path.join(ROOT, "gy-share-folder.json");
+const DEFAULT_SHARE_DIR = path.join(ROOT, "课堂资料");
 const ACCESS_FILE = path.join(ROOT, "固定访问地址.txt");
 /** 老师端永久收藏地址（本机环回，永远不变） */
 const TEACHER_BOOKMARK = `http://127.0.0.1:${PORT}/?mode=teacher`;
 const STUDENT_BOOKMARK_PATH = `/?mode=student`;
+const SHARE_PAGE_PATH = "/share.html";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -35,13 +39,30 @@ const MIME = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
   ".map": "application/json",
   ".txt": "text/plain; charset=utf-8",
   ".md": "text/markdown; charset=utf-8",
   ".bat": "text/plain; charset=utf-8",
-  ".sh": "text/plain; charset=utf-8"
+  ".sh": "text/plain; charset=utf-8",
+  ".pdf": "application/pdf",
+  ".zip": "application/zip",
+  ".7z": "application/x-7z-compressed",
+  ".rar": "application/vnd.rar",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".ppt": "application/vnd.ms-powerpoint",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".mp4": "video/mp4",
+  ".mov": "video/quicktime",
+  ".csv": "text/csv; charset=utf-8"
 };
 
 function isPhoneUnfriendlyIp(ip) {
@@ -814,6 +835,8 @@ function writeOriginHint(opts = {}) {
     preferred,
     teacher: TEACHER_BOOKMARK,
     checkin: phoneOrigin ? `${phoneOrigin}/?mode=checkin` : `${preferred}/?mode=checkin`,
+    share_page: phoneOrigin ? `${phoneOrigin}${SHARE_PAGE_PATH}` : `${preferred}${SHARE_PAGE_PATH}`,
+    share_local: `${preferred}${SHARE_PAGE_PATH}`,
     demo_sync: true,
     note: tunnel
       ? "手机可用流量扫 tunnel_origin；老师端仍用 127.0.0.1。"
@@ -835,6 +858,169 @@ function safeJoin(urlPath) {
   const abs = path.normalize(path.join(ROOT, rel));
   if (!abs.startsWith(ROOT)) return null;
   return abs;
+}
+
+function isLocalAdmin(req) {
+  const ra = String(req.socket?.remoteAddress || "");
+  return ra === "127.0.0.1" || ra === "::1" || ra === "::ffff:127.0.0.1" || ra.endsWith("127.0.0.1");
+}
+
+function ensureDir(dir) {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function loadShareConfig() {
+  let folder = DEFAULT_SHARE_DIR;
+  let enabled = true;
+  try {
+    if (fs.existsSync(SHARE_CFG_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(SHARE_CFG_FILE, "utf8"));
+      if (raw && typeof raw.folder === "string" && raw.folder.trim()) {
+        folder = path.resolve(raw.folder.trim());
+      }
+      if (raw && raw.enabled === false) enabled = false;
+    }
+  } catch (e) { /* ignore */ }
+  ensureDir(folder);
+  return { folder, enabled, is_default: path.resolve(folder) === path.resolve(DEFAULT_SHARE_DIR) };
+}
+
+function saveShareConfig({ folder, enabled } = {}) {
+  const prev = loadShareConfig();
+  const nextFolder = folder != null && String(folder).trim()
+    ? path.resolve(String(folder).trim())
+    : prev.folder;
+  const nextEnabled = enabled == null ? prev.enabled : !!enabled;
+  if (!ensureDir(nextFolder)) {
+    throw new Error("无法创建或访问该文件夹：" + nextFolder);
+  }
+  const st = fs.statSync(nextFolder);
+  if (!st.isDirectory()) throw new Error("路径不是文件夹：" + nextFolder);
+  const payload = {
+    folder: nextFolder,
+    enabled: nextEnabled,
+    updated_at: new Date().toISOString()
+  };
+  fs.writeFileSync(SHARE_CFG_FILE, JSON.stringify(payload, null, 2), "utf8");
+  return loadShareConfig();
+}
+
+function resolveUnderShareRoot(relPath) {
+  const cfg = loadShareConfig();
+  if (!cfg.enabled) return null;
+  const root = path.resolve(cfg.folder);
+  const raw = String(relPath || "").replace(/\\/g, "/");
+  if (!raw || raw.includes("\0")) return null;
+  const parts = raw.split("/").filter((p) => p && p !== ".");
+  if (parts.some((p) => p === "..")) return null;
+  const abs = path.normalize(path.join(root, ...parts));
+  if (abs !== root && !abs.startsWith(root + path.sep)) return null;
+  return { root, abs, rel: parts.join("/") };
+}
+
+function listShareFiles(maxDepth = 3) {
+  const cfg = loadShareConfig();
+  const root = path.resolve(cfg.folder);
+  const files = [];
+  const walk = (dir, rel, depth) => {
+    if (depth > maxDepth || files.length >= 500) return;
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    entries.sort((a, b) => a.name.localeCompare(b.name, "zh"));
+    for (const ent of entries) {
+      if (ent.name.startsWith(".")) continue;
+      const childRel = rel ? `${rel}/${ent.name}` : ent.name;
+      const childAbs = path.join(dir, ent.name);
+      let st;
+      try { st = fs.statSync(childAbs); } catch (e) { continue; }
+      if (st.isDirectory()) {
+        walk(childAbs, childRel, depth + 1);
+      } else if (st.isFile()) {
+        files.push({
+          name: ent.name,
+          path: childRel,
+          size: st.size,
+          mtime: st.mtimeMs
+        });
+      }
+      if (files.length >= 500) break;
+    }
+  };
+  if (cfg.enabled) walk(root, "", 0);
+  return { folder: root, enabled: cfg.enabled, is_default: cfg.is_default, files };
+}
+
+function formatBytes(n) {
+  const v = Number(n) || 0;
+  if (v < 1024) return v + " B";
+  if (v < 1024 * 1024) return (v / 1024).toFixed(1) + " KB";
+  if (v < 1024 * 1024 * 1024) return (v / (1024 * 1024)).toFixed(1) + " MB";
+  return (v / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+}
+
+function contentDisposition(filename) {
+  const raw = String(filename || "download").replace(/[\r\n"]/g, "_");
+  const ascii = raw.replace(/[^\x20-\x7E]/g, "_") || "download";
+  const encoded = encodeURIComponent(raw);
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
+function sendShareDownload(res, absPath, downloadName) {
+  let st;
+  try { st = fs.statSync(absPath); } catch (e) {
+    send(res, 404, "Not Found", { "Content-Type": "text/plain; charset=utf-8" });
+    return;
+  }
+  if (!st.isFile()) {
+    send(res, 404, "Not Found", { "Content-Type": "text/plain; charset=utf-8" });
+    return;
+  }
+  const ext = path.extname(absPath).toLowerCase();
+  const type = MIME[ext] || "application/octet-stream";
+  res.writeHead(200, {
+    "Content-Type": type,
+    "Content-Length": st.size,
+    "Content-Disposition": contentDisposition(downloadName || path.basename(absPath)),
+    "Cache-Control": "no-store",
+    "Access-Control-Allow-Origin": "*"
+  });
+  createReadStream(absPath).on("error", () => {
+    try { res.destroy(); } catch (e) { /* ignore */ }
+  }).pipe(res);
+}
+
+function openFolderInOs(folder) {
+  const dir = path.resolve(folder);
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    throw new Error("文件夹不存在：" + dir);
+  }
+  const plat = process.platform;
+  if (plat === "darwin") spawn("open", [dir], { detached: true, stdio: "ignore" }).unref();
+  else if (plat === "win32") spawn("explorer", [dir], { detached: true, stdio: "ignore" }).unref();
+  else spawn("xdg-open", [dir], { detached: true, stdio: "ignore" }).unref();
+}
+
+function sharePublicInfo(hint) {
+  const listed = listShareFiles();
+  const base = (hint && (hint.phone_origin || hint.tunnel_origin || hint.fixed_origin))
+    || `http://127.0.0.1:${PORT}`;
+  const local = `http://127.0.0.1:${PORT}${SHARE_PAGE_PATH}`;
+  return {
+    ok: true,
+    enabled: listed.enabled,
+    folder: listed.folder,
+    is_default: listed.is_default,
+    file_count: listed.files.length,
+    page_path: SHARE_PAGE_PATH,
+    student_url: `${normalizeOrigin(base)}${SHARE_PAGE_PATH}`,
+    local_url: local,
+    default_folder: DEFAULT_SHARE_DIR
+  };
 }
 
 function send(res, status, body, headers = {}) {
@@ -1189,6 +1375,102 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ---- 课堂资料共享：老师指定本机文件夹，学生下载 ----
+  if (u.pathname === "/__gy/share") {
+    if (req.method === "GET") {
+      sendJson(res, 200, sharePublicInfo(writeOriginHint()));
+      return;
+    }
+    if (req.method === "POST" || req.method === "PUT") {
+      if (!isLocalAdmin(req)) {
+        sendJson(res, 403, { ok: false, error: "仅老师本机可修改共享文件夹（请用 127.0.0.1 打开启动台）" });
+        return;
+      }
+      try {
+        const body = await readJson(req).catch(() => ({}));
+        if (body.use_default === true) {
+          const cfg = saveShareConfig({ folder: DEFAULT_SHARE_DIR, enabled: body.enabled });
+          sendJson(res, 200, { ok: true, ...sharePublicInfo(writeOriginHint()), config: cfg });
+          return;
+        }
+        if (body.folder != null && !String(body.folder).trim()) {
+          sendJson(res, 400, { ok: false, error: "请填写本机文件夹绝对路径，例如 /Users/你/Desktop/课件" });
+          return;
+        }
+        const cfg = saveShareConfig({
+          folder: body.folder,
+          enabled: body.enabled
+        });
+        sendJson(res, 200, { ok: true, ...sharePublicInfo(writeOriginHint()), config: cfg });
+      } catch (e) {
+        sendJson(res, 400, { ok: false, error: String(e.message || e) });
+      }
+      return;
+    }
+  }
+
+  if (u.pathname === "/__gy/share/list" && req.method === "GET") {
+    const listed = listShareFiles();
+    sendJson(res, 200, {
+      ok: true,
+      enabled: listed.enabled,
+      folder: listed.folder,
+      is_default: listed.is_default,
+      files: listed.files.map((f) => ({
+        ...f,
+        size_label: formatBytes(f.size),
+        url: `/__gy/share/download?path=${encodeURIComponent(f.path)}`
+      }))
+    });
+    return;
+  }
+
+  if (u.pathname === "/__gy/share/open" && (req.method === "POST" || req.method === "GET")) {
+    if (!isLocalAdmin(req)) {
+      sendJson(res, 403, { ok: false, error: "仅老师本机可打开文件夹" });
+      return;
+    }
+    try {
+      const cfg = loadShareConfig();
+      openFolderInOs(cfg.folder);
+      sendJson(res, 200, { ok: true, folder: cfg.folder });
+    } catch (e) {
+      sendJson(res, 400, { ok: false, error: String(e.message || e) });
+    }
+    return;
+  }
+
+  if (u.pathname === "/__gy/share/download" && req.method === "GET") {
+    const rel = u.searchParams.get("path") || u.searchParams.get("file") || "";
+    const resolved = resolveUnderShareRoot(rel);
+    if (!resolved) {
+      send(res, 404, "文件不存在或共享未开启", { "Content-Type": "text/plain; charset=utf-8" });
+      return;
+    }
+    sendShareDownload(res, resolved.abs, path.basename(resolved.abs));
+    return;
+  }
+
+  // 友好短链：/share/文件相对路径
+  if (u.pathname === "/share" || u.pathname === "/share/") {
+    sendFile(res, path.join(ROOT, "share.html"));
+    return;
+  }
+  if (u.pathname.startsWith("/share/")) {
+    const rel = decodeURIComponent(u.pathname.slice("/share/".length));
+    if (!rel || rel === "index.html") {
+      sendFile(res, path.join(ROOT, "share.html"));
+      return;
+    }
+    const resolved = resolveUnderShareRoot(rel);
+    if (!resolved) {
+      send(res, 404, "文件不存在或共享未开启", { "Content-Type": "text/plain; charset=utf-8" });
+      return;
+    }
+    sendShareDownload(res, resolved.abs, path.basename(resolved.abs));
+    return;
+  }
+
   const filePath = safeJoin(u.pathname);
   if (!filePath) {
     send(res, 403, "Forbidden");
@@ -1206,14 +1488,22 @@ server.listen(PORT, HOST, () => {
   liveTunnelOrigin = "";
   clearTunnelOriginFile();
   tunnelStatus = { state: "starting", detail: "服务已启动，正在建立公网隧道…", updated_at: new Date().toISOString() };
+  ensureDir(DEFAULT_SHARE_DIR);
+  loadShareConfig();
   const fresh = writeOriginHint();
   const fixed = fresh.fixed_origin || "";
+  const shareInfo = sharePublicInfo(fresh);
   console.log("");
   console.log("  ========================================");
   console.log("  光影盟 · 课堂服务");
   console.log("  ========================================");
   console.log("  ★ 老师收藏（永远不变）:");
   console.log("    " + TEACHER_BOOKMARK);
+  console.log("  ★ 启动台:");
+  console.log("    http://127.0.0.1:" + PORT + "/launcher.html");
+  console.log("  ★ 课堂资料下载:");
+  console.log("    " + shareInfo.local_url);
+  console.log("    共享文件夹: " + shareInfo.folder);
   if (fixed) {
     console.log("  · 局域网备用：" + fixed);
   }
