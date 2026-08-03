@@ -4559,6 +4559,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="ch-sub">名册 / 品牌 / 加分模板 / 数据回滚 · 玩法请点侧栏「玩法」</div>
         </div>
         <div class="ch-actions">
+          <button type="button" data-action="import-demo-data" title="导入一批小组、成员与积分演示数据">导入演示数据</button>
           <button type="button" class="primary" data-action="goto-play-mode">切换玩法</button>
         </div>
       </div>
@@ -4673,10 +4674,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </details>
 
         <!-- ⑦ 数据回滚：默认收起 -->
-        <details class="settings-acc" data-acc="data">
+        <details class="settings-acc" data-acc="data" open>
           <summary>
             <span class="acc-title">数据 · 积分 · 回滚</span>
-            <span class="acc-sum" id="acc-sum-data">清零 / 曲线 / 快照</span>
+            <span class="acc-sum" id="acc-sum-data">导入演示 / 清零 / 曲线</span>
           </summary>
           <div class="acc-body">
             <div id="settings-data-tools"></div>
@@ -6152,35 +6153,41 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function buildDemoShowcaseState() {
     const base = buildShowcaseRosterArena();
     const peakIds = Object.keys(base.peaks);
-    const scorePlan = [120, 95, 80, 110, 70, 88];
+    const scorePlan = [128, 102, 86, 118, 74, 96];
+    const votePlan = [18, 14, 11, 16, 9];
+    let redScore = 0, blueScore = 0;
     peakIds.forEach((pk, i) => {
+      const peak = base.peaks[pk];
       const sc = scorePlan[i % scorePlan.length] + (i * 7) % 40;
       const lv = calcPeakLevel(sc);
-      Object.assign(base.peaks[pk], {
+      Object.assign(peak, {
         score: sc,
+        votes: votePlan[i % votePlan.length] + (i % 3),
         peak_level: lv.peak_level,
         peak_level_name: lv.peak_level_name,
         progress: lv.progress,
         next_level_score: lv.next_level_score,
-        work_title: (base.peaks[pk].name || "小组") + "演示作品"
+        work_title: (peak.name || "小组") + "演示作品"
       });
+      if (peak.camp === "blue") blueScore += sc;
+      else redScore += sc;
     });
     const logs = {};
     let logN = 0;
-    const reasons = ["课堂表现", "完成任务", "作品分享", "创意亮点", "互助协作", "擂台加分"];
+    const reasons = ["课堂表现", "完成任务", "作品分享", "创意亮点", "互助协作", "擂台加分", "派系加分", "抽中答题"];
     // 模拟多天加分，供曲线统计
-    for (let day = 1; day <= 5; day++) {
+    for (let day = 1; day <= 7; day++) {
       peakIds.forEach((pk, i) => {
         const peak = base.peaks[pk];
-        const pts = 5 + ((day + i) % 5) * 2;
+        const pts = 4 + ((day + i) % 6) * 2;
         const id = "log_demo_" + (++logN);
         logs[id] = {
-          timestamp: Date.now() - (5 - day) * 86400000 - i * 3600000,
+          timestamp: Date.now() - (7 - day) * 86400000 - i * 3600000,
           peak_id: peak.id,
           peak_name: peak.name,
           reason: reasons[(day + i) % reasons.length],
           points: pts,
-          category: pts >= 10 ? "任务" : "日常",
+          category: pts >= 10 ? "任务" : (reasons[(day + i) % reasons.length].includes("擂台") ? "擂台" : "日常"),
           operator: OPERATOR,
           day
         };
@@ -6189,16 +6196,35 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     base.score_logs = logs;
     Object.keys(base.disciples).forEach((dk, i) => {
       const d = base.disciples[dk];
-      const contrib = 8 + (i % 9) * 3 + (i % 4);
+      const contrib = 10 + (i % 9) * 3 + (i % 5);
       const exp = contrib * 10;
       const lv = calcPersonalLevel(exp);
-      d.student_id = String(i + 1).padStart(3, "0");
+      d.student_id = String(2026001 + i);
       d.contributed = contrib;
       d.exp = exp;
       d.level = lv.level;
       d.title = lv.title;
-      d.checked_in_am = i % 3 !== 0;
-      d.checked_in_am_at = d.checked_in_am ? Date.now() - 3600000 : 0;
+      d.rank = ["青铜", "白银", "黄金", "铂金"][Math.min(3, Math.floor(contrib / 18))];
+      d.checked_in_am = i % 4 !== 0;
+      d.checked_in_am_at = d.checked_in_am ? Date.now() - 3600000 - i * 60000 : 0;
+      d.motto = ["镜头感拉满", "节奏稳如山", "创意不停", "声浪来袭", "追光而行"][i % 5];
+      d.gender = i % 2 ? "女" : "男";
+    });
+    // 再补几名「仅属派系、未入小组」的演示成员，方便测两派视图
+    const extraNames = ["林小满", "周可", "沈星语", "唐一帆"];
+    extraNames.forEach((name, i) => {
+      const id = "disciple_demo_extra_" + i;
+      const camp = i % 2 ? "blue" : "red";
+      const contrib = 6 + i * 2;
+      const lv = calcPersonalLevel(contrib * 10);
+      base.disciples[id] = {
+        name, student_id: String(2026101 + i), peak: -1, camp,
+        exp: contrib * 10, level: lv.level, title: lv.title,
+        rank: "青铜", role: "弟子", voted: false, contributed: contrib,
+        checked_in_am: true, checked_in_pm: false, checked_in_am_at: Date.now() - 1800000,
+        first_seen: new Date().toISOString(), voted_for: "",
+        weapon: "笔", gender: i % 2 ? "女" : "男", contact: "", motto: "演示派系成员", avatar: "", trait: "机动位"
+      };
     });
     // 队长标记
     peakIds.forEach((pk) => {
@@ -6209,19 +6235,36 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         peak.captain_name = members[0].name;
       }
     });
-    base.config.day = 5;
+    base.config.day = 7;
     base.config.week = 1;
     base.config.title = "演示周 · 最佳作品";
+    base.config.play_mode = "standard";
+    base.config.ui_display_mode = "peak";
+    base.config.camp_score_red = redScore;
+    base.config.camp_score_blue = blueScore;
+    base.config.voting_open = true;
+    base.config.checkin_session = "am";
+    base.config.checkin_active = false;
     return base;
   }
 
   async function importDemoData() {
-    if (!confirm("导入演示数据将覆盖当前课堂数据（名册/积分/日志）。\n会先自动快照，可后撤恢复。确认导入？")) return;
+    const empty = !getPeaksArray().length && !getDisciplesArray().length;
+    const tip = empty
+      ? "将导入一批演示课堂数据：\n· 5 个小组 · 约 29 名成员\n· 七日积分 / 签到 / 作品票\n· 自动切到「小组对抗」显示\n\n确认导入？"
+      : "导入演示数据将覆盖当前课堂数据（名册 / 积分 / 日志 / 分组）。\n会先自动快照，可后撤恢复。\n\n确认导入？";
+    if (!confirm(tip)) return;
     pushHistorySnapshot("导入演示前");
-    await replaceArenaState(buildDemoShowcaseState());
+    const demo = buildDemoShowcaseState();
+    await replaceArenaState(demo);
     pushHistorySnapshot("已导入演示数据");
-    showVoteToast("演示数据已导入");
-    if (teacherView === "settings") renderSettings();
+    const peaks = Object.keys(demo.peaks || {}).length;
+    const people = Object.keys(demo.disciples || {}).length;
+    try { playGameFx("win", { banner: `演示数据 · ${peaks} 组 ${people} 人` }); } catch (e) { /* ignore */ }
+    showVoteToast(`已导入演示：${peaks} 个小组 · ${people} 名成员`);
+    setTeacherView("main");
+    renderTeacherMain();
+    if (typeof renderAll === "function") renderAll();
   }
 
   function buildScoreCurveSeries() {
@@ -6330,9 +6373,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     host.innerHTML = `
       <p class="data-tools-hint">积分按天累计不清零。危险操作前会自动快照；另每 5 分钟自动记录，最多保留 10 步，可后撤 / 前进。</p>
       <div class="data-tools-bar">
+        <button type="button" class="primary" id="btn-import-demo" title="一键灌入小组、成员、积分与签到演示包">导入演示数据</button>
         <button type="button" class="danger-soft" id="btn-reset-scores">积分清零</button>
-        <button type="button" id="btn-import-demo">导入演示数据</button>
-        <button type="button" class="primary" id="btn-score-curve">积分曲线</button>
+        <button type="button" id="btn-score-curve">积分曲线</button>
         <button type="button" id="btn-history-snap">立即快照</button>
         <button type="button" id="btn-history-undo" ${items.length ? "" : "disabled"}>后撤</button>
         <button type="button" id="btn-history-redo" ${historyCanRedo() ? "" : "disabled"}>前进</button>
@@ -6476,11 +6519,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const mode = getUiDisplayMode();
     const modeDef = UI_DISPLAY_MODE_DEFS.find((m) => m.id === mode) || UI_DISPLAY_MODE_DEFS[0];
     const peakCount = getPeaksArray().length;
+    const people = getDisciplesArray().length;
     host.innerHTML = `
       <div class="sps-text">当前玩法 <b>${esc(def.name)}</b> · ${esc(def.size)} · 显示 <b>${esc(modeDef.name)}</b><br>
-        <span class="muted">主界面可切换：两派 / 小组 / 成员${peakCount ? ` · 已有 ${peakCount} 个小组` : " · 尚未创建小组"}</span><br>
+        <span class="muted">主界面可切换：两派 / 小组 / 成员${peakCount ? ` · 已有 ${peakCount} 个小组 · ${people} 人` : " · 尚未创建小组，可点导入演示数据"}</span><br>
         <span class="muted" id="settings-build-stamp">版本加载中…</span></div>
       <div class="row" style="gap:.35rem;flex-wrap:wrap">
+        <button type="button" class="primary" data-action="import-demo-data">导入演示数据</button>
         <button type="button" data-action="goto-play-mode">改玩法</button>
         ${UI_DISPLAY_MODE_DEFS.map((m) => {
           const disabled = (m.id === "peak" || m.id === "member") && !peakCount;
@@ -9406,6 +9451,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     const redInfo = renderCampColumn("red");
     const blueInfo = renderCampColumn("blue");
+    // 空课堂：给出醒目的演示数据入口
+    if (!getPeaksArray().length && !getDisciplesArray().length) {
+      const redList = document.getElementById("list-red");
+      const blueList = document.getElementById("list-blue");
+      const emptyHtml = `
+        <div class="camp-empty-hint">
+          还没有成员与小组<br>
+          <button type="button" class="primary" data-action="import-demo-data" style="margin-top:.65rem">导入演示数据</button>
+          <div class="muted" style="font-size:.75rem;margin-top:.45rem">或点「＋成员 / ＋小组」从零开始</div>
+        </div>`;
+      if (redList) redList.innerHTML = emptyHtml;
+      if (blueList) blueList.innerHTML = `
+        <div class="camp-empty-hint">
+          演示包含：5 小组 · 约 29 人 · 七日积分<br>
+          <button type="button" data-action="import-demo-data" style="margin-top:.65rem">一键灌入</button>
+        </div>`;
+    }
     setupCampDropZones();
     applyArenaDensity(Math.max(redInfo.peakCount, 1), Math.max(blueInfo.peakCount, 1));
     requestAnimationFrame(() => applyArenaDensity(Math.max(redInfo.peakCount, 1), Math.max(blueInfo.peakCount, 1)));
