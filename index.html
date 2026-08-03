@@ -887,6 +887,57 @@ body.has-brand-nav .demo-tip { top: 3.35rem !important; }
   .mission-edit-layout { grid-template-columns: 1fr; }
 }
 
+.ui-mode-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .55rem;
+  margin: .35rem 0 .55rem; padding: .35rem .5rem;
+  border: 1px solid rgba(240,193,75,.22);
+  border-radius: 8px;
+  background: rgba(8, 12, 22, .4);
+}
+.ui-mode-bar .ui-mode-lab {
+  font-size: .72rem; color: var(--ink-soft); letter-spacing: .08em; margin-right: .15rem;
+}
+.ui-mode-bar button {
+  min-height: 1.85rem !important; padding: .22rem .55rem !important; font-size: .74rem !important;
+}
+.ui-mode-bar button.on {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, #3a4668, #1c2438);
+  color: #ffe39a;
+}
+.camp-member-list {
+  display: flex; flex-direction: column; gap: .35rem; padding: .15rem 0 .4rem;
+}
+.camp-member-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) auto;
+  gap: .3rem .5rem; align-items: center;
+  padding: .45rem .55rem;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  background: rgba(7, 10, 18, .55);
+  cursor: pointer;
+}
+.camp-member-card.red { border-color: rgba(255,59,92,.28); }
+.camp-member-card.blue { border-color: rgba(46,230,255,.28); }
+.camp-member-card .cm-name {
+  font-family: var(--font-brush); font-size: 1.15rem; color: #fff5e8; letter-spacing: .06em;
+}
+.camp-member-card .cm-name.cap { color: #ffe39a; }
+.camp-member-card .cm-meta { font-size: .72rem; color: var(--ink-soft); grid-column: 1 / -1; }
+.camp-member-card .cm-score {
+  font-family: var(--font-num); font-weight: 700; color: #ffe39a; font-size: 1.05rem; text-align: right;
+}
+.camp-member-card .cm-track {
+  height: .35rem; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden;
+}
+.camp-member-card .cm-track > i {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, rgba(240,193,75,.35), #f0c14b);
+}
+.camp-empty-hint {
+  padding: .85rem .6rem; text-align: center; color: var(--ink-soft); font-size: .85rem; line-height: 1.45;
+}
 .camps-board {
   --arena-scale: 1;
   --camp-count: 3;
@@ -4196,21 +4247,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
       </div>
 
-      <div class="camps-board">
+      <div class="ui-mode-bar" id="ui-mode-bar" aria-label="主界面显示模式"></div>
+      <div class="camps-board" id="camps-board">
         <section class="camp-col red" data-camp="red" id="camp-red">
           <div class="camp-head">
-            <h2><button type="button" class="camp-title-btn" data-action="camp-attrs" data-camp="red" title="点击查看派系属性">光影 · 山峰群</button></h2>
-            <div class="camp-tools row">
-              <button type="button" data-action="add-peak-red">＋山峰</button>
+            <h2><button type="button" class="camp-title-btn" id="camp-title-red" data-action="camp-attrs" data-camp="red" title="点击查看派系属性">光影联盟</button></h2>
+            <div class="camp-tools row" id="camp-tools-red">
+              <button type="button" data-action="add-camp-member-red">＋成员</button>
+              <button type="button" data-action="camp-score-red">派系加分</button>
+              <button type="button" data-action="add-peak-red">＋小组</button>
             </div>
           </div>
           <div class="peak-list" id="list-red" data-camp="red"></div>
         </section>
         <section class="camp-col blue" data-camp="blue" id="camp-blue">
           <div class="camp-head">
-            <h2><button type="button" class="camp-title-btn" data-action="camp-attrs" data-camp="blue" title="点击查看派系属性">声浪 · 山峰群</button></h2>
-            <div class="camp-tools row">
-              <button type="button" data-action="add-peak-blue">＋山峰</button>
+            <h2><button type="button" class="camp-title-btn" id="camp-title-blue" data-action="camp-attrs" data-camp="blue" title="点击查看派系属性">声浪联盟</button></h2>
+            <div class="camp-tools row" id="camp-tools-blue">
+              <button type="button" data-action="add-camp-member-blue">＋成员</button>
+              <button type="button" data-action="camp-score-blue">派系加分</button>
+              <button type="button" data-action="add-peak-blue">＋小组</button>
             </div>
           </div>
           <div class="peak-list" id="list-blue" data-camp="blue"></div>
@@ -4443,7 +4499,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <!-- ③ 名册：默认展开 -->
         <details class="settings-acc" data-acc="roster" open>
           <summary>
-            <span class="acc-title">名册 · 派系 / 小组 / 弟子</span>
+            <span class="acc-title">名册 · 派系 / 小组 / 成员</span>
             <span class="acc-sum" id="acc-sum-roster">展开管理</span>
           </summary>
           <div class="acc-body">
@@ -4455,7 +4511,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5>小组</h5>
+                <h5>小组（需要时再创建）</h5>
                 <div class="card-actions">
                   <button type="button" data-action="add-peak-red">＋光影</button>
                   <button type="button" data-action="add-peak-blue">＋声浪</button>
@@ -4465,18 +4521,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5>弟子</h5>
+                <h5>成员</h5>
                 <div class="card-actions">
-                  <button type="button" data-action="add-disciple">＋添加弟子</button>
+                  <button type="button" data-action="add-camp-member-red">＋光影</button>
+                  <button type="button" data-action="add-camp-member-blue">＋声浪</button>
+                  <button type="button" data-action="add-disciple">＋添加</button>
                 </div>
               </div>
               <div id="settings-disciples" class="settings-chips"></div>
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5>大厅 · 未入峰</h5>
+                <h5>未入小组</h5>
                 <div class="card-actions">
-                  <button type="button" data-action="add-disciple">＋弟子</button>
+                  <button type="button" data-action="add-disciple">＋成员</button>
                 </div>
               </div>
               <div id="settings-hall" class="settings-chips"></div>
@@ -5109,7 +5167,96 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
   };
 
+  const UI_DISPLAY_MODE_DEFS = [
+    { id: "camp", name: "两派对抗", hint: "只显示红蓝两派与成员" },
+    { id: "peak", name: "小组对抗", hint: "创建小组后按小组出牌" },
+    { id: "member", name: "成员明细", hint: "展开成员进度与贡献" }
+  ];
+
+  function buildArenaConfig(extra = {}) {
+    return {
+      day: 1, week: 1, voting_open: false, title: "第1周最佳作品",
+      play_mode: "basic",
+      ui_display_mode: "camp",
+      camp_score_red: 0,
+      camp_score_blue: 0,
+      checkin_code: "", checkin_expires_at: 0, checkin_session: "am", checkin_active: false,
+      sort_mode: "score", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟",
+      score_quick_options: [
+        { id: "sq0", label: "课堂表现", points: 5, reason: "课堂表现", category: "日常" },
+        { id: "sq1", label: "完成任务", points: 10, reason: "完成任务", category: "任务" },
+        { id: "sq2", label: "作品分享", points: 8, reason: "作品分享", category: "日常" },
+        { id: "sq3", label: "创意亮点", points: 6, reason: "创意亮点", category: "日常" },
+        { id: "sq4", label: "互助协作", points: 4, reason: "互助协作", category: "日常" },
+        { id: "sq5", label: "全员激励", points: 3, reason: "全员激励", category: "日常" }
+      ],
+      redeem_catalog: getRedeemCatalogSeed().map((c) => ({ ...c })),
+      redeem_seed_rev: REDEEM_SEED_REV,
+      draw_actions: getDrawActionsSeed().map((c) => ({ ...c })),
+      draw_actions_rev: DRAW_ACTIONS_REV,
+      redeem_logs: {},
+      brand: {
+        name: "光影盟",
+        seal_text: "盟",
+        logo_url: "",
+        logo_size: 36,
+        seal_font: 1.05,
+        name_size: 1.15,
+        name_size_rail: 1.05,
+        letter_spacing: 0.18,
+        name_height: 4.2,
+        color: "#f0c14b",
+        show_name: true,
+        show_seal: true
+      },
+      camp_mission: {
+        title: "今日门派任务",
+        desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
+        points: 10,
+        difficulty: "进阶",
+        category: "任务",
+        status: "published",
+        deadline: "",
+        red_focus: "光影叙事特训",
+        red_element: "光",
+        red_note: "侧重镜头与故事表达",
+        blue_focus: "声浪情绪特训",
+        blue_element: "水",
+        blue_note: "侧重声音与情绪传递",
+        items: [
+          {
+            id: "mission_main",
+            title: "今日门派任务",
+            desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
+            weight: 90,
+            visible: true,
+            points: 10,
+            difficulty: "进阶",
+            category: "任务",
+            completions: []
+          }
+        ]
+      },
+      ...extra
+    };
+  }
+
+  /** 默认课堂：仅红蓝对抗，无预设小组/弟子；重置后回到此状态 */
   function buildSeedArena() {
+    const bonus_presets = {}; BONUS_PRESETS_SEED.forEach((b) => { bonus_presets[b.id] = b; });
+    const tasks = {}; TASKS_SEED.forEach((t) => { tasks[t.id] = t; });
+    return {
+      config: buildArenaConfig(),
+      peaks: {},
+      disciples: {},
+      score_logs: {},
+      bonus_presets,
+      tasks
+    };
+  }
+
+  /** 演示用完整名册（含小组）；仅「导入演示数据」使用 */
+  function buildShowcaseRosterArena() {
     const peaks = {};
     PEAK_SEED.forEach((p, idx) => { peaks["peak_" + p.id] = makePeak({ ...p, sort_order: idx }); });
     const disciples = {};
@@ -5117,68 +5264,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const bonus_presets = {}; BONUS_PRESETS_SEED.forEach((b) => { bonus_presets[b.id] = b; });
     const tasks = {}; TASKS_SEED.forEach((t) => { tasks[t.id] = t; });
     return {
-      config: {
-        day: 1, week: 1, voting_open: false, title: "第1周最佳作品",
+      config: buildArenaConfig({
         play_mode: "standard",
-        checkin_code: "", checkin_expires_at: 0, checkin_session: "am", checkin_active: false,
-        sort_mode: "score", alliance_red_name: "光影联盟", alliance_blue_name: "声浪联盟",
-        score_quick_options: [
-          { id: "sq0", label: "课堂表现", points: 5, reason: "课堂表现", category: "日常" },
-          { id: "sq1", label: "完成任务", points: 10, reason: "完成任务", category: "任务" },
-          { id: "sq2", label: "作品分享", points: 8, reason: "作品分享", category: "日常" },
-          { id: "sq3", label: "创意亮点", points: 6, reason: "创意亮点", category: "日常" },
-          { id: "sq4", label: "互助协作", points: 4, reason: "互助协作", category: "日常" },
-          { id: "sq5", label: "全员激励", points: 3, reason: "全员激励", category: "日常" }
-        ],
-        redeem_catalog: getRedeemCatalogSeed().map((c) => ({ ...c })),
-        redeem_seed_rev: REDEEM_SEED_REV,
-        draw_actions: getDrawActionsSeed().map((c) => ({ ...c })),
-        draw_actions_rev: DRAW_ACTIONS_REV,
-        redeem_logs: {},
-        brand: {
-          name: "光影盟",
-          seal_text: "盟",
-          logo_url: "",
-          logo_size: 36,
-          seal_font: 1.05,
-          name_size: 1.15,
-          name_size_rail: 1.05,
-          letter_spacing: 0.18,
-          name_height: 4.2,
-          color: "#f0c14b",
-          show_name: true,
-          show_seal: true
-        },
-        camp_mission: {
-          title: "今日门派任务",
-          desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
-          points: 10,
-          difficulty: "进阶",
-          category: "任务",
-          status: "published",
-          deadline: "",
-          red_focus: "光影叙事特训",
-          red_element: "光",
-          red_note: "侧重镜头与故事表达",
-          blue_focus: "声浪情绪特训",
-          blue_element: "水",
-          blue_note: "侧重声音与情绪传递",
-          items: [
-            {
-              id: "mission_main",
-              title: "今日门派任务",
-              desc: "两派同时出征，完成课堂创作挑战即可领取真气奖励。",
-              weight: 90,
-              visible: true,
-              points: 10,
-              difficulty: "进阶",
-              category: "任务",
-              completions: []
-            }
-          ]
-        }
-      },
-      peaks, disciples, score_logs: {}, bonus_presets, tasks
+        ui_display_mode: "peak",
+        day: 1
+      }),
+      peaks,
+      disciples,
+      score_logs: {},
+      bonus_presets,
+      tasks
     };
   }
 
@@ -5839,6 +5934,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!state.score_logs) state.score_logs = {};
     if (!state.bonus_presets) state.bonus_presets = {};
     if (!state.tasks) state.tasks = {};
+    ensureArenaDisplayConfig();
     saveDemoLocal();
     if (demoSyncEnabled) {
       try { await pushDemoFull(); } catch (e) { console.warn(e); }
@@ -5901,9 +5997,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   async function resetAllScores() {
-    if (!confirm("确认将所有小组总分、学员得分/经验清零？\n（会先自动快照，可后撤恢复）")) return;
+    if (!confirm("确认将派系/小组总分、学员得分/经验清零？\n（会先自动快照，可后撤恢复；名册与分组结构保留）")) return;
     pushHistorySnapshot("清零前");
     const updates = {};
+    updates["config/camp_score_red"] = 0;
+    updates["config/camp_score_blue"] = 0;
     getPeaksArray().forEach((p) => {
       const lv = calcPeakLevel(0);
       updates[`peaks/${peakKey(p.id)}/score`] = 0;
@@ -5930,8 +6028,54 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (teacherView === "settings") renderSettings();
   }
 
+  function ensureArenaDisplayConfig() {
+    if (!state.config) state.config = buildArenaConfig();
+    if (state.config.camp_score_red == null) state.config.camp_score_red = 0;
+    if (state.config.camp_score_blue == null) state.config.camp_score_blue = 0;
+    if (!state.config.ui_display_mode) {
+      state.config.ui_display_mode = getPeaksArray().length ? "peak" : "camp";
+    }
+  }
+
+  function getUiDisplayMode() {
+    ensureArenaDisplayConfig();
+    const raw = String(state.config?.ui_display_mode || "camp");
+    const mode = (raw === "peak" || raw === "member") ? raw : "camp";
+    if ((mode === "peak" || mode === "member") && !getPeaksArray().length) return "camp";
+    return mode;
+  }
+
+  async function setUiDisplayMode(mode) {
+    const next = (mode === "peak" || mode === "member") ? mode : "camp";
+    if ((next === "peak" || next === "member") && !getPeaksArray().length) {
+      showVoteToast("还没有小组 · 先创建小组，或继续用两派对抗");
+      await updatePaths({ "config/ui_display_mode": "camp" });
+      return;
+    }
+    await updatePaths({ "config/ui_display_mode": next });
+    if (teacherView === "main") renderTeacherMain();
+    if (teacherView === "settings") renderSettings();
+  }
+
+  function discipleCampOf(d) {
+    if (!d) return "red";
+    if (!isInHall(d)) {
+      const pk = findPeak(d.peak);
+      if (pk) return pk.camp === "blue" ? "blue" : "red";
+    }
+    return d.camp === "blue" ? "blue" : "red";
+  }
+
+  function getCampDisciples(camp) {
+    const want = camp === "blue" ? "blue" : "red";
+    return sortDisciples(
+      getDisciplesArray().filter((d) => discipleCampOf(d) === want),
+      "exp"
+    );
+  }
+
   function buildDemoShowcaseState() {
-    const base = buildSeedArena();
+    const base = buildShowcaseRosterArena();
     const peakIds = Object.keys(base.peaks);
     const scorePlan = [120, 95, 80, 110, 70, 88];
     peakIds.forEach((pk, i) => {
@@ -6254,9 +6398,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const host = document.getElementById("settings-play-summary");
     if (!host) return;
     const def = getPlayModeDef();
+    const mode = getUiDisplayMode();
+    const modeDef = UI_DISPLAY_MODE_DEFS.find((m) => m.id === mode) || UI_DISPLAY_MODE_DEFS[0];
+    const peakCount = getPeaksArray().length;
     host.innerHTML = `
-      <div class="sps-text">当前玩法 <b>${esc(def.name)}</b> · ${esc(def.size)}<br><span class="muted" id="settings-build-stamp">版本加载中…</span></div>
-      <button type="button" data-action="goto-play-mode">改玩法</button>`;
+      <div class="sps-text">当前玩法 <b>${esc(def.name)}</b> · ${esc(def.size)} · 显示 <b>${esc(modeDef.name)}</b><br>
+        <span class="muted">主界面可切换：两派 / 小组 / 成员${peakCount ? ` · 已有 ${peakCount} 个小组` : " · 尚未创建小组"}</span><br>
+        <span class="muted" id="settings-build-stamp">版本加载中…</span></div>
+      <div class="row" style="gap:.35rem;flex-wrap:wrap">
+        <button type="button" data-action="goto-play-mode">改玩法</button>
+        ${UI_DISPLAY_MODE_DEFS.map((m) => {
+          const disabled = (m.id === "peak" || m.id === "member") && !peakCount;
+          return `<button type="button" data-ui-mode="${m.id}" class="${mode === m.id ? "primary" : ""}" ${disabled ? "disabled" : ""}>${esc(m.name)}</button>`;
+        }).join("")}
+      </div>`;
+    host.querySelectorAll("[data-ui-mode]").forEach((b) => {
+      b.onclick = () => setUiDisplayMode(b.dataset.uiMode);
+    });
     fetch("/__gy/build", { cache: "no-store" }).then((r) => r.json()).then((b) => {
       const el = document.getElementById("settings-build-stamp");
       if (!el) return;
@@ -8072,34 +8230,44 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function getCampLiveStats(camp) {
-    const peaks = sortPeaks(getPeaksArray().filter((p) => (camp === "blue" ? p.camp === "blue" : p.camp !== "blue")));
-    const disciples = getDisciplesArray().filter((d) => {
-      if (isInHall(d)) return false;
-      const pk = findPeak(d.peak);
-      if (!pk) return false;
-      return camp === "blue" ? pk.camp === "blue" : pk.camp !== "blue";
-    });
-    const score = peaks.reduce((s, p) => s + (p.score || 0), 0);
-    const top = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+    ensureArenaDisplayConfig();
+    const want = camp === "blue" ? "blue" : "red";
+    const peaks = sortPeaks(getPeaksArray().filter((p) => (want === "blue" ? p.camp === "blue" : p.camp !== "blue")));
+    const disciples = getCampDisciples(want);
+    const peakScore = peaks.reduce((s, p) => s + (p.score || 0), 0);
+    const campScoreKey = want === "blue" ? "camp_score_blue" : "camp_score_red";
+    const directCampScore = Number(state.config?.[campScoreKey]) || 0;
+    // 有小组时以小组分为准；无小组时用派系分（并加上无组员贡献分作展示补充）
+    const memberContrib = peaks.length
+      ? 0
+      : disciples.reduce((s, d) => s + (Number(d.contributed) || 0), 0);
+    const score = peaks.length ? peakScore : (directCampScore + memberContrib);
+    const topPeak = peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+    const topMember = disciples.slice().sort((a, b) => (b.contributed || 0) - (a.contributed || 0))[0];
     const elements = {};
     peaks.forEach((p) => {
       const el = p.element || "无";
       elements[el] = (elements[el] || 0) + 1;
     });
     const dominant = Object.entries(elements).sort((a, b) => b[1] - a[1])[0];
-    const alliance = camp === "blue"
+    const alliance = want === "blue"
       ? (state.config?.alliance_blue_name || "声浪联盟")
       : (state.config?.alliance_red_name || "光影联盟");
+    const m = getCampMission();
+    const missionEl = want === "blue" ? m.blue_element : m.red_element;
     return {
-      camp,
+      camp: want,
       alliance,
       score,
       peakCount: peaks.length,
       memberCount: disciples.length,
-      topName: top ? `${top.icon || ""} ${top.name}` : "暂无山峰",
-      topScore: top ? (top.score || 0) : 0,
-      dominantElement: dominant ? dominant[0] : "—",
-      peaks
+      topName: topPeak
+        ? `${topPeak.icon || ""} ${topPeak.name}`
+        : (topMember ? topMember.name : "暂无成员"),
+      topScore: topPeak ? (topPeak.score || 0) : (topMember ? (topMember.contributed || 0) : 0),
+      dominantElement: dominant ? dominant[0] : (missionEl || "—"),
+      peaks,
+      disciples
     };
   }
 
@@ -8147,14 +8315,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       redAttrs.innerHTML = `
         <span>属性 <b>${esc(m.red_element || redLive.dominantElement || "—")}</b></span>
         <span>侧重 <b>${esc(m.red_focus || "—")}</b></span>
-        <span>山峰 <b>${redLive.peakCount}</b> · 弟子 <b>${redLive.memberCount}</b></span>`;
+        <span>小组 <b>${redLive.peakCount}</b> · 成员 <b>${redLive.memberCount}</b></span>`;
     }
     const blueAttrs = document.getElementById("blue-chip-attrs");
     if (blueAttrs) {
       blueAttrs.innerHTML = `
         <span>属性 <b>${esc(m.blue_element || blueLive.dominantElement || "—")}</b></span>
         <span>侧重 <b>${esc(m.blue_focus || "—")}</b></span>
-        <span>山峰 <b>${blueLive.peakCount}</b> · 弟子 <b>${blueLive.memberCount}</b></span>`;
+        <span>小组 <b>${blueLive.peakCount}</b> · 成员 <b>${blueLive.memberCount}</b></span>`;
     }
     // 主页顶部任务条已移除；任务入口改走左侧「任务」→ 详情页
   }
@@ -8700,7 +8868,46 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function isMembersOpen(peakId, campCount) {
     const id = String(peakId);
     if (memberOpenOverride.has(id)) return memberOpenOverride.get(id);
+    const mode = getUiDisplayMode();
+    if (mode === "member") return true;
+    if (mode === "peak") return false;
     return campCount <= 5;
+  }
+
+  function renderCampMemberCard(d, camp) {
+    const prog = personalProgress(d);
+    const ok = discipleCheckedIn(d);
+    const peak = isInHall(d) ? null : findPeak(d.peak);
+    const place = peak ? peak.name : "派系成员";
+    const isCap = d.role === "队长";
+    const av = d.avatar ? `<img class="disciple-avatar" src="${d.avatar}" alt="" />` : "";
+    return `<div class="camp-member-card ${camp}" data-camp-member="${d.id}" title="点击编辑成员">
+      <div class="cm-name ${isCap ? "cap" : ""}">${av}${esc(d.name || "未命名")}${isCap ? "★" : ""}</div>
+      <div class="cm-track"><i style="width:${prog.pct}%"></i></div>
+      <div class="cm-score">${d.contributed || 0}</div>
+      <div class="cm-meta">${esc(place)} · Lv${prog.level} · ${ok ? "已签到" : "未签到"} · ${esc(prog.title || "")}</div>
+    </div>`;
+  }
+
+  function renderUiModeBar() {
+    const bar = document.getElementById("ui-mode-bar");
+    if (!bar) return;
+    const mode = getUiDisplayMode();
+    const peakCount = getPeaksArray().length;
+    bar.innerHTML = `
+      <span class="ui-mode-lab">显示</span>
+      ${UI_DISPLAY_MODE_DEFS.map((m) => {
+        const disabled = (m.id === "peak" || m.id === "member") && !peakCount;
+        return `<button type="button" data-ui-mode="${m.id}" class="${mode === m.id ? "on" : ""}" ${disabled ? "disabled title=\"请先创建小组\"" : `title="${esc(m.hint)}"`}>${esc(m.name)}</button>`;
+      }).join("")}
+      <span class="muted" style="font-size:.72rem">${
+        mode === "camp" ? "两派成员视图 · 创建小组后可切小组对抗"
+          : mode === "peak" ? "按小组出牌 · 成员默认收起"
+          : "成员明细展开"
+      }</span>`;
+    bar.querySelectorAll("[data-ui-mode]").forEach((b) => {
+      b.onclick = () => setUiDisplayMode(b.dataset.uiMode);
+    });
   }
 
   function peakFeedText(peakId, peakName, day) {
@@ -8917,7 +9124,40 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
   }
 
+  function bindCampMemberList(listEl) {
+    if (!listEl) return;
+    listEl.querySelectorAll("[data-camp-member]").forEach((row) => {
+      row.onclick = () => editDiscipleModal(row.dataset.campMember);
+    });
+  }
+
+  function renderCampColumn(camp) {
+    const live = getCampLiveStats(camp);
+    const members = live.disciples || getCampDisciples(camp);
+    const mode = getUiDisplayMode();
+    const listEl = document.getElementById(camp === "blue" ? "list-blue" : "list-red");
+    const titleBtn = document.getElementById(camp === "blue" ? "camp-title-blue" : "camp-title-red");
+    if (titleBtn) titleBtn.textContent = live.alliance || (camp === "blue" ? "声浪联盟" : "光影联盟");
+    if (!listEl) return { peakCount: 0, memberCount: members.length };
+
+    if (mode === "camp" || !live.peaks.length) {
+      listEl.innerHTML = members.length
+        ? `<div class="camp-member-list">${members.map((d) => renderCampMemberCard(d, camp)).join("")}</div>`
+        : `<div class="camp-empty-hint">暂无成员 · 点「＋成员」加入本派<br>需要分组时再点「＋小组」</div>`;
+      bindCampMemberList(listEl);
+      return { peakCount: live.peakCount, memberCount: members.length };
+    }
+
+    const byScore = live.peaks.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+    const rankMap = {};
+    byScore.forEach((p, i) => { rankMap[p.id] = i; });
+    listEl.innerHTML = live.peaks.map((p) => renderSectCard(p, rankMap[p.id], live.peaks.length)).join("");
+    bindPeakListDnD(listEl);
+    return { peakCount: live.peakCount, memberCount: members.length };
+  }
+
   function renderTeacherMain() {
+    ensureArenaDisplayConfig();
     const day = state.config?.day || 1;
     const dayLabel = document.getElementById("day-label");
     if (dayLabel) dayLabel.textContent = day;
@@ -8925,12 +9165,21 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (dayInput && document.activeElement !== dayInput) dayInput.value = day;
     sortMode = "score";
 
-    const hall = getHallDisciples();
+    const mode = getUiDisplayMode();
+    const board = document.getElementById("camps-board") || document.querySelector(".camps-board");
+    if (board) board.dataset.uiMode = mode;
+
     const hallBanner = document.getElementById("hall-home-banner");
     if (hallBanner) {
-      if (hall.length) {
+      // 两派模式下，带派系的成员直接归入两列，不再挤在大厅横幅
+      const unassigned = getDisciplesArray().filter((d) => isInHall(d) && !d.camp);
+      if (mode !== "camp" && getHallDisciples().length) {
+        const hallAll = getHallDisciples();
         hallBanner.hidden = false;
-        hallBanner.textContent = `大厅未入峰 ${hall.length} 人：` + hall.slice(0, 12).map((d) => d.name).join("、") + (hall.length > 12 ? "…" : "") + " · 请在小组「弟子名册」入峰";
+        hallBanner.textContent = `大厅未入组 ${hallAll.length} 人：` + hallAll.slice(0, 12).map((d) => d.name).join("、") + (hallAll.length > 12 ? "…" : "") + " · 可在小组名册入组，或先归入红蓝派系";
+      } else if (unassigned.length) {
+        hallBanner.hidden = false;
+        hallBanner.textContent = `未分派系 ${unassigned.length} 人 · 请编辑成员并选择光影/声浪`;
       } else {
         hallBanner.hidden = true;
         hallBanner.textContent = "";
@@ -8944,25 +9193,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       memBtn.title = day < 20 ? "第 20 天解锁回忆" : "打开回忆";
     }
     syncRailDayUI();
-
-    const redList = sortPeaks(getPeaksArray().filter((p) => p.camp !== "blue"));
-    const blueList = sortPeaks(getPeaksArray().filter((p) => p.camp === "blue"));
-    const redByScore = redList.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
-    const blueByScore = blueList.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
-    const rankMap = {};
-    redByScore.forEach((p, i) => { rankMap[p.id] = i; });
-    blueByScore.forEach((p, i) => { rankMap[p.id] = i; });
-
+    renderUiModeBar();
     renderMissionBoard();
 
-    document.getElementById("list-red").innerHTML = redList.map((p) => renderSectCard(p, rankMap[p.id], redList.length)).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
-    document.getElementById("list-blue").innerHTML = blueList.map((p) => renderSectCard(p, rankMap[p.id], blueList.length)).join("") || '<p class="muted">暂无山峰，点击＋山峰</p>';
-
-    bindPeakListDnD(document.getElementById("list-red"));
-    bindPeakListDnD(document.getElementById("list-blue"));
+    const redInfo = renderCampColumn("red");
+    const blueInfo = renderCampColumn("blue");
     setupCampDropZones();
-    applyArenaDensity(redList.length, blueList.length);
-    requestAnimationFrame(() => applyArenaDensity(redList.length, blueList.length));
+    applyArenaDensity(Math.max(redInfo.peakCount, 1), Math.max(blueInfo.peakCount, 1));
+    requestAnimationFrame(() => applyArenaDensity(Math.max(redInfo.peakCount, 1), Math.max(blueInfo.peakCount, 1)));
 
     const logs = getLogsArray().filter((l) => l.day === day).slice(0, 10);
     const feed = logs.length
@@ -9436,6 +9674,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const id = ids.length ? Math.max(...ids) + 1 : 0;
       const nextCamp = document.getElementById("a-camp").value;
       const order = getPeaksArray().filter((p) => p.camp === nextCamp).length;
+      const hadPeaks = getPeaksArray().length > 0;
       await setPath("peaks/" + peakKey(id), makePeak({
         id,
         name: (document.getElementById("a-name").value || "").trim() || defaultName,
@@ -9450,7 +9689,50 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         captain_name: "",
         sort_order: order
       }));
+      // 首次创建小组时，自动切到「小组对抗」显示
+      if (!hadPeaks && getUiDisplayMode() === "camp") {
+        await updatePaths({ "config/ui_display_mode": "peak" });
+      }
       closeModal();
+      showVoteToast("小组已创建 · 可切显示模式");
+    };
+  }
+
+  function openAddCampMemberModal(camp) {
+    const want = camp === "blue" ? "blue" : "red";
+    const alliance = want === "blue"
+      ? (state.config?.alliance_blue_name || "声浪联盟")
+      : (state.config?.alliance_red_name || "光影联盟");
+    openModal(`
+      <h3>加入${esc(alliance)}</h3>
+      <div class="stack">
+        <label>姓名<input id="cm-name" maxlength="8" placeholder="2-4个中文名" /></label>
+        <label>学号<input id="cm-sid" maxlength="20" placeholder="可选" /></label>
+        <p class="muted" style="font-size:.78rem">将作为派系成员（未入小组）。创建小组后可再编入小组。</p>
+        <div class="row" style="justify-content:flex-end">
+          <button type="button" class="ghost" id="modal-cancel">取消</button>
+          <button type="button" class="primary" id="cm-save">加入</button>
+        </div>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("cm-save").onclick = async () => {
+      const name = (document.getElementById("cm-name").value || "").trim();
+      if (!name || !/^[\u4e00-\u9fa5]{2,4}$/.test(name)) { alert("请输入2-4个中文名"); return; }
+      const id = "disciple_" + Date.now();
+      const lv = calcPersonalLevel(0);
+      await setPath("disciples/" + id, {
+        name,
+        student_id: (document.getElementById("cm-sid").value || "").trim(),
+        peak: -1,
+        camp: want,
+        exp: 0, level: lv.level, title: lv.title,
+        rank: "青铜", role: "弟子", voted: false, contributed: 0,
+        checked_in_am: false, checked_in_pm: false, first_seen: new Date().toISOString(), voted_for: "",
+        weapon: "笔", gender: "", contact: "", motto: "", avatar: "", trait: "新晋侠客"
+      });
+      closeModal();
+      showVoteToast(`${name} 已加入${alliance}`);
+      if (teacherView === "main") renderTeacherMain();
     };
   }
 
@@ -9721,8 +10003,55 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   async function addScoreToCamp(camp, points, reason, category) {
-    const peaks = getPeaksArray().filter((p) => (camp === "blue" ? p.camp === "blue" : p.camp !== "blue"));
-    if (!peaks.length) { alert(camp === "blue" ? "声浪暂无小组" : "光影暂无小组"); return; }
+    ensureArenaDisplayConfig();
+    const want = camp === "blue" ? "blue" : "red";
+    const peaks = getPeaksArray().filter((p) => (want === "blue" ? p.camp === "blue" : p.camp !== "blue"));
+    const name = want === "blue" ? (state.config?.alliance_blue_name || "声浪联盟") : (state.config?.alliance_red_name || "光影联盟");
+    const pts = Number(points) || 0;
+    if (!pts) { alert("分数无效"); return; }
+
+    // 无小组：直接记入派系分
+    if (!peaks.length) {
+      closeModal();
+      const key = want === "blue" ? "camp_score_blue" : "camp_score_red";
+      const prev = Number(state.config?.[key]) || 0;
+      const next = prev + pts;
+      const day = state.config?.day || 1;
+      const logId = "log_camp_" + Date.now();
+      await updatePaths({
+        [`config/${key}`]: next,
+        [`score_logs/${logId}`]: {
+          timestamp: Date.now(),
+          peak_id: -1,
+          peak_name: name,
+          camp: want,
+          reason: reason || "派系加分",
+          points: pts,
+          category: category || "派系",
+          operator: OPERATOR,
+          day
+        }
+      });
+      if (typeof renderAll === "function") renderAll();
+      const fakePeak = {
+        id: want === "blue" ? -2 : -1,
+        name,
+        camp: want,
+        color: want === "blue" ? "#2ee6ff" : "#ff3b5c",
+        icon: want === "blue" ? "🌊" : "🔥",
+        score: next,
+        peak_level_name: "派系",
+        element: want === "blue" ? "水" : "光",
+        sfx_pack: "kyo"
+      };
+      showComboAnnounce(fakePeak, pts, reason || "派系加分", category || "派系", next, {
+        displayName: name,
+        totalLabel: `派系真气 ${next}`
+      });
+      setTimeout(() => showVoteToast(`${name} +${pts}`), 1200);
+      return;
+    }
+
     closeModal();
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
     const leveled = [];
@@ -9732,12 +10061,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (typeof renderAll === "function") renderAll();
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 40)));
-    const name = camp === "blue" ? (state.config?.alliance_blue_name || "声浪") : (state.config?.alliance_red_name || "光影");
     const peak = findPeak(peaks[0].id) || peaks[0];
     if (peak) {
-      showComboAnnounce(peak, Number(points) || 0, reason || "派系加分", category || "日常", peak.score || 0, {
+      showComboAnnounce(peak, pts, reason || "派系加分", category || "日常", peak.score || 0, {
         displayName: `${name} · 全体 ${peaks.length} 组`,
-        totalLabel: `派系同加 +${Number(points) || 0} · ${peaks.length} 组齐鸣`,
+        totalLabel: `派系同加 +${pts} · ${peaks.length} 组齐鸣`,
         glowPeakIds: peaks.map((p) => p.id)
       });
     }
@@ -12591,7 +12919,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
       if (tab === "camp") {
         pane.innerHTML = `
-          <p class="score-hub-hint">给某一派系下全部小组同时加分。</p>
+          <p class="score-hub-hint">有小组时给该派全部小组同加；无小组时直接记入派系真气。</p>
           <div class="score-target-row" style="margin-bottom:.5rem">
             <button type="button" class="pick on" id="sh-camp-red">光影派系</button>
             <button type="button" class="pick" id="sh-camp-blue">声浪派系</button>
@@ -13761,8 +14089,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="mission-faction-pane ${camp}" style="animation:none;margin-bottom:.7rem">
         <div class="fa-row"><span>联盟名</span><span>${esc(allianceVal)}</span></div>
         <div class="fa-row"><span>总真气</span><span>${live.score}</span></div>
-        <div class="fa-row"><span>山峰数</span><span>${live.peakCount}</span></div>
-        <div class="fa-row"><span>弟子数</span><span>${live.memberCount}</span></div>
+        <div class="fa-row"><span>小组数</span><span>${live.peakCount}</span></div>
+        <div class="fa-row"><span>成员数</span><span>${live.memberCount}</span></div>
         <div class="fa-row"><span>先锋</span><span>${esc(live.topName)} · ${live.topScore}</span></div>
         <div class="fa-row"><span>主流属性</span><span>${esc(live.dominantElement)}</span></div>
       </div>
@@ -13773,7 +14101,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <select id="ca-element">${ELEMENT_PRESETS.map((e) => `<option ${e === (element || "") ? "selected" : ""}>${e}</option>`).join("")}</select>
         </label>
         <label><span>派系备注</span><textarea id="ca-note" rows="2" maxlength="80">${esc(note || "")}</textarea></label>
-        <div class="field-name" style="margin-top:.2rem;color:#ffe39a;font-size:.82rem">旗下小组（点击查看属性）</div>
+        <div class="field-name" style="margin-top:.2rem;color:#ffe39a;font-size:.82rem">旗下小组（无则仅两派对抗）</div>
         <div class="settings-chips">${peakRows}</div>
         <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-top:.35rem">
           <button type="button" data-jump-mission="${camp}">管理门派任务内容</button>
@@ -13880,10 +14208,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <button type="button" data-action="insert-edit-box">插入编辑框</button>
         <button type="button" id="settings-fullscreen" data-action="toggle-fullscreen">全屏</button>
         <button type="button" id="btn-memories" data-action="goto-memories" ${day < 20 ? "disabled" : ""}>回忆${day < 20 ? "·D20" : ""}</button>
-        ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}`;
+        ${demoMode ? '<button type="button" id="settings-clear-demo">重置课堂</button>' : ""}`;
       const clearBtn = document.getElementById("settings-clear-demo");
       if (clearBtn) clearBtn.onclick = async () => {
-        if (!confirm("确认清空 DEMO 数据（含服务器同步库）并刷新？")) return;
+        if (!confirm("确认重置课堂？\n将清空积分、日志、小组与成员，回到「仅红蓝对抗」初始状态。")) return;
         localStorage.removeItem(DEMO_DB_KEY);
         try {
           await fetch("/__gy/demo-db/reset", { method: "POST", cache: "no-store" });
@@ -13934,7 +14262,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (hallHost) {
       hallHost.innerHTML = hall.length
         ? hall.map((d) => `<button type="button" class="settings-chip hall" data-ed="${d.id}" title="点击编辑弟子属性">${esc(d.name)}<span class="chip-sub">${esc(d.student_id || "无学号")}</span></button>`).join("")
-        : '<span class="settings-empty">大厅空闲 · 签到新学员会进入这里 · 点击人名可改属性</span>';
+        : '<span class="settings-empty">暂无未入组人员 · 派系成员可直接在两派视图中管理</span>';
       hallHost.querySelectorAll("[data-ed]").forEach((b) => b.onclick = () => editDiscipleModal(b.dataset.ed));
     }
 
@@ -13970,9 +14298,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       discHost.innerHTML = list.length
         ? list.map((d) => {
             const peak = findPeak(d.peak);
-            const place = peak ? peak.name : "大厅";
-            const camp = peak ? (peak.camp === "blue" ? "blue" : "red") : "hall";
-            return `<button type="button" class="settings-chip ${camp}" data-ed="${d.id}" title="点击编辑弟子属性">
+            const place = peak ? peak.name : (discipleCampOf(d) === "blue" ? "声浪" : "光影");
+            const camp = discipleCampOf(d);
+            return `<button type="button" class="settings-chip ${camp}" data-ed="${d.id}" title="点击编辑成员属性">
               ${esc(d.name)}${d.role === "队长" ? "·队" : ""}
               <span class="chip-sub">${esc(place)} · Lv${d.level || 1}</span>
               <span class="chip-x" data-dd="${d.id}" title="删除">×</span>
@@ -14051,9 +14379,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </select></label>
         <label>联系方式<input id="ed-contact" maxlength="40" value="${esc(profile.contact)}" placeholder="手机 / 微信" /></label>
         <label>个人口号<input id="ed-motto" maxlength="36" value="${esc(profile.motto)}" placeholder="一句话介绍" /></label>
-        <label>所属<select id="ed-peak">
-          <option value="-1" ${peakVal<0?"selected":""}>大厅 · 未入峰</option>
+        <label>所属小组<select id="ed-peak">
+          <option value="-1" ${peakVal<0?"selected":""}>未入小组 · 仅属派系</option>
           ${peaks.map((p)=>`<option value="${p.id}" ${peakVal===p.id?"selected":""}>${p.icon} ${p.name}</option>`).join("")}
+        </select></label>
+        <label>派系<select id="ed-camp">
+          <option value="red" ${discipleCampOf(d)==="red"?"selected":""}>光影</option>
+          <option value="blue" ${discipleCampOf(d)==="blue"?"selected":""}>声浪</option>
         </select></label>
         <label>身份<select id="ed-role"><option value="弟子" ${d.role!=="队长"?"selected":""}>弟子</option><option value="队长" ${d.role==="队长"?"selected":""}>队长</option></select></label>
         <label>个人特质<input id="ed-trait" value="${esc(d.trait||d.title||"")}" placeholder="如：镜头感 / 节奏控" /></label>
@@ -14092,12 +14424,24 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     };
     document.getElementById("ed-avatar-clear").onclick = () => setEdAvatar("");
     document.getElementById("modal-cancel").onclick = closeModal;
+    const peakSel = document.getElementById("ed-peak");
+    const campSel = document.getElementById("ed-camp");
+    const syncCampByPeak = () => {
+      if (!peakSel || !campSel) return;
+      const pid = Number(peakSel.value);
+      const pk = pid < 0 ? null : findPeak(pid);
+      campSel.disabled = !!pk;
+      if (pk) campSel.value = pk.camp === "blue" ? "blue" : "red";
+    };
+    if (peakSel) peakSel.onchange = syncCampByPeak;
+    syncCampByPeak();
     document.getElementById("ed-save").onclick = async () => {
       const peakId = Number(document.getElementById("ed-peak").value);
       const peak = peakId < 0 ? null : findPeak(peakId);
       const name = document.getElementById("ed-name").value.trim();
       const role = document.getElementById("ed-role").value;
       const trait = document.getElementById("ed-trait").value.trim();
+      const campVal = document.getElementById("ed-camp")?.value === "blue" ? "blue" : "red";
       const profileNext = normalizeDiscipleProfile({
         gender: document.getElementById("ed-gender").value,
         contact: document.getElementById("ed-contact").value,
@@ -14112,7 +14456,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         [`disciples/${id}/name`]: name,
         [`disciples/${id}/student_id`]: document.getElementById("ed-sid").value.trim(),
         [`disciples/${id}/peak`]: peakId,
-        [`disciples/${id}/camp`]: peak ? peak.camp : "red",
+        [`disciples/${id}/camp`]: peak ? peak.camp : campVal,
         [`disciples/${id}/role`]: peakId < 0 ? "弟子" : role,
         [`disciples/${id}/trait`]: trait,
         [`disciples/${id}/gender`]: profileNext.gender,
@@ -15507,6 +15851,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (act === "award") openAwardModal();
     if (act === "add-peak" || act === "add-peak-red") await addPeak("red");
     if (act === "add-peak-blue") await addPeak("blue");
+    if (act === "add-camp-member-red") { openAddCampMemberModal("red"); return; }
+    if (act === "add-camp-member-blue") { openAddCampMemberModal("blue"); return; }
+    if (act === "camp-score-red" || act === "camp-score-blue") {
+      openScoreHubModal("camp");
+      return;
+    }
     if (act === "add-disciple") editDiscipleModal("disciple_" + Date.now());
     if (act === "add-preset") editPresetModal("bp_" + Date.now());
     if (act === "settle-ranks") {
@@ -15648,6 +15998,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const loaded = loadDemo();
     state = loaded || buildSeedArena();
     if (!state.config) state.config = buildSeedArena().config;
+    ensureArenaDisplayConfig();
     saveDemoLocal();
     demoSyncEnabled = false;
     demoRev = 0;
