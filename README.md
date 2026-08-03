@@ -1,11 +1,12 @@
 # 光影盟 · 联盟积分体系
 
-**本机离线课堂**：老师电脑本地运行，学生现场同一 Wi‑Fi/局域网使用。  
-**无需外网**——教室断网也能签到、投票、抽人、加分、兑换。
+**本机课堂**：老师电脑本地运行；**学生可用手机流量扫码签到**（默认经 Cloudflare 临时隧道）。  
+老师端始终收藏 `http://127.0.0.1:3000/?mode=teacher`。同 Wi‑Fi 仍可作备用。
 
 - 字体 / 二维码在 `vendor/`，不请求 CDN  
 - 数据经本机 `/__gy/demo-db` 同步（`gy-demo-db.json`）  
-- 扫码地址锁定在 `gy-classroom.json`（局域网，非公网隧道）  
+- 启动时 `public-tunnel.sh` 写入 `gy-tunnel-origin.json`（流量扫码）；局域网备用见 `gy-classroom.json`  
+- 只要局域网、不要隧道：`GY_PUBLIC_TUNNEL=0 ./start.sh`
 
 **请先读：[课堂稳定使用.md](./课堂稳定使用.md)** · **[固定访问地址.md](./固定访问地址.md)**
 
