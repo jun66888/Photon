@@ -3776,6 +3776,81 @@ body.play-mode-basic #rail-side-mode-tabs {
   display: flex; align-items: center; justify-content: center;
   padding: 1.5rem;
 }
+#game-stage.game-fx-pulse { animation: gameStagePulse .45s ease; }
+#game-stage.game-fx-win { animation: gameStageWin .7s ease; }
+#game-stage.game-fx-boom { animation: gameStageBoom .85s ease; }
+@keyframes gameStagePulse {
+  0% { filter: brightness(1); transform: scale(1); }
+  40% { filter: brightness(1.18); transform: scale(1.015); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+@keyframes gameStageWin {
+  0% { filter: brightness(1.35) saturate(1.2); transform: scale(1.03); }
+  55% { filter: brightness(1.1); transform: scale(1.01); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+@keyframes gameStageBoom {
+  0% { filter: brightness(1.6) contrast(1.15); transform: scale(1.04); }
+  30% { filter: brightness(1.2); transform: scale(.99); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+.game-fx-nudge { animation: gameFxNudge .12s ease; }
+@keyframes gameFxNudge {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); color: #ffe39a; }
+  100% { transform: scale(1); }
+}
+.ice-stage-big.game-fx-pop,
+.ice-stage-title.game-fx-pop {
+  animation: gameFxPop .55s cubic-bezier(.2,1.4,.3,1);
+}
+@keyframes gameFxPop {
+  0% { transform: scale(.72); opacity: .35; filter: blur(2px); }
+  60% { transform: scale(1.06); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); }
+}
+.game-fx-banner {
+  position: fixed; left: 50%; top: 18%; z-index: 92; pointer-events: none;
+  transform: translateX(-50%);
+  font-family: var(--font-brush);
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  color: #ffe9a8; letter-spacing: .12em;
+  text-shadow: 0 0 22px rgba(240,193,75,.55), 0 3px 0 #1a1205;
+  padding: .55rem 1.2rem;
+  border: 2px solid rgba(240,193,75,.55);
+  background: rgba(10,14,26,.88);
+  animation: gameFxBanner 1.35s ease forwards;
+  white-space: nowrap;
+  max-width: 90vw;
+}
+.game-fx-banner.boom { color: #ffb0bd; border-color: rgba(255,90,120,.6); }
+.game-fx-banner.fail { color: #ffb0bd; }
+.game-fx-banner.ok { color: #9dffc4; border-color: rgba(61,255,154,.45); }
+@keyframes gameFxBanner {
+  0% { opacity: 0; transform: translateX(-50%) translateY(18px) scale(.85); }
+  18% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.05); }
+  75% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(.96); }
+}
+.flash-ice-win {
+  position: fixed; inset: 0; z-index: 85; pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,227,154,.5), transparent 42%),
+    radial-gradient(circle at 50% 55%, rgba(61,255,154,.18), transparent 70%);
+  animation: flashOut .65s ease forwards;
+}
+.flash-ice-boom {
+  position: fixed; inset: 0; z-index: 85; pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,90,120,.55), transparent 38%),
+    radial-gradient(circle at 50% 50%, rgba(255,200,80,.28), transparent 72%);
+  animation: flashOut .75s ease forwards;
+}
+.flash-ice-fail {
+  position: fixed; inset: 0; z-index: 85; pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255,100,120,.28), transparent 60%);
+  animation: flashOut .45s ease forwards;
+}
 .ice-private-mask .ice-stage-card { background: #141a28; border: 1px solid rgba(255,227,154,.25); border-radius: 1rem; padding: 1.25rem; min-width: min(90vw, 22rem); }
 @media (max-width: 900px) {
   .ice-mode-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -6892,7 +6967,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const ctx = ensureAudio();
     if (!ctx || !sfxEnabled || sfxVolume <= 0) return;
     const t = ctx.currentTime;
-    if (kind === "tick") {
+    if (kind === "tick" || kind === "countdown") {
       tone(880, t, 0.05, "square", 0.04, 660, 0.005);
       return;
     }
@@ -6905,7 +6980,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       pal3SpiritChime(t, 4);
       return;
     }
-    if (kind === "win" || kind === "ok") {
+    if (kind === "win" || kind === "ok" || kind === "reveal") {
       if (pal3Samples.mid && playBuffer(pal3Samples.mid, 0.78)) return;
       pal3SpiritChime(t, 6);
       tone(659, t + 0.08, 0.22, "sine", 0.07, 880, 0.02);
@@ -6932,6 +7007,129 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     playHitSfx(5, "日常");
+  }
+
+  function gameStageCenter() {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return { x: window.innerWidth / 2, y: window.innerHeight * 0.48 };
+    const r = stage.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  function pulseGameStage(cls) {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return;
+    stage.classList.remove("game-fx-pulse", "game-fx-win", "game-fx-boom");
+    void stage.offsetWidth;
+    stage.classList.add(cls || "game-fx-pulse");
+    setTimeout(() => stage.classList.remove("game-fx-pulse", "game-fx-win", "game-fx-boom"), 900);
+  }
+
+  function popGameText(sel) {
+    const el = typeof sel === "string" ? document.querySelector(sel) : sel;
+    if (!el) return;
+    el.classList.remove("game-fx-pop", "game-fx-nudge");
+    void el.offsetWidth;
+    el.classList.add("game-fx-pop");
+    setTimeout(() => el.classList.remove("game-fx-pop"), 600);
+  }
+
+  function showGameFxBanner(text, tone) {
+    if (!text) return;
+    document.querySelectorAll(".game-fx-banner").forEach((n) => n.remove());
+    const el = document.createElement("div");
+    el.className = "game-fx-banner" + (tone ? " " + tone : "");
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1400);
+  }
+
+  function addFxFlash(cls) {
+    const host = document.getElementById("fx-host");
+    if (!host) return;
+    const flash = document.createElement("div");
+    flash.className = cls;
+    host.appendChild(flash);
+    setTimeout(() => flash.remove(), 800);
+  }
+
+  /**
+   * 破冰 / 抽人统一反馈：音效 + 画面特效
+   * kind: start|spin|tick|countdown|win|ok|match|draw|boom|fail|bad|reveal
+   */
+  function playGameFx(kind, opts = {}) {
+    const k = kind || "tick";
+    if (!opts.silentSfx) {
+      try { playIceSfx(k === "countdown" ? "tick" : k); } catch (e) { /* ignore */ }
+    }
+    const c = gameStageCenter();
+    const x = opts.x != null ? opts.x : c.x;
+    const y = opts.y != null ? opts.y : c.y;
+    const banner = opts.banner || "";
+
+    if (k === "spin") {
+      const big = document.getElementById("ice-flower-name")
+        || document.querySelector("#game-stage .ice-stage-big")
+        || document.querySelector("#game-stage .snake-cell.on");
+      if (big) {
+        big.classList.remove("game-fx-nudge");
+        void big.offsetWidth;
+        big.classList.add("game-fx-nudge");
+      }
+      return;
+    }
+    if (k === "tick" || k === "countdown") {
+      if (k === "countdown") {
+        const timer = document.querySelector("#game-stage .ice-stage-timer");
+        if (timer) {
+          timer.classList.remove("game-fx-nudge");
+          void timer.offsetWidth;
+          timer.classList.add("game-fx-nudge");
+        }
+      }
+      return;
+    }
+    if (k === "start") {
+      inkBurstAt(x, y);
+      spawnParticles(x, y, "#ffe39a", 18, 6, { starRatio: 0.35, modes: ["dot", "star", "ember"] });
+      pulseGameStage("game-fx-pulse");
+      popGameText("#game-stage .ice-stage-title, #game-stage .ice-stage-big");
+      if (banner) showGameFxBanner(banner, "ok");
+      return;
+    }
+    if (k === "draw" || k === "reveal") {
+      inkBurstAt(x, y);
+      spawnParticles(x, y, "#9ec9ff", 20, 6, { starRatio: 0.4, modes: ["star", "dot"] });
+      pulseGameStage("game-fx-pulse");
+      popGameText("#game-stage .ice-stage-big, #game-stage .ice-stage-title");
+      if (banner) showGameFxBanner(banner);
+      return;
+    }
+    if (k === "win" || k === "ok" || k === "match") {
+      addFxFlash(k === "match" ? "flash-gold" : "flash-ice-win");
+      spawnParticleStorm(x, y, k === "match" || k === "win" ? 3 : 2);
+      pulseGameStage("game-fx-win");
+      popGameText("#game-stage .ice-stage-big, #game-stage .ice-stage-title");
+      screenShake(k === "win" || k === "match" ? 2 : 1);
+      if (banner) showGameFxBanner(banner, "ok");
+      return;
+    }
+    if (k === "boom") {
+      addFxFlash("flash-ice-boom");
+      spawnParticleStorm(x, y, 4);
+      inkBurstAt(x, y);
+      pulseGameStage("game-fx-boom");
+      screenShake(4);
+      if (banner) showGameFxBanner(banner, "boom");
+      return;
+    }
+    if (k === "fail" || k === "bad") {
+      addFxFlash("flash-ice-fail");
+      spawnParticles(x, y, "#ff8aa0", 14, 5, { starRatio: 0.12, modes: ["ember", "dot", "shard"] });
+      pulseGameStage("game-fx-pulse");
+      screenShake(1);
+      if (banner) showGameFxBanner(banner, "fail");
+    }
   }
 
   function playLevelUpSfx() {
@@ -7450,9 +7648,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <input type="range" id="game-sfx-vol" data-sfx-vol min="0" max="100" step="1" value="${sfxVolume}" />
       <span class="sfx-vol-num" id="game-sfx-vol-num">${sfxVolume}</span>
       <button type="button" data-sfx-preview>试听</button>
+      <button type="button" data-sfx-fx>试特效</button>
       <button type="button" data-sfx-import>导入音效</button>
       <input type="file" data-sfx-file accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
     bindSfxControls(bar);
+    const fxBtn = bar.querySelector("[data-sfx-fx]");
+    if (fxBtn) fxBtn.onclick = () => playGameFx("win", { banner: "特效预览" });
   }
 
   function renderSettingsSfxPanel() {
@@ -7494,7 +7695,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function clearFxOverlays() {
     const host = document.getElementById("fx-host");
     if (!host) return;
-    host.querySelectorAll(".hit-flash, .flash-gold, .ink-burst, .particles, .combo-layer, .toast-levelup").forEach((n) => n.remove());
+    host.querySelectorAll(".hit-flash, .flash-gold, .flash-ice-win, .flash-ice-boom, .flash-ice-fail, .ink-burst, .particles, .combo-layer, .toast-levelup").forEach((n) => n.remove());
+    document.querySelectorAll(".game-fx-banner").forEach((n) => n.remove());
   }
 
   function spawnParticles(x, y, color, count, size, opts = {}) {
@@ -10407,8 +10609,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>`;
     const ok = document.getElementById("ice-charades-ok");
     const skip = document.getElementById("ice-charades-skip");
-    if (ok) ok.onclick = () => { playIceSfx("ok"); showVoteToast(`猜对：${st.word}`); iceNext(); };
-    if (skip) skip.onclick = () => { playIceSfx("tick"); iceNext(); };
+    if (ok) ok.onclick = () => { playGameFx("ok", { banner: `猜对 · ${st.word}` }); showVoteToast(`猜对：${st.word}`); iceNext(); };
+    if (skip) skip.onclick = () => { playGameFx("tick"); iceNext(); };
   }
 
   function renderIceSyncStage() {
@@ -10454,12 +10656,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           if (iceState.red === iceState.blue) {
             iceState.score.hit += 1;
             iceState.score.streak += 1;
-            playIceSfx("match");
+            playGameFx("match", { banner: `默契 · 连击 ${iceState.score.streak}` });
             showVoteToast(`默契成功 · 连击 ${iceState.score.streak}`);
           } else {
             iceState.score.miss += 1;
             iceState.score.streak = 0;
-            playIceSfx("fail");
+            playGameFx("fail", { banner: "想法分歧" });
             showVoteToast("分歧出现 · 连击清零");
           }
         }
@@ -10498,6 +10700,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       b.onclick = () => {
         const k = b.dataset.iceStand;
         iceState[k] = (iceState[k] || 0) + 1;
+        playGameFx("tick");
+        const r = b.getBoundingClientRect();
+        spawnParticles(r.left + r.width/2, r.top + r.height/2, k==="left"?"#ffb0bd":(k==="right"?"#9ec9ff":"#ffe39a"), 10, 4, { starRatio: 0.2, modes: ["dot","ember"] });
         renderIceStandStage();
       };
     });
@@ -10673,6 +10878,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>`;
     mask.onclick = () => mask.remove();
     document.body.appendChild(mask);
+    try { playIceSfx("tick"); } catch (e) { /* ignore */ }
   }
 
   function iceSpyKill(idx) {
@@ -10684,19 +10890,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (p.role === "spy" && spiesLeft === 0) {
       iceState.phase = "end";
       iceState.result = "平民胜利 · 卧底全部出局";
-      playIceSfx("win");
+      playGameFx("win", { banner: "平民胜利" });
       showVoteToast("卧底被揪出！");
     } else if (spiesLeft > 0 && spiesLeft >= alive.length - spiesLeft) {
       iceState.phase = "end";
       iceState.result = "卧底胜利 · 人数占优";
-      playIceSfx("boom");
+      playGameFx("boom", { banner: "卧底胜利" });
       showVoteToast("卧底赢了");
     } else if (p.role === "spy") {
-      playIceSfx("ok");
+      playGameFx("ok", { banner: `${p.name} · 卧底出局` });
       showVoteToast(`${p.name} 出局（卧底）· 仍有卧底潜伏`);
       iceState.phase = "vote";
     } else {
-      playIceSfx("fail");
+      playGameFx("fail", { banner: `${p.name} · 平民出局` });
       showVoteToast(`${p.name} 出局（平民）· 继续`);
       iceState.phase = "vote";
     }
@@ -10738,6 +10944,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     iceBusy = false;
     iceState = {};
     renderIceStage();
+    playGameFx("tick");
     showVoteToast("已重置");
   }
 
@@ -10757,7 +10964,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState = { winner: winner.name };
       renderIceFlowerStage();
       syncIceStartLabels(iceDef().startLabel || "开始");
-      playIceSfx("win");
+      playGameFx("win", { banner: `花落 · ${winner.name}` });
       showVoteToast(`花落：${winner.name}`);
       return;
     }
@@ -10767,14 +10974,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     let i = 0;
     let tick = 0;
     clearIceTimer();
-    playIceSfx("start");
+    playGameFx("start", { banner: "击鼓传花" });
     iceTimer = setInterval(() => {
       i = (i + 1) % pool.length;
       iceState.flash = pool[i].name;
       const el = document.getElementById("ice-flower-name");
       if (el) el.textContent = pool[i].name;
       tick++;
-      if (tick % 3 === 0) playIceSfx("spin");
+      if (tick % 3 === 0) playGameFx("spin");
     }, 70);
     syncIceStartLabels("停下");
   }
@@ -10790,7 +10997,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const answer = min + Math.floor(Math.random() * (max - min + 1));
     iceState = { min, max, answer, guesses: [], boom: false };
     renderIceBombStage();
-    playIceSfx("start");
+    playGameFx("start", { banner: "炸弹已埋下" });
     showVoteToast("炸弹已埋好，开始猜吧");
   }
   function iceBombGuess() {
@@ -10806,10 +11013,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     iceState.guesses.push({ n, by: "课堂" });
     if (n === iceState.answer) {
       iceState.boom = true;
-      playIceSfx("boom");
+      playGameFx("boom", { banner: `踩中 · ${n}` });
       showVoteToast(`💥 ${n} 踩中炸弹！`);
     } else {
-      playIceSfx("tick");
+      playGameFx("tick");
       showVoteToast(n < iceState.answer ? `${n} 太小` : `${n} 太大`);
     }
     renderIceBombStage();
@@ -10823,17 +11030,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const topic = pickIce(ICE_INTRO_TOPICS, "intro");
     iceState = { name: person.name, topic, sec: 15 };
     renderIceIntroStage();
-    playIceSfx("draw");
+    playGameFx("draw", { banner: person.name });
     iceTimer = setInterval(() => {
       iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
       const el = document.getElementById("ice-intro-timer");
       if (el) el.textContent = String(iceState.sec);
       if (iceState.sec <= 0) {
         clearIceTimer();
-        playIceSfx("fail");
+        playGameFx("fail", { banner: "时间到" });
         showVoteToast("时间到");
       } else if (iceState.sec <= 3) {
-        playIceSfx("tick");
+        playGameFx("countdown");
       }
     }, 1000);
   }
@@ -10842,7 +11049,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const word = pickIce(ICE_CHARADES_WORDS, "charades");
     iceState = { word };
     renderIceCharadesStage();
-    playIceSfx("start");
+    playGameFx("start", { banner: "你比我猜" });
   }
 
   function iceSyncStart() {
@@ -10850,14 +11057,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const item = pickIce(ICE_SYNC_QUESTIONS, "sync");
     iceState = { q: item.q, a: item.a, b: item.b, red: "", blue: "", scored: false, score: prevScore };
     renderIceSyncStage();
-    playIceSfx("start");
+    playGameFx("start", { banner: "红蓝默契" });
   }
 
   function iceStandStart() {
     const q = pickIce(ICE_STAND_QUESTIONS, "stand");
     iceState = { q, left: 0, mid: 0, right: 0 };
     renderIceStandStage();
-    playIceSfx("start");
+    playGameFx("start", { banner: "站队表决" });
   }
 
   function iceDuelStart() {
@@ -10871,17 +11078,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const score = iceState.score || { a: 0, b: 0 };
     iceState = { left, right, challenge, sec: 30, score, judged: false };
     renderIceDuelStage();
-    playIceSfx("start");
+    playGameFx("start", { banner: `${left} VS ${right}` });
     iceTimer = setInterval(() => {
       iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
       const el = document.getElementById("ice-duel-timer");
       if (el) el.textContent = String(iceState.sec);
       if (iceState.sec <= 0) {
         clearIceTimer();
-        playIceSfx("fail");
+        playGameFx("fail", { banner: "时间到" });
         showVoteToast("时间到 · 请判定胜负");
       } else if (iceState.sec <= 5) {
-        playIceSfx("tick");
+        playGameFx("countdown");
       }
     }, 1000);
   }
@@ -10892,15 +11099,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (side === "left") {
       iceState.score.a += 1;
       iceState.judged = true;
-      playIceSfx("win");
+      playGameFx("win", { banner: `${iceState.left} 胜` });
       showVoteToast(`${iceState.left} 胜`);
     } else if (side === "right") {
       iceState.score.b += 1;
       iceState.judged = true;
-      playIceSfx("win");
+      playGameFx("win", { banner: `${iceState.right} 胜` });
       showVoteToast(`${iceState.right} 胜`);
     } else {
-      playIceSfx("tick");
+      playGameFx("tick");
       showVoteToast("平局 · 换挑战再战");
       iceState.challenge = pickIce(ICE_DUEL_CHALLENGES, "duel");
       iceState.sec = 30;
@@ -10911,8 +11118,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
         const el = document.getElementById("ice-duel-timer");
         if (el) el.textContent = String(iceState.sec);
-        if (iceState.sec <= 0) { clearIceTimer(); playIceSfx("fail"); showVoteToast("时间到 · 请判定胜负"); }
-        else if (iceState.sec <= 5) playIceSfx("tick");
+        if (iceState.sec <= 0) { clearIceTimer(); playGameFx("fail", { banner: "时间到" }); showVoteToast("时间到 · 请判定胜负"); }
+        else if (iceState.sec <= 5) playGameFx("countdown");
       }, 1000);
       return;
     }
@@ -10925,22 +11132,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const item = pickIce(ICE_BUZZ_QUESTIONS, "buzz");
     iceState = { q: item.q, a: item.a, score: prev, round, locked: false, showAns: false };
     renderIceBuzzStage();
-    playIceSfx("start");
+    playGameFx("start", { banner: `抢答 · 第 ${round} 题` });
   }
   function iceBuzzJudge(act) {
     if (act === "reveal") {
       iceState.showAns = true;
-      playIceSfx("tick");
+      playGameFx("reveal", { banner: "看答案" });
       showVoteToast(`参考答案：${iceState.a || "—"}`);
       renderIceBuzzStage();
       return;
     }
     if (iceState.locked) return;
     iceState.score = iceState.score || { red: 0, blue: 0 };
-    if (act === "red-ok") { iceState.score.red += 1; playIceSfx("ok"); showVoteToast("红方 +1"); }
-    else if (act === "red-bad") { iceState.score.red -= 1; playIceSfx("bad"); showVoteToast("红方 −1"); }
-    else if (act === "blue-ok") { iceState.score.blue += 1; playIceSfx("ok"); showVoteToast("蓝方 +1"); }
-    else if (act === "blue-bad") { iceState.score.blue -= 1; playIceSfx("bad"); showVoteToast("蓝方 −1"); }
+    if (act === "red-ok") { iceState.score.red += 1; playGameFx("ok", { banner: "红方答对" }); showVoteToast("红方 +1"); }
+    else if (act === "red-bad") { iceState.score.red -= 1; playGameFx("bad", { banner: "红方答错" }); showVoteToast("红方 −1"); }
+    else if (act === "blue-ok") { iceState.score.blue += 1; playGameFx("ok", { banner: "蓝方答对" }); showVoteToast("蓝方 +1"); }
+    else if (act === "blue-bad") { iceState.score.blue -= 1; playGameFx("bad", { banner: "蓝方答错" }); showVoteToast("蓝方 −1"); }
     iceState.locked = true;
     iceState.showAns = true;
     renderIceBuzzStage();
@@ -10955,13 +11162,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const done = iceState.done || 0;
     iceState = { name: person.name, kind, prompt, done };
     renderIceDareStage();
-    playIceSfx("draw");
+    playGameFx("draw", { banner: `${person.name} · ${kind === "truth" ? "真心话" : "大冒险"}` });
   }
   function iceDareAct(act) {
     if (!iceState.name) return;
     if (act === "done") {
       iceState.done = (iceState.done || 0) + 1;
-      playIceSfx("win");
+      playGameFx("win", { banner: `勇气 +1 · ${iceState.done}` });
       showVoteToast(`完成 · 勇气值 ${iceState.done}`);
       return iceDareStart();
     }
@@ -10969,8 +11176,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState.prompt = iceState.kind === "truth"
         ? pickIce(ICE_DARE_TRUTHS, "truth")
         : pickIce(ICE_DARE_DARES, "dare");
-      playIceSfx("tick");
+      playGameFx("tick");
       renderIceDareStage();
+      popGameText("#game-stage .ice-stage-title");
       return;
     }
     if (act === "flip") {
@@ -10978,7 +11186,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState.prompt = iceState.kind === "truth"
         ? pickIce(ICE_DARE_TRUTHS, "truth")
         : pickIce(ICE_DARE_DARES, "dare");
-      playIceSfx("tick");
+      playGameFx("reveal", { banner: iceState.kind === "truth" ? "真心话" : "大冒险" });
       renderIceDareStage();
     }
   }
@@ -11003,7 +11211,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       showRoles: false
     };
     renderIceSpyStage();
-    playIceSfx("start");
+    playGameFx("start", { banner: "谁是卧底 · 发牌" });
     showVoteToast(`已发牌 · ${spyCount} 名卧底潜伏中`);
   }
 
@@ -11266,10 +11474,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const winner = pickRandomDisciple(pool);
     if (!winner) return;
     setGameSpinButtons(true);
+    playGameFx("start", { banner: "开始抽取" });
     try {
       if (gameMode === "wheel") await runWheelDraw(pool, winner);
       else if (gameMode === "fruit") await runFruitDraw(pool, winner);
       else await runSnakeDraw(pool, winner);
+      playGameFx("win", { banner: `抽中 · ${winner.name}` });
       showDrawResultModal(winner);
     } finally {
       setGameSpinButtons(false);
@@ -11292,8 +11502,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       gameWheelAngle = final;
       disk.style.transition = "transform 4.2s cubic-bezier(.12,.75,.08,1)";
       disk.style.transform = `rotate(${final}deg)`;
-      playHitSfx(8, "日常");
+      playIceSfx("start");
+      let tickN = 0;
+      const tickTimer = setInterval(() => {
+        tickN += 1;
+        playGameFx("spin");
+        if (tickN > 28) clearInterval(tickTimer);
+      }, 140);
       setTimeout(() => {
+        clearInterval(tickTimer);
         disk.classList.remove("spinning");
         // 归一化角度，避免无限增大
         gameWheelAngle = ((final % 360) + 360) % 360;
@@ -11301,6 +11518,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         disk.style.transform = `rotate(${gameWheelAngle}deg)`;
         void disk.offsetWidth;
         disk.style.transition = "";
+        const c = gameStageCenter();
+        spawnParticleStorm(c.x, c.y, 3);
         resolve();
       }, 4300);
     });
@@ -11310,6 +11529,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return new Promise((resolve) => {
       const reels = [0, 1, 2];
       let done = 0;
+      playIceSfx("start");
+      let tickN = 0;
+      const tickTimer = setInterval(() => {
+        tickN += 1;
+        playGameFx("spin");
+        if (tickN > 22) clearInterval(tickTimer);
+      }, 160);
       reels.forEach((ri) => {
         const strip = document.getElementById("fruit-strip-" + ri);
         if (!strip) { if (++done === 3) resolve(); return; }
@@ -11336,12 +11562,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           const mid = strip.children[winAt];
           if (mid) mid.classList.add("win");
           if (++done === 3) {
-            playHitSfx(12, "任务");
+            clearInterval(tickTimer);
+            const c = gameStageCenter();
+            spawnParticleStorm(c.x, c.y, 3);
+            pulseGameStage("game-fx-win");
             resolve();
           }
         }, dur * 1000 + 40);
       });
-      playHitSfx(5, "日常");
     });
   }
 
@@ -11356,19 +11584,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const laps = 2 + Math.floor(Math.random() * 2);
       const totalSteps = laps * cells.length + winIdx;
       let step = 0;
-      playHitSfx(5, "日常");
+      playIceSfx("start");
       if (gameSnakeTimer) clearInterval(gameSnakeTimer);
       gameSnakeTimer = setInterval(() => {
         cells.forEach((c) => c.classList.remove("on", "win"));
         const cur = cells[step % cells.length];
         if (cur) cur.classList.add("on");
+        if (step % 2 === 0) playGameFx("spin");
         step += 1;
         if (step > totalSteps) {
           clearInterval(gameSnakeTimer);
           gameSnakeTimer = null;
           cells.forEach((c) => c.classList.remove("on"));
           winCell.classList.add("win", "on");
-          playHitSfx(15, "擂台");
+          const r = winCell.getBoundingClientRect();
+          spawnParticleStorm(r.left + r.width / 2, r.top + r.height / 2, 3);
+          pulseGameStage("game-fx-win");
+          screenShake(2);
           setTimeout(resolve, 480);
         }
       }, 70);
