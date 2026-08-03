@@ -2530,10 +2530,12 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center; align-items: center;
 }
 .checkin-qr-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.2rem;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+  align-items: stretch;
+  max-width: min(100%, 42rem);
+  margin: 0 auto;
 }
 .checkin-lists-row {
   display: grid;
@@ -2547,8 +2549,37 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   padding: .55rem .45rem .35rem;
   background: rgba(20, 40, 32, .35);
 }
+.checkin-backup-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  text-align: center;
+}
+.checkin-backup-toggle button {
+  min-width: 12rem;
+}
+.checkin-backup-pane {
+  border: 1px dashed rgba(240,193,75,.35);
+  border-radius: .75rem;
+  padding: .55rem .45rem .35rem;
+  background: rgba(30, 24, 12, .35);
+}
+.checkin-backup-pane.hidden { display: none !important; }
+.qr-wait-box {
+  min-height: 12rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.4rem 1rem;
+  line-height: 1.55;
+  color: #c9b88a;
+  background: rgba(0,0,0,.28);
+  border-radius: .6rem;
+  border: 1px dashed rgba(240,193,75,.35);
+}
 @media (max-width: 860px) {
-  .checkin-qr-layout,
   .checkin-lists-row { grid-template-columns: 1fr; }
 }
 .name-chip {
@@ -4535,7 +4566,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <span class="demo-sync-badge" hidden></span>
         </div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
-        <p class="muted" style="margin:.55rem 0 .75rem">推荐：投屏<strong>固定入口码</strong>（长期不变）→ 学生扫后输入当日 6 位签到码。也可扫下方「本场直达码」。绑定方式可选公网（流量）或局域网。</p>
+        <p class="muted" style="margin:.55rem 0 .75rem">推荐只投屏<strong>固定入口码</strong>→ 学生扫后手输上方 6 位签到码。备用直达码默认隐藏，需要时再点开。</p>
         <div class="checkin-code-banner" id="checkin-code-banner">
           <div class="ccb-lab">当日签到码（手输用）</div>
           <div class="ccb-code" id="checkin-code-text">------</div>
@@ -4543,12 +4574,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
         <div class="checkin-qr-layout">
           <div class="qr-stage checkin-fixed-pane">
-            <div class="course-section-title" style="margin:0 0 .35rem">固定入口码 · 推荐</div>
+            <div class="course-section-title" style="margin:0 0 .35rem">固定入口码 · 主码</div>
             <div class="muted" style="margin-bottom:.35rem" id="checkin-fixed-hint">不含签到码，可打印/投屏长期使用；学生扫后手输上方 6 位数字</div>
             <div class="qr-box" id="checkin-fixed-qr"></div>
           </div>
-          <div class="qr-stage">
-            <div class="course-section-title" style="margin:0 0 .35rem">本场直达码</div>
+          <div class="checkin-backup-toggle">
+            <button type="button" id="btn-toggle-backup-qr" aria-expanded="false" aria-controls="checkin-backup-pane">显示备用直达码</button>
+            <div class="muted" style="font-size:.82rem">平时只用上方主码；直达码含当日签到码，仅作备用</div>
+          </div>
+          <div class="qr-stage checkin-backup-pane hidden" id="checkin-backup-pane">
+            <div class="course-section-title" style="margin:0 0 .35rem">本场直达码 · 备用</div>
             <div class="muted" style="margin-bottom:.35rem" id="checkin-qr-hint">开启签到后生成；扫开直接进入本场（码内含当日签到码）</div>
             <div class="qr-box" id="checkin-qr"></div>
           </div>
@@ -14825,6 +14860,31 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return false;
     }
   }
+  /** 当前绑定模式下，这条 URL 是否适合画进「给学生扫」的二维码 */
+  function isScanSafeUrlForBindMode(url, mode = getQrBindMode()) {
+    if (!url || isLocalOrigin(url) || isPhoneUnfriendlyOrigin(url)) return false;
+    if (mode === "public") return isPublicTunnelHost(originHostname(url));
+    return isLanHttpOrigin(url);
+  }
+  async function verifyPhoneOriginAlive(origin) {
+    const o = String(origin || "").trim().replace(/\/$/, "");
+    if (!o || !isPhoneReachableOrigin(o)) return false;
+    try {
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const t = setTimeout(() => { try { ctrl && ctrl.abort(); } catch (e) { /* ignore */ } }, 7000);
+      const res = await fetch(o + "/__gy/health", {
+        cache: "no-store",
+        mode: "cors",
+        signal: ctrl ? ctrl.signal : undefined
+      });
+      clearTimeout(t);
+      if (!res.ok) return false;
+      const data = await res.json().catch(() => null);
+      return !!(data && data.ok);
+    } catch (e) {
+      return false;
+    }
+  }
   function clearBadPublicOriginOverride() {
     const cur = getPublicOriginOverride();
     if (!cur) return;
@@ -15207,13 +15267,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         hintEl.textContent = "局域网模式：请点「绑定局域网」自动读取教室网卡地址。";
       }
     };
-    const paint = (px) => paintQrInto(canvasHost, currentUrl, px).then((ok) => {
-      fail.style.display = ok ? "none" : "block";
-      link.href = currentUrl;
-      link.textContent = currentUrl;
+    const showWaitBox = (msg) => {
+      canvasHost.innerHTML = `<div class="qr-wait-box">${msg}</div>`;
+      fail.style.display = "none";
+      link.href = currentUrl || "#";
+      link.textContent = currentUrl || "（等待手机可达地址）";
       syncHint();
-      return ok;
-    });
+    };
+    const paint = (px) => {
+      if (!isScanSafeUrlForBindMode(currentUrl, bindMode)) {
+        showWaitBox(bindMode === "public"
+          ? "公网地址准备中…<br>请点「绑定公网」或稍候，勿扫本机/局域网临时地址"
+          : "局域网地址未就绪…<br>请点「绑定局域网」，学生需连同一 Wi‑Fi");
+        return Promise.resolve(false);
+      }
+      return paintQrInto(canvasHost, currentUrl, px).then((ok) => {
+        fail.style.display = ok ? "none" : "block";
+        link.href = currentUrl;
+        link.textContent = currentUrl;
+        syncHint();
+        return ok;
+      });
+    };
     const rebuildFromOrigin = () => {
       let search = "";
       try { search = new URL(currentUrl, location.href).search || ""; } catch (e) {
@@ -15248,13 +15323,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       setPublicOriginOverride(origin);
       if (input) input.value = origin;
       rebuildFromOrigin();
-      // 同步固定入口缓存，并刷新本场直达码（若已开启）
+      // 同步固定入口缓存，并刷新本场直达码（若已开启且备用面板打开）
       try {
         _fixedQrUrlPainted = publicPageUrl("?mode=checkin&entry=1");
         _bareQrUrlPainted = "";
         const dyn = document.getElementById("checkin-qr");
+        const backupPane = document.getElementById("checkin-backup-pane");
         const codeNow = state?.config?.checkin_code;
-        if (dyn && state?.config?.checkin_active && codeNow) {
+        if (dyn && state?.config?.checkin_active && codeNow && backupPane && !backupPane.classList.contains("hidden")) {
           paintBareCheckinQr(dyn, publicPageUrl(`?mode=checkin&code=${codeNow}`), "checkin-qr");
         }
         const fixedHint = document.getElementById("checkin-fixed-hint");
@@ -15269,6 +15345,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         hintEl.textContent = (note || "已绑定：") + origin;
       }
       syncHint();
+      // 后台探测：过期隧道会显示「链接不上」，探测失败则清掉并重绑
+      verifyPhoneOriginAlive(origin).then((alive) => {
+        if (alive) return;
+        if (getPublicOriginOverride() !== origin) return;
+        setPublicOriginOverride("");
+        setBindStatus("刚才的地址手机打不开（可能已过期），正在重新绑定…");
+        if (bindMode === "public") bindPublic({ restart: true });
+        else bindLan();
+      });
       return true;
     };
     const persistOrigin = (origin) => {
@@ -15289,9 +15374,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       setQrBindMode("public");
       syncModeButtons();
       stopTunnelPoll();
-      // 先保留并画出当前码，再后台换公网——避免「一直空白」
-      paintNow();
-      setBindStatus("正在绑定公网隧道（约 15–45 秒）…下方先显示当前码，就绪后自动换成流量地址");
+      // 公网未就绪时绝不画局域网/本机码——手机流量扫了会「链接不上」
+      if (!isScanSafeUrlForBindMode(currentUrl, "public")) {
+        showWaitBox("正在绑定公网隧道（约 15–45 秒）…<br>就绪后自动显示可扫二维码");
+      } else {
+        paintNow();
+      }
+      setBindStatus("正在绑定公网隧道（约 15–45 秒）…请稍候，不要扫临时地址");
       try {
         // 每次点「绑定公网」都主动重建，避免卡在半失败状态
         if (restart) {
@@ -15303,35 +15392,38 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           const d0 = tunnelDetailText(restarted);
           if (d0) setBindStatus(esc(d0));
         }
-        // 绑定过程中先尝试画局域网码，保证投屏上始终有码
-        try {
-          _netHintCache = null;
-          const hint = await fetchNetOriginHint();
-          const lan = pickLanOriginFromHint(hint) || (isLanHttpOrigin(location.origin) ? location.origin.replace(/\/$/, "") : "");
-          if (lan && !isPublicTunnelHost(originHostname(getPublicOriginOverride() || currentUrl))) {
-            currentUrl = lan.replace(/\/$/, "") + "/?mode=checkin&entry=1";
-            paintNow();
-          }
-        } catch (e) { /* ignore */ }
 
         const origin = await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 50000 });
-        if (applyOrigin(origin, "已绑定公网：")) {
+        const originAlive = origin ? await verifyPhoneOriginAlive(origin) : false;
+        if (origin && originAlive && applyOrigin(origin, "已绑定公网：")) {
           persistOrigin(origin);
           return;
         }
-        // 继续轮询，并展示服务端隧道进度（不再擦掉二维码）
+        if (origin && !originAlive) {
+          setPublicOriginOverride("");
+          setBindStatus("拿到的公网地址暂时打不开，继续等待新隧道…");
+          showWaitBox("公网地址检测失败，正在重建…<br>请稍候再扫");
+          await fetch("/__gy/tunnel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ restart: true })
+          }).catch(() => {});
+        }
+        // 继续轮询，并展示服务端隧道进度（绝不画局域网临时码）
         let n = 0;
         let lastDetail = "";
         tunnelTimer = setInterval(() => {
           n += 1;
-          fetchTunnelStatus().then((st) => {
+          fetchTunnelStatus().then(async (st) => {
             const d = tunnelDetailText(st);
             if (d && d !== lastDetail) {
               lastDetail = d;
               setBindStatus("建立中：" + esc(d));
             }
             const o = pickTunnelOriginFromHint(st) || pickTunnelOriginFromHint(st && st.hint);
-            if (o && applyOrigin(o, "已绑定公网：")) {
+            if (!o) return;
+            if (!(await verifyPhoneOriginAlive(o))) return;
+            if (applyOrigin(o, "已绑定公网：")) {
               persistOrigin(o);
               stopTunnelPoll();
             }
@@ -15342,12 +15434,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
               ? ("公网仍未就绪：" + lastDetail + " · 可改用「绑定局域网」或手输 6 位码")
               : "公网仍未就绪。可再点「绑定公网」，或改用「绑定局域网」/ 手输 6 位码。";
             setBindStatus(esc(tip));
-            paintNow();
+            showWaitBox("公网仍未就绪<br>可改点「绑定局域网」，或让学生手输 6 位码");
           }
         }, 2000);
       } catch (e) {
         setBindStatus("绑定公网失败：请确认「启动环境」窗口开着且电脑能上网");
-        paintNow();
+        showWaitBox("绑定公网失败<br>请确认启动环境已打开，且电脑能上网");
       }
     };
     const bindLan = async () => {
@@ -15385,16 +15477,27 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       }
     };
 
-    // 先立刻画码，再按模式后台绑定——杜绝空白等待
+    // 先按安全规则画码（不安全则显示等待框），再按模式后台绑定
     syncModeButtons();
     paintNow();
     if (bindMode === "public") {
-      if (isPublicTunnelHost(originHostname(currentUrl)) || isPublicTunnelHost(originHostname(overrideNow))) {
-        if (overrideNow) setPublicOriginOverride(overrideNow);
-        rebuildFromOrigin();
-        if (!isPublicTunnelHost(originHostname(getPublicOriginOverride() || currentUrl))) {
-          bindPublic({ restart: false });
-        }
+      const cand = (overrideNow && isPublicTunnelHost(originHostname(overrideNow)))
+        ? overrideNow
+        : (isPublicTunnelHost(originHostname(currentUrl)) ? new URL(currentUrl, location.href).origin : "");
+      if (cand) {
+        setBindStatus("正在检测公网地址是否可打开…");
+        verifyPhoneOriginAlive(cand).then((alive) => {
+          if (alive) {
+            setPublicOriginOverride(cand);
+            rebuildFromOrigin();
+            setBindStatus("已绑定公网 · 学生可用手机流量扫码：" + cand, true);
+          } else {
+            setPublicOriginOverride("");
+            setBindStatus("本地缓存的公网地址已失效，正在重新绑定…");
+            showWaitBox("旧地址已失效，正在重新绑定公网…<br>请稍候再扫");
+            bindPublic({ restart: true });
+          }
+        });
       } else {
         bindPublic({ restart: false });
       }
@@ -15530,8 +15633,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const hint = document.getElementById("checkin-qr-hint");
     if (hint) {
       hint.textContent = active
-        ? "本场直达：扫开即进本场。推荐学生扫「固定入口码」后手输上方签到码。"
-        : "可先投屏固定入口码；开启签到后，黄色数字即为当日手输签到码";
+        ? "备用直达：扫开即进本场。日常请用上方主码 + 手输签到码。"
+        : "开启签到后可点「显示备用直达码」；日常请用上方主码";
     }
     const sessionBtn = document.getElementById("btn-checkin-session");
     if (sessionBtn) {
@@ -15631,20 +15734,41 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       } catch (e) { /* ignore */ }
     }
 
-    // 固定入口码：始终渲染（绑定 UI 只出现在这里）；刷新签到码不会改它的内容结构
+    // 固定入口码：始终渲染（绑定 UI 只出现在这里）；备用直达码仅在展开时绘制
     ensurePhoneFriendlyOrigin({ preferTunnel: mode === "public", waitMs: 0 }).finally(() => {
       renderFixedCheckinQr();
-      const qrHost = document.getElementById("checkin-qr");
-      if (!qrHost) return;
-      if (active && code !== "------") {
-        const url = publicPageUrl(`?mode=checkin&code=${code}`);
-        // 本场直达码：只画图，不再重复绑定条
-        paintBareCheckinQr(qrHost, url, "checkin-qr");
-      } else {
-        _bareQrUrlPainted = "";
-        qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333;text-align:center;line-height:1.5">开启签到后生成本场直达码<br><span style="opacity:.8">也可只用左侧固定入口 + 手输签到码</span></div>';
-      }
+      wireBackupQrToggle();
+      refreshBackupCheckinQr();
     });
+  }
+
+  function wireBackupQrToggle() {
+    const btn = document.getElementById("btn-toggle-backup-qr");
+    const pane = document.getElementById("checkin-backup-pane");
+    if (!btn || !pane || btn.dataset.wired === "1") return;
+    btn.dataset.wired = "1";
+    btn.onclick = () => {
+      const open = pane.classList.contains("hidden");
+      pane.classList.toggle("hidden", !open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.textContent = open ? "收起备用直达码" : "显示备用直达码";
+      if (open) refreshBackupCheckinQr(true);
+    };
+  }
+  function refreshBackupCheckinQr(force = false) {
+    const pane = document.getElementById("checkin-backup-pane");
+    const qrHost = document.getElementById("checkin-qr");
+    if (!qrHost) return;
+    if (pane && pane.classList.contains("hidden") && !force) return;
+    const active = !!state.config?.checkin_active;
+    const code = state.config?.checkin_code || "------";
+    if (active && code !== "------") {
+      const url = publicPageUrl(`?mode=checkin&code=${code}`);
+      paintBareCheckinQr(qrHost, url, "checkin-qr");
+    } else {
+      _bareQrUrlPainted = "";
+      qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#c9b88a;text-align:center;line-height:1.5">开启签到后生成本场直达码<br><span style="opacity:.85">日常请用上方主码 + 手输 6 位数字</span></div>';
+    }
   }
 
   let _bareQrUrlPainted = "";
@@ -15656,6 +15780,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const size = getQrSize(key);
     host.classList.add("qr-stage");
     host.innerHTML = "";
+    if (!isScanSafeUrlForBindMode(url)) {
+      host.innerHTML = `<div class="qr-wait-box">${getQrBindMode() === "public"
+        ? "公网地址未就绪，暂不显示备用码<br>请先在上方主码处完成「绑定公网」"
+        : "局域网地址未就绪，暂不显示备用码<br>请先点「绑定局域网」"}</div>`;
+      _bareQrUrlPainted = "";
+      return;
+    }
     const frame = document.createElement("div");
     frame.className = "qr-resizable";
     frame.style.width = size + "px";

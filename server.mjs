@@ -113,43 +113,94 @@ let tunnelStatus = { state: "idle", detail: "", updated_at: "" };
 const TOOLS_DIR = path.join(ROOT, ".tools");
 const TUNNEL_LOG = path.join(ROOT, "gy-tunnel.log");
 
+function clearTunnelOriginFile() {
+  try { if (fs.existsSync(TUNNEL_FILE)) fs.unlinkSync(TUNNEL_FILE); } catch (e) { /* ignore */ }
+}
+
 function loadTunnelOrigin() {
-  if (liveTunnelOrigin && isPhoneReachableOrigin(liveTunnelOrigin)) return liveTunnelOrigin;
-  try {
-    if (!fs.existsSync(TUNNEL_FILE)) return "";
-    const raw = JSON.parse(fs.readFileSync(TUNNEL_FILE, "utf8"));
-    const o = normalizeOrigin(raw && (raw.origin || raw.tunnel_origin) || "");
-    if (!o) return "";
-    if (isPhoneReachableOrigin(o) && isPublicTunnelHost(new URL(o).hostname)) {
-      liveTunnelOrigin = o;
-      return o;
-    }
-    return "";
-  } catch (e) {
+  // 只信任当前仍存活的隧道进程；进程已死后绝不回读旧文件（否则二维码扫了「链接不上」）
+  if (liveTunnelOrigin && isPhoneReachableOrigin(liveTunnelOrigin) && tunnelProc) {
+    return liveTunnelOrigin;
+  }
+  if (!tunnelProc) {
+    if (liveTunnelOrigin) liveTunnelOrigin = "";
     return "";
   }
+  return liveTunnelOrigin && isPhoneReachableOrigin(liveTunnelOrigin) ? liveTunnelOrigin : "";
+}
+
+function probeTunnelHealth(origin) {
+  const o = normalizeOrigin(origin);
+  if (!o) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (ok) => {
+      if (settled) return;
+      settled = true;
+      resolve(!!ok);
+    };
+    try {
+      const u = new URL(o + "/__gy/health");
+      const lib = u.protocol === "https:" ? https : http;
+      const req = lib.get(u, { headers: { "User-Agent": "guangyingmeng-tunnel-probe" }, timeout: 7000 }, (res) => {
+        const code = res.statusCode || 0;
+        res.resume();
+        done(code >= 200 && code < 400);
+      });
+      req.on("error", () => done(false));
+      req.on("timeout", () => { try { req.destroy(); } catch (e) { /* ignore */ } done(false); });
+      setTimeout(() => done(false), 8000);
+    } catch (e) {
+      done(false);
+    }
+  });
 }
 
 function saveTunnelOrigin(origin, provider = "cloudflared") {
   const o = normalizeOrigin(origin);
   if (!o || !isPublicTunnelHost(new URL(o).hostname)) return "";
   liveTunnelOrigin = o;
-  tunnelStatus = { state: "ready", detail: o, updated_at: new Date().toISOString() };
+  tunnelStatus = { state: "probing", detail: "已拿到地址，正在检测能否打开… " + o, updated_at: new Date().toISOString() };
+  // 先写入，探测失败再清掉，避免短暂空白
   try {
     fs.writeFileSync(TUNNEL_FILE, JSON.stringify({
       origin: o,
-      updated_at: tunnelStatus.updated_at,
+      updated_at: new Date().toISOString(),
       port: PORT,
       provider,
       note: "学生可用手机流量扫此地址；老师电脑需能上网"
     }, null, 2), "utf8");
   } catch (e) { /* ignore */ }
-  console.log("");
-  console.log("  ========================================");
-  console.log("  ★ 学生可用手机流量扫码：");
-  console.log("    " + o + "/?mode=checkin");
-  console.log("  ========================================");
-  console.log("");
+  probeTunnelHealth(o).then((ok) => {
+    if (liveTunnelOrigin !== o) return;
+    if (ok) {
+      tunnelStatus = { state: "ready", detail: o, updated_at: new Date().toISOString() };
+      console.log("");
+      console.log("  ========================================");
+      console.log("  ★ 学生可用手机流量扫码：");
+      console.log("    " + o + "/?mode=checkin");
+      console.log("  ========================================");
+      console.log("");
+      try { writeOriginHint(); } catch (e) { /* ignore */ }
+      return;
+    }
+    console.log("  [警告] 隧道地址探测失败（手机可能打不开）：" + o);
+    liveTunnelOrigin = "";
+    clearTunnelOriginFile();
+    tunnelStatus = {
+      state: "starting",
+      detail: "隧道地址探测失败，正在换通道重试…",
+      updated_at: new Date().toISOString()
+    };
+    // 杀掉当前隧道，走备用/重建
+    if (tunnelProc) {
+      preferLocaltunnelNext = provider !== "localtunnel";
+      suppressTunnelRestart = true;
+      try { tunnelProc.kill(); } catch (e) { /* ignore */ }
+      tunnelProc = null;
+      setTimeout(() => startPublicTunnel(), 600);
+    }
+  });
   return o;
 }
 
@@ -361,10 +412,13 @@ function attachTunnelIO(child, provider) {
     const skip = suppressTunnelRestart;
     suppressTunnelRestart = false;
     tunnelProc = null;
-    if (skip) return;
-    const wasReady = tunnelStatus.state === "ready";
-    if (!wasReady) preferLocaltunnelNext = true;
     liveTunnelOrigin = "";
+    clearTunnelOriginFile();
+    try { writeOriginHint(); } catch (e) { /* ignore */ }
+    if (skip) return;
+    const wasReady = tunnelStatus.state === "ready" || tunnelStatus.state === "probing";
+    // cloudflared 失败后再用备用；不要每次偶数次强行走 localtunnel（微信常扫不开）
+    if (!wasReady && provider === "cloudflared") preferLocaltunnelNext = true;
     tunnelStatus = {
       state: wasReady ? "restarting" : "starting",
       detail: wasReady
@@ -406,7 +460,8 @@ function startPublicTunnel() {
   }
   if (tunnelProc) return;
   tunnelBootAttempt += 1;
-  const useLt = preferLocaltunnelNext || tunnelBootAttempt % 2 === 0;
+  // 优先 cloudflared（微信扫码更稳）；仅在明确失败后才切 localtunnel
+  const useLt = preferLocaltunnelNext;
   preferLocaltunnelNext = false;
   tunnelStatus = {
     state: "starting",
@@ -931,7 +986,7 @@ const server = http.createServer(async (req, res) => {
         liveTunnelOrigin = "";
         preferLocaltunnelNext = false;
         tunnelBootAttempt = 0;
-        try { if (fs.existsSync(TUNNEL_FILE)) fs.unlinkSync(TUNNEL_FILE); } catch (e) { /* ignore */ }
+        clearTunnelOriginFile();
         startPublicTunnel();
         sendJson(res, 200, { ok: true, restarting: true, tunnel_status: tunnelStatus });
       } catch (e) {
@@ -1052,6 +1107,10 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
+  // 启动时清掉上一次的过期隧道，避免二维码仍指向已失效地址
+  liveTunnelOrigin = "";
+  clearTunnelOriginFile();
+  tunnelStatus = { state: "starting", detail: "服务已启动，正在建立公网隧道…", updated_at: new Date().toISOString() };
   const fresh = writeOriginHint();
   const fixed = fresh.fixed_origin || "";
   console.log("");
