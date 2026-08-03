@@ -78,7 +78,9 @@ chmod +x \
   sync-from-github.sh start.sh 更新本地.sh 更新本地.command \
   一键放到桌面.sh 一键放到桌面.command \
   打开老师端.command 第一次安装-Mac.command \
-  诊断本机.command 2>/dev/null || true
+  诊断本机.command 光影盟-更新.command \
+  重建桌面更新按钮.sh 重建桌面更新按钮.command \
+  光影盟-一键上课.command 一键上课.sh 2>/dev/null || true
 
 HEAD="$(git rev-parse --short HEAD)"
 FULL="$(git rev-parse HEAD)"

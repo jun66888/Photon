@@ -1,5 +1,5 @@
 #!/bin/bash
-# 光影盟 · 桌面更新按钮（自包含：无 git / 旧 zip 也能修好）
+# 光影盟 · 桌面「更新」按钮（自包含：无 git / 旧 zip 也能修好）
 set -euo pipefail
 
 PHOTON_HOME="/Users/liwei/Photon"
@@ -48,13 +48,15 @@ restore_data() {
 if [[ -d "$PHOTON_HOME/.git" ]]; then
   echo "→ 强制同步 GitHub…"
   cd "$PHOTON_HOME"
+  # 优先走仓库内一键更新（会写版本戳 + 刷桌面按钮）
   if [[ -x ./更新本地.sh ]]; then
-    ./更新本地.sh || true
+    bash ./更新本地.sh || true
+  else
+    git remote set-url origin "$PHOTON_REPO" 2>/dev/null || git remote add origin "$PHOTON_REPO"
+    git fetch --force origin "$PHOTON_BRANCH"
+    git checkout -B "$PHOTON_BRANCH" "origin/$PHOTON_BRANCH"
+    git reset --hard "origin/$PHOTON_BRANCH"
   fi
-  git remote set-url origin "$PHOTON_REPO" 2>/dev/null || git remote add origin "$PHOTON_REPO"
-  git fetch --force origin "$PHOTON_BRANCH"
-  git checkout -B "$PHOTON_BRANCH" "origin/$PHOTON_BRANCH"
-  git reset --hard "origin/$PHOTON_BRANCH"
 else
   echo "→ 当前不是 git 仓库，自动备份并重新克隆…"
   if [[ -d "$PHOTON_HOME" ]]; then
@@ -83,9 +85,11 @@ cat > gy-build.json <<EOF
 }
 EOF
 
-# 刷新桌面快捷方式（含本更新按钮）
+# 无论刚才是否已刷过，再强制重建桌面「更新」按钮
 if [[ -x ./一键放到桌面.sh ]]; then
-  ./一键放到桌面.sh >/dev/null 2>&1 || true
+  bash ./一键放到桌面.sh || true
+elif [[ -x ./重建桌面更新按钮.sh ]]; then
+  bash ./重建桌面更新按钮.sh || true
 fi
 
 echo ""
@@ -93,8 +97,8 @@ echo "✅ 更新完成"
 echo "   版本：$HEAD"
 git log -1 --oneline 2>/dev/null || true
 echo ""
-echo "桌面已有：光影盟-更新.command"
-echo "接下来可双击「光影盟-开始上课」，或按 y 立即启动。"
+echo "桌面应有：光影盟-更新.command / GY-Update.command"
+echo "接下来可双击「光影盟-一键上课」，或按 y 立即启动。"
 echo ""
 read -r -p "现在启动上课吗？[y/N] " ans
 if [[ "${ans:-}" == "y" || "${ans:-}" == "Y" ]]; then

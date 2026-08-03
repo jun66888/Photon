@@ -1,16 +1,25 @@
 本机唯一目录：
   /Users/liwei/Photon
 
-【只需这一个】
+【上课】
 双击桌面「光影盟-一键上课」（或「开始上课」/ GY-Start）
 → 自动更新 + 启动环境 + 打开启动台与老师端
 → 黑色终端窗口上课期间别关
 
+【只更新代码】
+双击桌面任一即可：
+  更新.command
+  光影盟-更新.command
+  GY-Update.command
+  光影盟-更新代码.command
+
 启动台：http://127.0.0.1:3000/launcher.html
 老师端：http://127.0.0.1:3000/?mode=teacher
 
-【桌面没有按钮时】
+【桌面没有「更新」按钮时】
 终端执行：
+  cd /Users/liwei/Photon && ./重建桌面更新按钮.sh
+或：
   cd /Users/liwei/Photon && ./更新本地.sh && ./一键放到桌面.sh
 
 【命令行】
