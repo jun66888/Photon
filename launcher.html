@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>光影盟 · 启动台</title>
   <link rel="stylesheet" href="./vendor/fonts.css" />
+  <script src="./vendor/qrcodejs.min.js"></script>
+  <script>window.QRCodeJS = typeof QRCode === "function" ? QRCode : null;</script>
+  <script src="./vendor/qrcode.min.js"></script>
   <style>
     :root {
       --bg0: #0b0f18;
@@ -236,6 +239,63 @@
       font-weight: 500;
       color: rgba(255,227,154,.75);
     }
+    .share-easy {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      margin: .65rem 0 .55rem;
+      padding: .75rem;
+      border-radius: 12px;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    @media (max-width: 640px) {
+      .share-easy { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    }
+    .share-qr {
+      width: 140px; height: 140px;
+      border-radius: 10px;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .share-qr canvas, .share-qr img { width: 100% !important; height: 100% !important; object-fit: contain; }
+    .share-easy .url-lab { color: var(--soft); font-size: .75rem; margin-bottom: .3rem; display: block; }
+    .share-easy .short-url {
+      font-family: var(--font-num);
+      font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+      color: var(--gold2);
+      word-break: break-all;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+    .share-easy .short-tip {
+      margin-top: .35rem;
+      color: var(--soft);
+      font-size: .78rem;
+      line-height: 1.4;
+    }
+    .share-easy .short-tip b { color: var(--ink); font-weight: 700; }
+    .share-mini-row {
+      display: flex; flex-wrap: wrap; gap: .4rem;
+      margin-top: .35rem;
+    }
+    .share-mini-row button, .share-mini-row a.btn {
+      min-height: auto !important;
+      padding: .45rem .7rem !important;
+      font-size: .8rem !important;
+      display: inline-flex;
+      align-items: center;
+    }
+    .share-adv { margin-top: .55rem; }
+    .share-adv summary {
+      cursor: pointer;
+      color: var(--soft);
+      font-size: .78rem;
+      user-select: none;
+    }
+    .share-adv .path-row { margin-top: .45rem; }
   </style>
 </head>
 <body>
@@ -252,31 +312,33 @@
 
     <section class="share-panel" aria-label="课堂资料下载">
       <h2>课堂资料下载</h2>
-      <p class="hint">点金色大按钮选本机文件夹；选中后学生打开下方链接就能看到文件并下载。</p>
+      <p class="hint">老师点按钮选文件夹；学生优先扫码，手输只需短地址末尾 <b>/d</b>。</p>
       <button type="button" class="pick-main" id="btn-share-pick">
         选择文件夹
         <span class="sub">弹出系统窗口 · 选好后自动共享</span>
       </button>
-      <div class="path-row">
-        <input type="text" id="share-folder-input" placeholder="/Users/你/Desktop/课件" autocomplete="off" spellcheck="false" />
-        <button type="button" class="mini primary" id="btn-share-save">保存路径</button>
-        <button type="button" class="mini" id="btn-share-default">用默认文件夹</button>
-        <button type="button" class="mini" id="btn-share-open">打开文件夹</button>
+      <div class="share-easy">
+        <div class="share-qr" id="share-qr" aria-label="学生下载二维码"></div>
+        <div>
+          <span class="url-lab">学生下载 · 优先扫码</span>
+          <div class="short-url" id="share-student-url">检测中…</div>
+          <div class="short-tip" id="share-short-tip">手输提示：地址末尾只要 <b>/d</b></div>
+          <div class="share-mini-row">
+            <button type="button" class="mini primary" id="btn-share-copy">复制短地址</button>
+            <a class="btn mini" id="btn-share-page" href="/d" target="_blank" rel="noopener">打开下载页</a>
+            <button type="button" class="mini" id="btn-share-open">打开文件夹</button>
+            <button type="button" class="mini" id="btn-share-default">默认文件夹</button>
+          </div>
+          <div class="short-tip" id="share-file-count">尚未读取文件数</div>
+        </div>
       </div>
-      <div class="url-box">
-        <span class="url-lab">学生下载地址（投屏 / 发群）</span>
-        <span id="share-student-url">检测中…</span>
-      </div>
-      <div class="share-actions">
-        <a class="btn primary" id="btn-share-page" href="/share.html" target="_blank" rel="noopener">
-          打开下载页
-          <span class="sub" id="share-file-count">学生登录此地址下载文件</span>
-        </a>
-        <button type="button" id="btn-share-copy">
-          复制下载链接
-          <span class="sub">发给学生或贴到投屏</span>
-        </button>
-      </div>
+      <details class="share-adv">
+        <summary>高级：手动粘贴文件夹路径（一般不用）</summary>
+        <div class="path-row">
+          <input type="text" id="share-folder-input" placeholder="一般请用上方「选择文件夹」" autocomplete="off" spellcheck="false" />
+          <button type="button" class="mini primary" id="btn-share-save">保存</button>
+        </div>
+      </details>
     </section>
 
     <div class="grid">
@@ -350,11 +412,55 @@
     }
 
     let lastShareUrl = "";
+    let lastShareQrUrl = "";
+
+    function paintShareQr(url) {
+      const host = document.getElementById("share-qr");
+      if (!host || !url) return;
+      if (lastShareQrUrl === url && host.childNodes.length) return;
+      lastShareQrUrl = url;
+      host.innerHTML = "";
+      const qrNpm = (window.QRCode && typeof window.QRCode.toCanvas === "function") ? window.QRCode : null;
+      if (qrNpm) {
+        const canvas = document.createElement("canvas");
+        host.appendChild(canvas);
+        qrNpm.toCanvas(canvas, url, { width: 140, margin: 1, errorCorrectionLevel: "M" }).catch(() => {
+          host.textContent = "二维码失败";
+        });
+        return;
+      }
+      const QRCodeCtor = window.QRCodeJS
+        || ((typeof window.QRCode === "function" && window.QRCode.CorrectLevel) ? window.QRCode : null);
+      if (!QRCodeCtor) {
+        host.textContent = "无二维码库";
+        return;
+      }
+      try {
+        new QRCodeCtor(host, {
+          text: url,
+          width: 140,
+          height: 140,
+          correctLevel: QRCodeCtor.CorrectLevel.M
+        });
+      } catch (e) {
+        host.textContent = "二维码失败";
+      }
+    }
+
+    function shortUrlTip(fullUrl) {
+      try {
+        const u = new URL(fullUrl);
+        return `手输：浏览器打开后，地址末尾改成 <b>/d</b>（当前主机 ${u.host}）`;
+      } catch (e) {
+        return "手输提示：地址末尾只要 <b>/d</b>";
+      }
+    }
 
     async function refreshShare() {
       const share = await fetchJson("/__gy/share");
       const input = document.getElementById("share-folder-input");
       const urlEl = document.getElementById("share-student-url");
+      const tipEl = document.getElementById("share-short-tip");
       const countEl = document.getElementById("share-file-count");
       const pageBtn = document.getElementById("btn-share-page");
       if (!share) {
@@ -364,15 +470,16 @@
       }
       if (input && document.activeElement !== input) {
         input.value = share.folder || "";
-        input.placeholder = share.default_folder || input.placeholder;
       }
-      lastShareUrl = share.student_url || share.local_url || "/share.html";
+      lastShareUrl = share.student_url || share.local_url || "/d";
       if (urlEl) urlEl.textContent = lastShareUrl;
-      if (pageBtn) pageBtn.href = share.page_path || "/share.html";
+      if (tipEl) tipEl.innerHTML = shortUrlTip(lastShareUrl);
+      if (pageBtn) pageBtn.href = share.page_path || "/d";
       if (countEl) {
         const n = Number(share.file_count) || 0;
-        countEl.textContent = n ? `当前 ${n} 个文件可下载` : "学生登录此地址下载文件";
+        countEl.textContent = n ? `已共享 ${n} 个文件 · 扫码即可下` : "选好文件夹后，学生扫左侧码下载";
       }
+      paintShareQr(lastShareUrl);
     }
 
     async function refreshStatus() {
@@ -491,9 +598,9 @@
       }
       try {
         await navigator.clipboard.writeText(url);
-        toast("已复制学生下载链接");
+        toast("已复制短地址");
       } catch (e) {
-        prompt("请手动复制：", url);
+        prompt("请手动复制短地址：", url);
       }
     };
 

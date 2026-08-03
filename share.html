@@ -243,23 +243,23 @@
 <body>
   <div class="wrap">
     <h1 class="brand">光影盟</h1>
-    <p class="tagline">课堂资料下载 · 老师选文件夹，学生点文件下载</p>
+    <p class="tagline" id="page-tagline">课堂资料 · 点文件即可下载</p>
 
-    <section class="pick-bar" aria-label="选择共享文件夹">
-      <div class="lab">① 老师先选共享文件夹</div>
+    <section class="pick-bar" id="pick-bar" hidden aria-label="选择共享文件夹">
+      <div class="lab">老师选文件夹（学生不用管这里）</div>
       <div class="cur">当前：<strong id="cur-folder">检测中…</strong></div>
       <div class="pick-actions">
         <button type="button" class="pick-main" id="btn-pick-folder">选择文件夹</button>
-        <button type="button" id="btn-share-open">打开当前文件夹</button>
-        <button type="button" id="btn-share-default">用默认「课堂资料」</button>
+        <button type="button" id="btn-share-open">打开</button>
+        <button type="button" id="btn-share-default">默认</button>
       </div>
-      <div class="hint-local" id="pick-hint">点「选择文件夹」会弹出系统窗口，选中后下方自动列出文件。</div>
+      <div class="hint-local" id="pick-hint">本机点「选择文件夹」即可，不用手输路径。</div>
     </section>
 
     <div class="toolbar">
-      <button type="button" class="primary" id="btn-refresh">刷新列表</button>
+      <button type="button" class="primary" id="btn-refresh">刷新</button>
       <button type="button" id="btn-up" disabled>上一级</button>
-      <a class="btn" href="/launcher.html">返回启动台</a>
+      <a class="btn" href="/launcher.html" id="btn-back-launcher">启动台</a>
     </div>
 
     <nav class="crumbs" id="crumbs" aria-label="当前路径"></nav>
@@ -268,10 +268,10 @@
     <div class="section-title" id="dirs-title" hidden>子文件夹（点进去查看）</div>
     <div class="folders" id="dirs"></div>
 
-    <div class="section-title" id="files-title" hidden>② 文件列表 · 点击下载</div>
+    <div class="section-title" id="files-title" hidden>文件 · 点击下载</div>
     <div class="list" id="list"></div>
 
-    <p class="foot">老师请用本机地址打开本页再选文件夹：http://127.0.0.1:3000/share.html<br>学生用启动台上的下载链接即可。</p>
+    <p class="foot" id="page-foot">短地址：本页路径为 <b>/d</b> · 优先扫启动台上的下载码</p>
   </div>
   <div class="toast" id="toast" role="status"></div>
 
@@ -286,6 +286,7 @@
     const curFolderEl = document.getElementById("cur-folder");
     const pickHint = document.getElementById("pick-hint");
     const btnPick = document.getElementById("btn-pick-folder");
+    const pickBar = document.getElementById("pick-bar");
     const toastEl = document.getElementById("toast");
     let currentPath = "";
     let parentPath = null;
@@ -329,15 +330,18 @@
     }
 
     function syncManageUi() {
-      btnPick.disabled = false;
-      document.getElementById("btn-share-open").disabled = false;
-      document.getElementById("btn-share-default").disabled = false;
       if (canManage) {
+        pickBar.hidden = false;
+        document.getElementById("page-tagline").textContent = "老师选文件夹 · 学生扫码下载";
+        document.getElementById("page-foot").innerHTML = "老师本机选文件夹；学生扫启动台二维码，手输只需地址末尾 <b>/d</b>";
+        document.getElementById("btn-back-launcher").hidden = false;
         pickHint.classList.remove("bad");
-        pickHint.textContent = "点「选择文件夹」会弹出系统窗口，选中后下方自动列出文件。";
+        pickHint.textContent = "本机点「选择文件夹」即可，不用手输路径。";
       } else {
-        pickHint.classList.add("bad");
-        pickHint.textContent = "当前不是老师本机。请在老师电脑浏览器打开 http://127.0.0.1:3000/share.html 再点「选择文件夹」。";
+        pickBar.hidden = true;
+        document.getElementById("page-tagline").textContent = "课堂资料 · 点文件即可下载";
+        document.getElementById("page-foot").textContent = "找不到文件时点刷新；或请老师重新选择共享文件夹";
+        document.getElementById("btn-back-launcher").hidden = true;
       }
     }
 

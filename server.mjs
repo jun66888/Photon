@@ -28,7 +28,8 @@ const ACCESS_FILE = path.join(ROOT, "固定访问地址.txt");
 /** 老师端永久收藏地址（本机环回，永远不变） */
 const TEACHER_BOOKMARK = `http://127.0.0.1:${PORT}/?mode=teacher`;
 const STUDENT_BOOKMARK_PATH = `/?mode=student`;
-const SHARE_PAGE_PATH = "/share.html";
+/** 学生手输优先短路径；/share.html 仍可用 */
+const SHARE_PAGE_PATH = "/d";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -677,6 +678,10 @@ function writeAccessCard(phoneOrigin, lanOrigin, warn) {
     phone,
     phone.startsWith("http") ? `${phone}/?mode=checkin` : "",
     "",
+    "【课堂资料下载 · 短地址】",
+    phone.startsWith("http") ? `${phone}${SHARE_PAGE_PATH}` : `http://127.0.0.1:${PORT}${SHARE_PAGE_PATH}`,
+    `本机：http://127.0.0.1:${PORT}${SHARE_PAGE_PATH}`,
+    "",
     lanOrigin ? "【同 Wi‑Fi 备用局域网地址】" : "",
     lanOrigin || "",
     "",
@@ -684,7 +689,8 @@ function writeAccessCard(phoneOrigin, lanOrigin, warn) {
     "1. 老师收藏 127.0.0.1 地址；上课双击「启动环境」，保持窗口开着。",
     "2. 学生可用手机流量扫「流量扫码」地址（经公网隧道，老师电脑需能上网）。",
     "3. 隧道地址每次启动可能变化；以签到页二维码下方链接为准。",
-    "4. 若只要局域网、不要隧道：启动前设置 GY_PUBLIC_TUNNEL=0。",
+    "4. 资料下载优先扫码；手输时用短路径 /d 。",
+    "5. 若只要局域网、不要隧道：启动前设置 GY_PUBLIC_TUNNEL=0。",
     warn ? "" : "",
     warn ? ("注意：" + warn) : "",
     "",
@@ -1628,7 +1634,7 @@ const server = http.createServer(async (req, res) => {
     if (!isLocalAdmin(req)) {
       sendJson(res, 403, {
         ok: false,
-        error: "请用老师电脑本机打开：http://127.0.0.1:" + PORT + "/share.html ，再点「选择文件夹」"
+        error: "请用老师电脑本机打开：http://127.0.0.1:" + PORT + "/launcher.html ，再点「选择文件夹」"
       });
       return;
     }
@@ -1661,14 +1667,30 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 友好短链：/share/文件相对路径
-  if (u.pathname === "/share" || u.pathname === "/share/") {
+  // 短地址 /d · 兼容 /share、/share.html
+  if (u.pathname === "/d" || u.pathname === "/d/"
+    || u.pathname === "/share" || u.pathname === "/share/"
+    || u.pathname === "/share.html") {
     sendFile(res, path.join(ROOT, "share.html"));
     return;
   }
   if (u.pathname.startsWith("/share/")) {
     const rel = decodeURIComponent(u.pathname.slice("/share/".length));
     if (!rel || rel === "index.html") {
+      sendFile(res, path.join(ROOT, "share.html"));
+      return;
+    }
+    const resolved = resolveUnderShareRoot(rel);
+    if (!resolved) {
+      send(res, 404, "文件不存在或共享未开启", { "Content-Type": "text/plain; charset=utf-8" });
+      return;
+    }
+    sendShareDownload(res, resolved.abs, path.basename(resolved.abs));
+    return;
+  }
+  if (u.pathname.startsWith("/d/")) {
+    const rel = decodeURIComponent(u.pathname.slice("/d/".length));
+    if (!rel) {
       sendFile(res, path.join(ROOT, "share.html"));
       return;
     }
