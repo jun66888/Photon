@@ -3478,6 +3478,131 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   font-size: 1.25rem;
   color: var(--seal);
 }
+.setup-guide-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem 1rem;
+  margin: 0 0 .85rem;
+  padding: .85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(240, 193, 75, .45);
+  background: linear-gradient(110deg, rgba(106, 84, 20, .4), rgba(12, 18, 32, .65));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .22);
+}
+.setup-guide-banner[hidden] { display: none !important; }
+.setup-guide-banner .sgb-text {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+.setup-guide-banner .sgb-text strong {
+  color: #ffe39a;
+  font-size: 1.05rem;
+  letter-spacing: .04em;
+}
+.setup-guide-banner .sgb-text span {
+  color: var(--ink-soft);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+.setup-guide-banner .sgb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.setup-guide-banner .sgb-actions .primary {
+  min-height: 2.6rem;
+  padding: .55rem 1.1rem;
+  font-size: 1rem;
+}
+.setup-wizard { width: min(460px, 94vw); }
+.setup-wizard .sw-steps {
+  display: flex; flex-wrap: wrap; gap: .3rem;
+  margin: 0 0 .75rem;
+}
+.setup-wizard .sw-step {
+  font-size: .72rem;
+  padding: .2rem .5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--ink-soft);
+}
+.setup-wizard .sw-step.on {
+  color: #1a1205;
+  background: #ffe39a;
+  border-color: transparent;
+  font-weight: 700;
+}
+.setup-wizard .sw-step.done { color: #7dffb2; border-color: rgba(125,255,178,.35); }
+.setup-wizard .sw-chips {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+  margin: .35rem 0 .55rem;
+}
+.setup-wizard .sw-chip {
+  min-width: 3.2rem;
+  padding: .45rem .7rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.22);
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.setup-wizard .sw-chip.on {
+  background: linear-gradient(180deg, #6a5414, #2e240c);
+  border-color: rgba(240,193,75,.65);
+  color: #ffe39a;
+}
+.setup-wizard .sw-field {
+  display: flex; align-items: center; gap: .45rem;
+  margin: .35rem 0 .75rem;
+  font-size: .85rem;
+  color: var(--ink-soft);
+}
+.setup-wizard .sw-field input {
+  width: 5rem;
+  padding: .4rem .5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.35);
+  color: inherit;
+  font-family: var(--font-num);
+}
+.setup-wizard .sw-play {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  margin-bottom: .5rem;
+}
+.setup-wizard .sw-play-btn {
+  text-align: left;
+  padding: .55rem .7rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.22);
+  color: inherit;
+  cursor: pointer;
+}
+.setup-wizard .sw-play-btn.on {
+  border-color: rgba(240,193,75,.65);
+  background: linear-gradient(180deg, rgba(106,84,20,.45), rgba(0,0,0,.28));
+}
+.setup-wizard .sw-play-btn .sp-name { font-weight: 700; color: #ffe39a; display: block; }
+.setup-wizard .sw-play-btn .sp-size { font-size: .75rem; color: var(--ink-soft); }
+.setup-wizard .sw-summary {
+  margin: .35rem 0 .75rem;
+  padding: .65rem .75rem;
+  border-radius: 8px;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.1);
+  font-size: .86rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.setup-wizard .sw-summary b { color: #ffe39a; font-weight: 700; }
 .play-picker-note {
   margin: 0 0 .65rem;
   font-size: .72rem;
@@ -4626,6 +4751,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   <div id="teacher-screen" class="screen compact-arena" style="position:relative">
     <div id="edit-box-layer" aria-label="编辑框层"></div>
     <div id="teacher-main" class="subview course-page">
+      <div id="setup-guide-banner" class="setup-guide-banner" hidden>
+        <div class="sgb-text">
+          <strong>课堂初始引导</strong>
+          <span>重置后建议先走一遍：人数 → 分组 → 玩法 → 扫码签到</span>
+        </div>
+        <div class="sgb-actions">
+          <button type="button" class="primary" data-action="open-setup-guide">开始引导</button>
+          <button type="button" class="ghost" data-action="dismiss-setup-guide">稍后</button>
+        </div>
+      </div>
       <div class="arena-duel-hero" id="arena-duel-hero">
         <div class="hall-banner" id="hall-home-banner" hidden></div>
         <div class="mission-board as-hero" id="mission-board" aria-label="两派对阵属性">
@@ -5802,6 +5937,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const ICE_MODE_ORDER = ICE_MODE_ORDER_TEAM.concat(ICE_MODE_ORDER_ICE, ICE_MODE_ORDER_OPEN);
   const DRAW_POOL_MODE_KEY = "gy_arena_draw_pool_mode";
   const TEAM_BATTLE_CUSTOM_KEY = "gy_arena_team_battle_custom";
+  /** 重置课后的初始引导：pending | dismissed | done */
+  const SETUP_GUIDE_KEY = "gy_arena_setup_guide";
   const TEAM_BATTLE_COLORS = ["#ff6b84", "#5ec8ff", "#ffe39a", "#7dffb2", "#d4a5ff", "#ffb07a", "#8ec5ff", "#b8f0c8"];
   const ICE_MODE_DEFS = {
     flower: {
@@ -7203,6 +7340,226 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       b.onclick = () => showPlayModeDetail(b.dataset.playDetail);
     });
   }
+
+  function getSetupGuideStatus() {
+    return String(localStorage.getItem(SETUP_GUIDE_KEY) || "").trim();
+  }
+  function setSetupGuideStatus(status) {
+    if (!status) localStorage.removeItem(SETUP_GUIDE_KEY);
+    else localStorage.setItem(SETUP_GUIDE_KEY, String(status));
+  }
+  function shouldShowSetupGuideBanner() {
+    const st = getSetupGuideStatus();
+    if (st === "pending") return true;
+    if (st === "done" || st === "dismissed") return false;
+    // 全新空课堂也提示引导
+    return getPeaksArray().length === 0 && getDisciplesArray().length === 0;
+  }
+  function syncSetupGuideBanner() {
+    const banner = document.getElementById("setup-guide-banner");
+    if (!banner) return;
+    const main = document.getElementById("teacher-main");
+    const onMain = !!(main && !main.classList.contains("hidden"));
+    banner.hidden = !(shouldShowSetupGuideBanner() && onMain);
+  }
+
+  let _setupGuideDraft = null;
+  let _setupGuideStep = 0;
+  const SETUP_GUIDE_STEPS = ["人数", "分组", "玩法", "确认"];
+
+  function defaultSetupGuideDraft() {
+    const range = getIceNumRange();
+    const teams = getTeamBattleTeams();
+    return {
+      people: Math.max(2, Math.min(120, (range.max - range.min + 1) || 30)),
+      groups: Math.max(2, Math.min(8, teams.length || 4)),
+      playMode: getPlayMode() || "basic"
+    };
+  }
+  function openSetupGuide(step) {
+    _setupGuideDraft = _setupGuideDraft || defaultSetupGuideDraft();
+    _setupGuideStep = Math.max(0, Math.min(SETUP_GUIDE_STEPS.length - 1, step == null ? 0 : Number(step) || 0));
+    renderSetupGuideStep();
+  }
+  function renderSetupGuideStep() {
+    const draft = _setupGuideDraft || defaultSetupGuideDraft();
+    _setupGuideDraft = draft;
+    const step = _setupGuideStep;
+    const steppers = SETUP_GUIDE_STEPS.map((label, i) => {
+      const cls = i === step ? "on" : (i < step ? "done" : "");
+      return `<span class="sw-step ${cls}">${i + 1}.${esc(label)}</span>`;
+    }).join("");
+
+    let body = "";
+    if (step === 0) {
+      const presets = [10, 20, 30, 40, 50];
+      body = `
+        <p class="play-picker-note">抽人 / 破冰默认按「号码 1～N」开玩，签到后也可改用名单。</p>
+        <div class="sw-chips" id="sw-people-chips">
+          ${presets.map((n) => `<button type="button" class="sw-chip ${draft.people === n ? "on" : ""}" data-n="${n}">${n} 人</button>`).join("")}
+        </div>
+        <label class="sw-field">自定义人数 <input id="sw-people-input" type="number" min="2" max="120" value="${draft.people}" /></label>`;
+    } else if (step === 1) {
+      const presets = [2, 3, 4, 5, 6, 8];
+      body = `
+        <p class="play-picker-note">将创建对应数量的名册小组，并同步到「分组对抗」队伍。</p>
+        <div class="sw-chips" id="sw-group-chips">
+          ${presets.map((n) => `<button type="button" class="sw-chip ${draft.groups === n ? "on" : ""}" data-n="${n}">${n} 组</button>`).join("")}
+        </div>
+        <label class="sw-field">自定义组数 <input id="sw-group-input" type="number" min="2" max="8" value="${draft.groups}" /></label>`;
+    } else if (step === 2) {
+      body = `
+        <p class="play-picker-note">按班级规模选一档，之后仍可在「玩法」里改。</p>
+        <div class="sw-play" id="sw-play-list">
+          ${PLAY_MODE_ORDER.map((id) => {
+            const d = getPlayModeDef(id);
+            return `<button type="button" class="sw-play-btn ${draft.playMode === id ? "on" : ""}" data-mode="${id}">
+              <span class="sp-name">${esc(d.name)}</span>
+              <span class="sp-size">${esc(d.size)} · ${esc(d.blurb)}</span>
+            </button>`;
+          }).join("")}
+        </div>`;
+    } else {
+      const def = getPlayModeDef(draft.playMode);
+      body = `
+        <div class="sw-summary">
+          课堂人数（号码范围）<b>1 – ${draft.people}</b><br>
+          分组数量 <b>${draft.groups}</b> 组（红蓝交替建组）<br>
+          玩法档位 <b>${esc(def.name)}</b><br>
+          完成后将打开<strong>扫码签到</strong>并生成签到码
+        </div>
+        <p class="play-picker-note">若名册已有小组，将只更新号码范围、分组对抗与玩法，不覆盖现有名册。</p>`;
+    }
+
+    const isLast = step >= SETUP_GUIDE_STEPS.length - 1;
+    openModal(`
+      <div class="setup-wizard play-picker-modal">
+        <h3>课堂初始引导</h3>
+        <div class="sw-steps">${steppers}</div>
+        ${body}
+        <div class="row" style="justify-content:space-between;gap:.4rem;margin-top:.85rem;flex-wrap:wrap">
+          <button type="button" class="ghost" id="sw-skip">跳过</button>
+          <div class="row" style="gap:.4rem">
+            ${step > 0 ? '<button type="button" class="ghost" id="sw-prev">上一步</button>' : ""}
+            <button type="button" class="primary" id="sw-next">${isLast ? "完成并去签到" : "下一步"}</button>
+          </div>
+        </div>
+      </div>`);
+
+    const readPeople = () => {
+      const inp = document.getElementById("sw-people-input");
+      let n = Math.floor(Number(inp && inp.value));
+      if (!Number.isFinite(n)) n = draft.people;
+      draft.people = Math.max(2, Math.min(120, n));
+      return draft.people;
+    };
+    const readGroups = () => {
+      const inp = document.getElementById("sw-group-input");
+      let n = Math.floor(Number(inp && inp.value));
+      if (!Number.isFinite(n)) n = draft.groups;
+      draft.groups = Math.max(2, Math.min(8, n));
+      return draft.groups;
+    };
+
+    document.querySelectorAll("#sw-people-chips .sw-chip").forEach((b) => {
+      b.onclick = () => {
+        draft.people = Number(b.dataset.n) || 30;
+        renderSetupGuideStep();
+      };
+    });
+    document.querySelectorAll("#sw-group-chips .sw-chip").forEach((b) => {
+      b.onclick = () => {
+        draft.groups = Number(b.dataset.n) || 4;
+        renderSetupGuideStep();
+      };
+    });
+    document.querySelectorAll("#sw-play-list .sw-play-btn").forEach((b) => {
+      b.onclick = () => {
+        draft.playMode = b.dataset.mode || "basic";
+        renderSetupGuideStep();
+      };
+    });
+    const skip = document.getElementById("sw-skip");
+    if (skip) skip.onclick = () => {
+      setSetupGuideStatus("dismissed");
+      _setupGuideDraft = null;
+      closeModal();
+      syncSetupGuideBanner();
+      showVoteToast("已跳过引导 · 可随时在设置里再开");
+    };
+    const prev = document.getElementById("sw-prev");
+    if (prev) prev.onclick = () => {
+      if (step === 0) readPeople();
+      if (step === 1) readGroups();
+      openSetupGuide(step - 1);
+    };
+    document.getElementById("sw-next").onclick = async () => {
+      if (step === 0) readPeople();
+      if (step === 1) readGroups();
+      if (!isLast) {
+        openSetupGuide(step + 1);
+        return;
+      }
+      closeModal();
+      await finishSetupGuide(draft);
+    };
+  }
+
+  async function finishSetupGuide(draft) {
+    const people = Math.max(2, Math.min(120, Math.floor(Number(draft.people) || 30)));
+    const groups = Math.max(2, Math.min(8, Math.floor(Number(draft.groups) || 4)));
+    const playMode = PLAY_MODE_DEFS[draft.playMode] ? draft.playMode : "basic";
+
+    setIceNumRange(1, people);
+    setIcePoolMode("numbers");
+    setDrawPoolMode("numbers");
+    saveTeamBattleCustom(defaultTeamBattleTeams(groups));
+
+    const updates = {
+      "config/play_mode": playMode,
+      "config/ui_display_mode": groups >= 2 ? "peak" : "camp"
+    };
+
+    // 空名册时按组数建红蓝交替小组；已有名册则不覆盖
+    if (getPeaksArray().length === 0) {
+      for (let i = 0; i < groups; i++) {
+        const camp = i % 2 === 0 ? "red" : "blue";
+        updates[`peaks/${peakKey(i)}`] = makePeak({
+          id: i,
+          name: `第${i + 1}组`,
+          icon: camp === "blue" ? "🌊" : "🐉",
+          color: TEAM_BATTLE_COLORS[i % TEAM_BATTLE_COLORS.length],
+          camp,
+          sort_order: Math.floor(i / 2),
+          slogan: "课堂小组",
+          work_title: `第${i + 1}组参赛作品`,
+          element: camp === "blue" ? "水" : "光",
+          intro: "初始引导创建",
+          sfx_pack: "kyo"
+        });
+      }
+    }
+
+    await updatePaths(updates);
+    applyPlayModeUI();
+    setSetupGuideStatus("done");
+    _setupGuideDraft = null;
+    syncSetupGuideBanner();
+    showVoteToast(`已就绪 · ${people} 人 · ${groups} 组 · ${getPlayModeDef(playMode).name}`);
+
+    // 进入签到并开启签到码
+    showScreen("teacher");
+    _fixedQrUrlPainted = "";
+    _bareQrUrlPainted = "";
+    setTeacherView("checkin");
+    startCheckinRefreshLoop();
+    try {
+      await generateCheckinCode();
+    } catch (e) {
+      renderTeacherCheckin();
+    }
+  }
+
   function renderSettingsPlaySummary() {
     const host = document.getElementById("settings-play-summary");
     if (!host) return;
@@ -7217,6 +7574,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span class="muted" id="settings-build-stamp">版本加载中…</span></div>
       <div class="row" style="gap:.35rem;flex-wrap:wrap">
         <button type="button" data-action="goto-play-mode">改玩法</button>
+        <button type="button" data-action="open-setup-guide">上课引导</button>
       </div>
       <div class="ui-mode-bar" id="settings-ui-mode-bar" style="margin:.45rem 0 0;width:100%" aria-label="主界面显示模式">
         <span class="ui-mode-lab">显示</span>
@@ -10139,6 +10497,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       void tickerEl.offsetWidth;
       tickerEl.style.animation = "";
     }
+    syncSetupGuideBanner();
   }
 
   function openModal(html) {
@@ -10713,6 +11072,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (view === "logs") { logsPage = 1; renderLogs(); }
     if (view === "settings") renderSettings();
     renderEditBoxes();
+    syncSetupGuideBanner();
   }
 
   function goHome() {
@@ -17637,8 +17997,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ${demoMode ? '<button type="button" id="settings-clear-demo">重置课堂</button>' : ""}`;
       const clearBtn = document.getElementById("settings-clear-demo");
       if (clearBtn) clearBtn.onclick = async () => {
-        if (!confirm("确认重置课堂？\n将清空积分、日志、小组与成员，回到「仅红蓝对抗」初始状态。")) return;
+        if (!confirm("确认重置课堂？\n将清空积分、日志、小组与成员，回到「仅红蓝对抗」初始状态。\n重置后将出现「课堂初始引导」。")) return;
         localStorage.removeItem(DEMO_DB_KEY);
+        try { localStorage.removeItem(TEAM_BATTLE_CUSTOM_KEY); } catch (e) { /* ignore */ }
+        setSetupGuideStatus("pending");
         try {
           await fetch("/__gy/demo-db/reset", { method: "POST", cache: "no-store" });
         } catch (e) { /* ignore */ }
@@ -19247,6 +19609,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       openPlayModePicker();
       return;
     }
+    if (act === "open-setup-guide") {
+      showScreen("teacher");
+      setTeacherView("main");
+      openSetupGuide(0);
+      return;
+    }
+    if (act === "dismiss-setup-guide") {
+      setSetupGuideStatus("dismissed");
+      syncSetupGuideBanner();
+      showVoteToast("可稍后在设置 → 上课引导 再打开");
+      return;
+    }
     if (act === "goto-settings") {
       showScreen("teacher");
       setTeacherView("settings");
@@ -19563,7 +19937,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       applyBrandUI();
       updateFullscreenButtons();
       updateDemoSyncBadge();
-      if (m === "teacher") setTeacherView("main");
+      if (m === "teacher") {
+        setTeacherView("main");
+        syncSetupGuideBanner();
+        if (getSetupGuideStatus() === "pending") {
+          setTimeout(() => showVoteToast("点首页「开始引导」完成初始设置"), 700);
+        }
+      }
       if (m === "memories") { /* loader */ } else renderAll();
       window.addEventListener("resize", () => {
         if (teacherView !== "main") return;
