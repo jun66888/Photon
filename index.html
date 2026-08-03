@@ -3854,6 +3854,54 @@ body.play-mode-basic #rail-side-mode-tabs {
 .ice-scoreboard .red { color: #ffb0bd; }
 .ice-scoreboard .blue { color: #9ec9ff; }
 .ice-scoreboard .vs { color: var(--ink-soft); font-weight: 500; }
+.team-score-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .45rem;
+  width: min(100%, 42rem);
+  margin: .15rem auto 0;
+}
+@media (max-width: 720px) {
+  .team-score-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.team-score-card {
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px;
+  padding: .55rem .4rem .65rem;
+  background: rgba(8, 12, 22, .55);
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+}
+.team-score-card .ts-name {
+  font-family: var(--font-brush);
+  font-size: 1.05rem;
+  letter-spacing: .06em;
+  line-height: 1.2;
+  text-align: center;
+}
+.team-score-card .ts-pts {
+  font-family: var(--font-num);
+  font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+  font-weight: 800;
+  color: #ffe39a;
+  line-height: 1;
+}
+.team-score-card .ts-actions {
+  display: flex; flex-wrap: wrap; gap: .25rem; justify-content: center;
+}
+.team-score-card .ts-actions button {
+  min-width: 3.2rem !important;
+  min-height: 2rem !important;
+  padding: .25rem .4rem !important;
+  font-size: .78rem !important;
+}
+.team-score-card.is-lead {
+  box-shadow: 0 0 0 1px rgba(240,193,75,.45) inset;
+  background: rgba(80, 60, 12, .35);
+}
+.team-score-card.is-turn {
+  border-color: rgba(240,193,75,.7);
+  box-shadow: 0 0 0 1px rgba(240,193,75,.55) inset, 0 0 18px rgba(240,193,75,.18);
+}
 .ice-player-grid {
   display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center;
   max-width: 34rem; margin: .2rem auto 0;
@@ -4567,6 +4615,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="course-panel">
         <div class="game-cat-tabs" id="game-cat-tabs" role="tablist" aria-label="互动分类">
           <button type="button" class="on" data-games-cat="draw">抽人答题</button>
+          <button type="button" data-games-cat="team">分组对抗</button>
           <button type="button" data-games-cat="ice">破冰互动</button>
           <button type="button" data-games-cat="open">暖场投放</button>
         </div>
@@ -5484,12 +5533,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   const ICE_POOL_MODE_KEY = "gy_arena_ice_pool_mode"; // numbers | roster
   const ICE_MATCH_RULES_KEY = "gy_arena_ice_match_rules";
   /** 支持「共 N 题 / 倒计时」赛制的游戏 */
-  const ICE_MATCH_GAMES = new Set(["buzz", "sync", "charades", "stand", "choice", "dare"]);
+  const ICE_MATCH_GAMES = new Set(["buzz", "sync", "charades", "stand", "choice", "dare", "tbuzz", "tturn"]);
+  // 分组对抗：四组轻松上手
+  const ICE_MODE_ORDER_TEAM = ["tbuzz", "trace", "tturn"];
   // 破冰：前半对抗有输赢（可发小奖品）→ 后半全员一起参与
   const ICE_MODE_ORDER_ICE = ["buzz", "duel", "spy", "sync", "flower", "dare", "intro"];
   // 暖场：前半有胜负 → 后半全班一起做
   const ICE_MODE_ORDER_OPEN = ["bomb", "charades", "timer", "stand", "choice", "pose", "chain"];
-  const ICE_MODE_ORDER = ICE_MODE_ORDER_ICE.concat(ICE_MODE_ORDER_OPEN);
+  const ICE_MODE_ORDER = ICE_MODE_ORDER_TEAM.concat(ICE_MODE_ORDER_ICE, ICE_MODE_ORDER_OPEN);
   const ICE_MODE_DEFS = {
     flower: {
       name: "击鼓传花", group: "ice",
@@ -5560,15 +5611,65 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       name: "接龙开场", group: "open",
       hint: "一起玩 · 口头接龙为主，全班轮流说即可",
       startLabel: "抽规则", nextLabel: "换规则"
+    },
+    tbuzz: {
+      name: "四组抢答", group: "team",
+      hint: "最简单 · 出题后哪组答对就点哪组 · 可发小奖品",
+      startLabel: "出题", nextLabel: "下一题"
+    },
+    trace: {
+      name: "积分冲刺", group: "team",
+      hint: "最简单 · 哪组表现好就给哪组 +1 · 先到目标分获胜",
+      startLabel: "开始冲刺", nextLabel: "再来一局"
+    },
+    tturn: {
+      name: "轮流挑战", group: "team",
+      hint: "最简单 · 随机抽一组上场做小挑战 · 成功加分",
+      startLabel: "抽组上场", nextLabel: "下一组"
     }
   };
   function iceModesForCat(cat) {
-    const group = cat === "open" ? "open" : "ice";
-    const order = group === "open" ? ICE_MODE_ORDER_OPEN : ICE_MODE_ORDER_ICE;
+    const order = cat === "open" ? ICE_MODE_ORDER_OPEN
+      : (cat === "team" ? ICE_MODE_ORDER_TEAM : ICE_MODE_ORDER_ICE);
     return order.filter((id) => ICE_MODE_DEFS[id]);
   }
   function isIceLikeCat(cat) {
-    return cat === "ice" || cat === "open";
+    return cat === "ice" || cat === "open" || cat === "team";
+  }
+  /** 分组对抗队伍：优先用名册前 4 个小组名，没有则用第1–4组 */
+  function getTeamBattleTeams() {
+    const colors = ["#ff6b84", "#5ec8ff", "#ffe39a", "#7dffb2"];
+    const peaks = getPeaksArray().slice().sort((a, b) =>
+      (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0) ||
+      String(a.name || "").localeCompare(String(b.name || ""), "zh-CN") ||
+      (Number(a.id) || 0) - (Number(b.id) || 0)
+    ).slice(0, 4);
+    if (peaks.length >= 2) {
+      return peaks.map((p, i) => ({
+        id: String(p.id),
+        name: String(p.name || (`第${i + 1}组`)).slice(0, 10),
+        color: colors[i % colors.length],
+        icon: p.icon || ""
+      }));
+    }
+    return [0, 1, 2, 3].map((i) => ({
+      id: `team-${i}`,
+      name: `第${i + 1}组`,
+      color: colors[i],
+      icon: ""
+    }));
+  }
+  function blankTeamScores(teams) {
+    const score = {};
+    (teams || getTeamBattleTeams()).forEach((t) => { score[t.id] = 0; });
+    return score;
+  }
+  function teamLeadIds(score, teams) {
+    const list = teams || getTeamBattleTeams();
+    let best = -Infinity;
+    list.forEach((t) => { best = Math.max(best, Number(score[t.id]) || 0); });
+    if (best <= 0) return [];
+    return list.filter((t) => (Number(score[t.id]) || 0) === best).map((t) => t.id);
   }
   let iceLastPick = {};
   function pickIce(arr, key) {
@@ -5917,6 +6018,45 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     "队名接龙：每人补一个字，拼完整队名",
     "水果接龙：末字开头，说不出就轻鼓掌过",
     "「然而」接龙：用「然而」接上一人的话续一句"
+  ];
+  const TEAM_BUZZ_QUESTIONS = [
+    { q: "一年有几个月？", a: "12" },
+    { q: "一周有几天？", a: "7" },
+    { q: "中国的首都是？", a: "北京" },
+    { q: "1 + 1 = ？", a: "2" },
+    { q: "红绿灯：红灯停，绿灯？", a: "行" },
+    { q: "太阳从哪边升起？", a: "东边" },
+    { q: "一年有几个季节？", a: "4" },
+    { q: "水在多少度结冰？（摄氏）", a: "0 度" },
+    { q: "「你好」的英文是？", a: "Hello" },
+    { q: "三角形有几条边？", a: "3" },
+    { q: "世界上最大的动物是？", a: "蓝鲸（答鲸鱼也可）" },
+    { q: "手机没电了要先做什么？", a: "充电" },
+    { q: "过马路要先看什么？", a: "红绿灯 / 左右来车" },
+    { q: "一天有多少小时？", a: "24" },
+    { q: "「光影盟」今天最该做的一件事是？", a: "认真上课 / 开心参与（言之成理即可）" },
+    { q: "两只手一共几根手指？", a: "10" },
+    { q: "冬天会下雪的常见气温特征？", a: "冷 / 低温" },
+    { q: "书是用来？", a: "读 / 看" },
+    { q: "班级里共有几组？（请看现场）", a: "按实际组数" },
+    { q: "举手发言前应该先？", a: "举手 / 被点到" }
+  ];
+  const TEAM_TURN_CHALLENGES = [
+    "全组一起轻拍手 3 下，要整齐",
+    "全组同时说「我们最棒」",
+    "派 1 人用 5 秒自我介绍",
+    "全组举起右手保持 3 秒",
+    "全组用气声说「冲啊」",
+    "派 1 人讲一个今天开心的小事",
+    "全组对老师挥手打招呼",
+    "全组一起做一个「耶」手势定格",
+    "派 1 人夸本组一句",
+    "全组轻轻跺脚两下（坐着踮脚即可）",
+    "全组同步点头三下",
+    "派 1 人用一个词形容本组状态",
+    "全组一起倒计时 3、2、1",
+    "全组对邻组挥手示好",
+    "派 1 人做个搞笑表情，全组跟做"
   ];
   let redeemTab = "shop";
   /** 作品投票榜快照：用于追赶排序动效 */
@@ -10765,6 +10905,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       matchOver: !!prev.matchOver,
       matchStarted: !!prev.matchStarted,
       score: prev.score,
+      teams: prev.teams,
       done: prev.done,
       round: prev.round
     };
@@ -10814,16 +10955,27 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (iceState.qSecLeft <= 0) {
         clearIceTimer();
         playGameFx("fail", { banner: "本题时间到" });
-        showVoteToast("本题时间到 · 可判分或点下一题");
         if (iceMode === "buzz") {
           iceState.locked = true;
           iceState.showAns = true;
+          showVoteToast("本题时间到 · 可判分或点下一题");
           renderIceBuzzStage();
+        } else if (iceMode === "tbuzz") {
+          iceState.locked = true;
+          iceState.showAns = true;
+          showVoteToast("时间到 · 可点下一题");
+          renderTeamBuzzStage();
+        } else if (iceMode === "tturn") {
+          showVoteToast("时间到 · 点「没完成」或「下一组」");
+          renderTeamTurnStage();
         } else if (iceMode === "sync") {
+          showVoteToast("本题时间到 · 可判分或点下一题");
           renderIceSyncStage();
         } else if (iceMode === "charades") {
+          showVoteToast("本题时间到 · 可判分或点下一题");
           renderIceCharadesStage();
         } else {
+          showVoteToast("本题时间到 · 可判分或点下一题");
           renderIceStage();
         }
       } else if (iceState.qSecLeft <= 3) {
@@ -10977,25 +11129,30 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const actions = document.getElementById("games-hero-actions");
     const iceLike = isIceLikeCat(gamesCat);
     const open = gamesCat === "open";
-    if (seal) seal.textContent = open ? "暖" : (iceLike ? "冰" : "转");
+    const team = gamesCat === "team";
+    if (seal) seal.textContent = team ? "组" : (open ? "暖" : (iceLike ? "冰" : "转"));
     if (kicker) {
-      kicker.textContent = open ? "COURSE · WARMUP"
-        : (iceLike ? "COURSE · ICEBREAKER" : "COURSE · DRAW");
+      kicker.textContent = team ? "COURSE · TEAM"
+        : (open ? "COURSE · WARMUP"
+          : (iceLike ? "COURSE · ICEBREAKER" : "COURSE · DRAW"));
     }
     if (title) {
-      title.textContent = open ? "暖场投放 · 无人签到也能玩"
-        : (iceLike ? "破冰互动 · 无需签到也能玩" : "课堂抽人 · 答题加分");
+      title.textContent = team ? "分组对抗 · 四组轻松上手"
+        : (open ? "暖场投放 · 无人签到也能玩"
+          : (iceLike ? "破冰互动 · 无需签到也能玩" : "课堂抽人 · 答题加分"));
     }
     if (sub) {
-      sub.textContent = open
-        ? "题目类可设共 N 题/倒计时 · 前半有输赢，后半全班一起"
-        : (iceLike
-          ? "题目类可设共 N 题/倒计时 · 抽号码开玩 · 前半对抗领小奖"
-          : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分");
+      sub.textContent = team
+        ? "自动读取前 4 个小组名 · 抢答 / 积分冲刺 / 轮流挑战 · 点一下就会"
+        : (open
+          ? "题目类可设共 N 题/倒计时 · 前半有输赢，后半全班一起"
+          : (iceLike
+            ? "题目类可设共 N 题/倒计时 · 抽号码开玩 · 前半对抗领小奖"
+            : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分"));
     }
     if (actions) {
       if (iceLike) {
-        actions.innerHTML = open
+        actions.innerHTML = (open || team)
           ? `<button type="button" class="primary" data-action="ice-start" id="game-spin-top">${esc(iceDef().startLabel || "开始")}</button>`
           : `<button type="button" data-action="goto-checkin">去签到</button>
              <button type="button" class="primary" data-action="ice-start" id="game-spin-top">${esc(iceDef().startLabel || "开始")}</button>`;
@@ -11019,13 +11176,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       b.onclick = () => {
         if (gameSpinning || iceBusy) return;
         const next = b.dataset.gamesCat;
-        gamesCat = next === "ice" || next === "open" ? next : "draw";
+        gamesCat = (next === "ice" || next === "open" || next === "team") ? next : "draw";
         clearIceTimer();
+        clearIceMatchClock();
         iceBusy = false;
         // 切换大类时落到该类默认玩法
         const modes = iceModesForCat(gamesCat);
         if (isIceLikeCat(gamesCat) && (!ICE_MODE_DEFS[iceMode] || ICE_MODE_DEFS[iceMode].group !== gamesCat)) {
-          iceMode = modes[0] || (gamesCat === "open" ? "bomb" : "buzz");
+          iceMode = modes[0] || (gamesCat === "open" ? "bomb" : (gamesCat === "team" ? "tbuzz" : "buzz"));
           iceState = {};
         }
         renderGames();
@@ -11088,9 +11246,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const def = iceDef();
     const hint = document.getElementById("ice-mode-hint");
     if (hint) {
-      hint.textContent = gamesCat === "open"
-        ? `${def.name} · ${def.hint}（无需登录签到）`
-        : `${def.name} · ${def.hint}（无需签到）`;
+      hint.textContent = gamesCat === "team"
+        ? `${def.name} · ${def.hint}（自动用前 4 个小组名）`
+        : (gamesCat === "open"
+          ? `${def.name} · ${def.hint}（无需登录签到）`
+          : `${def.name} · ${def.hint}（无需签到）`);
     }
     const tabs = document.getElementById("ice-mode-tabs");
     if (tabs) {
@@ -11138,6 +11298,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else if (iceMode === "choice") renderIceChoiceStage();
     else if (iceMode === "timer") renderIceTimerStage();
     else if (iceMode === "chain") renderIceChainStage();
+    else if (iceMode === "tbuzz") renderTeamBuzzStage();
+    else if (iceMode === "trace") renderTeamRaceStage();
+    else if (iceMode === "tturn") renderTeamTurnStage();
     else renderIceFlowerStage();
   }
 
@@ -11732,6 +11895,328 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     renderIceSpyStage();
   }
 
+  /* -------- 分组对抗：四组轻松上手 -------- */
+  function renderTeamScoreGrid(teams, score, opts = {}) {
+    const lead = new Set(opts.leadIds || teamLeadIds(score, teams));
+    const turnId = opts.turnId || "";
+    const showPlus = opts.showPlus !== false;
+    const showOk = !!opts.showOk;
+    const showBad = !!opts.showBad;
+    const disabled = !!opts.disabled;
+    return `<div class="team-score-grid">${teams.map((t) => {
+      const pts = Number(score[t.id]) || 0;
+      const cls = [
+        "team-score-card",
+        lead.has(t.id) ? "is-lead" : "",
+        turnId && turnId === t.id ? "is-turn" : ""
+      ].filter(Boolean).join(" ");
+      return `<div class="${cls}" style="border-color:${esc(t.color)}55">
+        <div class="ts-name" style="color:${esc(t.color)}">${esc(t.icon || "")}${esc(t.name)}</div>
+        <div class="ts-pts">${pts}</div>
+        <div class="ts-actions">
+          ${showPlus ? `<button type="button" class="primary" data-team-plus="${esc(t.id)}" ${disabled ? "disabled" : ""}>+1</button>` : ""}
+          ${showOk ? `<button type="button" class="primary" data-team-ok="${esc(t.id)}" ${disabled ? "disabled" : ""}>答对</button>` : ""}
+          ${showBad ? `<button type="button" data-team-bad="${esc(t.id)}" ${disabled ? "disabled" : ""}>答错</button>` : ""}
+        </div>
+      </div>`;
+    }).join("")}</div>`;
+  }
+  function bindTeamScoreActions(root, onPlus, onOk, onBad) {
+    (root || document).querySelectorAll("[data-team-plus]").forEach((b) => {
+      b.onclick = () => onPlus && onPlus(b.dataset.teamPlus);
+    });
+    (root || document).querySelectorAll("[data-team-ok]").forEach((b) => {
+      b.onclick = () => onOk && onOk(b.dataset.teamOk);
+    });
+    (root || document).querySelectorAll("[data-team-bad]").forEach((b) => {
+      b.onclick = () => onBad && onBad(b.dataset.teamBad);
+    });
+  }
+  function renderTeamBuzzStage() {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return;
+    const teams = iceState.teams || getTeamBattleTeams();
+    const score = iceState.score || blankTeamScores(teams);
+    if (iceState.matchOver) {
+      const leads = teamLeadIds(score, teams).map((id) => {
+        const t = teams.find((x) => x.id === id);
+        return t ? t.name : id;
+      });
+      renderIceMatchEndCard(`
+        ${renderTeamScoreGrid(teams, score, { showPlus: false, showOk: false, leadIds: teamLeadIds(score, teams) })}
+        <div class="ice-stage-big" style="font-size:clamp(1.6rem,4vw,2.4rem)">${esc(leads.length ? leads.join("、") + " 领先" : "本场结束")}</div>
+        <div class="ice-stage-sub">共完成 ${iceState.round || 0} 题</div>`);
+      return;
+    }
+    if (!iceState.q) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">四组抢答 · 点一下就会</div>
+          ${iceMatchProgressHtml()}
+          <div class="ice-stage-title">哪组答对，就点哪组</div>
+          <div class="ice-stage-sub">自动使用前 4 个小组名：${esc(teams.map((t) => t.name).join(" / "))} · 可先设共 N 题</div>
+          ${renderTeamScoreGrid(teams, score, { showPlus: false, showOk: false })}
+        </div>`;
+      return;
+    }
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">四组抢答 · 第 ${iceState.round || 1} 题</div>
+        ${iceMatchProgressHtml()}
+        ${renderTeamScoreGrid(teams, score, { showPlus: false, showOk: true, showBad: true, disabled: !!iceState.locked, leadIds: teamLeadIds(score, teams) })}
+        <div class="ice-stage-title">${esc(iceState.q)}</div>
+        <div class="ice-stage-sub">${iceState.showAns || iceState.locked ? `参考：${esc(iceState.a || "—")}` : "学生举手抢答 → 老师点对应组「答对/答错」"}</div>
+        <div class="ice-stage-row">
+          <button type="button" data-team-buzz="reveal">看答案</button>
+          <button type="button" data-team-buzz="skip" ${iceState.locked ? "" : ""}>跳过本题</button>
+        </div>
+      </div>`;
+    bindTeamScoreActions(stage, null, (id) => iceTeamBuzzJudge(id, "ok"), (id) => iceTeamBuzzJudge(id, "bad"));
+    stage.querySelectorAll("[data-team-buzz]").forEach((b) => {
+      b.onclick = () => iceTeamBuzzJudge("", b.dataset.teamBuzz);
+    });
+  }
+  function iceTeamBuzzStart() {
+    const teams = iceState.teams || getTeamBattleTeams();
+    const score = iceState.score || blankTeamScores(teams);
+    const next = iceOpenNextMatchRound({ teams, score });
+    if (!next) return;
+    const item = pickIce(TEAM_BUZZ_QUESTIONS, "tbuzz");
+    iceState = { ...next, teams, score, q: item.q, a: item.a, locked: false, showAns: false };
+    renderTeamBuzzStage();
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
+    playGameFx("start", { banner: `四组抢答 · 第 ${iceState.round} 题` });
+  }
+  function iceTeamBuzzJudge(teamId, act) {
+    if (iceState.matchOver) return;
+    if (act === "reveal") {
+      iceState.showAns = true;
+      playGameFx("reveal", { banner: "看答案" });
+      showVoteToast(`参考：${iceState.a || "—"}`);
+      renderTeamBuzzStage();
+      return;
+    }
+    if (act === "skip") {
+      clearIceTimer();
+      iceState.locked = true;
+      iceState.showAns = true;
+      playGameFx("tick");
+      showVoteToast("已跳过 · 可点下一题");
+      if (iceMatchShouldEndAfterRound(iceState.round)) {
+        showVoteToast("最后一题 · 再点下一题结算");
+      }
+      renderTeamBuzzStage();
+      return;
+    }
+    if (iceState.locked || !teamId) return;
+    clearIceTimer();
+    iceState.score = iceState.score || blankTeamScores(iceState.teams);
+    const team = (iceState.teams || []).find((t) => t.id === teamId);
+    const name = team ? team.name : "该组";
+    if (act === "ok") {
+      iceState.score[teamId] = (Number(iceState.score[teamId]) || 0) + 1;
+      playGameFx("ok", { banner: `${name} +1` });
+      showVoteToast(`${name} 答对 +1`);
+    } else {
+      iceState.score[teamId] = (Number(iceState.score[teamId]) || 0) - 1;
+      playGameFx("bad", { banner: `${name} −1` });
+      showVoteToast(`${name} 答错 −1`);
+    }
+    iceState.locked = true;
+    iceState.showAns = true;
+    if (iceMatchShouldEndAfterRound(iceState.round)) {
+      renderTeamBuzzStage();
+      showVoteToast("最后一题已判 · 点「下一题」结算");
+      return;
+    }
+    renderTeamBuzzStage();
+  }
+
+  function renderTeamRaceStage() {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return;
+    const teams = iceState.teams || getTeamBattleTeams();
+    const score = iceState.score || blankTeamScores(teams);
+    const target = Number(iceState.target) || 10;
+    const winner = iceState.winner || "";
+    if (winner || iceState.matchOver) {
+      const winNames = (winner ? [winner] : teamLeadIds(score, teams)).map((id) => {
+        const t = teams.find((x) => x.id === id);
+        return t ? t.name : id;
+      });
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">积分冲刺 · 结束</div>
+          <div class="ice-stage-title">🏆 ${esc(winNames.join("、") || "本场结束")}</div>
+          ${renderTeamScoreGrid(teams, score, { showPlus: false, leadIds: teamLeadIds(score, teams) })}
+          <div class="ice-stage-sub">目标 ${target} 分 · 可改目标后点「再来一局」</div>
+          <div class="ice-stage-row">
+            <button type="button" class="primary" id="team-race-again">再来一局</button>
+          </div>
+        </div>`;
+      const again = document.getElementById("team-race-again");
+      if (again) again.onclick = () => iceTeamRaceStart(true);
+      return;
+    }
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">积分冲刺 · 先到 ${target} 分</div>
+        <div class="ice-stage-title">${iceState.started ? "哪组表现好，就给 +1" : "点开始，然后狂点 +1"}</div>
+        <div class="ice-stage-sub">自动组名：${esc(teams.map((t) => t.name).join(" / "))} · 不用出题，最适合四组对抗</div>
+        ${renderTeamScoreGrid(teams, score, { showPlus: true, disabled: !iceState.started, leadIds: teamLeadIds(score, teams) })}
+        <div class="ice-stage-row" style="margin-top:.35rem">
+          <label class="tool-inline"><span>目标分</span>
+            <input id="team-race-target" type="number" min="3" max="99" value="${target}" style="width:4.2rem" />
+          </label>
+          <button type="button" id="team-race-apply-target">应用</button>
+        </div>
+      </div>`;
+    bindTeamScoreActions(stage, (id) => iceTeamRacePlus(id), null, null);
+    const apply = document.getElementById("team-race-apply-target");
+    const input = document.getElementById("team-race-target");
+    if (apply && input) {
+      apply.onclick = () => {
+        let n = Math.floor(Number(input.value) || 10);
+        n = Math.max(3, Math.min(99, n));
+        iceState.target = n;
+        renderTeamRaceStage();
+        showVoteToast(`目标改为 ${n} 分`);
+      };
+    }
+  }
+  function iceTeamRaceStart(forceNew = false) {
+    const teams = getTeamBattleTeams();
+    if (forceNew || !iceState.started || iceState.winner) {
+      iceState = { teams, score: blankTeamScores(teams), target: Number(iceState.target) || 10, started: true, winner: "" };
+      playGameFx("start", { banner: "积分冲刺开始" });
+      showVoteToast(`冲刺开始 · 先到 ${iceState.target} 分`);
+    } else {
+      iceState.started = true;
+      iceState.teams = teams;
+      iceState.score = iceState.score || blankTeamScores(teams);
+    }
+    renderTeamRaceStage();
+  }
+  function iceTeamRacePlus(teamId) {
+    if (!iceState.started || iceState.winner) return;
+    iceState.score = iceState.score || blankTeamScores(iceState.teams);
+    iceState.score[teamId] = (Number(iceState.score[teamId]) || 0) + 1;
+    const team = (iceState.teams || []).find((t) => t.id === teamId);
+    const pts = iceState.score[teamId];
+    const target = Number(iceState.target) || 10;
+    playGameFx("tick");
+    if (pts >= target) {
+      iceState.winner = teamId;
+      playGameFx("win", { banner: `${team ? team.name : "该组"} 获胜` });
+      showVoteToast(`${team ? team.name : "该组"} 率先到达 ${target} 分！`);
+    } else {
+      showVoteToast(`${team ? team.name : "该组"} ${pts} 分`);
+    }
+    renderTeamRaceStage();
+  }
+
+  function renderTeamTurnStage() {
+    const stage = document.getElementById("game-stage");
+    if (!stage) return;
+    const teams = iceState.teams || getTeamBattleTeams();
+    const score = iceState.score || blankTeamScores(teams);
+    if (iceState.matchOver) {
+      const leads = teamLeadIds(score, teams).map((id) => {
+        const t = teams.find((x) => x.id === id);
+        return t ? t.name : id;
+      });
+      renderIceMatchEndCard(`
+        ${renderTeamScoreGrid(teams, score, { showPlus: false, leadIds: teamLeadIds(score, teams) })}
+        <div class="ice-stage-big" style="font-size:clamp(1.6rem,4vw,2.4rem)">${esc(leads.length ? leads.join("、") + " 领先" : "本场结束")}</div>`);
+      return;
+    }
+    if (!iceState.turnId) {
+      stage.innerHTML = `
+        <div class="ice-stage-card">
+          <div class="ice-stage-kicker">轮流挑战 · 点一下就会</div>
+          ${iceMatchProgressHtml()}
+          <div class="ice-stage-title">随机抽一组上场</div>
+          <div class="ice-stage-sub">成功 +2 · 失败 0 · 组名：${esc(teams.map((t) => t.name).join(" / "))}</div>
+          ${renderTeamScoreGrid(teams, score, { showPlus: false, leadIds: teamLeadIds(score, teams) })}
+        </div>`;
+      return;
+    }
+    const turn = teams.find((t) => t.id === iceState.turnId);
+    stage.innerHTML = `
+      <div class="ice-stage-card">
+        <div class="ice-stage-kicker">轮流挑战 · 第 ${iceState.round || 1} 轮</div>
+        ${iceMatchProgressHtml()}
+        ${renderTeamScoreGrid(teams, score, { showPlus: false, turnId: iceState.turnId, leadIds: teamLeadIds(score, teams) })}
+        <div class="ice-stage-big" style="color:${esc((turn && turn.color) || "#ffe39a")}">${esc(turn ? turn.name : "一组")} 上场</div>
+        <div class="ice-stage-title">${esc(iceState.challenge || "")}</div>
+        <div class="ice-stage-row">
+          <button type="button" class="primary" data-team-turn="ok" ${iceState.locked ? "disabled" : ""}>成功 +2</button>
+          <button type="button" data-team-turn="fail" ${iceState.locked ? "disabled" : ""}>没完成</button>
+          <button type="button" data-team-turn="redraw" ${iceState.locked ? "disabled" : ""}>换一组</button>
+        </div>
+        <div class="ice-stage-sub">${iceState.locked ? "已判定 · 点「下一组」继续" : "做完后老师点成功或没完成即可"}</div>
+      </div>`;
+    stage.querySelectorAll("[data-team-turn]").forEach((b) => {
+      b.onclick = () => iceTeamTurnAct(b.dataset.teamTurn);
+    });
+  }
+  function iceTeamTurnStart() {
+    const teams = iceState.teams || getTeamBattleTeams();
+    const score = iceState.score || blankTeamScores(teams);
+    const next = iceOpenNextMatchRound({ teams, score });
+    if (!next) return;
+    const turn = teams[Math.floor(Math.random() * teams.length)];
+    const challenge = pickIce(TEAM_TURN_CHALLENGES, "tturn");
+    iceState = {
+      ...next,
+      teams,
+      score,
+      turnId: turn.id,
+      challenge,
+      locked: false
+    };
+    renderTeamTurnStage();
+    startIceMatchClockIfNeeded();
+    startIceQuestionClockIfNeeded();
+    playGameFx("draw", { banner: `${turn.name} 上场` });
+    showVoteToast(`${turn.name} 上场`);
+  }
+  function iceTeamTurnAct(act) {
+    if (!iceState.turnId || iceState.matchOver) return;
+    const teams = iceState.teams || getTeamBattleTeams();
+    const turn = teams.find((t) => t.id === iceState.turnId);
+    const name = turn ? turn.name : "该组";
+    if (act === "redraw" && !iceState.locked) {
+      const others = teams.filter((t) => t.id !== iceState.turnId);
+      const pick = (others.length ? others : teams)[Math.floor(Math.random() * (others.length || teams.length))];
+      iceState.turnId = pick.id;
+      iceState.challenge = pickIce(TEAM_TURN_CHALLENGES, "tturn");
+      playGameFx("tick");
+      showVoteToast(`改抽：${pick.name}`);
+      renderTeamTurnStage();
+      return;
+    }
+    if (iceState.locked) return;
+    clearIceTimer();
+    iceState.score = iceState.score || blankTeamScores(teams);
+    if (act === "ok") {
+      iceState.score[iceState.turnId] = (Number(iceState.score[iceState.turnId]) || 0) + 2;
+      playGameFx("win", { banner: `${name} +2` });
+      showVoteToast(`${name} 成功 +2`);
+    } else if (act === "fail") {
+      playGameFx("fail", { banner: `${name} 未完成` });
+      showVoteToast(`${name} 没完成 · 0 分`);
+    } else return;
+    iceState.locked = true;
+    if (iceMatchShouldEndAfterRound(iceState.round)) {
+      renderTeamTurnStage();
+      showVoteToast("最后一轮已判 · 点「下一组」结算");
+      return;
+    }
+    renderTeamTurnStage();
+  }
+
   async function iceStart() {
     if (!isIceLikeCat(gamesCat)) return;
     if (iceMode === "flower") return iceFlowerToggle();
@@ -11748,6 +12233,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "choice") return iceChoiceStart();
     if (iceMode === "timer") return iceTimerStart();
     if (iceMode === "chain") return iceChainStart();
+    if (iceMode === "tbuzz") return iceTeamBuzzStart();
+    if (iceMode === "trace") return iceTeamRaceStart();
+    if (iceMode === "tturn") return iceTeamTurnStart();
   }
   function iceNext() {
     if (iceMode === "flower") {
@@ -11769,12 +12257,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (iceMode === "choice") return iceChoiceStart();
     if (iceMode === "timer") return iceTimerStart();
     if (iceMode === "chain") return iceChainStart();
+    if (iceMode === "tbuzz") return iceTeamBuzzStart();
+    if (iceMode === "trace") return iceTeamRaceStart(true);
+    if (iceMode === "tturn") return iceTeamTurnStart();
   }
   function iceReset() {
     clearIceTimer();
     clearIceMatchClock();
     iceBusy = false;
-    iceState = iceSupportsMatchRules() ? { ...iceMatchMetaFromRules() } : {};
+    if (iceMode === "trace") {
+      const teams = getTeamBattleTeams();
+      iceState = { teams, score: blankTeamScores(teams), target: Number(iceState.target) || 10, started: false, winner: "" };
+    } else {
+      iceState = iceSupportsMatchRules() ? { ...iceMatchMetaFromRules() } : {};
+    }
     renderIceMatchRulesBar();
     renderIceStage();
     playGameFx("tick");
