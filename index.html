@@ -3632,18 +3632,66 @@ body.play-mode-basic #rail-side-mode-tabs {
 }
 .ice-stage-card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .55rem; min-height: 18rem; text-align: center; padding: .5rem;
+  gap: .65rem; min-height: 18rem; text-align: center; padding: .5rem;
 }
-.ice-stage-kicker { font-size: .75rem; color: var(--ink-soft); letter-spacing: .12em; }
+.ice-stage-kicker {
+  font-family: var(--font-brush);
+  font-size: clamp(1.35rem, 3vw, 1.9rem);
+  color: #ffe39a; letter-spacing: .14em; line-height: 1.2;
+  text-shadow: 0 0 12px rgba(240,193,75,.35);
+}
 .ice-stage-title {
-  font-family: var(--font-brush); font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-family: var(--font-brush); font-size: clamp(2.1rem, 5.2vw, 3.35rem);
   color: #ffe9a8; letter-spacing: .06em; line-height: 1.2;
+  text-shadow: 0 0 16px rgba(240,193,75,.28);
+  max-width: 38rem;
 }
-.ice-stage-sub { font-size: .9rem; color: var(--ink-soft); max-width: 32rem; line-height: 1.45; }
+.ice-stage-sub { font-size: .95rem; color: var(--ink-soft); max-width: 34rem; line-height: 1.45; }
 .ice-stage-big {
   font-family: var(--font-brush);
-  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  font-size: clamp(2.8rem, 7.5vw, 4.4rem);
   color: #fff5e8; letter-spacing: .08em;
+  text-shadow: 0 0 18px rgba(255,245,232,.2);
+}
+#teacher-games .course-hero .ch-title {
+  font-size: clamp(2rem, 3.6vw, 2.75rem);
+}
+.game-sfx-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .65rem;
+  margin: 0 0 .65rem;
+  padding: .45rem .65rem;
+  border: 1px solid rgba(240,193,75,.28);
+  border-radius: 8px;
+  background: rgba(8, 12, 22, .45);
+}
+.game-sfx-bar .sfx-lab {
+  font-size: .78rem; color: var(--ink-soft); letter-spacing: .06em; white-space: nowrap;
+}
+.game-sfx-bar input[type="range"] {
+  width: min(12rem, 42vw); accent-color: var(--gold); vertical-align: middle;
+}
+.game-sfx-bar .sfx-vol-num {
+  font-family: var(--font-num); font-size: .85rem; color: #ffe39a; min-width: 2.4rem;
+}
+.game-sfx-bar button {
+  min-height: 1.85rem !important; padding: .2rem .55rem !important; font-size: .74rem !important;
+}
+.sfx-settings-panel {
+  display: flex; flex-direction: column; gap: .55rem;
+  padding: .2rem 0 .15rem;
+}
+.sfx-settings-panel .sfx-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .65rem;
+}
+.sfx-settings-panel .sfx-row label {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .82rem; color: var(--ink-soft);
+}
+.sfx-settings-panel input[type="range"] {
+  width: min(14rem, 55vw); accent-color: var(--gold);
+}
+.sfx-settings-panel .sfx-hint {
+  font-size: .72rem; color: var(--ink-soft); line-height: 1.4; max-width: 36rem;
 }
 .ice-stage-timer {
   font-family: var(--font-num); font-size: clamp(2.4rem, 7vw, 4rem);
@@ -4305,6 +4353,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           </div>
           <div class="muted" style="margin-bottom:.35rem" id="ice-mode-hint">暖场互动 · 不扣积分</div>
         </div>
+        <div class="game-sfx-bar" id="game-sfx-bar" aria-label="音效调节"></div>
         <div class="game-stage" id="game-stage"></div>
         <div class="game-actions" id="games-draw-actions">
           <button type="button" class="primary" data-action="game-spin" id="game-spin-btn">开始抽取</button>
@@ -4501,11 +4550,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           </div>
         </details>
 
-        <!-- ⑧ 更多工具：默认收起 -->
+        <!-- ⑧ 音效：可开关、调音量、导入自定义包 -->
+        <details class="settings-acc" data-acc="sfx" open>
+          <summary>
+            <span class="acc-title">音效调节</span>
+            <span class="acc-sum" id="acc-sum-sfx">开关 · 音量 · 自定义包</span>
+          </summary>
+          <div class="acc-body">
+            <div id="settings-sfx-panel" class="sfx-settings-panel"></div>
+          </div>
+        </details>
+
+        <!-- ⑨ 更多工具：默认收起 -->
         <details class="settings-acc" data-acc="tools">
           <summary>
             <span class="acc-title">更多工具</span>
-            <span class="acc-sum">音效 / 导出 / 全屏等</span>
+            <span class="acc-sum">导出 / 全屏 / 回忆等</span>
           </summary>
           <div class="acc-body">
             <div id="settings-runtime" class="settings-inline"></div>
@@ -6291,11 +6351,55 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   /* -------- FX + SFX：仙剑奇侠传3 气质音效（合成还原气质；可导入本地音效包） -------- */
   let sfxEnabled = localStorage.getItem("gy_arena_sfx") !== "0";
+  let sfxVolume = (() => {
+    const n = Number(localStorage.getItem("gy_arena_sfx_vol"));
+    return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 78;
+  })();
   let audioCtx = null;
   let masterBus = null;
   /** 用户导入的仙剑音效采样（非仓库附带正版资源） */
   const pal3Samples = { light: null, mid: null, heavy: null, ultimate: null, levelup: null };
   let pal3PackReady = localStorage.getItem("gy_arena_pal3_pack") === "1";
+
+  function sfxGainValue() {
+    return Math.max(0, Math.min(1, (sfxVolume || 0) / 100));
+  }
+  function applySfxVolume() {
+    if (masterBus) masterBus.gain.value = sfxGainValue();
+    localStorage.setItem("gy_arena_sfx_vol", String(sfxVolume));
+    const num = document.getElementById("game-sfx-vol-num");
+    if (num) num.textContent = String(sfxVolume);
+    const num2 = document.getElementById("settings-sfx-vol-num");
+    if (num2) num2.textContent = String(sfxVolume);
+    const range = document.getElementById("game-sfx-vol");
+    if (range && Number(range.value) !== sfxVolume) range.value = String(sfxVolume);
+    const range2 = document.getElementById("settings-sfx-vol");
+    if (range2 && Number(range2.value) !== sfxVolume) range2.value = String(sfxVolume);
+    const sum = document.getElementById("acc-sum-sfx");
+    if (sum) {
+      sum.textContent = sfxEnabled
+        ? `开 · 音量 ${sfxVolume}%${pal3PackReady ? " · 已导入包" : ""}`
+        : `关 · 音量 ${sfxVolume}%`;
+    }
+  }
+  function setSfxVolume(v, { preview = false } = {}) {
+    sfxVolume = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+    ensureAudio();
+    applySfxVolume();
+    if (preview && sfxEnabled && sfxVolume > 0) {
+      try { playIceSfx("tick"); } catch (e) { /* ignore */ }
+    }
+  }
+  function setSfxEnabled(on, { preview = true } = {}) {
+    sfxEnabled = !!on;
+    localStorage.setItem("gy_arena_sfx", sfxEnabled ? "1" : "0");
+    updateSfxToggleLabel();
+    applySfxVolume();
+    if (preview && sfxEnabled) {
+      ensureAudio();
+      try { playHitSfx(pick([2, 5, 12]), pick(["日常", "任务"])); } catch (e) { /* ignore */ }
+    }
+  }
 
   function ensureAudio() {
     if (!audioCtx) {
@@ -6303,8 +6407,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (!AC) return null;
       audioCtx = new AC();
       masterBus = audioCtx.createGain();
-      masterBus.gain.value = 0.78;
+      masterBus.gain.value = sfxGainValue();
       masterBus.connect(audioCtx.destination);
+    } else if (masterBus) {
+      masterBus.gain.value = sfxGainValue();
     }
     if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
     return audioCtx;
@@ -6461,9 +6567,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     localStorage.setItem("gy_arena_pal3_pack", pal3PackReady ? "1" : "0");
     updateSfxToggleLabel();
     alert(pal3PackReady
-      ? `已导入仙剑音效包（${mapped} 个采样）。加分时优先播放导入音效。`
+      ? `已导入自定义音效包（${mapped} 个采样）。加分/互动时优先播放导入音效。`
       : "未能识别音效文件，请按 light/mid/heavy/ultimate/levelup 命名后重试。");
     if (pal3PackReady) playHitSfx(5, "任务");
+    applySfxVolume();
+  }
+
+  async function clearPal3SoundPack() {
+    try {
+      const db = await openPal3Idb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction("samples", "readwrite");
+        tx.objectStore("samples").clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (_) {}
+    Object.keys(pal3Samples).forEach((k) => { pal3Samples[k] = null; });
+    pal3PackReady = false;
+    localStorage.setItem("gy_arena_pal3_pack", "0");
+    updateSfxToggleLabel();
+    applySfxVolume();
+    showVoteToast("已清除自定义音效包，恢复合成音效");
   }
 
   /** 剑气破空 —— 仙剑战斗中常见的轻剑音 */
@@ -6596,6 +6721,53 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (lv === 2) return pal3Mid(now);
     if (lv === 3) return pal3Heavy(now);
     pal3Ultimate(now);
+  }
+
+  /** 破冰 / 抽人互动反馈音（受总音量与开关控制） */
+  function playIceSfx(kind) {
+    const ctx = ensureAudio();
+    if (!ctx || !sfxEnabled || sfxVolume <= 0) return;
+    const t = ctx.currentTime;
+    if (kind === "tick") {
+      tone(880, t, 0.05, "square", 0.04, 660, 0.005);
+      return;
+    }
+    if (kind === "spin") {
+      tone(420 + Math.random() * 180, t, 0.04, "triangle", 0.035, 280, 0.004);
+      return;
+    }
+    if (kind === "start") {
+      if (pal3Samples.light && playBuffer(pal3Samples.light, 0.7)) return;
+      pal3SpiritChime(t, 4);
+      return;
+    }
+    if (kind === "win" || kind === "ok") {
+      if (pal3Samples.mid && playBuffer(pal3Samples.mid, 0.78)) return;
+      pal3SpiritChime(t, 6);
+      tone(659, t + 0.08, 0.22, "sine", 0.07, 880, 0.02);
+      return;
+    }
+    if (kind === "fail" || kind === "bad") {
+      tone(220, t, 0.22, "sawtooth", 0.05, 110, 0.02);
+      noiseBurst(t, 0.16, 0.06, { type: "lowpass", freq: 600, freqTo: 120, q: 0.7, decay: 1.2 });
+      return;
+    }
+    if (kind === "boom") {
+      if (pal3Samples.heavy && playBuffer(pal3Samples.heavy, 0.88)) return;
+      noiseBurst(t, 0.35, 0.16, { type: "lowpass", freq: 900, freqTo: 80, q: 0.6, decay: 0.9 });
+      tone(90, t, 0.4, "sine", 0.12, 40, 0.01);
+      return;
+    }
+    if (kind === "draw") {
+      if (pal3Samples.light && playBuffer(pal3Samples.light, 0.65)) return;
+      pal3QinPluck(t, 392);
+      return;
+    }
+    if (kind === "match") {
+      [523, 659, 784].forEach((f, i) => tone(f, t + i * 0.07, 0.28, "sine", 0.07, f * 1.01, 0.02));
+      return;
+    }
+    playHitSfx(5, "日常");
   }
 
   function playLevelUpSfx() {
@@ -7053,17 +7225,93 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function updateSfxToggleLabel() {
+    const label = !sfxEnabled
+      ? "音效关"
+      : (pal3PackReady ? `音效开 · ${sfxVolume}% · 自定义包` : `音效开 · ${sfxVolume}%`);
     const btn = document.getElementById("sfx-toggle");
-    if (btn) {
-      if (!sfxEnabled) btn.textContent = "🔇 音效关";
-      else btn.textContent = pal3PackReady ? "🔊 仙剑音效·包" : "🔊 仙剑音效";
+    if (btn) btn.textContent = (sfxEnabled ? "🔊 " : "🔇 ") + label;
+    ["settings-sfx-toggle", "game-sfx-toggle"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = (sfxEnabled ? "🔊 " : "🔇 ") + (sfxEnabled ? `音效 ${sfxVolume}%` : "音效关");
+    });
+    applySfxVolume();
+  }
+
+  function bindSfxControls(root) {
+    if (!root) return;
+    const toggle = root.querySelector("[data-sfx-toggle]");
+    if (toggle) toggle.onclick = () => {
+      setSfxEnabled(!sfxEnabled);
+      renderGameSfxBar();
+      if (teacherView === "settings") renderSettingsSfxPanel();
+    };
+    const range = root.querySelector("[data-sfx-vol]");
+    if (range) {
+      range.oninput = () => setSfxVolume(range.value, { preview: false });
+      range.onchange = () => setSfxVolume(range.value, { preview: true });
     }
-    const settingsBtn = document.getElementById("settings-sfx-toggle");
-    if (settingsBtn) {
-      settingsBtn.textContent = sfxEnabled
-        ? (pal3PackReady ? "🔊 音效开 · 已导入包" : "🔊 音效开")
-        : "🔇 音效关";
+    const preview = root.querySelector("[data-sfx-preview]");
+    if (preview) preview.onclick = () => {
+      ensureAudio();
+      if (!sfxEnabled) setSfxEnabled(true, { preview: false });
+      playIceSfx("win");
+    };
+    const imp = root.querySelector("[data-sfx-import]");
+    const file = root.querySelector("[data-sfx-file]");
+    if (imp && file) {
+      imp.onclick = () => file.click();
+      file.onchange = async (e) => {
+        if (e.target.files?.length) await importPal3SoundPack(e.target.files);
+        e.target.value = "";
+        renderGameSfxBar();
+        if (teacherView === "settings") renderSettingsSfxPanel();
+      };
     }
+    const clear = root.querySelector("[data-sfx-clear]");
+    if (clear) clear.onclick = async () => {
+      if (!pal3PackReady) { showVoteToast("当前没有自定义音效包"); return; }
+      if (!confirm("清除已导入的自定义音效包？")) return;
+      await clearPal3SoundPack();
+      renderGameSfxBar();
+      if (teacherView === "settings") renderSettingsSfxPanel();
+    };
+  }
+
+  function renderGameSfxBar() {
+    const bar = document.getElementById("game-sfx-bar");
+    if (!bar) return;
+    bar.innerHTML = `
+      <button type="button" id="game-sfx-toggle" data-sfx-toggle>${sfxEnabled ? "🔊" : "🔇"} 音效 ${sfxEnabled ? sfxVolume + "%" : "关"}</button>
+      <span class="sfx-lab">音量</span>
+      <input type="range" id="game-sfx-vol" data-sfx-vol min="0" max="100" step="1" value="${sfxVolume}" />
+      <span class="sfx-vol-num" id="game-sfx-vol-num">${sfxVolume}</span>
+      <button type="button" data-sfx-preview>试听</button>
+      <button type="button" data-sfx-import>导入音效</button>
+      <input type="file" data-sfx-file accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
+    bindSfxControls(bar);
+  }
+
+  function renderSettingsSfxPanel() {
+    const host = document.getElementById("settings-sfx-panel");
+    if (!host) return;
+    host.innerHTML = `
+      <div class="sfx-row">
+        <button type="button" id="settings-sfx-toggle" data-sfx-toggle>${sfxEnabled ? "🔊 音效开" : "🔇 音效关"}</button>
+        <label><span>音量</span>
+          <input type="range" id="settings-sfx-vol" data-sfx-vol min="0" max="100" step="1" value="${sfxVolume}" />
+          <strong id="settings-sfx-vol-num" style="color:#ffe39a;font-family:var(--font-num)">${sfxVolume}</strong>
+        </label>
+        <button type="button" data-sfx-preview>试听</button>
+      </div>
+      <div class="sfx-row">
+        <button type="button" data-sfx-import>导入自定义音效包</button>
+        <button type="button" data-sfx-clear ${pal3PackReady ? "" : "disabled"}>清除自定义包</button>
+        <span class="meta-pill">${pal3PackReady ? "已导入本地采样" : "当前：合成音效"}</span>
+        <input type="file" data-sfx-file accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />
+      </div>
+      <div class="sfx-hint">支持 mp3 / wav / ogg。文件名建议含 light / mid / heavy / ultimate / levelup（或 轻/中/重/大招/升级）。课堂页抽人与破冰旁也可随时调音量。</div>`;
+    bindSfxControls(host);
+    updateSfxToggleLabel();
   }
 
   function ensureSfxToggle() {
@@ -9666,6 +9914,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (drawActions) drawActions.classList.toggle("hidden", gamesCat !== "draw");
     if (iceActions) iceActions.classList.toggle("hidden", gamesCat !== "ice");
     syncGamesHero();
+    try { renderGameSfxBar(); } catch (e) { /* ignore */ }
 
     if (gamesCat === "ice") {
       renderIceGames();
@@ -9803,7 +10052,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">闪电介绍</div>
         <div class="ice-stage-big">${esc(st.name || "等待抽取")}</div>
-        <div class="ice-stage-title" style="font-size:clamp(1.2rem,2.5vw,1.7rem)">${esc(st.topic || "点开始抽取上场同学与题目")}</div>
+        <div class="ice-stage-title">${esc(st.topic || "点开始抽取上场同学与题目")}</div>
         <div class="ice-stage-timer" id="ice-intro-timer">${st.sec != null ? st.sec : "15"}</div>
         <div class="ice-stage-sub">限时回答 / 自我介绍 · 到点可换下一位</div>
       </div>`;
@@ -9824,8 +10073,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       </div>`;
     const ok = document.getElementById("ice-charades-ok");
     const skip = document.getElementById("ice-charades-skip");
-    if (ok) ok.onclick = () => { showVoteToast(`猜对：${st.word}`); iceNext(); };
-    if (skip) skip.onclick = () => iceNext();
+    if (ok) ok.onclick = () => { playIceSfx("ok"); showVoteToast(`猜对：${st.word}`); iceNext(); };
+    if (skip) skip.onclick = () => { playIceSfx("tick"); iceNext(); };
   }
 
   function renderIceSyncStage() {
@@ -9848,7 +10097,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">红蓝默契</div>
         <div class="ice-scoreboard"><span class="red">默契 ${score.hit}</span><span class="vs">·</span><span class="blue">分歧 ${score.miss}</span><span class="vs">连击 ${score.streak}</span></div>
-        <div class="ice-stage-title" style="font-size:clamp(1.3rem,2.8vw,1.9rem)">${esc(st.q)}</div>
+        <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-sub">A · ${esc(st.a)}　　B · ${esc(st.b)}</div>
         <div class="ice-stage-row">
           <button type="button" data-ice-sync-camp="red" data-ice-sync-ans="A">红方 A</button>
@@ -9871,10 +10120,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           if (iceState.red === iceState.blue) {
             iceState.score.hit += 1;
             iceState.score.streak += 1;
+            playIceSfx("match");
             showVoteToast(`默契成功 · 连击 ${iceState.score.streak}`);
           } else {
             iceState.score.miss += 1;
             iceState.score.streak = 0;
+            playIceSfx("fail");
             showVoteToast("分歧出现 · 连击清零");
           }
         }
@@ -9900,7 +10151,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     stage.innerHTML = `
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">站队表决 · ${esc(lead)}</div>
-        <div class="ice-stage-title" style="font-size:clamp(1.15rem,2.4vw,1.7rem)">${esc(st.q)}</div>
+        <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-row">
           <button type="button" data-ice-stand="left">左 +1（${L}）</button>
           <button type="button" data-ice-stand="mid">中 +1（${M}）</button>
@@ -9938,8 +10189,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">双人对决 · 限时挑战</div>
         <div class="ice-scoreboard"><span class="red">甲胜 ${score.a}</span><span class="vs">VS</span><span class="blue">乙胜 ${score.b}</span></div>
-        <div class="ice-stage-big" style="font-size:clamp(1.6rem,4vw,2.6rem)">${esc(st.left)} <span class="vs" style="font-size:.7em">VS</span> ${esc(st.right)}</div>
-        <div class="ice-stage-title" style="font-size:clamp(1.1rem,2.4vw,1.55rem)">${esc(st.challenge || "")}</div>
+        <div class="ice-stage-big">${esc(st.left)} <span class="vs" style="font-size:.55em;opacity:.75">VS</span> ${esc(st.right)}</div>
+        <div class="ice-stage-title">${esc(st.challenge || "")}</div>
         <div class="ice-stage-timer" id="ice-duel-timer">${st.sec != null ? st.sec : "30"}</div>
         <div class="ice-stage-row">
           <button type="button" class="primary" data-ice-duel-win="left">甲胜 · ${esc(st.left)}</button>
@@ -9971,7 +10222,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">红蓝抢答 · 第 ${st.round || 1} 题</div>
         <div class="ice-scoreboard"><span class="red">红 ${score.red}</span><span class="vs">VS</span><span class="blue">蓝 ${score.blue}</span></div>
-        <div class="ice-stage-title" style="font-size:clamp(1.25rem,2.8vw,1.85rem)">${esc(st.q)}</div>
+        <div class="ice-stage-title">${esc(st.q)}</div>
         <div class="ice-stage-sub">${st.showAns || st.locked ? `参考：${esc(st.a || "—")}` : "先抢后答 · 老师判定对错"}</div>
         <div class="ice-stage-row">
           <button type="button" class="primary" data-ice-buzz="red-ok" ${st.locked ? "disabled" : ""}>红方答对</button>
@@ -10005,7 +10256,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       <div class="ice-stage-card">
         <div class="ice-stage-kicker">${esc(kindLabel)} · 勇气值 ${done}</div>
         <div class="ice-stage-big">${esc(st.name)}</div>
-        <div class="ice-stage-title" style="font-size:clamp(1.15rem,2.5vw,1.7rem)">${esc(st.prompt || "")}</div>
+        <div class="ice-stage-title">${esc(st.prompt || "")}</div>
         <div class="ice-stage-row">
           <button type="button" class="primary" data-ice-dare="done">完成了</button>
           <button type="button" data-ice-dare="swap">换一条</button>
@@ -10099,15 +10350,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (p.role === "spy" && spiesLeft === 0) {
       iceState.phase = "end";
       iceState.result = "平民胜利 · 卧底全部出局";
+      playIceSfx("win");
       showVoteToast("卧底被揪出！");
     } else if (spiesLeft > 0 && spiesLeft >= alive.length - spiesLeft) {
       iceState.phase = "end";
       iceState.result = "卧底胜利 · 人数占优";
+      playIceSfx("boom");
       showVoteToast("卧底赢了");
     } else if (p.role === "spy") {
+      playIceSfx("ok");
       showVoteToast(`${p.name} 出局（卧底）· 仍有卧底潜伏`);
       iceState.phase = "vote";
     } else {
+      playIceSfx("fail");
       showVoteToast(`${p.name} 出局（平民）· 继续`);
       iceState.phase = "vote";
     }
@@ -10168,6 +10423,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState = { winner: winner.name };
       renderIceFlowerStage();
       syncIceStartLabels(iceDef().startLabel || "开始");
+      playIceSfx("win");
       showVoteToast(`花落：${winner.name}`);
       return;
     }
@@ -10175,12 +10431,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     iceState = { flash: pool[0].name };
     renderIceFlowerStage();
     let i = 0;
+    let tick = 0;
     clearIceTimer();
+    playIceSfx("start");
     iceTimer = setInterval(() => {
       i = (i + 1) % pool.length;
       iceState.flash = pool[i].name;
       const el = document.getElementById("ice-flower-name");
       if (el) el.textContent = pool[i].name;
+      tick++;
+      if (tick % 3 === 0) playIceSfx("spin");
     }, 70);
     syncIceStartLabels("停下");
   }
@@ -10196,6 +10456,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const answer = min + Math.floor(Math.random() * (max - min + 1));
     iceState = { min, max, answer, guesses: [], boom: false };
     renderIceBombStage();
+    playIceSfx("start");
     showVoteToast("炸弹已埋好，开始猜吧");
   }
   function iceBombGuess() {
@@ -10211,8 +10472,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     iceState.guesses.push({ n, by: "课堂" });
     if (n === iceState.answer) {
       iceState.boom = true;
+      playIceSfx("boom");
       showVoteToast(`💥 ${n} 踩中炸弹！`);
     } else {
+      playIceSfx("tick");
       showVoteToast(n < iceState.answer ? `${n} 太小` : `${n} 太大`);
     }
     renderIceBombStage();
@@ -10226,13 +10489,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const topic = pickIce(ICE_INTRO_TOPICS, "intro");
     iceState = { name: person.name, topic, sec: 15 };
     renderIceIntroStage();
+    playIceSfx("draw");
     iceTimer = setInterval(() => {
       iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
       const el = document.getElementById("ice-intro-timer");
       if (el) el.textContent = String(iceState.sec);
       if (iceState.sec <= 0) {
         clearIceTimer();
+        playIceSfx("fail");
         showVoteToast("时间到");
+      } else if (iceState.sec <= 3) {
+        playIceSfx("tick");
       }
     }, 1000);
   }
@@ -10241,6 +10508,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const word = pickIce(ICE_CHARADES_WORDS, "charades");
     iceState = { word };
     renderIceCharadesStage();
+    playIceSfx("start");
   }
 
   function iceSyncStart() {
@@ -10248,12 +10516,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const item = pickIce(ICE_SYNC_QUESTIONS, "sync");
     iceState = { q: item.q, a: item.a, b: item.b, red: "", blue: "", scored: false, score: prevScore };
     renderIceSyncStage();
+    playIceSfx("start");
   }
 
   function iceStandStart() {
     const q = pickIce(ICE_STAND_QUESTIONS, "stand");
     iceState = { q, left: 0, mid: 0, right: 0 };
     renderIceStandStage();
+    playIceSfx("start");
   }
 
   function iceDuelStart() {
@@ -10267,13 +10537,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const score = iceState.score || { a: 0, b: 0 };
     iceState = { left, right, challenge, sec: 30, score, judged: false };
     renderIceDuelStage();
+    playIceSfx("start");
     iceTimer = setInterval(() => {
       iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
       const el = document.getElementById("ice-duel-timer");
       if (el) el.textContent = String(iceState.sec);
       if (iceState.sec <= 0) {
         clearIceTimer();
+        playIceSfx("fail");
         showVoteToast("时间到 · 请判定胜负");
+      } else if (iceState.sec <= 5) {
+        playIceSfx("tick");
       }
     }, 1000);
   }
@@ -10284,12 +10558,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (side === "left") {
       iceState.score.a += 1;
       iceState.judged = true;
+      playIceSfx("win");
       showVoteToast(`${iceState.left} 胜`);
     } else if (side === "right") {
       iceState.score.b += 1;
       iceState.judged = true;
+      playIceSfx("win");
       showVoteToast(`${iceState.right} 胜`);
     } else {
+      playIceSfx("tick");
       showVoteToast("平局 · 换挑战再战");
       iceState.challenge = pickIce(ICE_DUEL_CHALLENGES, "duel");
       iceState.sec = 30;
@@ -10300,7 +10577,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         iceState.sec = Math.max(0, (iceState.sec || 0) - 1);
         const el = document.getElementById("ice-duel-timer");
         if (el) el.textContent = String(iceState.sec);
-        if (iceState.sec <= 0) { clearIceTimer(); showVoteToast("时间到 · 请判定胜负"); }
+        if (iceState.sec <= 0) { clearIceTimer(); playIceSfx("fail"); showVoteToast("时间到 · 请判定胜负"); }
+        else if (iceState.sec <= 5) playIceSfx("tick");
       }, 1000);
       return;
     }
@@ -10313,20 +10591,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const item = pickIce(ICE_BUZZ_QUESTIONS, "buzz");
     iceState = { q: item.q, a: item.a, score: prev, round, locked: false, showAns: false };
     renderIceBuzzStage();
+    playIceSfx("start");
   }
   function iceBuzzJudge(act) {
     if (act === "reveal") {
       iceState.showAns = true;
+      playIceSfx("tick");
       showVoteToast(`参考答案：${iceState.a || "—"}`);
       renderIceBuzzStage();
       return;
     }
     if (iceState.locked) return;
     iceState.score = iceState.score || { red: 0, blue: 0 };
-    if (act === "red-ok") { iceState.score.red += 1; showVoteToast("红方 +1"); }
-    else if (act === "red-bad") { iceState.score.red -= 1; showVoteToast("红方 −1"); }
-    else if (act === "blue-ok") { iceState.score.blue += 1; showVoteToast("蓝方 +1"); }
-    else if (act === "blue-bad") { iceState.score.blue -= 1; showVoteToast("蓝方 −1"); }
+    if (act === "red-ok") { iceState.score.red += 1; playIceSfx("ok"); showVoteToast("红方 +1"); }
+    else if (act === "red-bad") { iceState.score.red -= 1; playIceSfx("bad"); showVoteToast("红方 −1"); }
+    else if (act === "blue-ok") { iceState.score.blue += 1; playIceSfx("ok"); showVoteToast("蓝方 +1"); }
+    else if (act === "blue-bad") { iceState.score.blue -= 1; playIceSfx("bad"); showVoteToast("蓝方 −1"); }
     iceState.locked = true;
     iceState.showAns = true;
     renderIceBuzzStage();
@@ -10341,11 +10621,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const done = iceState.done || 0;
     iceState = { name: person.name, kind, prompt, done };
     renderIceDareStage();
+    playIceSfx("draw");
   }
   function iceDareAct(act) {
     if (!iceState.name) return;
     if (act === "done") {
       iceState.done = (iceState.done || 0) + 1;
+      playIceSfx("win");
       showVoteToast(`完成 · 勇气值 ${iceState.done}`);
       return iceDareStart();
     }
@@ -10353,6 +10635,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState.prompt = iceState.kind === "truth"
         ? pickIce(ICE_DARE_TRUTHS, "truth")
         : pickIce(ICE_DARE_DARES, "dare");
+      playIceSfx("tick");
       renderIceDareStage();
       return;
     }
@@ -10361,6 +10644,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       iceState.prompt = iceState.kind === "truth"
         ? pickIce(ICE_DARE_TRUTHS, "truth")
         : pickIce(ICE_DARE_DARES, "dare");
+      playIceSfx("tick");
       renderIceDareStage();
     }
   }
@@ -10385,6 +10669,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       showRoles: false
     };
     renderIceSpyStage();
+    playIceSfx("start");
     showVoteToast(`已发牌 · ${spyCount} 名卧底潜伏中`);
   }
 
@@ -13583,11 +13868,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (dayInc) dayInc.onclick = async () => { await nudgeDay(1); renderSettings(); };
     }
 
+    try { renderSettingsSfxPanel(); } catch (e) { console.warn(e); }
+
     const runtime = document.getElementById("settings-runtime");
     if (runtime) {
       runtime.innerHTML = `
-        <button type="button" id="settings-sfx-toggle">${sfxEnabled ? (pal3PackReady ? "🔊 音效开·包" : "🔊 音效开") : "🔇 音效关"}</button>
-        <button type="button" id="settings-sfx-import">导入音效包</button>
         <button type="button" data-action="export-data">导出</button>
         <button type="button" data-action="export-csv">CSV</button>
         <button type="button" data-action="export-json">JSON</button>
@@ -13595,24 +13880,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <button type="button" data-action="insert-edit-box">插入编辑框</button>
         <button type="button" id="settings-fullscreen" data-action="toggle-fullscreen">全屏</button>
         <button type="button" id="btn-memories" data-action="goto-memories" ${day < 20 ? "disabled" : ""}>回忆${day < 20 ? "·D20" : ""}</button>
-        ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}
-        <input type="file" id="settings-sfx-file" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
-      const sfxToggle = document.getElementById("settings-sfx-toggle");
-      if (sfxToggle) sfxToggle.onclick = () => {
-        sfxEnabled = !sfxEnabled;
-        localStorage.setItem("gy_arena_sfx", sfxEnabled ? "1" : "0");
-        updateSfxToggleLabel();
-        if (sfxEnabled) { ensureAudio(); playHitSfx(pick([2, 5, 12, 25]), pick(["日常", "任务", "擂台"])); }
-        renderSettings();
-      };
-      const sfxImp = document.getElementById("settings-sfx-import");
-      if (sfxImp) sfxImp.onclick = () => document.getElementById("settings-sfx-file").click();
-      const sfxFile = document.getElementById("settings-sfx-file");
-      if (sfxFile) sfxFile.onchange = (e) => {
-        if (e.target.files?.length) importPal3SoundPack(e.target.files);
-        e.target.value = "";
-        renderSettings();
-      };
+        ${demoMode ? '<button type="button" id="settings-clear-demo">重置 DEMO</button>' : ""}`;
       const clearBtn = document.getElementById("settings-clear-demo");
       if (clearBtn) clearBtn.onclick = async () => {
         if (!confirm("确认清空 DEMO 数据（含服务器同步库）并刷新？")) return;
