@@ -13151,11 +13151,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function iceFlowerToggle() {
     const pool = getIcePool();
     if (!pool.length) { showVoteToast("号码池为空，请设定数字范围"); return; }
+    const pickRandom = (avoidName) => {
+      if (pool.length === 1) return pool[0];
+      let item = pool[Math.floor(Math.random() * pool.length)];
+      for (let n = 0; n < 8 && avoidName && item.name === avoidName; n++) {
+        item = pool[Math.floor(Math.random() * pool.length)];
+      }
+      return item;
+    };
     if (iceBusy) {
       clearIceTimer();
       stopIceRoundMusic();
       iceBusy = false;
-      const winner = pool[Math.floor(Math.random() * pool.length)];
+      // 停下时在范围内随机定号（不按滚动顺序）
+      const winner = pickRandom(iceState.flash);
       iceState = { winner: winner.name };
       renderIceFlowerStage();
       syncIceStartLabels(iceDef().startLabel || "开始");
@@ -13164,19 +13173,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     iceBusy = true;
-    iceState = { flash: pool[0].name };
+    const first = pickRandom("");
+    iceState = { flash: first.name };
     renderIceFlowerStage();
-    let i = 0;
     let tick = 0;
+    let lastName = first.name;
     clearIceTimer();
     const musicOn = startIceRoundMusic();
     playGameFx("start", { banner: musicOn ? "击鼓传花 · 音乐起" : "击鼓传花" });
     if (!musicOn && !iceRoundMusic.url) showVoteToast("未选音乐也可玩 · 上方可随时选择");
+    // 滚动过程也在范围内随机跳号，不再 1、2、3 顺序刷
     iceTimer = setInterval(() => {
-      i = (i + 1) % pool.length;
-      iceState.flash = pool[i].name;
+      const item = pickRandom(lastName);
+      lastName = item.name;
+      iceState.flash = item.name;
       const el = document.getElementById("ice-flower-name");
-      if (el) el.textContent = pool[i].name;
+      if (el) el.textContent = item.name;
       tick++;
       // 有自定义音乐时不再叠加快节奏 spin 音效
       if (!iceRoundMusic.audio && tick % 3 === 0) playGameFx("spin");
