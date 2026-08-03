@@ -64,13 +64,23 @@ echo "  流量扫码隧道由服务进程自动拉起（约 10–30 秒后出现
 echo "  只要局域网、不要隧道：GY_PUBLIC_TUNNEL=0 ./start.sh"
 echo ""
 
-(
-  sleep 2
-  url="http://127.0.0.1:3000/?mode=teacher"
-  if command -v xdg-open >/dev/null 2>&1; then xdg-open "$url" >/dev/null 2>&1 || true
-  elif command -v open >/dev/null 2>&1; then open "$url" >/dev/null 2>&1 || true
-  fi
-) &
+# PHOTON_NO_BROWSER=1 时由「一键上课」统一打开启动页/老师端，避免重复弹窗
+if [[ "${PHOTON_NO_BROWSER:-0}" != "1" ]]; then
+  (
+    sleep 2
+    url="http://127.0.0.1:3000/launcher.html"
+    teacher="http://127.0.0.1:3000/?mode=teacher"
+    if command -v open >/dev/null 2>&1; then
+      open "$url" >/dev/null 2>&1 || true
+      sleep 1
+      open "$teacher" >/dev/null 2>&1 || true
+    elif command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "$url" >/dev/null 2>&1 || true
+      sleep 1
+      xdg-open "$teacher" >/dev/null 2>&1 || true
+    fi
+  ) &
+fi
 
 # 隧道地址出现后在终端再提示一次
 (

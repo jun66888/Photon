@@ -68,8 +68,9 @@ else
 fi
 
 cd "$PHOTON_HOME"
-chmod +x sync-from-github.sh start.sh 更新本地.sh 更新本地.command \
-  一键放到桌面.sh 一键放到桌面.command 诊断本机.command 2>/dev/null || true
+chmod +x sync-from-github.sh start.sh 一键上课.sh 更新本地.sh 更新本地.command \
+  一键放到桌面.sh 一键放到桌面.command 诊断本机.command \
+  光影盟-一键上课.command 光影盟-启动环境.command 打开老师端.command 2>/dev/null || true
 
 # 写版本戳
 HEAD="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"

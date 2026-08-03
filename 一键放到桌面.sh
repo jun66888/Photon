@@ -23,24 +23,31 @@ fi
 
 chmod +x "$ROOT"/*.sh "$ROOT"/*.command 2>/dev/null || true
 
-# macOS 可双击运行的 .command —— 全部写死绝对路径
-# 启动环境（主入口）：关掉窗口=关掉前端
-if [[ -f "$ROOT/光影盟-启动环境.command" ]]; then
-  cp -f "$ROOT/光影盟-启动环境.command" "$DESKTOP/光影盟-启动环境.command"
-  cp -f "$ROOT/光影盟-启动环境.command" "$DESKTOP/光影盟-开始上课.command"
-  cp -f "$ROOT/光影盟-启动环境.command" "$DESKTOP/GY-Start.command"
-else
-  cat > "$DESKTOP/光影盟-启动环境.command" <<EOF
+# ★ 主入口：一键上课（更新 + 启动环境 + 打开启动台）
+# 同时保留旧名「启动环境 / 开始上课 / GY-Start」，都指向同一套流程
+ONECLICK_SRC=""
+if [[ -f "$ROOT/光影盟-一键上课.command" ]]; then
+  ONECLICK_SRC="$ROOT/光影盟-一键上课.command"
+elif [[ -f "$ROOT/一键上课.sh" ]]; then
+  cat > "$ROOT/光影盟-一键上课.command" <<EOF
 #!/bin/bash
-cd "$PHOTON_HOME" || { echo "找不到 $PHOTON_HOME"; read -r -p "按回车关闭… " _; exit 1; }
-chmod +x start.sh sync-from-github.sh 2>/dev/null || true
-exec "$PHOTON_HOME/start.sh"
+cd "$PHOTON_HOME" || exit 1
+exec "$PHOTON_HOME/一键上课.sh"
 EOF
-  cp -f "$DESKTOP/光影盟-启动环境.command" "$DESKTOP/光影盟-开始上课.command"
-  cp -f "$DESKTOP/光影盟-启动环境.command" "$DESKTOP/GY-Start.command"
+  chmod +x "$ROOT/光影盟-一键上课.command"
+  ONECLICK_SRC="$ROOT/光影盟-一键上课.command"
+elif [[ -f "$ROOT/光影盟-启动环境.command" ]]; then
+  ONECLICK_SRC="$ROOT/光影盟-启动环境.command"
 fi
 
-# 打开老师端：服务没开则自动启动
+if [[ -n "$ONECLICK_SRC" ]]; then
+  cp -f "$ONECLICK_SRC" "$DESKTOP/光影盟-一键上课.command"
+  cp -f "$ONECLICK_SRC" "$DESKTOP/光影盟-开始上课.command"
+  cp -f "$ONECLICK_SRC" "$DESKTOP/光影盟-启动环境.command"
+  cp -f "$ONECLICK_SRC" "$DESKTOP/GY-Start.command"
+fi
+
+# 打开老师端：服务没开则自动走一键上课
 if [[ -f "$ROOT/打开老师端.command" ]]; then
   cp -f "$ROOT/打开老师端.command" "$DESKTOP/光影盟-打开老师端.command"
   cp -f "$ROOT/打开老师端.command" "$DESKTOP/GY-Teacher.command"
@@ -48,10 +55,12 @@ else
   cat > "$DESKTOP/光影盟-打开老师端.command" <<EOF
 #!/bin/bash
 URL="http://127.0.0.1:3000/?mode=teacher"
+HUB="http://127.0.0.1:3000/launcher.html"
 if curl -fsS --max-time 1 "http://127.0.0.1:3000/" >/dev/null 2>&1; then
+  open "\$HUB"
   open "\$URL"
 else
-  open "$PHOTON_HOME/光影盟-启动环境.command"
+  open "$PHOTON_HOME/光影盟-一键上课.command"
 fi
 EOF
   cp -f "$DESKTOP/光影盟-打开老师端.command" "$DESKTOP/GY-Teacher.command"
@@ -97,28 +106,25 @@ exec "$PHOTON_HOME/诊断本机.command"
 EOF
 
 cat > "$DESKTOP/光影盟-收藏地址.txt" <<EOF
-光影盟 · 请收藏老师端（永远不变）
+光影盟 · 请收藏（永远不变）
 
-http://127.0.0.1:3000/?mode=teacher
+老师端：http://127.0.0.1:3000/?mode=teacher
+启动台：http://127.0.0.1:3000/launcher.html
 
-【先开环境，再上课】
-双击桌面「光影盟-启动环境」或「光影盟-开始上课」
-→ 会弹出黑色终端窗口 = 前端服务 + 流量扫码隧道
-→ 上课期间不要关这个窗口；关掉后页面与扫码都会失效
-→ 老师电脑需能上网（学生可用手机流量扫签到码）
+【只需这一个】
+双击桌面「光影盟-一键上课」（或「开始上课」/ GY-Start）
+→ 自动：更新代码 + 启动服务/隧道 + 打开启动台与老师端
+→ 上课期间不要关黑色终端窗口
 
-学生签到：开启签到后看二维码下方是否为 https://…trycloudflare.com
-若还是局域网地址，点「刷新流量地址」
+启动台里可点：老师端 / 签到入口 / 重建公网隧道 / 看状态
 
-只开浏览器：双击「光影盟-打开老师端」（没服务会自动启动）
-更新代码：双击「光影盟-更新」或 GY-Update
-详细说明：桌面「光影盟-环境说明.txt」
+可选：
+• 光影盟-打开老师端：只开浏览器
+• 光影盟-更新：只更新、不开课
+• 光影盟-诊断：排查问题
 
-本机固定目录（唯一）：
-$PHOTON_HOME
-
-需要的环境：Node.js（装一次）+ 启动窗口（每次上课开）
-Mac 用 start.sh / 启动环境按钮（不要用 start.bat）
+本机固定目录：$PHOTON_HOME
+需要：Node.js（装一次）
 EOF
 
 cat > "$DESKTOP/光影盟-老师端.url" <<EOF
@@ -126,7 +132,8 @@ cat > "$DESKTOP/光影盟-老师端.url" <<EOF
 URL=http://127.0.0.1:3000/?mode=teacher
 EOF
 
-chmod +x "$DESKTOP/光影盟-启动环境.command" \
+chmod +x "$DESKTOP/光影盟-一键上课.command" \
+         "$DESKTOP/光影盟-启动环境.command" \
          "$DESKTOP/光影盟-开始上课.command" \
          "$DESKTOP/GY-Start.command" \
          "$DESKTOP/光影盟-打开老师端.command" \
@@ -134,23 +141,27 @@ chmod +x "$DESKTOP/光影盟-启动环境.command" \
          "$DESKTOP/光影盟-更新.command" \
          "$DESKTOP/GY-Update.command" \
          "$DESKTOP/光影盟-诊断.command" \
+         "$PHOTON_HOME/光影盟-一键上课.command" \
+         "$PHOTON_HOME/一键上课.sh" \
          "$PHOTON_HOME/光影盟-启动环境.command" \
          "$PHOTON_HOME/打开老师端.command" 2>/dev/null || true
 
 # 去掉 macOS 隔离属性，方便双击
-xattr -cr "$DESKTOP/光影盟-更新.command" "$DESKTOP/GY-Update.command" \
+xattr -cr "$DESKTOP/光影盟-一键上课.command" \
+  "$DESKTOP/光影盟-更新.command" "$DESKTOP/GY-Update.command" \
   "$DESKTOP/光影盟-启动环境.command" "$DESKTOP/光影盟-开始上课.command" \
   "$DESKTOP/GY-Start.command" "$DESKTOP/光影盟-打开老师端.command" 2>/dev/null || true
 
 echo ""
 echo "  [完成] 已放到桌面：$DESKTOP"
-echo "    光影盟-启动环境.command  ← ★ 打开前端环境（关窗=关掉前端）"
+echo "    光影盟-一键上课.command  ← ★ 只要这一个：更新+启动+启动台"
 echo "    光影盟-开始上课.command  ← 同上"
-echo "    光影盟-环境说明.txt      ← 需要开什么、怎么用"
-echo "    光影盟-打开老师端.command← 开浏览器（没服务会自动启动）"
-echo "    光影盟-更新.command      ← 更新到最新"
+echo "    光影盟-环境说明.txt      ← 说明"
+echo "    光影盟-打开老师端.command← 只开浏览器"
+echo "    光影盟-更新.command      ← 只更新"
 echo "    光影盟-诊断.command      ← 检查路径/版本"
 echo ""
+echo "  启动台：http://127.0.0.1:3000/launcher.html"
 echo "  老师端：http://127.0.0.1:3000/?mode=teacher"
 echo "  固定目录：$PHOTON_HOME"
 echo ""

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>光影盟 · 启动台</title>
+  <link rel="stylesheet" href="./vendor/fonts.css" />
+  <style>
+    :root {
+      --bg0: #0b0f18;
+      --bg1: #151c2e;
+      --ink: #e8eef8;
+      --soft: #9aa8c3;
+      --gold: #f0c14b;
+      --gold2: #ffe39a;
+      --ok: #7dffb2;
+      --warn: #ffb0bd;
+      --line: rgba(240, 193, 75, .28);
+      --font-brush: "ZCOOL XiaoWei", "STKaiti", "KaiTi", serif;
+      --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-num: "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(240,193,75,.16), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(80,140,255,.12), transparent 50%),
+        linear-gradient(165deg, var(--bg1), var(--bg0) 55%, #070a12);
+    }
+    .wrap {
+      width: min(920px, 94vw);
+      margin: 0 auto;
+      padding: 2.2rem 0 3rem;
+    }
+    .brand {
+      font-family: var(--font-brush);
+      font-size: clamp(2.6rem, 7vw, 3.8rem);
+      letter-spacing: .18em;
+      color: var(--gold2);
+      text-shadow: 0 0 24px rgba(240,193,75,.28);
+      margin: 0;
+      line-height: 1.1;
+    }
+    .tagline {
+      margin: .55rem 0 1.4rem;
+      color: var(--soft);
+      font-size: 1rem;
+      max-width: 36rem;
+      line-height: 1.5;
+    }
+    .status {
+      display: grid;
+      gap: .55rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(8, 12, 22, .55);
+      margin-bottom: 1.25rem;
+    }
+    .status .row {
+      display: flex; flex-wrap: wrap; gap: .35rem .75rem;
+      align-items: baseline;
+      font-size: .92rem;
+    }
+    .status .k { color: var(--soft); min-width: 4.5rem; }
+    .status .v { font-family: var(--font-num); color: var(--gold2); word-break: break-all; }
+    .status .v.ok { color: var(--ok); }
+    .status .v.bad { color: var(--warn); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .7rem;
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    button, a.btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, #2a3350, #171e30);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 1rem 1.05rem;
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: .28rem;
+      min-height: 5.2rem;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    button:hover, a.btn:hover {
+      border-color: rgba(240,193,75,.55);
+      transform: translateY(-1px);
+    }
+    button.primary, a.btn.primary {
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      border-color: rgba(240,193,75,.65);
+      color: var(--gold2);
+      grid-column: 1 / -1;
+      min-height: 5.6rem;
+      font-size: 1.2rem;
+    }
+    button .sub, a.btn .sub {
+      font-size: .78rem;
+      font-weight: 500;
+      color: var(--soft);
+      letter-spacing: 0;
+    }
+    button.primary .sub, a.btn.primary .sub { color: rgba(255,227,154,.75); }
+    .foot {
+      margin-top: 1.25rem;
+      color: var(--soft);
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+    .toast {
+      position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%);
+      background: rgba(10,14,24,.92); border: 1px solid var(--line);
+      color: var(--gold2); padding: .55rem 1rem; border-radius: 999px;
+      font-size: .85rem; opacity: 0; pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 20;
+    }
+    .toast.on { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="brand">光影盟</h1>
+    <p class="tagline">上课启动台 · 更新与环境已由桌面「一键上课」自动完成，这里集中常用入口。</p>
+
+    <section class="status" aria-label="环境状态">
+      <div class="row"><span class="k">服务</span><span class="v" id="st-server">检测中…</span></div>
+      <div class="row"><span class="k">版本</span><span class="v" id="st-ver">—</span></div>
+      <div class="row"><span class="k">公网隧道</span><span class="v" id="st-tunnel">检测中…</span></div>
+      <div class="row"><span class="k">扫码地址</span><span class="v" id="st-origin">—</span></div>
+    </section>
+
+    <div class="grid">
+      <a class="btn primary" href="/?mode=teacher">
+        进入老师端
+        <span class="sub">课堂主界面 · 签到 / 破冰 / 抽人 / 投票</span>
+      </a>
+      <a class="btn" href="/?mode=teacher" id="btn-checkin-jump">
+        打开签到页
+        <span class="sub">老师端签到面板（需在老师端左侧点「签到」）</span>
+      </a>
+      <a class="btn" href="/?mode=checkin&entry=1" target="_blank" rel="noopener">
+        学生固定入口
+        <span class="sub">手输 6 位签到码 · 可投屏给学生看链接</span>
+      </a>
+      <a class="btn" href="/?mode=student" target="_blank" rel="noopener">
+        学生端预览
+        <span class="sub">投票与学员视角</span>
+      </a>
+      <button type="button" id="btn-tunnel">
+        重建公网隧道
+        <span class="sub">学生要用手机流量扫码时点这里</span>
+      </button>
+      <button type="button" id="btn-refresh">
+        刷新状态
+        <span class="sub">重新读取服务 / 隧道 / 版本</span>
+      </button>
+      <a class="btn" href="/固定访问地址.txt" target="_blank" rel="noopener">
+        查看固定访问地址
+        <span class="sub">老师收藏 127.0.0.1 · 扫码链接文本</span>
+      </a>
+      <button type="button" id="btn-hard-reload">
+        强制刷新老师端
+        <span class="sub">打开老师端并提示 Cmd+Shift+R</span>
+      </button>
+    </div>
+
+    <p class="foot">
+      桌面只需保留「光影盟-一键上课」：双击后会自动更新、启动环境并打开本页。<br>
+      黑色终端窗口请保持开着；关掉即下课。老师电脑需能上网，公网扫码才会就绪。
+    </p>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const toastEl = document.getElementById("toast");
+    let toastTimer = null;
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("on");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("on"), 2600);
+    }
+
+    async function fetchJson(url) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setText(id, text, cls) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = text;
+      el.classList.remove("ok", "bad");
+      if (cls) el.classList.add(cls);
+    }
+
+    async function refreshStatus() {
+      const build = await fetchJson("/gy-build.json");
+      if (build && (build.short || build.commit)) {
+        const short = build.short || String(build.commit || "").slice(0, 7);
+        const when = build.synced_at || build.built_at || "";
+        setText("st-ver", when ? `${short} · ${when}` : short, "ok");
+      } else {
+        setText("st-ver", "未知（可再点桌面一键上课更新）", "bad");
+      }
+
+      const net = await fetchJson("/__gy/net.json");
+      const tun = await fetchJson("/__gy/tunnel");
+      if (!net && !tun) {
+        setText("st-server", "未连接 · 请确认桌面「一键上课」窗口开着", "bad");
+        setText("st-tunnel", "—");
+        setText("st-origin", "—");
+        return;
+      }
+      setText("st-server", "运行中 · 端口 " + ((net && net.port) || 3000), "ok");
+
+      const st = (tun && tun.tunnel_status) || (net && net.tunnel_status) || {};
+      const origin = (tun && tun.tunnel_origin) || (net && (net.tunnel_origin || net.phone_origin)) || "";
+      const state = st.state || (origin ? "ready" : "idle");
+      if (origin) {
+        setText("st-tunnel", "已就绪 · " + (state === "ready" ? "可手机流量扫码" : state), "ok");
+        setText("st-origin", origin, "ok");
+      } else if (state === "starting" || state === "downloading" || state === "restarting") {
+        setText("st-tunnel", "建立中 · " + (st.detail || state), "bad");
+        setText("st-origin", "约 15–45 秒后出现 https 地址", "bad");
+      } else if (state === "error") {
+        setText("st-tunnel", "失败 · " + (st.detail || "请点重建公网隧道"), "bad");
+        setText("st-origin", (net && net.origins && net.origins[0]) || "可临时用局域网", "bad");
+      } else {
+        setText("st-tunnel", "尚未就绪", "bad");
+        setText("st-origin", (net && net.origins && net.origins[0]) || "—", "bad");
+      }
+    }
+
+    document.getElementById("btn-refresh").onclick = () => {
+      refreshStatus();
+      toast("已刷新状态");
+    };
+    document.getElementById("btn-tunnel").onclick = async () => {
+      toast("正在重建公网隧道…");
+      try {
+        await fetch("/__gy/tunnel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restart: true })
+        });
+      } catch (e) { /* ignore */ }
+      setTimeout(refreshStatus, 800);
+      const poll = setInterval(refreshStatus, 2000);
+      setTimeout(() => clearInterval(poll), 60000);
+    };
+    document.getElementById("btn-hard-reload").onclick = () => {
+      window.open("/?mode=teacher&_=" + Date.now(), "_blank", "noopener");
+      toast("已打开老师端 · 请按 Cmd+Shift+R 硬刷新");
+    };
+    document.getElementById("btn-checkin-jump").onclick = (e) => {
+      e.preventDefault();
+      // 老师端签到是子视图，带 hash 提示；实际仍进老师端由老师点签到
+      location.href = "/?mode=teacher#checkin";
+    };
+
+    refreshStatus();
+    setInterval(refreshStatus, 4000);
+  </script>
+</body>
+</html>
