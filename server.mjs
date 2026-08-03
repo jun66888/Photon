@@ -4,10 +4,14 @@
  * 手机签到 / 老师投屏共用 /__gy/demo-db，实现实时同步（无需 Firebase）
  */
 import http from "node:http";
+import https from "node:https";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { spawn, execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createWriteStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -102,16 +106,208 @@ function isPhoneReachableOrigin(url) {
   }
 }
 
+let liveTunnelOrigin = "";
+let tunnelProc = null;
+let tunnelStatus = { state: "idle", detail: "", updated_at: "" };
+const TOOLS_DIR = path.join(ROOT, ".tools");
+const TUNNEL_LOG = path.join(ROOT, "gy-tunnel.log");
+
 function loadTunnelOrigin() {
+  if (liveTunnelOrigin && isPhoneReachableOrigin(liveTunnelOrigin)) return liveTunnelOrigin;
   try {
     if (!fs.existsSync(TUNNEL_FILE)) return "";
     const raw = JSON.parse(fs.readFileSync(TUNNEL_FILE, "utf8"));
     const o = normalizeOrigin(raw && (raw.origin || raw.tunnel_origin) || "");
     if (!o) return "";
-    return isPhoneReachableOrigin(o) && isPublicTunnelHost(new URL(o).hostname) ? o : "";
+    if (isPhoneReachableOrigin(o) && isPublicTunnelHost(new URL(o).hostname)) {
+      liveTunnelOrigin = o;
+      return o;
+    }
+    return "";
   } catch (e) {
     return "";
   }
+}
+
+function saveTunnelOrigin(origin, provider = "cloudflared") {
+  const o = normalizeOrigin(origin);
+  if (!o || !isPublicTunnelHost(new URL(o).hostname)) return "";
+  liveTunnelOrigin = o;
+  tunnelStatus = { state: "ready", detail: o, updated_at: new Date().toISOString() };
+  try {
+    fs.writeFileSync(TUNNEL_FILE, JSON.stringify({
+      origin: o,
+      updated_at: tunnelStatus.updated_at,
+      port: PORT,
+      provider,
+      note: "学生可用手机流量扫此地址；老师电脑需能上网"
+    }, null, 2), "utf8");
+  } catch (e) { /* ignore */ }
+  console.log("");
+  console.log("  ========================================");
+  console.log("  ★ 学生可用手机流量扫码：");
+  console.log("    " + o + "/?mode=checkin");
+  console.log("  ========================================");
+  console.log("");
+  return o;
+}
+
+function extractTunnelUrl(text) {
+  const s = String(text || "");
+  const m = s.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/)
+    || s.match(/https:\/\/[a-zA-Z0-9.-]+\.loca\.lt/)
+    || s.match(/https:\/\/[a-zA-Z0-9.-]+\.ngrok(?:-free)?\.app/)
+    || s.match(/https:\/\/[a-zA-Z0-9.-]+\.ngrok\.io/);
+  return m ? m[0] : "";
+}
+
+function downloadFile(url, dest, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    if (redirects > 8) return reject(new Error("too many redirects"));
+    const lib = url.startsWith("https") ? https : http;
+    const req = lib.get(url, {
+      headers: { "User-Agent": "guangyingmeng-tunnel" }
+    }, async (res) => {
+      const code = res.statusCode || 0;
+      if (code >= 300 && code < 400 && res.headers.location) {
+        res.resume();
+        try {
+          resolve(await downloadFile(res.headers.location, dest, redirects + 1));
+        } catch (e) { reject(e); }
+        return;
+      }
+      if (code !== 200) {
+        res.resume();
+        reject(new Error("download HTTP " + code));
+        return;
+      }
+      try {
+        await pipeline(res, createWriteStream(dest));
+        resolve(dest);
+      } catch (e) { reject(e); }
+    });
+    req.on("error", reject);
+    req.setTimeout(180000, () => { req.destroy(new Error("download timeout")); });
+  });
+}
+
+function cloudflaredAssetName() {
+  const plat = process.platform;
+  const arch = process.arch;
+  if (plat === "darwin" && arch === "arm64") return { asset: "cloudflared-darwin-arm64.tgz", tgz: true };
+  if (plat === "darwin" && (arch === "x64" || arch === "amd64")) return { asset: "cloudflared-darwin-amd64.tgz", tgz: true };
+  if (plat === "linux" && arch === "arm64") return { asset: "cloudflared-linux-arm64", tgz: false };
+  if (plat === "linux") return { asset: "cloudflared-linux-amd64", tgz: false };
+  if (plat === "win32") return { asset: "cloudflared-windows-amd64.exe", tgz: false };
+  return null;
+}
+
+async function ensureCloudflaredBin() {
+  try {
+    execFileSync("cloudflared", ["--version"], { stdio: "ignore" });
+    return "cloudflared";
+  } catch (e) { /* local tools next */ }
+  const bin = path.join(TOOLS_DIR, process.platform === "win32" ? "cloudflared.exe" : "cloudflared");
+  if (fs.existsSync(bin)) {
+    try { fs.chmodSync(bin, 0o755); } catch (e) { /* ignore */ }
+    return bin;
+  }
+  const spec = cloudflaredAssetName();
+  if (!spec) throw new Error("当前系统暂不支持自动下载 cloudflared");
+  fs.mkdirSync(TOOLS_DIR, { recursive: true });
+  const url = "https://github.com/cloudflare/cloudflared/releases/latest/download/" + spec.asset;
+  const tmp = path.join(TOOLS_DIR, "cf-dl-" + Date.now());
+  tunnelStatus = { state: "downloading", detail: "正在下载 cloudflared…", updated_at: new Date().toISOString() };
+  console.log("  正在下载 cloudflared（首次需要一点时间）…");
+  await downloadFile(url, tmp);
+  if (spec.tgz) {
+    execFileSync("tar", ["-xzf", tmp, "-C", TOOLS_DIR], { stdio: "ignore" });
+    try { fs.unlinkSync(tmp); } catch (e) { /* ignore */ }
+    if (!fs.existsSync(bin)) {
+      // 有些包解压到子目录
+      const walk = (dir, depth = 0) => {
+        if (depth > 3 || !fs.existsSync(dir)) return "";
+        for (const name of fs.readdirSync(dir)) {
+          const p = path.join(dir, name);
+          if (name === "cloudflared" || name === "cloudflared.exe") return p;
+          try {
+            if (fs.statSync(p).isDirectory()) {
+              const hit = walk(p, depth + 1);
+              if (hit) return hit;
+            }
+          } catch (e) { /* ignore */ }
+        }
+        return "";
+      };
+      const found = walk(TOOLS_DIR);
+      if (found && found !== bin) fs.copyFileSync(found, bin);
+    }
+  } else {
+    fs.renameSync(tmp, bin);
+  }
+  try { fs.chmodSync(bin, 0o755); } catch (e) { /* ignore */ }
+  if (!fs.existsSync(bin)) throw new Error("cloudflared 下载后未找到可执行文件");
+  return bin;
+}
+
+function startPublicTunnel() {
+  if (String(process.env.GY_PUBLIC_TUNNEL || "1") === "0") {
+    tunnelStatus = { state: "disabled", detail: "GY_PUBLIC_TUNNEL=0", updated_at: new Date().toISOString() };
+    console.log("  已关闭公网隧道（GY_PUBLIC_TUNNEL=0）· 仅局域网扫码");
+    return;
+  }
+  if (tunnelProc) return;
+  tunnelStatus = { state: "starting", detail: "正在建立流量扫码隧道…", updated_at: new Date().toISOString() };
+  (async () => {
+    let bin = "";
+    try {
+      bin = await ensureCloudflaredBin();
+    } catch (err) {
+      tunnelStatus = { state: "error", detail: String(err.message || err), updated_at: new Date().toISOString() };
+      console.log("  [错误] 无法准备 cloudflared：" + tunnelStatus.detail);
+      console.log("  可手动：brew install cloudflared 后重启；或签到页粘贴 https 隧道地址");
+      return;
+    }
+    try {
+      fs.writeFileSync(TUNNEL_LOG, "");
+    } catch (e) { /* ignore */ }
+    console.log("  正在建立流量扫码隧道（学生可不用教室 Wi‑Fi）…");
+    const child = spawn(bin, ["tunnel", "--url", `http://127.0.0.1:${PORT}`, "--no-autoupdate"], {
+      cwd: ROOT,
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    tunnelProc = child;
+    const onChunk = (buf) => {
+      const text = buf.toString("utf8");
+      try { fs.appendFileSync(TUNNEL_LOG, text); } catch (e) { /* ignore */ }
+      const url = extractTunnelUrl(text);
+      if (url) saveTunnelOrigin(url, "cloudflared");
+    };
+    child.stdout.on("data", onChunk);
+    child.stderr.on("data", onChunk);
+    child.on("exit", (code) => {
+      tunnelProc = null;
+      if (tunnelStatus.state === "ready" && liveTunnelOrigin) {
+        tunnelStatus = {
+          state: "restarting",
+          detail: "隧道断开，正在重连…（code " + code + "）",
+          updated_at: new Date().toISOString()
+        };
+      } else {
+        tunnelStatus = {
+          state: "error",
+          detail: "隧道进程退出 code=" + code + "，详见 gy-tunnel.log",
+          updated_at: new Date().toISOString()
+        };
+      }
+      liveTunnelOrigin = "";
+      setTimeout(() => startPublicTunnel(), 4000);
+    });
+  })().catch((err) => {
+    tunnelStatus = { state: "error", detail: String(err.message || err), updated_at: new Date().toISOString() };
+    console.log("  [错误] 启动隧道失败：" + tunnelStatus.detail);
+  });
 }
 
 function loadClassroomConfig() {
@@ -301,6 +497,7 @@ function writeOriginHint(opts = {}) {
     classroom_mode: true,
     offline_local: !tunnel,
     mobile_data_ok: !!tunnel,
+    tunnel_status: tunnelStatus,
     teacher_bookmark: TEACHER_BOOKMARK,
     student_bookmark: `http://127.0.0.1:${PORT}${STUDENT_BOOKMARK_PATH}`,
     fixed_origin: fixed,
@@ -549,8 +746,34 @@ const server = http.createServer(async (req, res) => {
         ok: !!tunnel,
         tunnel_origin: tunnel,
         mobile_data_ok: !!tunnel,
+        tunnel_status: tunnelStatus,
         hint: writeOriginHint()
       });
+      return;
+    }
+    if (req.method === "POST" || req.method === "PUT") {
+      try {
+        const body = await readJson(req).catch(() => ({}));
+        if (body && body.origin) {
+          const o = saveTunnelOrigin(body.origin, "manual");
+          if (!o) {
+            sendJson(res, 400, { ok: false, error: "请提供 https://xxx.trycloudflare.com 这类隧道地址" });
+            return;
+          }
+          sendJson(res, 200, { ok: true, tunnel_origin: o, hint: writeOriginHint() });
+          return;
+        }
+        // 重启隧道
+        if (tunnelProc) {
+          try { tunnelProc.kill(); } catch (e) { /* ignore */ }
+          tunnelProc = null;
+        }
+        liveTunnelOrigin = "";
+        startPublicTunnel();
+        sendJson(res, 200, { ok: true, restarting: true, tunnel_status: tunnelStatus });
+      } catch (e) {
+        sendJson(res, 400, { ok: false, error: String(e.message || e) });
+      }
       return;
     }
   }
@@ -668,27 +891,32 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   const fresh = writeOriginHint();
   const fixed = fresh.fixed_origin || "";
-  const tunnel = fresh.tunnel_origin || "";
   console.log("");
   console.log("  ========================================");
   console.log("  光影盟 · 课堂服务");
   console.log("  ========================================");
   console.log("  ★ 老师收藏（永远不变）:");
   console.log("    " + TEACHER_BOOKMARK);
-  if (tunnel) {
-    console.log("  ★ 学生扫码（手机流量可用）:");
-    console.log("    " + tunnel + "/?mode=checkin");
-  } else if (fixed) {
-    console.log("  ★ 学生扫码（当前为局域网，需同一 Wi‑Fi）:");
-    console.log("    " + fixed + "/?mode=checkin");
-    console.log("  ! 流量扫码隧道尚未就绪：请用 start.sh 启动（会自动开隧道）");
-  } else {
-    console.log("  ! 扫码地址尚未就绪。请保持 start.sh 窗口打开，等待隧道建立。");
+  if (fixed) {
+    console.log("  · 局域网备用：" + fixed);
   }
-  if (fresh.fixed_warn) {
-    console.log("  ! " + fresh.fixed_warn);
-  }
+  console.log("  · 正在准备流量扫码隧道（约 10–30 秒）…");
   console.log("  详情已写入: 固定访问地址.txt");
   console.log("  按 Ctrl+C 停止；关闭窗口即下课");
   console.log("");
+  startPublicTunnel();
+});
+
+process.on("exit", () => {
+  if (tunnelProc) {
+    try { tunnelProc.kill(); } catch (e) { /* ignore */ }
+  }
+});
+["SIGINT", "SIGTERM"].forEach((sig) => {
+  process.on(sig, () => {
+    if (tunnelProc) {
+      try { tunnelProc.kill(); } catch (e) { /* ignore */ }
+    }
+    process.exit(0);
+  });
 });

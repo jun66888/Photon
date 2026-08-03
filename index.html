@@ -13765,45 +13765,80 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return false;
     }
   }
-  function pickPhoneOriginFromHint(hint) {
+  function pickTunnelOriginFromHint(hint) {
     if (!hint) return "";
-    // 优先公网隧道（手机流量），再退回局域网
-    const tunnel = String(hint.tunnel_origin || hint.phone_origin || "").trim().replace(/\/$/, "");
-    if (tunnel && isPhoneReachableOrigin(tunnel) && isPublicTunnelHost(originHostname(tunnel))) return tunnel;
+    const candidates = [
+      hint.tunnel_origin,
+      hint.phone_origin,
+      getPublicOriginOverride()
+    ];
+    for (const raw of candidates) {
+      const v = String(raw || "").trim().replace(/\/$/, "");
+      if (v && isPublicTunnelHost(originHostname(v)) && isPhoneReachableOrigin(v)) return v;
+    }
+    return "";
+  }
+  function pickLanOriginFromHint(hint) {
+    if (!hint) return "";
     const fixed = String(hint.fixed_origin || "").trim().replace(/\/$/, "");
     if (fixed && isLanHttpOrigin(fixed)) return fixed;
     const list = Array.isArray(hint.origins) ? hint.origins : [];
-    const lanPreferred = [];
     for (const o of list) {
       const v = String(o || "").trim().replace(/\/$/, "");
-      if (!v || !isLanHttpOrigin(v)) continue;
-      const host = originHostname(v);
-      if (host.startsWith("192.168.") || host.startsWith("10.")) lanPreferred.unshift(v);
-      else lanPreferred.push(v);
+      if (v && isLanHttpOrigin(v)) return v;
     }
-    if (lanPreferred.length) return lanPreferred[0];
-    const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
-    if (preferred && isPhoneReachableOrigin(preferred)) return preferred;
+    if (isLanHttpOrigin(location.origin)) return location.origin.replace(/\/$/, "");
     return "";
   }
-  /** 自动选用手机可达地址：公网隧道（流量）优先，其次教室局域网 */
-  async function ensurePhoneFriendlyOrigin() {
-    clearBadPublicOriginOverride();
-    _netHintCache = null;
-    let existing = getPublicOriginOverride();
-    if (existing && !isPhoneReachableOrigin(existing)) {
-      setPublicOriginOverride("");
-      existing = "";
+  function pickPhoneOriginFromHint(hint) {
+    return pickTunnelOriginFromHint(hint) || pickLanOriginFromHint(hint);
+  }
+  async function fetchTunnelStatus() {
+    try {
+      const res = await fetch("/__gy/tunnel", { cache: "no-store" });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
     }
-    const hint = await fetchNetOriginHint();
-    const picked = pickPhoneOriginFromHint(hint);
-    if (picked) {
-      // 隧道地址优先覆盖旧局域网锁定，保证流量可扫
-      if (existing !== picked) setPublicOriginOverride(picked);
-      return picked;
+  }
+  /**
+   * 自动选用手机可达地址。
+   * preferTunnel=true（签到默认）：优先等 https 隧道；未就绪时不把局域网写进覆盖，避免二维码卡在 192.168。
+   */
+  async function ensurePhoneFriendlyOrigin(opts = {}) {
+    const preferTunnel = opts.preferTunnel !== false;
+    const waitMs = Number(opts.waitMs || 0);
+    clearBadPublicOriginOverride();
+    const deadline = Date.now() + Math.max(0, waitMs);
+    let lastHint = null;
+    do {
+      _netHintCache = null;
+      const tun = await fetchTunnelStatus();
+      if (tun && tun.hint) lastHint = tun.hint;
+      else lastHint = await fetchNetOriginHint();
+      const tunnel = pickTunnelOriginFromHint(tun || lastHint) || pickTunnelOriginFromHint(lastHint);
+      if (tunnel) {
+        setPublicOriginOverride(tunnel);
+        return tunnel;
+      }
+      if (Date.now() < deadline) await new Promise((r) => setTimeout(r, 1500));
+    } while (Date.now() < deadline);
+
+    // 隧道仍未就绪
+    let existing = getPublicOriginOverride();
+    if (existing && isPublicTunnelHost(originHostname(existing))) return existing;
+    if (preferTunnel) {
+      // 清掉旧局域网覆盖，避免二维码继续画 192.168
+      if (existing && isLanHttpOrigin(existing)) setPublicOriginOverride("");
+      return "";
+    }
+    const lan = pickLanOriginFromHint(lastHint);
+    if (lan) {
+      setPublicOriginOverride(lan);
+      return lan;
     }
     if (existing && isPhoneReachableOrigin(existing)) return existing;
-    if (isLanHttpOrigin(location.origin)) return location.origin.replace(/\/$/, "");
     return "";
   }
   function defaultQrSize() {
@@ -13917,19 +13952,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const overrideNow = getPublicOriginOverride();
     pubBar.innerHTML = `
       <div class="qr-public-hint ok" style="margin-bottom:.4rem">老师收藏（永远不变）：<strong>http://127.0.0.1:3000/?mode=teacher</strong></div>
-      <label>学生扫码地址（优先 https 公网隧道 = 手机流量可扫；也可填局域网）</label>
+      <label>学生扫码地址（必须是 https://….trycloudflare.com 才能用手机流量）</label>
       <div class="qr-public-row">
-        <input type="url" id="qr-public-origin-input" placeholder="例如 https://xxxx.trycloudflare.com 或 http://192.168.1.8:3000" value="${esc(overrideNow || (localNow ? "" : location.origin))}" />
+        <input type="url" id="qr-public-origin-input" placeholder="等待自动生成 https://xxxx.trycloudflare.com" value="${esc(isPublicTunnelHost(originHostname(overrideNow)) ? overrideNow : "")}" />
         <button type="button" class="primary" id="qr-public-origin-save">应用地址</button>
         <button type="button" id="qr-public-origin-refresh">刷新流量地址</button>
-        <button type="button" id="qr-public-origin-rebind">重绑局域网</button>
+        <button type="button" id="qr-public-origin-restart">重建隧道</button>
         <button type="button" id="qr-download-png">下载二维码图</button>
       </div>
-      <div class="qr-public-hint ${localNow ? "" : "ok"}" id="qr-public-origin-hint">${
-        localNow
-          ? "正在获取流量扫码地址（启动环境后约十几秒）…"
-          : "https 开头通常可用手机流量；请保持启动环境窗口开着，老师电脑需联网"
-      }</div>`;
+      <div class="qr-public-hint" id="qr-public-origin-hint">正在等待流量隧道（约 10–30 秒）…老师电脑需能上网，并保持启动窗口开着</div>`;
     host.appendChild(pubBar);
 
     const frame = document.createElement("div");
@@ -14009,41 +14040,54 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       if (input) input.value = getPublicOriginOverride() || (isLocalHostname(location.hostname) ? "" : location.origin);
       paint(size);
     };
-    paint(size);
-    // 自动换成手机可达地址（流量隧道优先）
-    ensurePhoneFriendlyOrigin().then((origin) => {
-      if (!origin) return;
-      const urlOk = isPhoneReachableOrigin(currentUrl) && !isLocalOrigin(currentUrl);
-      if (urlOk && sameOriginUrl(currentUrl, origin)) {
-        syncHint();
-        return;
-      }
+    // 先不画局域网码：等隧道；超时再提示
+    const applyTunnelOrigin = (origin, note) => {
+      if (!origin || !isPublicTunnelHost(originHostname(origin))) return false;
+      setPublicOriginOverride(origin);
+      if (input) input.value = origin;
       rebuildFromOrigin();
-      if (hintEl && isPhoneReachableOrigin(currentUrl)) {
-        const viaTunnel = isPublicTunnelHost(originHostname(origin));
+      if (hintEl) {
         hintEl.className = "qr-public-hint ok";
-        hintEl.textContent = (viaTunnel ? "已自动改用流量扫码地址：" : "已自动改用局域网扫码地址：") + origin;
+        hintEl.textContent = (note || "流量扫码已就绪：") + origin;
       }
+      syncHint();
+      return true;
+    };
+
+    // 若当前还是 localhost/局域网，先显示等待文案，二维码暂用占位提示
+    if (isLocalOrigin(currentUrl) || isLanHttpOrigin(currentUrl) || isPhoneUnfriendlyOrigin(currentUrl)) {
+      canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#333;line-height:1.55;max-width:22rem">
+        正在建立流量扫码隧道…<br>约 10–30 秒后自动变成 <b>https</b> 二维码<br>
+        <span style="font-size:.85em;opacity:.8">请保持「启动环境」窗口开着，老师电脑需能上网</span>
+      </div>`;
+      fail.style.display = "none";
+    } else {
+      paint(size);
+    }
+
+    ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 45000 }).then((origin) => {
+      if (applyTunnelOrigin(origin, "流量扫码已就绪：")) return;
+      // 仍无隧道：不要回落画局域网码（学生流量扫不开）
+      if (hintEl) {
+        hintEl.className = "qr-public-hint";
+        hintEl.textContent = "隧道尚未就绪。请点「重建隧道」或确认电脑能上网后点「刷新流量地址」。暂时可让学生手输 6 位签到码。";
+      }
+      canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#a33;line-height:1.55;max-width:22rem">
+        还没有 https 流量地址<br>请点上方「重建隧道 / 刷新流量地址」<br>
+        或先让学生手输投屏上的 <b>6 位签到码</b>
+      </div>`;
     }).catch(() => {});
 
-    // 隧道往往晚几秒才就绪：轮询一会儿
+    // 继续轮询，隧道晚到也能换上
     let tunnelPoll = 0;
     const tunnelTimer = setInterval(() => {
       tunnelPoll += 1;
-      if (tunnelPoll > 24) { clearInterval(tunnelTimer); return; }
+      if (tunnelPoll > 40) { clearInterval(tunnelTimer); return; }
       if (isPublicTunnelHost(originHostname(currentUrl))) { clearInterval(tunnelTimer); return; }
-      _netHintCache = null;
-      ensurePhoneFriendlyOrigin().then((origin) => {
-        if (origin && isPublicTunnelHost(originHostname(origin))) {
-          rebuildFromOrigin();
-          clearInterval(tunnelTimer);
-          if (hintEl) {
-            hintEl.className = "qr-public-hint ok";
-            hintEl.textContent = "流量隧道已就绪：" + origin;
-          }
-        }
+      ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 0 }).then((origin) => {
+        if (applyTunnelOrigin(origin, "流量隧道已就绪：")) clearInterval(tunnelTimer);
       }).catch(() => {});
-    }, 2500);
+    }, 2000);
 
     pubBar.querySelector("#qr-public-origin-save")?.addEventListener("click", () => {
       const v = String(input?.value || "").trim().replace(/\/$/, "");
@@ -14075,48 +14119,29 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     });
     pubBar.querySelector("#qr-public-origin-refresh")?.addEventListener("click", () => {
       if (hintEl) hintEl.textContent = "正在刷新流量扫码地址…";
-      _netHintCache = null;
       setPublicOriginOverride("");
-      ensurePhoneFriendlyOrigin().then((origin) => {
-        if (input) input.value = origin || "";
-        rebuildFromOrigin();
-        if (hintEl) {
-          if (origin && isPublicTunnelHost(originHostname(origin))) {
-            hintEl.className = "qr-public-hint ok";
-            hintEl.textContent = "已刷新流量地址：" + origin;
-          } else if (origin) {
-            hintEl.className = "qr-public-hint";
-            hintEl.textContent = "隧道尚未就绪，暂用：" + origin + "（请确认启动环境已开、电脑能上网，稍后再点刷新）";
-          } else {
-            hintEl.textContent = "尚未拿到扫码地址。请重新双击「光影盟-启动环境」。";
-          }
-        }
+      ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 20000 }).then((origin) => {
+        if (applyTunnelOrigin(origin, "已刷新流量地址：")) return;
+        if (hintEl) hintEl.textContent = "仍未拿到 https 地址。请点「重建隧道」，或查看启动窗口是否有报错。";
       }).catch(() => {
         if (hintEl) hintEl.textContent = "刷新失败：请确认启动环境窗口还开着";
       });
     });
-    pubBar.querySelector("#qr-public-origin-rebind")?.addEventListener("click", () => {
-      if (!confirm("确认用「当前网卡」重新绑定局域网扫码地址？\n（老师端收藏地址 http://127.0.0.1:3000 不会变）\n流量隧道仍优先于局域网。")) return;
-      fetch("/__gy/classroom", {
+    pubBar.querySelector("#qr-public-origin-restart")?.addEventListener("click", () => {
+      if (hintEl) hintEl.textContent = "正在重建流量隧道…";
+      setPublicOriginOverride("");
+      canvasHost.innerHTML = `<div class="muted" style="padding:1.2rem;text-align:center;color:#333">正在重建隧道，请稍候…</div>`;
+      fetch("/__gy/tunnel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rebind: true })
-      }).then((r) => r.json()).then((data) => {
-        _netHintCache = null;
-        const next = (data && data.hint && (data.hint.tunnel_origin || data.hint.phone_origin || data.hint.fixed_origin)) || "";
-        if (data && data.ok && next) {
-          setPublicOriginOverride(next);
-          if (input) input.value = next;
-          rebuildFromOrigin();
-          if (hintEl) {
-            hintEl.className = "qr-public-hint ok";
-            hintEl.textContent = "已重新绑定：" + next;
-          }
-        } else if (hintEl) {
-          hintEl.textContent = "重绑失败：" + (data && data.error || "请先连网并保持启动环境开着");
-        }
+        body: JSON.stringify({ restart: true })
+      }).then((r) => r.json()).then(() =>
+        ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 45000 })
+      ).then((origin) => {
+        if (applyTunnelOrigin(origin, "隧道已重建：")) return;
+        if (hintEl) hintEl.textContent = "重建后仍无地址。请确认电脑能访问外网，或手动 brew install cloudflared 后重开启动环境。";
       }).catch(() => {
-        if (hintEl) hintEl.textContent = "重绑失败：请确认「启动环境」已运行";
+        if (hintEl) hintEl.textContent = "重建失败：请确认「启动环境」窗口开着";
       });
     });
     pubBar.querySelector("#qr-download-png")?.addEventListener("click", () => {
@@ -14220,7 +14245,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   async function generateCheckinCode() {
     clearBadPublicOriginOverride();
-    await ensurePhoneFriendlyOrigin();
+    try {
+      const old = getPublicOriginOverride();
+      if (old && !isPublicTunnelHost(originHostname(old))) setPublicOriginOverride("");
+    } catch (e) { /* ignore */ }
+    // 开启时尽量等到隧道；不等到也不要用局域网冒充
+    await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 25000 });
     await updatePaths({
       "config/checkin_code": randCode(),
       "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS,
@@ -14235,7 +14265,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     clearBadPublicOriginOverride();
-    await ensurePhoneFriendlyOrigin();
+    await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 15000 });
     await updatePaths({
       "config/checkin_code": randCode(),
       "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS
@@ -14296,8 +14326,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     updateDemoSyncBadge();
     const qrHost = document.getElementById("checkin-qr");
     if (active && code !== "------") {
-      ensurePhoneFriendlyOrigin().finally(() => {
-        renderQr(qrHost, publicPageUrl(`?mode=checkin&code=${code}`), "checkin-qr");
+      try {
+        const old = getPublicOriginOverride();
+        if (old && !isPublicTunnelHost(originHostname(old))) setPublicOriginOverride("");
+      } catch (e) { /* ignore */ }
+      ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 0 }).finally(() => {
+        // 无隧道时先用本机占位 URL，renderQr 内部会等待 https 再重绘
+        const origin = getPublicOriginOverride();
+        const q = `?mode=checkin&code=${code}`;
+        const url = (origin && isPublicTunnelHost(originHostname(origin)))
+          ? publicPageUrl(q)
+          : `${location.origin.replace(/\/$/, "")}/${q}`;
+        renderQr(qrHost, url, "checkin-qr");
       });
     } else if (qrHost) {
       qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333;text-align:center">点击上方「开启签到」生成二维码</div>';

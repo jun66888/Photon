@@ -60,39 +60,9 @@ echo "  【请收藏老师端 · 永远不变】"
 echo "    http://127.0.0.1:3000/?mode=teacher"
 echo ""
 
-TUNNEL_PID=""
-cleanup_tunnel() {
-  if [[ -n "${TUNNEL_PID:-}" ]] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
-    kill "$TUNNEL_PID" 2>/dev/null || true
-    wait "$TUNNEL_PID" 2>/dev/null || true
-  fi
-  # 顺带清掉可能残留的 tunnel 子进程
-  if [[ -f "$ROOT/gy-tunnel.pid" ]]; then
-    tp="$(cat "$ROOT/gy-tunnel.pid" 2>/dev/null || true)"
-    [[ -n "${tp:-}" ]] && kill "$tp" 2>/dev/null || true
-    rm -f "$ROOT/gy-tunnel.pid" 2>/dev/null || true
-  fi
-}
-trap cleanup_tunnel EXIT INT TERM
-
-# 默认开启公网隧道，让学生用手机流量也能扫签到码（老师电脑需能上网）
-# 只要局域网：GY_PUBLIC_TUNNEL=0 ./start.sh
-if [[ "${GY_PUBLIC_TUNNEL:-1}" == "1" ]]; then
-  chmod +x "$ROOT/public-tunnel.sh" 2>/dev/null || true
-  if [[ -x "$ROOT/public-tunnel.sh" ]]; then
-    echo "  正在启动流量扫码隧道（学生可不用教室 Wi‑Fi）…"
-    bash "$ROOT/public-tunnel.sh" &
-    TUNNEL_PID=$!
-    echo "  隧道进程 PID=$TUNNEL_PID（就绪后签到页二维码会自动换成 https 地址）"
-    echo ""
-  else
-    echo "  [警告] 缺少 public-tunnel.sh，学生可能只能连同一 Wi‑Fi 扫码"
-    echo ""
-  fi
-else
-  echo "  已关闭公网隧道（GY_PUBLIC_TUNNEL=0）· 仅局域网扫码"
-  echo ""
-fi
+echo "  流量扫码隧道由服务进程自动拉起（约 10–30 秒后出现 https 地址）"
+echo "  只要局域网、不要隧道：GY_PUBLIC_TUNNEL=0 ./start.sh"
+echo ""
 
 (
   sleep 2
@@ -102,9 +72,9 @@ fi
   fi
 ) &
 
-# 隧道地址出现后提示一次
+# 隧道地址出现后在终端再提示一次
 (
-  for _i in $(seq 1 40); do
+  for _i in $(seq 1 60); do
     sleep 1
     if [[ -f "$ROOT/gy-tunnel-origin.json" ]]; then
       origin="$(grep -o '"origin": "[^"]*"' "$ROOT/gy-tunnel-origin.json" 2>/dev/null | head -1 | cut -d'"' -f4 || true)"
