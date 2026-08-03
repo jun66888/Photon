@@ -88,7 +88,8 @@ function isClassroomLanHost(host) {
 
 function isPublicTunnelHost(host) {
   const h = String(host || "").toLowerCase();
-  return h.includes("trycloudflare.com") || h.includes("ngrok") || h.includes("loca.lt")
+  return h.includes("trycloudflare.com") || h.includes("cfargotunnel.com")
+    || h.includes("ngrok") || h.includes("loca.lt") || h.includes("lhr.life")
     || h.includes("cloudflared") || h.endsWith(".ts.net");
 }
 
@@ -153,11 +154,14 @@ function saveTunnelOrigin(origin, provider = "cloudflared") {
 }
 
 function extractTunnelUrl(text) {
-  const s = String(text || "");
-  const m = s.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/)
-    || s.match(/https:\/\/[a-zA-Z0-9.-]+\.loca\.lt/)
-    || s.match(/https:\/\/[a-zA-Z0-9.-]+\.ngrok(?:-free)?\.app/)
-    || s.match(/https:\/\/[a-zA-Z0-9.-]+\.ngrok\.io/);
+  // 去掉 ANSI 颜色码，避免解析失败
+  const s = String(text || "").replace(/\x1b\[[0-9;]*m/g, "");
+  const m = s.match(/https:\/\/[a-zA-Z0-9._-]+\.trycloudflare\.com/)
+    || s.match(/https:\/\/[a-zA-Z0-9._-]+\.cfargotunnel\.com/)
+    || s.match(/https:\/\/[a-zA-Z0-9._-]+\.loca\.lt/)
+    || s.match(/https:\/\/[a-zA-Z0-9._-]+\.ngrok(?:-free)?\.app/)
+    || s.match(/https:\/\/[a-zA-Z0-9._-]+\.ngrok\.io/)
+    || s.match(/https:\/\/[a-zA-Z0-9._-]+\.lhr\.life/);
   return m ? m[0] : "";
 }
 
@@ -166,7 +170,7 @@ function downloadFile(url, dest, redirects = 0) {
     if (redirects > 8) return reject(new Error("too many redirects"));
     const lib = url.startsWith("https") ? https : http;
     const req = lib.get(url, {
-      headers: { "User-Agent": "guangyingmeng-tunnel" }
+      headers: { "User-Agent": "Mozilla/5.0 guangyingmeng-tunnel" }
     }, async (res) => {
       const code = res.statusCode || 0;
       if (code >= 300 && code < 400 && res.headers.location) {
@@ -178,7 +182,7 @@ function downloadFile(url, dest, redirects = 0) {
       }
       if (code !== 200) {
         res.resume();
-        reject(new Error("download HTTP " + code));
+        reject(new Error("download HTTP " + code + " from " + url));
         return;
       }
       try {
@@ -187,7 +191,7 @@ function downloadFile(url, dest, redirects = 0) {
       } catch (e) { reject(e); }
     });
     req.on("error", reject);
-    req.setTimeout(180000, () => { req.destroy(new Error("download timeout")); });
+    req.setTimeout(120000, () => { req.destroy(new Error("download timeout")); });
   });
 }
 
@@ -202,52 +206,196 @@ function cloudflaredAssetName() {
   return null;
 }
 
-async function ensureCloudflaredBin() {
+function lookLikeCloudflaredBin(filePath) {
   try {
-    execFileSync("cloudflared", ["--version"], { stdio: "ignore" });
+    if (!filePath || !fs.existsSync(filePath)) return false;
+    const st = fs.statSync(filePath);
+    if (!st.isFile() || st.size < 100000) return false;
+    execFileSync(filePath, ["--version"], { stdio: "ignore", timeout: 8000 });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function findBrewCloudflared() {
+  try {
+    const p = String(execFileSync("brew", ["--prefix", "cloudflared"], { encoding: "utf8" }).trim());
+    const cand = path.join(p, "bin", "cloudflared");
+    if (lookLikeCloudflaredBin(cand)) return cand;
+  } catch (e) { /* ignore */ }
+  return "";
+}
+
+function clearMacQuarantine(filePath) {
+  if (process.platform !== "darwin" || !filePath) return;
+  try {
+    execFileSync("xattr", ["-dr", "com.apple.quarantine", filePath], { stdio: "ignore" });
+  } catch (e) { /* ignore */ }
+}
+
+async function downloadCloudflaredTo(bin, spec) {
+  fs.mkdirSync(TOOLS_DIR, { recursive: true });
+  const gh = "https://github.com/cloudflare/cloudflared/releases/latest/download/" + spec.asset;
+  // 国内常见 GitHub 加速；依次尝试
+  const urls = [
+    gh,
+    "https://ghfast.top/" + gh,
+    "https://gh-proxy.com/" + gh,
+    "https://mirror.ghproxy.com/" + gh,
+    "https://gitproxy.click/" + gh
+  ];
+  let lastErr = null;
+  for (const url of urls) {
+    const tmp = path.join(TOOLS_DIR, "cf-dl-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+    try {
+      tunnelStatus = {
+        state: "downloading",
+        detail: "正在下载 cloudflared… " + url.replace(/^https?:\/\//, "").slice(0, 48),
+        updated_at: new Date().toISOString()
+      };
+      console.log("  下载 cloudflared：" + url);
+      await downloadFile(url, tmp);
+      if (spec.tgz) {
+        execFileSync("tar", ["-xzf", tmp, "-C", TOOLS_DIR], { stdio: "ignore" });
+        try { fs.unlinkSync(tmp); } catch (e) { /* ignore */ }
+        if (!fs.existsSync(bin)) {
+          const walk = (dir, depth = 0) => {
+            if (depth > 3 || !fs.existsSync(dir)) return "";
+            for (const name of fs.readdirSync(dir)) {
+              const p = path.join(dir, name);
+              if (name === "cloudflared" || name === "cloudflared.exe") return p;
+              try {
+                if (fs.statSync(p).isDirectory()) {
+                  const hit = walk(p, depth + 1);
+                  if (hit) return hit;
+                }
+              } catch (e) { /* ignore */ }
+            }
+            return "";
+          };
+          const found = walk(TOOLS_DIR);
+          if (found && found !== bin) fs.copyFileSync(found, bin);
+        }
+      } else {
+        fs.renameSync(tmp, bin);
+      }
+      try { fs.chmodSync(bin, 0o755); } catch (e) { /* ignore */ }
+      clearMacQuarantine(bin);
+      clearMacQuarantine(TOOLS_DIR);
+      if (lookLikeCloudflaredBin(bin)) return bin;
+      lastErr = new Error("下载完成但无法执行 cloudflared");
+    } catch (e) {
+      lastErr = e;
+      try { fs.unlinkSync(tmp); } catch (err) { /* ignore */ }
+    }
+  }
+  throw lastErr || new Error("cloudflared 下载失败");
+}
+
+async function ensureCloudflaredBin() {
+  // 1) PATH
+  try {
+    execFileSync("cloudflared", ["--version"], { stdio: "ignore", timeout: 8000 });
     return "cloudflared";
-  } catch (e) { /* local tools next */ }
+  } catch (e) { /* next */ }
+  // 2) brew
+  const brewBin = findBrewCloudflared();
+  if (brewBin) return brewBin;
+  // 3) 本地缓存
   const bin = path.join(TOOLS_DIR, process.platform === "win32" ? "cloudflared.exe" : "cloudflared");
-  if (fs.existsSync(bin)) {
-    try { fs.chmodSync(bin, 0o755); } catch (e) { /* ignore */ }
+  if (lookLikeCloudflaredBin(bin)) {
+    clearMacQuarantine(bin);
     return bin;
+  }
+  // 4) 尝试 brew 安装（Mac 常见）
+  if (process.platform === "darwin") {
+    try {
+      tunnelStatus = { state: "downloading", detail: "正在 brew 安装 cloudflared…", updated_at: new Date().toISOString() };
+      console.log("  尝试 brew install cloudflared …");
+      execFileSync("brew", ["install", "cloudflared"], { stdio: "ignore", timeout: 300000 });
+      const again = findBrewCloudflared();
+      if (again) return again;
+      execFileSync("cloudflared", ["--version"], { stdio: "ignore", timeout: 8000 });
+      return "cloudflared";
+    } catch (e) { /* fall through to download */ }
   }
   const spec = cloudflaredAssetName();
   if (!spec) throw new Error("当前系统暂不支持自动下载 cloudflared");
-  fs.mkdirSync(TOOLS_DIR, { recursive: true });
-  const url = "https://github.com/cloudflare/cloudflared/releases/latest/download/" + spec.asset;
-  const tmp = path.join(TOOLS_DIR, "cf-dl-" + Date.now());
-  tunnelStatus = { state: "downloading", detail: "正在下载 cloudflared…", updated_at: new Date().toISOString() };
-  console.log("  正在下载 cloudflared（首次需要一点时间）…");
-  await downloadFile(url, tmp);
-  if (spec.tgz) {
-    execFileSync("tar", ["-xzf", tmp, "-C", TOOLS_DIR], { stdio: "ignore" });
-    try { fs.unlinkSync(tmp); } catch (e) { /* ignore */ }
-    if (!fs.existsSync(bin)) {
-      // 有些包解压到子目录
-      const walk = (dir, depth = 0) => {
-        if (depth > 3 || !fs.existsSync(dir)) return "";
-        for (const name of fs.readdirSync(dir)) {
-          const p = path.join(dir, name);
-          if (name === "cloudflared" || name === "cloudflared.exe") return p;
-          try {
-            if (fs.statSync(p).isDirectory()) {
-              const hit = walk(p, depth + 1);
-              if (hit) return hit;
-            }
-          } catch (e) { /* ignore */ }
-        }
-        return "";
-      };
-      const found = walk(TOOLS_DIR);
-      if (found && found !== bin) fs.copyFileSync(found, bin);
-    }
-  } else {
-    fs.renameSync(tmp, bin);
+  return downloadCloudflaredTo(bin, spec);
+}
+
+let tunnelRestartTimer = null;
+let tunnelBootAttempt = 0;
+let preferLocaltunnelNext = false;
+let suppressTunnelRestart = false;
+
+function commandExists(cmd) {
+  try {
+    execFileSync(process.platform === "win32" ? "where" : "which", [cmd], { stdio: "ignore" });
+    return true;
+  } catch (e) {
+    return false;
   }
-  try { fs.chmodSync(bin, 0o755); } catch (e) { /* ignore */ }
-  if (!fs.existsSync(bin)) throw new Error("cloudflared 下载后未找到可执行文件");
-  return bin;
+}
+
+function attachTunnelIO(child, provider) {
+  const onChunk = (buf) => {
+    const text = buf.toString("utf8");
+    try { fs.appendFileSync(TUNNEL_LOG, text); } catch (e) { /* ignore */ }
+    // localtunnel 常见输出：your url is: https://xxx.loca.lt
+    const url = extractTunnelUrl(text);
+    if (url) saveTunnelOrigin(url, provider);
+  };
+  child.stdout.on("data", onChunk);
+  child.stderr.on("data", onChunk);
+  child.on("error", (err) => {
+    tunnelStatus = {
+      state: "error",
+      detail: "隧道进程启动失败：" + String(err.message || err),
+      updated_at: new Date().toISOString()
+    };
+    console.log("  [错误] " + tunnelStatus.detail);
+  });
+  child.on("exit", (code) => {
+    const skip = suppressTunnelRestart;
+    suppressTunnelRestart = false;
+    tunnelProc = null;
+    if (skip) return;
+    const wasReady = tunnelStatus.state === "ready";
+    if (!wasReady) preferLocaltunnelNext = true;
+    liveTunnelOrigin = "";
+    tunnelStatus = {
+      state: wasReady ? "restarting" : "starting",
+      detail: wasReady
+        ? ("隧道断开，准备重连…（code " + code + "）")
+        : ("隧道未就绪，正在换备用通道重试…"),
+      updated_at: new Date().toISOString()
+    };
+    if (tunnelRestartTimer) clearTimeout(tunnelRestartTimer);
+    tunnelRestartTimer = setTimeout(() => startPublicTunnel(), wasReady ? 3000 : 1500);
+  });
+}
+
+function startLocaltunnelFallback() {
+  // 无需额外全局安装：用 npx 拉起；微信偶发要过一次提示页，但仍比完全没码强
+  if (!commandExists("npx")) throw new Error("npx 不可用，无法启用 localtunnel 备用通道");
+  console.log("  启用备用通道 localtunnel …");
+  tunnelStatus = { state: "starting", detail: "改用备用通道 localtunnel，正在申请公网地址…", updated_at: new Date().toISOString() };
+  const child = spawn("npx", ["--yes", "localtunnel", "--port", String(PORT)], {
+    cwd: ROOT,
+    env: process.env,
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  tunnelProc = child;
+  attachTunnelIO(child, "localtunnel");
+  setTimeout(() => {
+    if (!liveTunnelOrigin && tunnelProc === child) {
+      console.log("  localtunnel 超时未拿到地址，将重试…");
+      preferLocaltunnelNext = false;
+      try { child.kill(); } catch (e) { /* ignore */ }
+    }
+  }, 45000);
 }
 
 function startPublicTunnel() {
@@ -257,53 +405,64 @@ function startPublicTunnel() {
     return;
   }
   if (tunnelProc) return;
-  tunnelStatus = { state: "starting", detail: "正在建立流量扫码隧道…", updated_at: new Date().toISOString() };
+  tunnelBootAttempt += 1;
+  const useLt = preferLocaltunnelNext || tunnelBootAttempt % 2 === 0;
+  preferLocaltunnelNext = false;
+  tunnelStatus = {
+    state: "starting",
+    detail: useLt ? "正在用备用通道建立公网地址…" : "正在建立流量扫码隧道…",
+    updated_at: new Date().toISOString()
+  };
   (async () => {
-    let bin = "";
-    try {
-      bin = await ensureCloudflaredBin();
-    } catch (err) {
-      tunnelStatus = { state: "error", detail: String(err.message || err), updated_at: new Date().toISOString() };
-      console.log("  [错误] 无法准备 cloudflared：" + tunnelStatus.detail);
-      console.log("  可手动：brew install cloudflared 后重启；或签到页粘贴 https 隧道地址");
-      return;
-    }
-    try {
-      fs.writeFileSync(TUNNEL_LOG, "");
-    } catch (e) { /* ignore */ }
-    console.log("  正在建立流量扫码隧道（学生可不用教室 Wi‑Fi）…");
-    const child = spawn(bin, ["tunnel", "--url", `http://127.0.0.1:${PORT}`, "--no-autoupdate"], {
-      cwd: ROOT,
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-    tunnelProc = child;
-    const onChunk = (buf) => {
-      const text = buf.toString("utf8");
-      try { fs.appendFileSync(TUNNEL_LOG, text); } catch (e) { /* ignore */ }
-      const url = extractTunnelUrl(text);
-      if (url) saveTunnelOrigin(url, "cloudflared");
-    };
-    child.stdout.on("data", onChunk);
-    child.stderr.on("data", onChunk);
-    child.on("exit", (code) => {
-      tunnelProc = null;
-      if (tunnelStatus.state === "ready" && liveTunnelOrigin) {
+    try { fs.writeFileSync(TUNNEL_LOG, ""); } catch (e) { /* ignore */ }
+
+    if (!useLt) {
+      try {
+        const bin = await ensureCloudflaredBin();
+        console.log("  正在建立流量扫码隧道（cloudflared）…");
+        tunnelStatus = { state: "starting", detail: "cloudflared 已就绪，正在申请公网地址…", updated_at: new Date().toISOString() };
+        const child = spawn(bin, ["tunnel", "--url", `http://127.0.0.1:${PORT}`, "--no-autoupdate"], {
+          cwd: ROOT,
+          env: process.env,
+          stdio: ["ignore", "pipe", "pipe"]
+        });
+        tunnelProc = child;
+        attachTunnelIO(child, "cloudflared");
+        // 若 28 秒仍无 URL，杀掉并立即走备用
+        setTimeout(() => {
+          if (!liveTunnelOrigin && tunnelProc === child) {
+            console.log("  cloudflared 超时未拿到地址，切换备用通道…");
+            preferLocaltunnelNext = true;
+            suppressTunnelRestart = true;
+            try { child.kill(); } catch (e) { /* ignore */ }
+            tunnelProc = null;
+            setTimeout(() => startPublicTunnel(), 400);
+          }
+        }, 28000);
+        return;
+      } catch (err) {
+        console.log("  [警告] cloudflared 准备失败：" + String(err.message || err));
         tunnelStatus = {
-          state: "restarting",
-          detail: "隧道断开，正在重连…（code " + code + "）",
-          updated_at: new Date().toISOString()
-        };
-      } else {
-        tunnelStatus = {
-          state: "error",
-          detail: "隧道进程退出 code=" + code + "，详见 gy-tunnel.log",
+          state: "starting",
+          detail: "cloudflared 失败，尝试备用通道… " + String(err.message || err).slice(0, 140),
           updated_at: new Date().toISOString()
         };
       }
-      liveTunnelOrigin = "";
-      setTimeout(() => startPublicTunnel(), 4000);
-    });
+    }
+
+    try {
+      startLocaltunnelFallback();
+    } catch (err2) {
+      preferLocaltunnelNext = false;
+      tunnelStatus = {
+        state: "error",
+        detail: "公网隧道建立失败：" + String(err2.message || err2) + "。可在终端执行 brew install cloudflared 后重启「启动环境」，或点「绑定局域网」。",
+        updated_at: new Date().toISOString()
+      };
+      console.log("  [错误] " + tunnelStatus.detail);
+      if (tunnelRestartTimer) clearTimeout(tunnelRestartTimer);
+      tunnelRestartTimer = setTimeout(() => startPublicTunnel(), 15000);
+    }
   })().catch((err) => {
     tunnelStatus = { state: "error", detail: String(err.message || err), updated_at: new Date().toISOString() };
     console.log("  [错误] 启动隧道失败：" + tunnelStatus.detail);
@@ -763,12 +922,16 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 200, { ok: true, tunnel_origin: o, hint: writeOriginHint() });
           return;
         }
-        // 重启隧道
+        // 重启隧道（抑制旧进程 exit 触发的自动重连，避免双开）
         if (tunnelProc) {
+          suppressTunnelRestart = true;
           try { tunnelProc.kill(); } catch (e) { /* ignore */ }
           tunnelProc = null;
         }
         liveTunnelOrigin = "";
+        preferLocaltunnelNext = false;
+        tunnelBootAttempt = 0;
+        try { if (fs.existsSync(TUNNEL_FILE)) fs.unlinkSync(TUNNEL_FILE); } catch (e) { /* ignore */ }
         startPublicTunnel();
         sendJson(res, 200, { ok: true, restarting: true, tunnel_status: tunnelStatus });
       } catch (e) {

@@ -13830,7 +13830,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function isPublicTunnelHost(host) {
     const h = String(host || "").toLowerCase();
-    return h.includes("trycloudflare.com") || h.includes("ngrok") || h.includes("loca.lt")
+    return h.includes("trycloudflare.com") || h.includes("cfargotunnel.com")
+      || h.includes("ngrok") || h.includes("loca.lt") || h.includes("lhr.life")
       || h.includes("cloudflared") || h.endsWith(".ts.net")
       || h.includes("vercel.app") || h.includes("netlify.app") || h.includes("github.io");
   }
@@ -14167,6 +14168,22 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       setPublicOriginOverride(origin);
       if (input) input.value = origin;
       rebuildFromOrigin();
+      // 同步固定入口缓存，并刷新本场直达码（若已开启）
+      try {
+        _fixedQrUrlPainted = publicPageUrl("?mode=checkin&entry=1");
+        _bareQrUrlPainted = "";
+        const dyn = document.getElementById("checkin-qr");
+        const codeNow = state?.config?.checkin_code;
+        if (dyn && state?.config?.checkin_active && codeNow) {
+          paintBareCheckinQr(dyn, publicPageUrl(`?mode=checkin&code=${codeNow}`), "checkin-qr");
+        }
+        const fixedHint = document.getElementById("checkin-fixed-hint");
+        if (fixedHint) {
+          fixedHint.textContent = bindMode === "public"
+            ? "固定入口（公网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用"
+            : "固定入口（局域网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用";
+        }
+      } catch (e) { /* ignore */ }
       if (hintEl) {
         hintEl.className = "qr-public-hint ok";
         hintEl.textContent = (note || "已绑定：") + origin;
@@ -14184,48 +14201,71 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const stopTunnelPoll = () => {
       if (tunnelTimer) { clearInterval(tunnelTimer); tunnelTimer = null; }
     };
-    const bindPublic = async ({ restart = false } = {}) => {
+    const tunnelDetailText = (st) => {
+      const d = st && st.tunnel_status && st.tunnel_status.detail;
+      return d ? String(d).slice(0, 160) : "";
+    };
+    const bindPublic = async ({ restart = true } = {}) => {
       setQrBindMode("public");
       syncModeButtons();
       stopTunnelPoll();
       setPublicOriginOverride("");
-      showWaitCard("正在绑定公网隧道…<br>约 10–30 秒<br><span style='font-size:.85em;opacity:.8'>老师电脑需能上网</span>");
+      showWaitCard("正在绑定公网隧道…<br>约 15–45 秒<br><span style='font-size:.85em;opacity:.8'>老师电脑需能上网；失败会自动换备用通道</span>");
       if (hintEl) {
         hintEl.className = "qr-public-hint";
-        hintEl.textContent = restart ? "正在重建公网隧道…" : "正在绑定公网…";
+        hintEl.textContent = "正在绑定公网…";
       }
       try {
+        // 每次点「绑定公网」都主动重建，避免卡在半失败状态
         if (restart) {
-          await fetch("/__gy/tunnel", {
+          const restarted = await fetch("/__gy/tunnel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ restart: true })
           }).then((r) => r.json()).catch(() => ({}));
+          const d0 = tunnelDetailText(restarted);
+          if (d0 && hintEl) hintEl.textContent = d0;
         }
-        const origin = await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 45000 });
+        const origin = await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 50000 });
         if (applyOrigin(origin, "已绑定公网：")) {
           persistOrigin(origin);
           return;
         }
-        // 继续轮询
+        // 继续轮询，并展示服务端隧道进度
         let n = 0;
+        let lastDetail = "";
         tunnelTimer = setInterval(() => {
           n += 1;
-          if (n > 30) {
-            stopTunnelPoll();
-            if (hintEl) hintEl.textContent = "公网仍未就绪。请确认电脑能上网后再点「绑定公网」。学生可先手输 6 位码。";
-            showWaitCard("公网地址未就绪<br>请再点「绑定公网」<br>或先手输 <b>6 位签到码</b>");
-            return;
-          }
-          ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 0 }).then((o) => {
-            if (applyOrigin(o, "已绑定公网：")) {
+          fetchTunnelStatus().then((st) => {
+            const d = tunnelDetailText(st);
+            if (d && d !== lastDetail) {
+              lastDetail = d;
+              if (hintEl) {
+                hintEl.className = "qr-public-hint";
+                hintEl.textContent = d;
+              }
+              if (st && st.tunnel_status && /downloading|starting|restarting/i.test(String(st.tunnel_status.state || ""))) {
+                showWaitCard("正在建立公网地址…<br><span style='font-size:.85em;opacity:.85'>" + esc(d) + "</span>");
+              }
+            }
+            const o = pickTunnelOriginFromHint(st) || pickTunnelOriginFromHint(st && st.hint);
+            if (o && applyOrigin(o, "已绑定公网：")) {
               persistOrigin(o);
               stopTunnelPoll();
             }
           }).catch(() => {});
+          if (n > 40) {
+            stopTunnelPoll();
+            const tip = lastDetail
+              ? ("公网仍未就绪：" + lastDetail)
+              : "公网仍未就绪。请确认电脑能上网后再点「绑定公网」。学生可先手输 6 位码。";
+            if (hintEl) hintEl.textContent = tip;
+            showWaitCard("公网地址未就绪<br>请再点「绑定公网」<br>或改用「绑定局域网」/ 手输 <b>6 位签到码</b>");
+          }
         }, 2000);
       } catch (e) {
         if (hintEl) hintEl.textContent = "绑定公网失败：请确认「启动环境」窗口开着且电脑能上网";
+        showWaitCard("绑定失败<br>请重启「启动环境」后再点「绑定公网」");
       }
     };
     const bindLan = async () => {
@@ -14408,8 +14448,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const hint = document.getElementById("checkin-qr-hint");
     if (hint) {
       hint.textContent = active
-        ? "学生用微信扫下方码；扫不开可手输上方 6 位码。点「刷新二维码」可换新码。"
-        : "先点「开启签到」，再让学生扫下方二维码；扫不开可手输 6 位码";
+        ? "本场直达：扫开即进本场。推荐学生扫「固定入口码」后手输上方签到码。"
+        : "可先投屏固定入口码；开启签到后，黄色数字即为当日手输签到码";
     }
     const sessionBtn = document.getElementById("btn-checkin-session");
     if (sessionBtn) {
