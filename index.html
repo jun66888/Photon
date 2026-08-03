@@ -2539,6 +2539,20 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   font-size: .8rem; color: var(--ink-soft);
   display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center; align-items: center;
 }
+.checkin-code-banner .ccb-actions {
+  display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; align-items: center;
+  margin-top: .15rem;
+}
+.checkin-code-banner .ccb-actions button {
+  min-height: 2rem !important;
+  padding: .25rem .7rem !important;
+  font-size: .85rem !important;
+}
+.checkin-lists-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .5rem; margin: 1rem 0 .55rem;
+}
+.checkin-lists-head .course-section-title { margin: 0; }
 .checkin-wifi-tip {
   display: flex; flex-direction: column; gap: .35rem;
   padding: .75rem .9rem;
@@ -4701,7 +4715,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <button type="button" id="btn-checkin-open" class="primary" data-action="gen-checkin-code">开启签到</button>
             <button type="button" id="btn-checkin-close" data-action="end-checkin" disabled>关闭签到</button>
           </div>
-          <button type="button" id="btn-checkin-refresh" data-action="refresh-checkin-code" disabled>刷新签到码</button>
+          <button type="button" class="primary" id="btn-checkin-reload" data-action="refresh-checkin" title="重新拉取名单、进度与二维码">刷新</button>
           <button type="button" data-action="toggle-session" id="btn-checkin-session">下午签到</button>
         </div>
       </div>
@@ -4717,6 +4731,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <div class="ccb-lab">当日签到码（手输用）</div>
             <div class="ccb-code" id="checkin-code-text">------</div>
             <div class="ccb-meta"><span id="checkin-qr-state" class="vote-qr-state off">○ 签到未开启</span> · <span id="checkin-countdown">未开启</span></div>
+            <div class="ccb-actions">
+              <button type="button" id="btn-checkin-refresh" data-action="refresh-checkin-code" disabled title="请先开启签到">刷新签到码</button>
+              <button type="button" class="ghost" data-action="refresh-checkin" title="刷新名单与二维码显示">刷新名单</button>
+            </div>
           </div>
           <aside class="checkin-wifi-tip" id="checkin-wifi-tip" aria-label="教室 Wi-Fi 提示">
             <div class="cwt-lab">
@@ -4754,6 +4772,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <div class="muted" style="margin-bottom:.35rem" id="checkin-qr-hint">开启签到后生成；扫开直接进入本场（码内含当日签到码）</div>
             <div class="qr-box" id="checkin-qr"></div>
           </div>
+        </div>
+        <div class="checkin-lists-head">
+          <div class="course-section-title" style="margin:0">签到名单</div>
+          <button type="button" class="ghost" data-action="refresh-checkin" title="重新渲染已签/未签名单">刷新名单</button>
         </div>
         <div class="checkin-lists-row">
           <div>
@@ -19249,6 +19271,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     if (act === "gen-checkin-code") { await generateCheckinCode(); return; }
+    if (act === "refresh-checkin") {
+      setTeacherView("checkin");
+      renderTeacherCheckin();
+      return;
+    }
     if (act === "refresh-checkin-code") { await refreshCheckinCode(); return; }
     if (act === "end-checkin") { await endCheckinSession(); return; }
     if (act === "toggle-session") {
