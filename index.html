@@ -16893,12 +16893,107 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       cd.textContent = "扫码签到中 · 点「关闭签到」结束";
     }, 1000);
   }
+  const CHECKIN_WIFI_KEY = "gy_arena_checkin_wifi";
+  function getCheckinWifi() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(CHECKIN_WIFI_KEY) || "{}");
+      return {
+        ssid: String(raw.ssid || "").trim().slice(0, 64),
+        pass: String(raw.pass || "").trim().slice(0, 64)
+      };
+    } catch (e) {
+      return { ssid: "", pass: "" };
+    }
+  }
+  function setCheckinWifi(ssid, pass) {
+    const next = {
+      ssid: String(ssid || "").trim().slice(0, 64),
+      pass: String(pass || "").trim().slice(0, 64)
+    };
+    if (!next.ssid && !next.pass) localStorage.removeItem(CHECKIN_WIFI_KEY);
+    else localStorage.setItem(CHECKIN_WIFI_KEY, JSON.stringify(next));
+    return next;
+  }
+  function syncCheckinWifiTip() {
+    const tip = document.getElementById("checkin-wifi-tip");
+    if (!tip) return;
+    const { ssid, pass } = getCheckinWifi();
+    const ssidEl = document.getElementById("checkin-wifi-ssid");
+    const passEl = document.getElementById("checkin-wifi-pass");
+    const noteEl = document.getElementById("checkin-wifi-note");
+    if (ssidEl) {
+      ssidEl.textContent = ssid || "未填写";
+      ssidEl.classList.toggle("empty", !ssid);
+    }
+    if (passEl) {
+      passEl.textContent = pass || "未填写";
+      passEl.classList.toggle("empty", !pass);
+    }
+    if (noteEl) {
+      noteEl.textContent = ssid
+        ? "请先连此 Wi‑Fi，再用手机扫签到码（局域网更稳，公网不稳时可改「绑定局域网」）"
+        : "点右上角填写教室 Wi‑Fi，投屏给学生看，方便连局域网签到";
+    }
+  }
+  function wireCheckinWifiTip() {
+    const tip = document.getElementById("checkin-wifi-tip");
+    if (!tip || tip.dataset.wired === "1") {
+      syncCheckinWifiTip();
+      return;
+    }
+    tip.dataset.wired = "1";
+    const editBtn = document.getElementById("btn-wifi-edit");
+    const saveBtn = document.getElementById("btn-wifi-save");
+    const cancelBtn = document.getElementById("btn-wifi-cancel");
+    const clearBtn = document.getElementById("btn-wifi-clear");
+    const ssidInput = document.getElementById("wifi-ssid-input");
+    const passInput = document.getElementById("wifi-pass-input");
+    const openEdit = () => {
+      const cur = getCheckinWifi();
+      if (ssidInput) ssidInput.value = cur.ssid;
+      if (passInput) passInput.value = cur.pass;
+      tip.classList.add("editing");
+      if (editBtn) editBtn.textContent = "编辑中";
+      ssidInput?.focus();
+    };
+    const closeEdit = () => {
+      tip.classList.remove("editing");
+      if (editBtn) editBtn.textContent = "填写 / 修改";
+      syncCheckinWifiTip();
+    };
+    if (editBtn) {
+      editBtn.onclick = () => {
+        if (tip.classList.contains("editing")) closeEdit();
+        else openEdit();
+      };
+    }
+    if (saveBtn) {
+      saveBtn.onclick = () => {
+        const next = setCheckinWifi(ssidInput?.value, passInput?.value);
+        closeEdit();
+        showVoteToast(next.ssid ? `Wi‑Fi 已保存：${next.ssid}` : "已清空 Wi‑Fi 提示");
+      };
+    }
+    if (cancelBtn) cancelBtn.onclick = () => closeEdit();
+    if (clearBtn) {
+      clearBtn.onclick = () => {
+        setCheckinWifi("", "");
+        if (ssidInput) ssidInput.value = "";
+        if (passInput) passInput.value = "";
+        closeEdit();
+        showVoteToast("已清空 Wi‑Fi 提示");
+      };
+    }
+    syncCheckinWifiTip();
+  }
+
   function renderTeacherCheckin() {
     const session = state.config?.checkin_session || "am";
     const active = !!state.config?.checkin_active;
     const labelEl = document.getElementById("checkin-session-label");
     if (labelEl) labelEl.textContent = session === "pm" ? "下午" : "上午";
     syncCheckinToggleButtons(active);
+    wireCheckinWifiTip();
     const flag = session === "pm" ? "checked_in_pm" : "checked_in_am";
     const timeFlag = session === "pm" ? "checked_in_pm_at" : "checked_in_am_at";
     // 签到榜只统计已登记学号的真实学员（排除无学号的演示种子占位）
