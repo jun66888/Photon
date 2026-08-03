@@ -4322,7 +4322,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </div>
       </div>
 
-      <div class="ui-mode-bar" id="ui-mode-bar" aria-label="主界面显示模式"></div>
       <div class="camps-board" id="camps-board">
         <section class="camp-col red" data-camp="red" id="camp-red">
           <div class="camp-head">
@@ -4559,8 +4558,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <div class="ch-sub">名册 / 品牌 / 加分模板 / 数据回滚 · 玩法请点侧栏「玩法」</div>
         </div>
         <div class="ch-actions">
-          <button type="button" data-action="import-demo-data" title="导入一批小组、成员与积分演示数据">导入演示数据</button>
-          <button type="button" class="primary" data-action="goto-play-mode">切换玩法</button>
+          <button type="button" class="ghost" data-action="goto-play-mode">切换玩法</button>
         </div>
       </div>
       <div class="settings-stack" id="settings-stack">
@@ -4674,18 +4672,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </details>
 
         <!-- ⑦ 数据回滚：默认收起 -->
-        <details class="settings-acc" data-acc="data" open>
+        <details class="settings-acc" data-acc="data">
           <summary>
             <span class="acc-title">数据 · 积分 · 回滚</span>
-            <span class="acc-sum" id="acc-sum-data">导入演示 / 清零 / 曲线</span>
+            <span class="acc-sum" id="acc-sum-data">清零 / 曲线 / 快照</span>
           </summary>
           <div class="acc-body">
             <div id="settings-data-tools"></div>
           </div>
         </details>
 
-        <!-- ⑧ 音效：可开关、调音量、导入自定义包 -->
-        <details class="settings-acc" data-acc="sfx" open>
+        <!-- ⑧ 音效：可开关、调音量、导入自定义包（默认收起，避免占主视线） -->
+        <details class="settings-acc" data-acc="sfx">
           <summary>
             <span class="acc-title">音效调节</span>
             <span class="acc-sum" id="acc-sum-sfx">开关 · 音量 · 自定义包</span>
@@ -6372,8 +6370,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const items = st.items || [];
     host.innerHTML = `
       <p class="data-tools-hint">积分按天累计不清零。危险操作前会自动快照；另每 5 分钟自动记录，最多保留 10 步，可后撤 / 前进。</p>
+      <p class="data-tools-hint" style="margin-top:-.15rem">需要样例课堂时，可在下方导入演示数据（会覆盖当前名册与积分）。</p>
       <div class="data-tools-bar">
-        <button type="button" class="primary" id="btn-import-demo" title="一键灌入小组、成员、积分与签到演示包">导入演示数据</button>
+        <button type="button" class="ghost" id="btn-import-demo" title="导入演示课堂数据包">导入演示数据</button>
         <button type="button" class="danger-soft" id="btn-reset-scores">积分清零</button>
         <button type="button" id="btn-score-curve">积分曲线</button>
         <button type="button" id="btn-history-snap">立即快照</button>
@@ -6522,14 +6521,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const people = getDisciplesArray().length;
     host.innerHTML = `
       <div class="sps-text">当前玩法 <b>${esc(def.name)}</b> · ${esc(def.size)} · 显示 <b>${esc(modeDef.name)}</b><br>
-        <span class="muted">主界面可切换：两派 / 小组 / 成员${peakCount ? ` · 已有 ${peakCount} 个小组 · ${people} 人` : " · 尚未创建小组，可点导入演示数据"}</span><br>
+        <span class="muted">${peakCount ? `${peakCount} 个小组 · ${people} 人` : "尚未创建小组"} · 显示模式见下方</span><br>
         <span class="muted" id="settings-build-stamp">版本加载中…</span></div>
       <div class="row" style="gap:.35rem;flex-wrap:wrap">
-        <button type="button" class="primary" data-action="import-demo-data">导入演示数据</button>
         <button type="button" data-action="goto-play-mode">改玩法</button>
+      </div>
+      <div class="ui-mode-bar" id="settings-ui-mode-bar" style="margin:.45rem 0 0;width:100%" aria-label="主界面显示模式">
+        <span class="ui-mode-lab">显示</span>
         ${UI_DISPLAY_MODE_DEFS.map((m) => {
           const disabled = (m.id === "peak" || m.id === "member") && !peakCount;
-          return `<button type="button" data-ui-mode="${m.id}" class="${mode === m.id ? "primary" : ""}" ${disabled ? "disabled" : ""}>${esc(m.name)}</button>`;
+          return `<button type="button" data-ui-mode="${m.id}" class="${mode === m.id ? "on" : ""}" ${disabled ? "disabled title=\"请先创建小组\"" : `title="${esc(m.hint)}"`}>${esc(m.name)}</button>`;
         }).join("")}
       </div>`;
     host.querySelectorAll("[data-ui-mode]").forEach((b) => {
@@ -7687,18 +7688,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderGameSfxBar() {
     const bar = document.getElementById("game-sfx-bar");
     if (!bar) return;
+    // 课堂页只保留开关与音量；导入/试听/试特效在设置「音效调节」
     bar.innerHTML = `
       <button type="button" id="game-sfx-toggle" data-sfx-toggle>${sfxEnabled ? "🔊" : "🔇"} 音效 ${sfxEnabled ? sfxVolume + "%" : "关"}</button>
       <span class="sfx-lab">音量</span>
       <input type="range" id="game-sfx-vol" data-sfx-vol min="0" max="100" step="1" value="${sfxVolume}" />
-      <span class="sfx-vol-num" id="game-sfx-vol-num">${sfxVolume}</span>
-      <button type="button" data-sfx-preview>试听</button>
-      <button type="button" data-sfx-fx>试特效</button>
-      <button type="button" data-sfx-import>导入音效</button>
-      <input type="file" data-sfx-file accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />`;
+      <span class="sfx-vol-num" id="game-sfx-vol-num">${sfxVolume}</span>`;
     bindSfxControls(bar);
-    const fxBtn = bar.querySelector("[data-sfx-fx]");
-    if (fxBtn) fxBtn.onclick = () => playGameFx("win", { banner: "特效预览" });
   }
 
   function renderSettingsSfxPanel() {
@@ -7712,6 +7708,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <strong id="settings-sfx-vol-num" style="color:#ffe39a;font-family:var(--font-num)">${sfxVolume}</strong>
         </label>
         <button type="button" data-sfx-preview>试听</button>
+        <button type="button" data-sfx-fx>试特效</button>
       </div>
       <div class="sfx-row">
         <button type="button" data-sfx-import>导入自定义音效包</button>
@@ -7719,8 +7716,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span class="meta-pill">${pal3PackReady ? "已导入本地采样" : "当前：合成音效"}</span>
         <input type="file" data-sfx-file accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />
       </div>
-      <div class="sfx-hint">支持 mp3 / wav / ogg。文件名建议含 light / mid / heavy / ultimate / levelup（或 轻/中/重/大招/升级）。课堂页抽人与破冰旁也可随时调音量。</div>`;
+      <div class="sfx-hint">支持 mp3 / wav / ogg。文件名建议含 light / mid / heavy / ultimate / levelup（或 轻/中/重/大招/升级）。</div>`;
     bindSfxControls(host);
+    const fxBtn = host.querySelector("[data-sfx-fx]");
+    if (fxBtn) fxBtn.onclick = () => playGameFx("win", { banner: "特效预览" });
     updateSfxToggleLabel();
   }
 
@@ -9143,24 +9142,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function renderUiModeBar() {
-    const bar = document.getElementById("ui-mode-bar");
-    if (!bar) return;
-    const mode = getUiDisplayMode();
-    const peakCount = getPeaksArray().length;
-    bar.innerHTML = `
-      <span class="ui-mode-lab">显示</span>
-      ${UI_DISPLAY_MODE_DEFS.map((m) => {
-        const disabled = (m.id === "peak" || m.id === "member") && !peakCount;
-        return `<button type="button" data-ui-mode="${m.id}" class="${mode === m.id ? "on" : ""}" ${disabled ? "disabled title=\"请先创建小组\"" : `title="${esc(m.hint)}"`}>${esc(m.name)}</button>`;
-      }).join("")}
-      <span class="muted" style="font-size:.72rem">${
-        mode === "camp" ? "两派成员视图 · 创建小组后可切小组对抗"
-          : mode === "peak" ? "按小组出牌 · 成员默认收起"
-          : "成员明细展开"
-      }</span>`;
-    bar.querySelectorAll("[data-ui-mode]").forEach((b) => {
-      b.onclick = () => setUiDisplayMode(b.dataset.uiMode);
-    });
+    // 显示模式改在设置页调整，主界面不再放入口
   }
 
   function peakFeedText(peakId, peakName, day) {
@@ -9396,7 +9378,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (mode === "camp" || !live.peaks.length) {
       listEl.innerHTML = members.length
         ? `<div class="camp-member-list">${members.map((d) => renderCampMemberCard(d, camp)).join("")}</div>`
-        : `<div class="camp-empty-hint">暂无成员 · 点「＋成员」加入本派<br>需要分组时再点「＋小组」</div>`;
+        : `<div class="camp-empty-hint">暂无成员 · 点上方「＋成员」加入本派<br>需要分组时再点「＋小组」</div>`;
       bindCampMemberList(listEl);
       return { peakCount: live.peakCount, memberCount: members.length };
     }
@@ -9446,28 +9428,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       memBtn.title = day < 20 ? "第 20 天解锁回忆" : "打开回忆";
     }
     syncRailDayUI();
-    renderUiModeBar();
     renderMissionBoard();
 
     const redInfo = renderCampColumn("red");
     const blueInfo = renderCampColumn("blue");
-    // 空课堂：给出醒目的演示数据入口
-    if (!getPeaksArray().length && !getDisciplesArray().length) {
-      const redList = document.getElementById("list-red");
-      const blueList = document.getElementById("list-blue");
-      const emptyHtml = `
-        <div class="camp-empty-hint">
-          还没有成员与小组<br>
-          <button type="button" class="primary" data-action="import-demo-data" style="margin-top:.65rem">导入演示数据</button>
-          <div class="muted" style="font-size:.75rem;margin-top:.45rem">或点「＋成员 / ＋小组」从零开始</div>
-        </div>`;
-      if (redList) redList.innerHTML = emptyHtml;
-      if (blueList) blueList.innerHTML = `
-        <div class="camp-empty-hint">
-          演示包含：5 小组 · 约 29 人 · 七日积分<br>
-          <button type="button" data-action="import-demo-data" style="margin-top:.65rem">一键灌入</button>
-        </div>`;
-    }
     setupCampDropZones();
     applyArenaDensity(Math.max(redInfo.peakCount, 1), Math.max(blueInfo.peakCount, 1));
     requestAnimationFrame(() => applyArenaDensity(Math.max(redInfo.peakCount, 1), Math.max(blueInfo.peakCount, 1)));
