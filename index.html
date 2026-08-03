@@ -5001,7 +5001,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="teacher-rate-panel" id="teacher-rate-panel" aria-label="学生对老师评分">
           <div class="trp-head">
             <h4 class="trp-title">学生对老师评分</h4>
-            <span class="trp-meta" id="teacher-rate-meta">签到后可评 · 五维五星</span>
+            <span class="trp-meta" id="teacher-rate-meta">学生选填 · 五维五星</span>
           </div>
           <div id="teacher-rate-summary"><div class="trp-empty">暂无评分</div></div>
         </div>
@@ -19080,6 +19080,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function teacherRateLocalMarkKey(slotKey) {
     return "gy_arena_trate_" + slotKey;
   }
+  function hasTeacherRated(studentId, discipleId) {
+    const found = findTeacherRating(studentId, discipleId);
+    return !!(found.rating && TEACHER_RATE_DIMS.every((dim) => Number(found.rating.scores?.[dim.id]) >= 1));
+  }
+  function teacherRateEntryBtnHtml(rated) {
+    if (rated) {
+      return `<button type="button" class="ghost" id="ci-rate-open" style="width:100%" disabled>已给老师打分</button>`;
+    }
+    return `<button type="button" class="ghost" id="ci-rate-open" style="width:100%">给老师打分（选填）</button>`;
+  }
   function renderTeacherRateFormHtml(existing) {
     const scores = existing && existing.scores ? existing.scores : {};
     const rows = TEACHER_RATE_DIMS.map((dim) => {
@@ -19095,19 +19105,39 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (existing) {
       return `<div class="ci-rate-box" id="ci-rate-box">
         <div class="ci-rate-title">已给老师打分</div>
-        <p class="ci-rate-note">本时段每位同学可评一次 · 谢谢反馈</p>
+        <p class="ci-rate-note">本时段已提交 · 谢谢反馈</p>
         ${rows}
         <p class="ci-rate-done">提交成功</p>
+        <button type="button" class="ghost" id="ci-rate-back" style="width:100%;margin-top:.45rem">返回</button>
       </div>`;
     }
     return `<div class="ci-rate-box" id="ci-rate-box">
       <div class="ci-rate-title">给老师打分</div>
-      <p class="ci-rate-note">五个维度，各点 1～5 颗星 · 本时段一次</p>
+      <p class="ci-rate-note">选填 · 五个维度各 1～5 星 · 本时段一次</p>
       ${rows}
       <button type="button" class="primary ci-big" id="ci-rate-submit" style="margin-top:.55rem">提交评分</button>
+      <button type="button" class="ghost" id="ci-rate-back" style="width:100%;margin-top:.35rem">暂不评分，返回</button>
     </div>`;
   }
-  function wireTeacherRateForm(name, studentId, discipleId) {
+  function openTeacherRateView({ name, studentId, discipleId, onBack }) {
+    const body = document.getElementById("checkin-body");
+    const hint = document.getElementById("checkin-session-hint");
+    if (hint) hint.textContent = "给老师打分 · 选填，可随时返回";
+    const rated = hasTeacherRated(studentId, discipleId);
+    const existing = rated ? findTeacherRating(studentId, discipleId).rating : null;
+    body.innerHTML = `<div class="stack">${renderTeacherRateFormHtml(existing)}</div>`;
+    const back = () => { if (typeof onBack === "function") onBack(); else renderCheckin(); };
+    const backBtn = document.getElementById("ci-rate-back");
+    if (backBtn) backBtn.onclick = back;
+    if (rated) return;
+    wireTeacherRateForm(name, studentId, discipleId, back);
+  }
+  function wireTeacherRateOpenButton({ name, studentId, discipleId, onBack }) {
+    const btn = document.getElementById("ci-rate-open");
+    if (!btn || btn.disabled) return;
+    btn.onclick = () => openTeacherRateView({ name, studentId, discipleId, onBack });
+  }
+  function wireTeacherRateForm(name, studentId, discipleId, onDone) {
     const box = document.getElementById("ci-rate-box");
     if (!box || box.dataset.wired === "1") return;
     box.dataset.wired = "1";
@@ -19148,7 +19178,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           disciple_id: discipleId,
           scores: { ...picked }
         });
-        renderCheckinSuccess(name, studentId, Date.now(), true, discipleId);
+        alert("已提交对老师的评分，谢谢！");
+        if (typeof onDone === "function") onDone();
+        else openTeacherRateView({ name, studentId, discipleId, onBack: onDone });
       } catch (e) {
         alert(e?.message || "提交失败，请重试");
         submit.disabled = false;
@@ -19212,7 +19244,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const sum = summarizeTeacherRatings("session");
     if (meta) meta.textContent = `第 ${day} 天 · ${session} · ${sum.count} 人已评`;
     if (!sum.count) {
-      host.innerHTML = '<div class="trp-empty">学生签到成功后可在手机上给老师打分</div>';
+      host.innerHTML = '<div class="trp-empty">学生可在签到按钮下方点「给老师打分」（选填）</div>';
       return;
     }
     host.innerHTML = TEACHER_RATE_DIMS.map((d) => {
@@ -19230,14 +19262,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderCheckinSuccess(name, student_id, at, already, discipleId) {
     const body = document.getElementById("checkin-body");
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = already ? "本时段已签到 · 还可给老师打分" : "签到完成 · 请给老师打个分";
+    if (hint) hint.textContent = already ? "本时段已签到 · 本次扫码勿重复" : "签到完成 · 本次扫码仅一次";
     const d = discipleId && state.disciples ? state.disciples[discipleId] : null;
     const profile = d ? profileFromDisciple(d) : normalizeDiscipleProfile(checkinProfileDraft);
     const avatarHtml = profile.avatar
       ? `<img class="disciple-avatar lg" src="${profile.avatar}" alt="" style="display:block;margin:.2rem auto .35rem" />`
       : "";
-    const found = findTeacherRating(student_id, discipleId);
-    const rated = !!(found.rating && TEACHER_RATE_DIMS.every((dim) => Number(found.rating.scores?.[dim.id]) >= 1));
+    const rated = hasTeacherRated(student_id, discipleId);
     body.innerHTML = `
       <div style="text-align:center" class="stack">
         <div class="success-burst">${already ? "✓" : "✅"}</div>
@@ -19247,10 +19278,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ${profile.motto ? `<p style="margin:.2rem 0 0;color:#8b5a2b">「${esc(profile.motto)}」</p>` : ""}
         <p style="margin-top:.5rem;font-size:1.1rem">${already ? "本时段已签到" : "签到成功 · 门派 +2 分"}</p>
         <p class="muted">${at ? fmtTime(at) : ""} · 每次扫码只能签到一次</p>
-        ${renderTeacherRateFormHtml(rated ? found.rating : null)}
+        ${teacherRateEntryBtnHtml(rated)}
         ${discipleId ? `<button type="button" class="ghost" id="ci-edit-profile-after" style="width:100%">完善 / 修改个人信息</button>` : ""}
       </div>`;
-    if (!rated) wireTeacherRateForm(name, student_id, discipleId);
+    wireTeacherRateOpenButton({
+      name,
+      studentId: student_id,
+      discipleId,
+      onBack: () => renderCheckinSuccess(name, student_id, at, already, discipleId)
+    });
     const editBtn = document.getElementById("ci-edit-profile-after");
     if (editBtn && discipleId) {
       editBtn.onclick = () => {
@@ -19346,6 +19382,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </button>
         ${profileFormHtml(profile, { open: checkinProfilePanelOpen, showSave: !!discipleId })}
         <button type="button" class="primary ci-big" id="ci-do" ${selected ? "" : "disabled"}>签到</button>
+        ${teacherRateEntryBtnHtml(hasTeacherRated(showSid, discipleId))}
         <button type="button" class="ghost" id="ci-who" style="width:100%">不是我？换一个名字</button>
       </div>`;
 
@@ -19406,6 +19443,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         checkinSubmitting = false;
       }
     };
+    wireTeacherRateOpenButton({
+      name: showName,
+      studentId: showSid,
+      discipleId,
+      onBack: () => renderCheckinIdentityStep(code, getLocalStudent() || local, me)
+    });
     document.getElementById("ci-who").onclick = () => {
       checkinNameSelected = false;
       showWhoList(code);
@@ -19428,6 +19471,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ci-sid" id="ci-sid-preview">学号将自动生成：<b>${esc(sid)}</b></div>
         ${profileFormHtml(draft, { open: checkinProfilePanelOpen, showSave: false })}
         <button type="button" class="primary ci-big seal" id="ci-confirm">签到确认</button>
+        ${teacherRateEntryBtnHtml(false)}
         <div style="height:1px;background:rgba(139,90,43,.3);margin:.2rem 0"></div>
         <p class="muted" style="text-align:center">换过手机？从名单找回自己</p>
         <button type="button" id="ci-who">点我的名字</button>
@@ -19440,6 +19484,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     nameInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !checkinProfilePanelOpen) doConfirm();
     });
+    const rateBtn = document.getElementById("ci-rate-open");
+    if (rateBtn) {
+      rateBtn.onclick = () => {
+        const nm = (document.getElementById("ci-name")?.value || "").trim();
+        openTeacherRateView({
+          name: nm,
+          studentId: sid,
+          discipleId: "",
+          onBack: () => renderCheckinFirstForm(code)
+        });
+      };
+    }
     document.getElementById("ci-who").onclick = () => showWhoList(code);
   }
 
