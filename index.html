@@ -15610,14 +15610,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         hintEl.textContent = (note || "已绑定：") + origin;
       }
       syncHint();
-      // 后台探测：过期隧道会显示「链接不上」，探测失败则清掉并重绑
+      // 后台轻探测：失败只提示，绝不自动重建（重建会换新地址，二维码更不稳）
       verifyPhoneOriginAlive(origin).then((alive) => {
-        if (alive) return;
+        if (alive) {
+          setBindStatus((note || "已绑定：") + origin + " · 连通正常", true);
+          return;
+        }
         if (getPublicOriginOverride() !== origin) return;
-        setPublicOriginOverride("");
-        setBindStatus("刚才的地址手机打不开（可能已过期），正在重新绑定…");
-        if (bindMode === "public") bindPublic({ restart: true });
-        else bindLan();
+        setBindStatus("地址已锁定投屏，连通偏慢时请等 10–20 秒再扫；仍不行再点「绑定公网」：" + origin);
       });
       return true;
     };
@@ -15635,19 +15635,31 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const d = st && st.tunnel_status && st.tunnel_status.detail;
       return d ? String(d).slice(0, 160) : "";
     };
-    const bindPublic = async ({ restart = true } = {}) => {
+    const bindPublic = async ({ restart = false } = {}) => {
       setQrBindMode("public");
       syncModeButtons();
       stopTunnelPoll();
+      // 已有可扫公网码时，非手动重建不打断投屏
+      const existing = getPublicOriginOverride();
+      if (!restart && existing && isPublicTunnelHost(originHostname(existing)) && qrGraphicPresent(canvasHost)) {
+        currentUrl = publicPageUrl((() => {
+          try { return new URL(currentUrl, location.href).search || "?mode=checkin&entry=1"; } catch (e) { return "?mode=checkin&entry=1"; }
+        })());
+        setBindStatus("已锁定公网二维码 · 学生请扫当前码：" + existing, true);
+        startStableTunnelWatch();
+        return;
+      }
       // 公网未就绪时绝不画局域网/本机码——手机流量扫了会「链接不上」
       if (!isScanSafeUrlForBindMode(currentUrl, "public")) {
-        showWaitBox("正在绑定公网隧道（约 15–45 秒）…<br>就绪后自动显示可扫二维码");
+        showWaitBox("正在绑定公网隧道（约 15–45 秒）…<br>就绪后自动显示可扫二维码，之后会锁定不再乱跳");
       } else {
         paintNow();
       }
-      setBindStatus("正在绑定公网隧道（约 15–45 秒）…请稍候，不要扫临时地址");
+      setBindStatus(restart
+        ? "正在重建公网隧道（约 15–45 秒）…请稍候再扫"
+        : "正在获取公网地址（约 15–45 秒）…请稍候，不要扫临时地址");
       try {
-        // 每次点「绑定公网」都主动重建，避免卡在半失败状态
+        // 仅老师手动点「绑定公网」时才 restart，避免自动重建导致地址乱跳
         if (restart) {
           const restarted = await fetch("/__gy/tunnel", {
             method: "POST",
@@ -15658,28 +15670,19 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           if (d0) setBindStatus(esc(d0));
         }
 
-        const origin = await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 50000 });
-        const originAlive = origin ? await verifyPhoneOriginAlive(origin) : false;
-        if (origin && originAlive && applyOrigin(origin, "已绑定公网：")) {
+        const origin = await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 55000 });
+        // 拿到地址就锁定画码；连通探测只作提示，不再因一次失败清掉重绑
+        if (origin && applyOrigin(origin, "已绑定公网：")) {
           persistOrigin(origin);
+          startStableTunnelWatch();
           return;
         }
-        if (origin && !originAlive) {
-          setPublicOriginOverride("");
-          setBindStatus("拿到的公网地址暂时打不开，继续等待新隧道…");
-          showWaitBox("公网地址检测失败，正在重建…<br>请稍候再扫");
-          await fetch("/__gy/tunnel", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ restart: true })
-          }).catch(() => {});
-        }
-        // 继续轮询，并展示服务端隧道进度（绝不画局域网临时码）
+        // 继续轮询服务端（不主动 POST restart）
         let n = 0;
         let lastDetail = "";
         tunnelTimer = setInterval(() => {
           n += 1;
-          fetchTunnelStatus().then(async (st) => {
+          fetchTunnelStatus().then((st) => {
             const d = tunnelDetailText(st);
             if (d && d !== lastDetail) {
               lastDetail = d;
@@ -15687,13 +15690,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             }
             const o = pickTunnelOriginFromHint(st) || pickTunnelOriginFromHint(st && st.hint);
             if (!o) return;
-            if (!(await verifyPhoneOriginAlive(o))) return;
             if (applyOrigin(o, "已绑定公网：")) {
               persistOrigin(o);
               stopTunnelPoll();
+              startStableTunnelWatch();
             }
           }).catch(() => {});
-          if (n > 40) {
+          if (n > 45) {
             stopTunnelPoll();
             const tip = lastDetail
               ? ("公网仍未就绪：" + lastDetail + " · 可改用「绑定局域网」或手输 6 位码")
@@ -15706,6 +15709,37 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         setBindStatus("绑定公网失败：请确认「启动环境」窗口开着且电脑能上网");
         showWaitBox("绑定公网失败<br>请确认启动环境已打开，且电脑能上网");
       }
+    };
+    const startStableTunnelWatch = () => {
+      stopTunnelPoll();
+      let softFail = 0;
+      tunnelTimer = setInterval(() => {
+        const origin = getPublicOriginOverride();
+        if (!origin || !isPublicTunnelHost(originHostname(origin))) return;
+        fetchTunnelStatus().then(async (st) => {
+          const live = pickTunnelOriginFromHint(st) || pickTunnelOriginFromHint(st && st.hint);
+          // 服务端换了新地址才更新二维码；同地址只更新状态字
+          if (live && live !== origin.replace(/\/$/, "") && isPublicTunnelHost(originHostname(live))) {
+            applyOrigin(live, "隧道已更新：");
+            persistOrigin(live);
+            softFail = 0;
+            return;
+          }
+          const state = st && st.tunnel_status && st.tunnel_status.state;
+          if (state === "ready" || state === "degraded") {
+            const alive = await verifyPhoneOriginAlive(origin);
+            if (alive) {
+              softFail = 0;
+              setBindStatus("可扫 · 公网已锁定：" + origin, true);
+            } else {
+              softFail += 1;
+              setBindStatus(softFail >= 3
+                ? ("连通偏慢，仍请扫当前码；不行再点「绑定公网」：" + origin)
+                : ("检测中…请继续扫当前码：" + origin));
+            }
+          }
+        }).catch(() => {});
+      }, 12000);
     };
     const bindLan = async () => {
       setQrBindMode("lan");
@@ -15750,18 +15784,25 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ? overrideNow
         : (isPublicTunnelHost(originHostname(currentUrl)) ? new URL(currentUrl, location.href).origin : "");
       if (cand) {
-        setBindStatus("正在检测公网地址是否可打开…");
+        // 有缓存地址：先画上并锁定，再轻量确认；失败也不自动 restart
+        setPublicOriginOverride(cand);
+        rebuildFromOrigin();
+        setBindStatus("已显示公网码，正在确认连通…请先投屏此码：" + cand, true);
         verifyPhoneOriginAlive(cand).then((alive) => {
           if (alive) {
-            setPublicOriginOverride(cand);
-            rebuildFromOrigin();
-            setBindStatus("已绑定公网 · 学生可用手机流量扫码：" + cand, true);
-          } else {
-            setPublicOriginOverride("");
-            setBindStatus("本地缓存的公网地址已失效，正在重新绑定…");
-            showWaitBox("旧地址已失效，正在重新绑定公网…<br>请稍候再扫");
-            bindPublic({ restart: true });
+            setBindStatus("可扫 · 公网已锁定：" + cand, true);
+            startStableTunnelWatch();
+            return;
           }
+          setBindStatus("当前码连通偏慢，先等 10–20 秒再扫；仍不行再点「绑定公网」：" + cand);
+          // 不清缓存、不自动重建；只拉服务端现成隧道
+          ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 20000 }).then((o) => {
+            if (o && o !== cand && isPublicTunnelHost(originHostname(o))) {
+              applyOrigin(o, "已切换到新公网：");
+              persistOrigin(o);
+            }
+            startStableTunnelWatch();
+          });
         });
       } else {
         bindPublic({ restart: false });
@@ -17749,12 +17790,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const hint = document.getElementById("checkin-fixed-hint");
     const origin = getPublicOriginOverride() || location.origin.replace(/\/$/, "");
     const viaPublic = isPublicTunnelHost(originHostname(origin));
+    const bindMode = getQrBindMode();
     if (hint) {
       hint.textContent = viaPublic
-        ? "固定入口（公网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用"
+        ? "固定入口（公网）· 已锁定投屏 · 学生扫后手输上方 6 位数字"
         : isLanHttpOrigin(origin)
-          ? "固定入口（局域网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用"
-          : "下方会先显示当前码；点「绑定公网/局域网」后地址会换成手机可扫的";
+          ? "固定入口（局域网）· 学生需同一 Wi‑Fi · 扫后手输上方 6 位数字"
+          : "等待手机可达地址…就绪后会锁定二维码，避免中途乱跳";
+    }
+    // 公网模式下若暂时还没有隧道地址，绝不拿 localhost 重绘冲掉已有可扫码
+    if (bindMode === "public" && !isScanSafeUrlForBindMode(url, "public")) {
+      if (host.querySelector("#qr-bind-public") && (qrGraphicPresent(host) || host.querySelector(".qr-wait-box"))) return;
     }
     // 同一地址且已真正画出二维码时不重绘；若只有绑定条没有图形，必须重画
     const link0 = host.querySelector(".qr-link-line");
