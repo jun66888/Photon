@@ -16,6 +16,7 @@ const PORT = Number(process.env.PORT || 3000) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const DEMO_DB_FILE = path.join(ROOT, "gy-demo-db.json");
 const CLASSROOM_FILE = path.join(ROOT, "gy-classroom.json");
+const TUNNEL_FILE = path.join(ROOT, "gy-tunnel-origin.json");
 const ACCESS_FILE = path.join(ROOT, "固定访问地址.txt");
 /** 老师端永久收藏地址（本机环回，永远不变） */
 const TEACHER_BOOKMARK = `http://127.0.0.1:${PORT}/?mode=teacher`;
@@ -81,6 +82,38 @@ function isClassroomLanHost(host) {
   return h.startsWith("192.168.") || h.startsWith("10.") || /^172\.(1[6-9]|2\d|3[0-1])\./.test(h);
 }
 
+function isPublicTunnelHost(host) {
+  const h = String(host || "").toLowerCase();
+  return h.includes("trycloudflare.com") || h.includes("ngrok") || h.includes("loca.lt")
+    || h.includes("cloudflared") || h.endsWith(".ts.net");
+}
+
+/** 学生手机流量可达：公网隧道 https；同 Wi‑Fi：局域网 http */
+function isPhoneReachableOrigin(url) {
+  try {
+    const u = new URL(String(url || ""));
+    const host = u.hostname.toLowerCase();
+    if (isPhoneUnfriendlyIp(host)) return false;
+    if (isPublicTunnelHost(host) && (u.protocol === "https:" || u.protocol === "http:")) return true;
+    if (u.protocol === "http:" && isClassroomLanHost(host)) return true;
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+function loadTunnelOrigin() {
+  try {
+    if (!fs.existsSync(TUNNEL_FILE)) return "";
+    const raw = JSON.parse(fs.readFileSync(TUNNEL_FILE, "utf8"));
+    const o = normalizeOrigin(raw && (raw.origin || raw.tunnel_origin) || "");
+    if (!o) return "";
+    return isPhoneReachableOrigin(o) && isPublicTunnelHost(new URL(o).hostname) ? o : "";
+  } catch (e) {
+    return "";
+  }
+}
+
 function loadClassroomConfig() {
   try {
     if (!fs.existsSync(CLASSROOM_FILE)) return null;
@@ -106,10 +139,10 @@ function saveClassroomConfig(cfg) {
   return payload;
 }
 
-function writeAccessCard(fixedOrigin, warn) {
-  const phone = fixedOrigin || "(尚未绑定：请连教室 Wi-Fi 后双击「绑定课堂扫码地址.bat」一次)";
+function writeAccessCard(phoneOrigin, lanOrigin, warn) {
+  const phone = phoneOrigin || lanOrigin || "(尚未就绪：启动后会自动建立流量扫码隧道)";
   const text = [
-    "光影盟 · 固定访问地址（本机离线，请收藏）",
+    "光影盟 · 固定访问地址（请收藏）",
     "================================================",
     "",
     "【老师端 · 请收藏这一条，永远不变】",
@@ -118,15 +151,18 @@ function writeAccessCard(fixedOrigin, warn) {
     "【学生端（本机浏览器）】",
     `http://127.0.0.1:${PORT}${STUDENT_BOOKMARK_PATH}`,
     "",
-    "【手机扫码 / 学生手机 · 已锁定，不会自动更换】",
+    "【手机扫码 · 可用手机流量】",
     phone,
     phone.startsWith("http") ? `${phone}/?mode=checkin` : "",
     "",
+    lanOrigin ? "【同 Wi‑Fi 备用局域网地址】" : "",
+    lanOrigin || "",
+    "",
     "说明：",
-    "1. 老师只要收藏上面的 127.0.0.1 地址，下次 start.bat 打开后即可继续用。",
-    "2. 手机扫码地址写入 gy-classroom.json 后永久锁定；DHCP 换 IP 也不会自动改。",
-    "3. 若手机突然扫不开：给电脑设静态 IP 为锁定的那个地址，或运行「绑定课堂扫码地址.bat」手动重绑一次。",
-    "4. 不要使用任何临时公网链接。",
+    "1. 老师收藏 127.0.0.1 地址；上课双击「启动环境」，保持窗口开着。",
+    "2. 学生可用手机流量扫「流量扫码」地址（经公网隧道，老师电脑需能上网）。",
+    "3. 隧道地址每次启动可能变化；以签到页二维码下方链接为准。",
+    "4. 若只要局域网、不要隧道：启动前设置 GY_PUBLIC_TUNNEL=0。",
     warn ? "" : "",
     warn ? ("注意：" + warn) : "",
     "",
@@ -251,27 +287,35 @@ function writeOriginHint(opts = {}) {
   });
   const resolved = resolveClassroomOrigin(classroomOrigins, opts);
   const fixed = resolved.fixed_origin;
-  // 老师收藏永远用环回地址；手机扫码才用 fixed_origin
+  const tunnel = loadTunnelOrigin();
+  // 手机流量优先公网隧道；同 Wi‑Fi 可用局域网
+  const phoneOrigin = tunnel || fixed;
+  // 老师收藏永远用环回地址
   const preferred = `http://127.0.0.1:${PORT}`;
-  writeAccessCard(fixed, resolved.warn || "");
+  writeAccessCard(phoneOrigin, fixed, resolved.warn || (tunnel ? "" : "公网隧道尚未就绪：请确认已用 start.sh 启动，且老师电脑能上网。"));
   const payload = {
     port: PORT,
     generated_at: new Date().toISOString(),
     lan: lans,
     origins,
     classroom_mode: true,
-    offline_local: true,
+    offline_local: !tunnel,
+    mobile_data_ok: !!tunnel,
     teacher_bookmark: TEACHER_BOOKMARK,
     student_bookmark: `http://127.0.0.1:${PORT}${STUDENT_BOOKMARK_PATH}`,
     fixed_origin: fixed,
+    tunnel_origin: tunnel,
+    phone_origin: phoneOrigin,
     fixed_locked: !!resolved.locked,
     fixed_reason: resolved.reason,
     fixed_warn: resolved.warn || "",
     preferred,
     teacher: TEACHER_BOOKMARK,
-    checkin: fixed ? `${fixed}/?mode=checkin` : `${preferred}/?mode=checkin`,
+    checkin: phoneOrigin ? `${phoneOrigin}/?mode=checkin` : `${preferred}/?mode=checkin`,
     demo_sync: true,
-    note: "老师收藏 teacher_bookmark（永远不变）。手机扫码用 fixed_origin（锁定后不自动更换）。"
+    note: tunnel
+      ? "手机可用流量扫 tunnel_origin；老师端仍用 127.0.0.1。"
+      : "老师收藏 teacher_bookmark。隧道未就绪时暂用局域网 fixed_origin。"
   };
   try {
     fs.writeFileSync(path.join(ROOT, "gy-public-origin.json"), JSON.stringify(payload, null, 2));
@@ -449,8 +493,8 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         const origin = normalizeOrigin(body.fixed_origin || body.origin || "");
-        if (!origin || !/^http:\/\//i.test(origin)) {
-          sendJson(res, 400, { ok: false, error: "请提供本机局域网地址，例如 http://192.168.1.8:3000（仅 http，不要公网域名）" });
+        if (!origin || !/^https?:\/\//i.test(origin)) {
+          sendJson(res, 400, { ok: false, error: "请提供扫码地址：局域网 http://192.168.x.x:3000，或流量隧道 https://xxx.trycloudflare.com" });
           return;
         }
         let hostName = "";
@@ -462,19 +506,51 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 400, { ok: false, error: "不能锁定 localhost / 云内网地址" });
           return;
         }
-        if (!isClassroomLanHost(hostName)) {
-          sendJson(res, 400, { ok: false, error: "只能锁定教室局域网（192.168.x.x / 10.x.x.x）" });
+        const tunnelOk = isPublicTunnelHost(hostName) && /^https:\/\//i.test(origin);
+        const lanOk = isClassroomLanHost(hostName) && /^http:\/\//i.test(origin);
+        if (!tunnelOk && !lanOk) {
+          sendJson(res, 400, { ok: false, error: "请使用教室局域网，或 Cloudflare/ngrok 等流量隧道地址" });
           return;
         }
-        const cfg = saveClassroomConfig({
-          fixed_origin: origin,
-          locked: body.locked !== false,
-          note: body.note || "教师手动锁定的本机扫码地址（永久，不自动更换）"
-        });
-        sendJson(res, 200, { ok: true, config: cfg, hint: writeOriginHint() });
+        // 隧道地址写入 tunnel 文件，便于二维码立即采用；局域网仍写入 classroom 锁定
+        if (tunnelOk) {
+          try {
+            fs.writeFileSync(TUNNEL_FILE, JSON.stringify({
+              origin,
+              updated_at: new Date().toISOString(),
+              port: PORT,
+              provider: "manual",
+              note: "教师手动锁定的流量扫码地址"
+            }, null, 2), "utf8");
+          } catch (e) { /* ignore */ }
+        }
+        const cfg = tunnelOk
+          ? (loadClassroomConfig() || saveClassroomConfig({ fixed_origin: "", locked: false, note: "流量扫码模式" }))
+          : saveClassroomConfig({
+            fixed_origin: origin,
+            locked: body.locked !== false,
+            note: body.note || "教师手动锁定的本机扫码地址（永久，不自动更换）"
+          });
+        if (tunnelOk && body.locked !== false && !cfg.fixed_origin) {
+          /* keep lan lock untouched */
+        }
+        sendJson(res, 200, { ok: true, config: cfg, hint: writeOriginHint(), tunnel: tunnelOk });
       } catch (e) {
         sendJson(res, 400, { ok: false, error: String(e.message || e) });
       }
+      return;
+    }
+  }
+
+  if (u.pathname === "/__gy/tunnel") {
+    if (req.method === "GET") {
+      const tunnel = loadTunnelOrigin();
+      sendJson(res, 200, {
+        ok: !!tunnel,
+        tunnel_origin: tunnel,
+        mobile_data_ok: !!tunnel,
+        hint: writeOriginHint()
+      });
       return;
     }
   }
@@ -592,24 +668,25 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   const fresh = writeOriginHint();
   const fixed = fresh.fixed_origin || "";
+  const tunnel = fresh.tunnel_origin || "";
   console.log("");
   console.log("  ========================================");
-  console.log("  光影盟 · 本机离线课堂（地址永久固定）");
+  console.log("  光影盟 · 课堂服务");
   console.log("  ========================================");
   console.log("  ★ 老师收藏（永远不变）:");
   console.log("    " + TEACHER_BOOKMARK);
-  if (fixed) {
-    console.log("  ★ 手机扫码（已锁定，不自动更换）:");
+  if (tunnel) {
+    console.log("  ★ 学生扫码（手机流量可用）:");
+    console.log("    " + tunnel + "/?mode=checkin");
+  } else if (fixed) {
+    console.log("  ★ 学生扫码（当前为局域网，需同一 Wi‑Fi）:");
     console.log("    " + fixed + "/?mode=checkin");
-    if (fresh.fixed_reason === "first-bind") {
-      console.log("  （首次已自动绑定扫码地址，已写入 gy-classroom.json）");
-    }
-    if (fresh.fixed_warn) {
-      console.log("  ! " + fresh.fixed_warn);
-    }
+    console.log("  ! 流量扫码隧道尚未就绪：请用 start.sh 启动（会自动开隧道）");
   } else {
-    console.log("  ! 尚未绑定手机扫码地址。请连教室 Wi-Fi 后：");
-    console.log("    双击「绑定课堂扫码地址.bat」，或重启本程序自动首次绑定");
+    console.log("  ! 扫码地址尚未就绪。请保持 start.sh 窗口打开，等待隧道建立。");
+  }
+  if (fresh.fixed_warn) {
+    console.log("  ! " + fresh.fixed_warn);
   }
   console.log("  详情已写入: 固定访问地址.txt");
   console.log("  按 Ctrl+C 停止；关闭窗口即下课");

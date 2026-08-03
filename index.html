@@ -4390,7 +4390,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <span class="demo-sync-badge" hidden></span>
         </div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
-        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「关闭签到」前一直有效 · 须与老师端同一服务地址（优先同一 Wi‑Fi 局域网）</p>
+        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「关闭签到」前一直有效 · <strong>可用手机流量</strong>（二维码为 https 公网地址时）；老师电脑需保持联网与「启动环境」窗口开着</p>
         <div class="checkin-qr-layout">
           <div class="qr-stage">
             <div id="checkin-qr-state" class="vote-qr-state off">○ 签到未开启</div>
@@ -13680,10 +13680,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return true;
     }
   }
+  function isPhoneReachableOrigin(url) {
+    try {
+      const u = new URL(String(url || ""), location.href);
+      const host = u.hostname.toLowerCase();
+      if (isPhoneUnfriendlyHost(host)) return false;
+      if (isPublicTunnelHost(host) && (u.protocol === "https:" || u.protocol === "http:")) return true;
+      return isLanHttpOrigin(url);
+    } catch (e) {
+      return false;
+    }
+  }
   function clearBadPublicOriginOverride() {
     const cur = getPublicOriginOverride();
     if (!cur) return;
-    if (isPhoneUnfriendlyOrigin(cur) || isPublicTunnelHost(originHostname(cur)) || !/^http:\/\//i.test(cur)) {
+    // 保留公网隧道（手机流量）与合法局域网；清掉 localhost / 无协议垃圾
+    if (isPhoneReachableOrigin(cur)) return;
+    if (isPhoneUnfriendlyOrigin(cur) || !/^https?:\/\//i.test(cur)) {
       setPublicOriginOverride("");
     }
   }
@@ -13707,12 +13720,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     return path;
   }
-  /** 可设置手机可达地址：localStorage gy_arena_public_origin = http://192.168.x.x:3000（仅本机局域网） */
+  /** 可设置手机可达地址：公网隧道 https://xxx.trycloudflare.com，或局域网 http://192.168.x.x:3000 */
   function publicPageUrl(query) {
     const override = getPublicOriginOverride();
     const origin = (override || location.origin || "").replace(/\/$/, "");
-    // 覆盖 origin 或本机打开时，统一落到站点根，避免 /index 路径
-    const path = (override || isLocalHostname(location.hostname)) ? "/" : publicPagePath();
+    // 覆盖 origin / 本机 / 隧道时，统一落到站点根，避免 /index 路径
+    const host = originHostname(origin);
+    const path = (override || isLocalHostname(location.hostname) || isPublicTunnelHost(host)) ? "/" : publicPagePath();
     const pathPart = path === "/" ? "/" : (path.endsWith("/") ? path : path + "/");
     let search = String(query || "").trim();
     if (search && search.charAt(0) !== "?") search = "?" + search;
@@ -13753,7 +13767,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function pickPhoneOriginFromHint(hint) {
     if (!hint) return "";
-    // 纯本机：只用固定局域网 / 当前教室网卡，绝不使用公网隧道
+    // 优先公网隧道（手机流量），再退回局域网
+    const tunnel = String(hint.tunnel_origin || hint.phone_origin || "").trim().replace(/\/$/, "");
+    if (tunnel && isPhoneReachableOrigin(tunnel) && isPublicTunnelHost(originHostname(tunnel))) return tunnel;
     const fixed = String(hint.fixed_origin || "").trim().replace(/\/$/, "");
     if (fixed && isLanHttpOrigin(fixed)) return fixed;
     const list = Array.isArray(hint.origins) ? hint.origins : [];
@@ -13767,32 +13783,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (lanPreferred.length) return lanPreferred[0];
     const preferred = String(hint.preferred || "").trim().replace(/\/$/, "");
-    if (preferred && isLanHttpOrigin(preferred)) return preferred;
+    if (preferred && isPhoneReachableOrigin(preferred)) return preferred;
     return "";
   }
-  /** 自动选用手机可达地址：仅本机局域网；拒绝公网隧道 */
+  /** 自动选用手机可达地址：公网隧道（流量）优先，其次教室局域网 */
   async function ensurePhoneFriendlyOrigin() {
     clearBadPublicOriginOverride();
     _netHintCache = null;
     let existing = getPublicOriginOverride();
-    // 清掉历史残留的公网隧道 / 不可达地址
-    if (existing && (isPhoneUnfriendlyOrigin(existing) || isPublicTunnelHost(originHostname(existing)) || !/^http:\/\//i.test(existing))) {
+    if (existing && !isPhoneReachableOrigin(existing)) {
       setPublicOriginOverride("");
       existing = "";
     }
     const hint = await fetchNetOriginHint();
-    const fixed = String(hint && hint.fixed_origin || "").trim().replace(/\/$/, "");
-    if (fixed && isLanHttpOrigin(fixed)) {
-      if (existing !== fixed) setPublicOriginOverride(fixed);
-      return fixed;
-    }
     const picked = pickPhoneOriginFromHint(hint);
-    if (picked && isLanHttpOrigin(picked)) {
-      setPublicOriginOverride(picked);
+    if (picked) {
+      // 隧道地址优先覆盖旧局域网锁定，保证流量可扫
+      if (existing !== picked) setPublicOriginOverride(picked);
       return picked;
     }
-    if (existing && isLanHttpOrigin(existing)) return existing;
-    // 老师已用局域网 IP 打开页面时，直接用当前页
+    if (existing && isPhoneReachableOrigin(existing)) return existing;
     if (isLanHttpOrigin(location.origin)) return location.origin.replace(/\/$/, "");
     return "";
   }
@@ -13907,17 +13917,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const overrideNow = getPublicOriginOverride();
     pubBar.innerHTML = `
       <div class="qr-public-hint ok" style="margin-bottom:.4rem">老师收藏（永远不变）：<strong>http://127.0.0.1:3000/?mode=teacher</strong></div>
-      <label>手机扫码地址（已永久锁定；只有点「重新绑定」才会更换）</label>
+      <label>学生扫码地址（优先 https 公网隧道 = 手机流量可扫；也可填局域网）</label>
       <div class="qr-public-row">
-        <input type="url" id="qr-public-origin-input" placeholder="例如 http://192.168.1.8:3000" value="${esc(overrideNow || (localNow ? "" : location.origin))}" />
-        <button type="button" class="primary" id="qr-public-origin-save">永久锁定</button>
-        <button type="button" id="qr-public-origin-rebind">重新绑定当前网卡</button>
+        <input type="url" id="qr-public-origin-input" placeholder="例如 https://xxxx.trycloudflare.com 或 http://192.168.1.8:3000" value="${esc(overrideNow || (localNow ? "" : location.origin))}" />
+        <button type="button" class="primary" id="qr-public-origin-save">应用地址</button>
+        <button type="button" id="qr-public-origin-refresh">刷新流量地址</button>
+        <button type="button" id="qr-public-origin-rebind">重绑局域网</button>
         <button type="button" id="qr-download-png">下载二维码图</button>
       </div>
       <div class="qr-public-hint ${localNow ? "" : "ok"}" id="qr-public-origin-hint">${
         localNow
-          ? "正在读取已锁定的局域网扫码地址…"
-          : "扫码地址锁定后不会自动更换；老师端请始终用 127.0.0.1:3000"
+          ? "正在获取流量扫码地址（启动环境后约十几秒）…"
+          : "https 开头通常可用手机流量；请保持启动环境窗口开着，老师电脑需联网"
       }</div>`;
     host.appendChild(pubBar);
 
@@ -13953,8 +13964,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const warn = document.createElement("div");
       warn.className = "demo-qr-warn";
       warn.textContent = demoSyncEnabled
-        ? "DEMO 跨设备同步已开启：手机签到会实时出现在老师端签到列表与抽人池（本机局域网，无需外网）。"
-        : "DEMO 未连上同步服务。请用本机 start.bat / npm start 打开老师端与扫码页（同一局域网）。";
+        ? "跨设备同步已开启：手机签到会实时出现在老师端（流量隧道或同一局域网均可）。"
+        : "未连上同步服务。请用本机「启动环境」/ start.sh 打开老师端与扫码页。";
       host.appendChild(warn);
     }
 
@@ -13970,9 +13981,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const bad = isPhoneUnfriendlyOrigin(currentUrl) || isLocalOrigin(currentUrl);
       if (!hintEl) return;
       hintEl.className = "qr-public-hint " + (bad ? "" : "ok");
-      hintEl.textContent = bad
-        ? "当前地址手机扫不开（localhost）。请填同一 Wi‑Fi 的 http://192.168.x.x:3000，再点「锁定并应用」。"
-        : "已指向本机局域网。无外网也可签到；请保持 start.bat 窗口打开。";
+      const hostName = originHostname(currentUrl);
+      if (bad) {
+        hintEl.textContent = "当前仍是本机地址，手机扫不开。请等流量隧道就绪后点「刷新流量地址」，或手动填 https://xxx.trycloudflare.com。";
+      } else if (isPublicTunnelHost(hostName)) {
+        hintEl.textContent = "已指向公网隧道 · 学生可用手机流量扫码（老师电脑需保持联网与启动窗口）。";
+      } else {
+        hintEl.textContent = "当前为局域网地址 · 需同一 Wi‑Fi。要用流量请点「刷新流量地址」。";
+      }
     };
     const paint = (px) => paintQrInto(canvasHost, currentUrl, px).then((ok) => {
       fail.style.display = ok ? "none" : "block";
@@ -13994,25 +14010,49 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       paint(size);
     };
     paint(size);
-    // 自动换成手机可达地址，避免扫到 localhost / 云内网 / 过期隧道
+    // 自动换成手机可达地址（流量隧道优先）
     ensurePhoneFriendlyOrigin().then((origin) => {
       if (!origin) return;
-      const urlOk = !isPhoneUnfriendlyOrigin(currentUrl) && !isLocalOrigin(currentUrl);
-      if (urlOk && sameOriginUrl(currentUrl, origin)) return;
+      const urlOk = isPhoneReachableOrigin(currentUrl) && !isLocalOrigin(currentUrl);
+      if (urlOk && sameOriginUrl(currentUrl, origin)) {
+        syncHint();
+        return;
+      }
       rebuildFromOrigin();
-      if (hintEl && !isPhoneUnfriendlyOrigin(currentUrl)) {
-        hintEl.textContent = "已自动改用手机可达地址：" + origin;
+      if (hintEl && isPhoneReachableOrigin(currentUrl)) {
+        const viaTunnel = isPublicTunnelHost(originHostname(origin));
+        hintEl.className = "qr-public-hint ok";
+        hintEl.textContent = (viaTunnel ? "已自动改用流量扫码地址：" : "已自动改用局域网扫码地址：") + origin;
       }
     }).catch(() => {});
 
+    // 隧道往往晚几秒才就绪：轮询一会儿
+    let tunnelPoll = 0;
+    const tunnelTimer = setInterval(() => {
+      tunnelPoll += 1;
+      if (tunnelPoll > 24) { clearInterval(tunnelTimer); return; }
+      if (isPublicTunnelHost(originHostname(currentUrl))) { clearInterval(tunnelTimer); return; }
+      _netHintCache = null;
+      ensurePhoneFriendlyOrigin().then((origin) => {
+        if (origin && isPublicTunnelHost(originHostname(origin))) {
+          rebuildFromOrigin();
+          clearInterval(tunnelTimer);
+          if (hintEl) {
+            hintEl.className = "qr-public-hint ok";
+            hintEl.textContent = "流量隧道已就绪：" + origin;
+          }
+        }
+      }).catch(() => {});
+    }, 2500);
+
     pubBar.querySelector("#qr-public-origin-save")?.addEventListener("click", () => {
       const v = String(input?.value || "").trim().replace(/\/$/, "");
-      if (!v || !/^http:\/\//i.test(v)) {
-        alert("请填写本机局域网地址，例如 http://192.168.1.8:3000");
+      if (!v || !/^https?:\/\//i.test(v)) {
+        alert("请填写扫码地址：\n· 流量隧道 https://xxxx.trycloudflare.com\n· 或局域网 http://192.168.1.8:3000");
         return;
       }
-      if (!isLanHttpOrigin(v)) {
-        alert("只能使用教室局域网地址（192.168.x.x / 10.x.x.x）");
+      if (!isPhoneReachableOrigin(v)) {
+        alert("地址手机不可达。请使用公网隧道 https 地址，或教室局域网 192.168/10。");
         return;
       }
       setPublicOriginOverride(v);
@@ -14026,35 +14066,57 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         if (hintEl) {
           hintEl.className = "qr-public-hint " + (data && data.ok ? "ok" : "");
           hintEl.textContent = data && data.ok
-            ? "已永久锁定扫码地址：" + v + "（不会自动更换）"
-            : ("锁定失败：" + (data && data.error || "请确认 start.bat 已运行"));
+            ? ("已应用扫码地址：" + v + (isPublicTunnelHost(originHostname(v)) ? "（手机流量可扫）" : "（需同一 Wi‑Fi）"))
+            : ("应用失败：" + (data && data.error || "请确认已用启动环境打开"));
         }
       }).catch(() => {
-        if (hintEl) hintEl.textContent = "已应用到二维码；写入本机锁定失败（请用 start.bat 启动）";
+        if (hintEl) hintEl.textContent = "已应用到二维码；写入服务失败（请用「启动环境」打开）";
+      });
+    });
+    pubBar.querySelector("#qr-public-origin-refresh")?.addEventListener("click", () => {
+      if (hintEl) hintEl.textContent = "正在刷新流量扫码地址…";
+      _netHintCache = null;
+      setPublicOriginOverride("");
+      ensurePhoneFriendlyOrigin().then((origin) => {
+        if (input) input.value = origin || "";
+        rebuildFromOrigin();
+        if (hintEl) {
+          if (origin && isPublicTunnelHost(originHostname(origin))) {
+            hintEl.className = "qr-public-hint ok";
+            hintEl.textContent = "已刷新流量地址：" + origin;
+          } else if (origin) {
+            hintEl.className = "qr-public-hint";
+            hintEl.textContent = "隧道尚未就绪，暂用：" + origin + "（请确认启动环境已开、电脑能上网，稍后再点刷新）";
+          } else {
+            hintEl.textContent = "尚未拿到扫码地址。请重新双击「光影盟-启动环境」。";
+          }
+        }
+      }).catch(() => {
+        if (hintEl) hintEl.textContent = "刷新失败：请确认启动环境窗口还开着";
       });
     });
     pubBar.querySelector("#qr-public-origin-rebind")?.addEventListener("click", () => {
-      if (!confirm("确认用「当前网卡」重新绑定扫码地址？\n（老师端收藏地址 http://127.0.0.1:3000 不会变）")) return;
+      if (!confirm("确认用「当前网卡」重新绑定局域网扫码地址？\n（老师端收藏地址 http://127.0.0.1:3000 不会变）\n流量隧道仍优先于局域网。")) return;
       fetch("/__gy/classroom", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rebind: true })
       }).then((r) => r.json()).then((data) => {
         _netHintCache = null;
-        const next = data && data.hint && data.hint.fixed_origin;
+        const next = (data && data.hint && (data.hint.tunnel_origin || data.hint.phone_origin || data.hint.fixed_origin)) || "";
         if (data && data.ok && next) {
           setPublicOriginOverride(next);
           if (input) input.value = next;
           rebuildFromOrigin();
           if (hintEl) {
             hintEl.className = "qr-public-hint ok";
-            hintEl.textContent = "已重新绑定并永久锁定：" + next;
+            hintEl.textContent = "已重新绑定：" + next;
           }
         } else if (hintEl) {
-          hintEl.textContent = "重绑失败：" + (data && data.error || "请先连教室 Wi-Fi");
+          hintEl.textContent = "重绑失败：" + (data && data.error || "请先连网并保持启动环境开着");
         }
       }).catch(() => {
-        if (hintEl) hintEl.textContent = "重绑失败：请确认 start.bat 已运行";
+        if (hintEl) hintEl.textContent = "重绑失败：请确认「启动环境」已运行";
       });
     });
     pubBar.querySelector("#qr-download-png")?.addEventListener("click", () => {
@@ -16603,13 +16665,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   async function init() {
     try {
-      // 清掉历史公网隧道覆盖，避免二维码指向外网
-      try {
-        const old = getPublicOriginOverride();
-        if (old && (isPublicTunnelHost(originHostname(old)) || !/^http:\/\//i.test(old))) {
-          setPublicOriginOverride("");
-        }
-      } catch (e) { /* ignore */ }
+      // 只清掉手机不可达的旧地址；保留流量隧道 / 局域网
+      try { clearBadPublicOriginOverride(); } catch (e) { /* ignore */ }
       const { mode } = getMode();
       const m = ["teacher","student","checkin","memories"].includes(mode) ? mode : "teacher";
       showScreen(m);
