@@ -2503,14 +2503,53 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   .vote-race-shell { grid-template-columns: 1fr; }
   .vote-qr-dock { position: static; min-width: 0; }
 }
+.checkin-code-banner {
+  display: flex; flex-direction: column; align-items: center; gap: .35rem;
+  margin: .35rem 0 .85rem; padding: .85rem 1rem;
+  border-radius: .75rem;
+  background: linear-gradient(180deg, rgba(255,227,154,.16), rgba(0,0,0,.2));
+  border: 1px solid rgba(240,193,75,.4);
+  text-align: center;
+}
+.checkin-code-banner .ccb-lab {
+  font-size: .85rem; color: var(--ink-soft); letter-spacing: .08em;
+}
+.checkin-code-banner .ccb-code {
+  font-family: var(--font-num);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 900;
+  letter-spacing: .28em;
+  color: #1a1205;
+  background: #ffe39a;
+  padding: .2rem .7rem .2rem .95rem;
+  border-radius: .5rem;
+  line-height: 1.15;
+}
+.checkin-code-banner .ccb-meta {
+  font-size: .8rem; color: var(--ink-soft);
+  display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center; align-items: center;
+}
 .checkin-qr-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 48%) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.2rem;
   align-items: start;
 }
+.checkin-lists-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.checkin-fixed-pane {
+  border: 1px solid rgba(157,255,192,.28);
+  border-radius: .75rem;
+  padding: .55rem .45rem .35rem;
+  background: rgba(20, 40, 32, .35);
+}
 @media (max-width: 860px) {
-  .checkin-qr-layout { grid-template-columns: 1fr; }
+  .checkin-qr-layout,
+  .checkin-lists-row { grid-template-columns: 1fr; }
 }
 .name-chip {
   display: inline-block; margin: .2rem; padding: .3rem .55rem;
@@ -4399,7 +4438,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <button type="button" id="btn-checkin-open" class="primary" data-action="gen-checkin-code">开启签到</button>
             <button type="button" id="btn-checkin-close" data-action="end-checkin" disabled>关闭签到</button>
           </div>
-          <button type="button" id="btn-checkin-refresh" data-action="refresh-checkin-code" disabled>刷新二维码</button>
+          <button type="button" id="btn-checkin-refresh" data-action="refresh-checkin-code" disabled>刷新签到码</button>
           <button type="button" data-action="toggle-session" id="btn-checkin-session">下午签到</button>
         </div>
       </div>
@@ -4409,18 +4448,31 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <span class="demo-sync-badge" hidden></span>
         </div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
-        <p class="muted" style="margin:.55rem 0 .75rem">请学生用<strong>微信扫一扫</strong> · 码在「关闭签到」前一直有效 · <strong>可用手机流量</strong>（二维码为 https 公网地址时）；老师电脑需保持联网与「启动环境」窗口开着</p>
+        <p class="muted" style="margin:.55rem 0 .75rem">推荐：投屏<strong>固定入口码</strong>（长期不变）→ 学生扫后输入当日 6 位签到码。也可扫下方「本场直达码」。绑定方式可选公网（流量）或局域网。</p>
+        <div class="checkin-code-banner" id="checkin-code-banner">
+          <div class="ccb-lab">当日签到码（手输用）</div>
+          <div class="ccb-code" id="checkin-code-text">------</div>
+          <div class="ccb-meta"><span id="checkin-qr-state" class="vote-qr-state off">○ 签到未开启</span> · <span id="checkin-countdown">未开启</span></div>
+        </div>
         <div class="checkin-qr-layout">
+          <div class="qr-stage checkin-fixed-pane">
+            <div class="course-section-title" style="margin:0 0 .35rem">固定入口码 · 推荐</div>
+            <div class="muted" style="margin-bottom:.35rem" id="checkin-fixed-hint">不含签到码，可打印/投屏长期使用；学生扫后手输上方 6 位数字</div>
+            <div class="qr-box" id="checkin-fixed-qr"></div>
+          </div>
           <div class="qr-stage">
-            <div id="checkin-qr-state" class="vote-qr-state off">○ 签到未开启</div>
-            <div class="muted" style="margin-bottom:.35rem" id="checkin-qr-hint">先点「开启签到」，再让学生扫下方二维码；扫不开可手输 6 位码</div>
-            <div class="muted">签到码 <span id="checkin-code-text">------</span> · <span id="checkin-countdown">未开启</span></div>
+            <div class="course-section-title" style="margin:0 0 .35rem">本场直达码</div>
+            <div class="muted" style="margin-bottom:.35rem" id="checkin-qr-hint">开启签到后生成；扫开直接进入本场（码内含当日签到码）</div>
             <div class="qr-box" id="checkin-qr"></div>
           </div>
+        </div>
+        <div class="checkin-lists-row">
           <div>
             <h4 class="course-section-title" style="color:var(--ok)">已签到 · 金光修炼</h4>
             <div id="checked-list"></div>
-            <h4 class="course-section-title" style="color:var(--danger);margin-top:.9rem">未签到</h4>
+          </div>
+          <div>
+            <h4 class="course-section-title" style="color:var(--danger)">未签到</h4>
             <div id="unchecked-list"></div>
           </div>
         </div>
@@ -14367,12 +14419,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   async function generateCheckinCode() {
     clearBadPublicOriginOverride();
-    try {
-      const old = getPublicOriginOverride();
-      if (old && !isPublicTunnelHost(originHostname(old))) setPublicOriginOverride("");
-    } catch (e) { /* ignore */ }
-    // 开启时尽量等到隧道；不等到也不要用局域网冒充
-    await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 25000 });
+    const mode = getQrBindMode();
+    if (mode === "public") {
+      try {
+        const old = getPublicOriginOverride();
+        if (old && !isPublicTunnelHost(originHostname(old))) setPublicOriginOverride("");
+      } catch (e) { /* ignore */ }
+      await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 20000 });
+    } else {
+      await ensurePhoneFriendlyOrigin({ preferTunnel: false, waitMs: 0 });
+    }
     await updatePaths({
       "config/checkin_code": randCode(),
       "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS,
@@ -14387,7 +14443,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     clearBadPublicOriginOverride();
-    await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 15000 });
+    const mode = getQrBindMode();
+    await ensurePhoneFriendlyOrigin({ preferTunnel: mode === "public", waitMs: mode === "public" ? 12000 : 0 });
     await updatePaths({
       "config/checkin_code": randCode(),
       "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS
@@ -14438,32 +14495,61 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     ).join("") || '<span class="muted">全员已签（或尚无登记学员）</span>';
     const code = state.config?.checkin_code || "------";
     const codeEl = document.getElementById("checkin-code-text");
-    if (codeEl) {
-      codeEl.textContent = code;
-      codeEl.style.cssText = "font-size:1.8rem;font-weight:900;letter-spacing:.2em;color:#1a1205;background:#ffe39a;padding:.15rem .45rem;border-radius:6px";
-    }
+    if (codeEl) codeEl.textContent = code;
     document.getElementById("checkin-countdown").textContent = active
-      ? "扫码签到中 · 扫不开可让学生手输上方6位码"
-      : "未开启";
+      ? "进行中 · 学生可扫固定入口码后手输此数字"
+      : "未开启 · 仍可先投屏固定入口码";
     updateDemoSyncBadge();
-    const qrHost = document.getElementById("checkin-qr");
-    if (active && code !== "------") {
+
+    const mode = getQrBindMode();
+    if (mode === "public") {
       try {
         const old = getPublicOriginOverride();
         if (old && !isPublicTunnelHost(originHostname(old))) setPublicOriginOverride("");
       } catch (e) { /* ignore */ }
-      ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 0 }).finally(() => {
-        // 无隧道时先用本机占位 URL，renderQr 内部会等待 https 再重绘
+    }
+
+    // 固定入口码：始终渲染（绑定 UI 只出现在这里）；刷新签到码不会改它的内容结构
+    ensurePhoneFriendlyOrigin({ preferTunnel: mode === "public", waitMs: 0 }).finally(() => {
+      renderFixedCheckinQr();
+      const qrHost = document.getElementById("checkin-qr");
+      if (!qrHost) return;
+      if (active && code !== "------") {
         const origin = getPublicOriginOverride();
         const q = `?mode=checkin&code=${code}`;
-        const url = (origin && isPublicTunnelHost(originHostname(origin)))
-          ? publicPageUrl(q)
-          : `${location.origin.replace(/\/$/, "")}/${q}`;
-        renderQr(qrHost, url, "checkin-qr");
-      });
-    } else if (qrHost) {
-      qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333;text-align:center">点击上方「开启签到」生成二维码</div>';
-    }
+        const url = origin ? publicPageUrl(q) : `${location.origin.replace(/\/$/, "")}/${q}`;
+        // 本场直达码：只画图，不再重复绑定条
+        paintBareCheckinQr(qrHost, url, "checkin-qr");
+      } else {
+        qrHost.innerHTML = '<div class="muted" style="padding:2rem;color:#333;text-align:center;line-height:1.5">开启签到后生成本场直达码<br><span style="opacity:.8">也可只用左侧固定入口 + 手输签到码</span></div>';
+      }
+    });
+  }
+
+  let _bareQrUrlPainted = "";
+  function paintBareCheckinQr(host, url, key) {
+    if (!host) return;
+    const link0 = host.querySelector(".qr-link-line");
+    if (_bareQrUrlPainted === url && link0 && host.querySelector("canvas, img")) return;
+    _bareQrUrlPainted = url;
+    const size = getQrSize(key);
+    host.classList.add("qr-stage");
+    host.innerHTML = "";
+    const frame = document.createElement("div");
+    frame.className = "qr-resizable";
+    frame.style.width = size + "px";
+    const canvasHost = document.createElement("div");
+    canvasHost.className = "qr-canvas-host";
+    frame.appendChild(canvasHost);
+    host.appendChild(frame);
+    const link = document.createElement("a");
+    link.className = "qr-link-line";
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = url;
+    host.appendChild(link);
+    paintQrInto(canvasHost, url, size);
   }
 
   function peakWorkTitle(p) {
@@ -16131,6 +16217,33 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     document.getElementById("ci-who").onclick = () => showWhoList(code);
   }
 
+  function fixedCheckinEntryUrl() {
+    // 固定入口：不含当日签到码，二维码可长期投屏/打印
+    return publicPageUrl("?mode=checkin&entry=1");
+  }
+
+  let _fixedQrUrlPainted = "";
+  function renderFixedCheckinQr() {
+    const host = document.getElementById("checkin-fixed-qr");
+    if (!host) return;
+    const url = fixedCheckinEntryUrl();
+    const hint = document.getElementById("checkin-fixed-hint");
+    const origin = getPublicOriginOverride() || location.origin.replace(/\/$/, "");
+    const viaPublic = isPublicTunnelHost(originHostname(origin));
+    if (hint) {
+      hint.textContent = viaPublic
+        ? "固定入口（公网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用"
+        : isLanHttpOrigin(origin)
+          ? "固定入口（局域网）· 不含签到码 · 学生扫后手输上方 6 位数字 · 可长期使用"
+          : "请先点「绑定公网」或「绑定局域网」，固定入口才会指向手机可达地址";
+    }
+    // 同一地址且已有完整绑定条/画布时不重绘，避免名单刷新时闪烁
+    const link0 = host.querySelector(".qr-link-line");
+    if (_fixedQrUrlPainted === url && link0 && host.querySelector("#qr-bind-public")) return;
+    _fixedQrUrlPainted = url;
+    renderQr(host, url, "checkin-fixed-qr");
+  }
+
   function goCheckinWithCode(raw) {
     const c = String(raw || "").trim();
     if (!/^\d{6}$/.test(c)) {
@@ -16144,19 +16257,23 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderCheckinManualEntry(extraMsg) {
     const body = document.getElementById("checkin-body");
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = "扫码失败时，可手输老师投屏上的 6 位签到码";
+    if (hint) hint.textContent = "固定入口 · 输入老师投屏上的 6 位签到码";
     body.innerHTML = `
       <div style="text-align:center;padding:.6rem" class="stack">
-        <div style="font-size:2.2rem">⌨️</div>
-        <p>${extraMsg || "请扫描老师投屏二维码，或手输 6 位签到码"}</p>
-        <input id="ci-manual-code" inputmode="numeric" maxlength="6" placeholder="6位签到码"
-          style="text-align:center;font-size:1.6rem;letter-spacing:.25em;padding:.7rem;width:100%;max-width:260px;margin:0 auto;display:block" />
-        <button type="button" class="primary ci-big" id="ci-manual-go">进入签到</button>
-        <p class="muted">手机浏览器打开本页后，输入投屏上的黄色大号数字即可</p>
+        <div style="font-family:var(--font-brush);font-size:1.85rem;color:var(--seal);margin:0">课堂签到入口</div>
+        <p style="margin:0;line-height:1.5">${extraMsg || "请输入老师投屏上的 <b>6 位签到码</b>"}</p>
+        <input id="ci-manual-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6位签到码" autocomplete="one-time-code"
+          style="text-align:center;font-size:1.85rem;letter-spacing:.28em;padding:.85rem;width:100%;max-width:280px;margin:0 auto;display:block;border-radius:.55rem;border:2px solid rgba(240,193,75,.55);background:#141a28;color:#ffe39a" />
+        <button type="button" class="primary ci-big" id="ci-manual-go">确认进入</button>
+        <p class="muted" style="margin:0;line-height:1.45">黄色大号数字在老师投屏顶部<br>签到开启期间有效 · 每人一次</p>
       </div>`;
     const input = document.getElementById("ci-manual-code");
     const go = () => goCheckinWithCode(input && input.value);
     document.getElementById("ci-manual-go").onclick = go;
+    input?.addEventListener("input", () => {
+      if (input) input.value = String(input.value || "").replace(/\D/g, "").slice(0, 6);
+      if (input && input.value.length === 6) go();
+    });
     input?.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
     setTimeout(() => input?.focus(), 50);
   }
@@ -16167,15 +16284,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const body = document.getElementById("checkin-body");
     const sessionLabel = checkinSessionLabel();
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = `${sessionLabel}签到 · 微信扫码 · 每次扫码仅一次`;
+    if (hint) hint.textContent = `${sessionLabel}签到 · 输入签到码或扫直达码 · 每人一次`;
 
     if (!code) {
-      renderCheckinManualEntry("请扫描老师投屏上的签到二维码；扫不开可手输 6 位码");
+      renderCheckinManualEntry("已进入固定签到入口，请输入老师投屏上的 <b>6 位签到码</b>");
       return;
     }
 
     if (!codeOk(code)) {
-      renderCheckinManualEntry("签到码无效或已结束，请向老师确认后重新输入 6 位码");
+      renderCheckinManualEntry("签到码无效或本场未开启，请向老师确认黄色大号数字后重新输入");
       return;
     }
 
