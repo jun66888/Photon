@@ -5438,7 +5438,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   let iceTimer = null;
   let iceBusy = false;
   let iceState = {};
-  /** ice=需名册/签到池；open=无人登录签到，纯投屏暖场 */
+  /** ice / open 均可无签到开玩；抽人游戏无名单时用「座位号」池 */
+  const ICE_SEAT_COUNT_KEY = "gy_arena_ice_seat_count";
   // 破冰：前半对抗有输赢（可发小奖品）→ 后半全员一起参与
   const ICE_MODE_ORDER_ICE = ["buzz", "duel", "spy", "sync", "flower", "dare", "intro"];
   // 暖场：前半有胜负 → 后半全班一起做
@@ -10584,10 +10585,34 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function getCheckedInDisciples() {
     return sortDisciples(getDisciplesArray().filter(discipleCheckedIn), "name");
   }
+  function getIceSeatCount() {
+    const n = Number(localStorage.getItem(ICE_SEAT_COUNT_KEY) || 30);
+    if (!Number.isFinite(n)) return 30;
+    return Math.max(3, Math.min(80, Math.floor(n)));
+  }
+  function setIceSeatCount(n) {
+    const v = Math.max(3, Math.min(80, Math.floor(Number(n) || 30)));
+    localStorage.setItem(ICE_SEAT_COUNT_KEY, String(v));
+    return v;
+  }
+  /** 破冰抽人池：已签到 → 名册 → 座位号（无需签到也能玩） */
   function getIcePool() {
     const checked = getCheckedInDisciples();
-    if (checked.length) return checked;
-    return sortDisciples(getDisciplesArray(), "name");
+    if (checked.length) return checked.map((d) => ({ ...d, _iceSource: "checkin" }));
+    const all = sortDisciples(getDisciplesArray(), "name");
+    if (all.length) return all.map((d) => ({ ...d, _iceSource: "roster" }));
+    const n = getIceSeatCount();
+    return Array.from({ length: n }, (_, i) => ({
+      id: `seat-${i + 1}`,
+      name: `座位${i + 1}`,
+      _iceSource: "seat"
+    }));
+  }
+  function icePoolSourceLabel(pool) {
+    const src = pool && pool[0] && pool[0]._iceSource;
+    if (src === "checkin") return `已签到 ${pool.length} 人`;
+    if (src === "roster") return `名册 ${pool.length} 人（未签到也可抽）`;
+    return `座位号 1–${pool.length}（无需签到）`;
   }
   function clearIceTimer() {
     if (iceTimer) { clearInterval(iceTimer); iceTimer = null; }
@@ -10622,13 +10647,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (title) {
       title.textContent = open ? "暖场投放 · 无人签到也能玩"
-        : (iceLike ? "破冰互动 · 先对抗后一起玩" : "课堂抽人 · 答题加分");
+        : (iceLike ? "破冰互动 · 无需签到也能玩" : "课堂抽人 · 答题加分");
     }
     if (sub) {
       sub.textContent = open
         ? "前半有输赢（炸弹/比划/限时）· 后半全班一起（举手/左右/坐席/接龙）"
         : (iceLike
-          ? "前半对抗领小奖（抢答/对决/卧底/默契）· 后半一起玩（传花/真心话/介绍）"
+          ? "不强制签到 · 有名单抽人，无名单用座位号 · 前半对抗领小奖，后半一起玩"
           : "已签到弟子入池 · 大转轮 / 水果机 / 蛇盘随机抽取 · 答对给分");
     }
     if (actions) {
@@ -10777,16 +10802,40 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     else renderIceFlowerStage();
   }
 
+  function renderIceSeatCountRow(pool) {
+    if (!pool.length || pool[0]._iceSource !== "seat") return "";
+    return `<div class="ice-stage-row" style="margin-top:.55rem">
+      <label class="tool-inline"><span>本班人数</span>
+        <input id="ice-seat-count" type="number" min="3" max="80" value="${getIceSeatCount()}" style="width:4.5rem" />
+      </label>
+      <button type="button" id="ice-seat-apply">应用座位号</button>
+    </div>`;
+  }
+  function bindIceSeatCountControls() {
+    const btn = document.getElementById("ice-seat-apply");
+    const input = document.getElementById("ice-seat-count");
+    if (!btn || !input) return;
+    btn.onclick = () => {
+      setIceSeatCount(input.value);
+      iceState = {};
+      iceBusy = false;
+      clearIceTimer();
+      renderIceStage();
+      showVoteToast(`已用座位号 1–${getIceSeatCount()}（无需签到）`);
+    };
+  }
   function renderIceFlowerStage() {
     const stage = document.getElementById("game-stage");
     const pool = getIcePool();
     const name = iceState.winner || (iceBusy ? (iceState.flash || "…") : "准备传花");
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">击鼓传花</div>
+        <div class="ice-stage-kicker">击鼓传花 · 无需签到</div>
         <div class="ice-stage-big" id="ice-flower-name">${esc(name)}</div>
-        <div class="ice-stage-sub">${pool.length ? `池中 ${pool.length} 人 · ${iceBusy ? "再点「停下」定人" : "点开始后滚动，再点停下"}` : "名册为空 · 请先到设置添加弟子"}</div>
+        <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · ${iceBusy ? "再点「停下」定人" : "点开始后滚动，再点停下"}</div>
+        ${renderIceSeatCountRow(pool)}
       </div>`;
+    bindIceSeatCountControls();
   }
 
   function renderIceBombStage() {
@@ -10826,14 +10875,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function renderIceIntroStage() {
     const stage = document.getElementById("game-stage");
     const st = iceState;
+    const pool = getIcePool();
     stage.innerHTML = `
       <div class="ice-stage-card">
-        <div class="ice-stage-kicker">闪电介绍</div>
+        <div class="ice-stage-kicker">闪电介绍 · 无需签到</div>
         <div class="ice-stage-big">${esc(st.name || "等待抽取")}</div>
         <div class="ice-stage-title">${esc(st.topic || "点开始抽取同学与题目")}</div>
         <div class="ice-stage-timer" id="ice-intro-timer">${st.sec != null ? st.sec : "15"}</div>
-        <div class="ice-stage-sub">坐着限时回答 / 自我介绍 · 到点可换下一位</div>
+        <div class="ice-stage-sub">${st.name ? "坐着限时回答 / 自我介绍 · 到点可换下一位" : icePoolSourceLabel(pool)}</div>
+        ${st.name ? "" : renderIceSeatCountRow(pool)}
       </div>`;
+    if (!st.name) bindIceSeatCountControls();
   }
 
   function renderIceCharadesStage() {
@@ -10862,9 +10914,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">红蓝默契</div>
+          <div class="ice-stage-kicker">红蓝默契 · 无需签到</div>
           <div class="ice-stage-title">测两派默契</div>
-          <div class="ice-stage-sub">出题后红蓝各选 A/B，选一样加分并累计连击</div>
+          <div class="ice-stage-sub">现场分红蓝两队举手选 A/B 即可 · 选一样加分</div>
           <div class="ice-scoreboard"><span class="red">默契 ${score.hit}</span><span class="vs">·</span><span class="blue">分歧 ${score.miss}</span><span class="vs">连击 ${score.streak}</span></div>
         </div>`;
       return;
@@ -11044,13 +11096,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const st = iceState;
     const score = st.score || { a: 0, b: 0 };
     if (!st.left || !st.right) {
+      const pool = getIcePool();
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">双人对决</div>
+          <div class="ice-stage-kicker">双人对决 · 无需签到</div>
           <div class="ice-stage-title">抽两人对战</div>
-          <div class="ice-stage-sub">随机抽取两名同学 · 座位上比拼口才/反应，老师判定胜负</div>
+          <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · 座位上比拼，老师判定胜负</div>
           <div class="ice-scoreboard"><span class="red">甲胜 ${score.a}</span><span class="vs">VS</span><span class="blue">乙胜 ${score.b}</span></div>
+          ${renderIceSeatCountRow(pool)}
         </div>`;
+      bindIceSeatCountControls();
       return;
     }
     stage.innerHTML = `
@@ -11079,9 +11134,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!st.q) {
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">红蓝抢答</div>
+          <div class="ice-stage-kicker">红蓝抢答 · 无需签到</div>
           <div class="ice-stage-title">抢答擂台</div>
-          <div class="ice-stage-sub">出题后红蓝抢答：答对 +1，抢错 −1，比分实时更新</div>
+          <div class="ice-stage-sub">现场分红蓝两队举手抢答即可 · 答对 +1，抢错 −1</div>
           <div class="ice-scoreboard"><span class="red">红 ${score.red}</span><span class="vs">VS</span><span class="blue">蓝 ${score.blue}</span></div>
         </div>`;
       return;
@@ -11110,13 +11165,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const st = iceState;
     const done = st.done || 0;
     if (!st.name) {
+      const pool = getIcePool();
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">真心话冒险</div>
+          <div class="ice-stage-kicker">真心话冒险 · 无需签到</div>
           <div class="ice-stage-title">抽人开整</div>
-          <div class="ice-stage-sub">随机抽人，再抽真心话或大冒险；完成计一次勇气值</div>
+          <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · 抽真心话或大冒险</div>
           <div class="ice-stage-sub">本场已完成 ${done} 次挑战</div>
+          ${renderIceSeatCountRow(pool)}
         </div>`;
+      bindIceSeatCountControls();
       return;
     }
     const kindLabel = st.kind === "truth" ? "真心话" : "大冒险";
@@ -11141,12 +11199,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const stage = document.getElementById("game-stage");
     const st = iceState;
     if (!st.players || !st.players.length) {
+      const pool = getIcePool();
       stage.innerHTML = `
         <div class="ice-stage-card">
-          <div class="ice-stage-kicker">谁是卧底</div>
+          <div class="ice-stage-kicker">谁是卧底 · 无需签到</div>
           <div class="ice-stage-title">发牌开局</div>
-          <div class="ice-stage-sub">至少 3 人 · 点名偷看自己的词 · 轮流描述后投票淘汰 · 揪出卧底即平民胜</div>
+          <div class="ice-stage-sub">${icePoolSourceLabel(pool)} · 点名偷看词语 · 描述后投票淘汰</div>
+          ${renderIceSeatCountRow(pool)}
         </div>`;
+      bindIceSeatCountControls();
       return;
     }
     if (st.phase === "end") {
@@ -11293,7 +11354,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   function iceFlowerToggle() {
     const pool = getIcePool();
-    if (!pool.length) { showVoteToast("名册为空，请先添加弟子或签到"); return; }
+    if (!pool.length) { showVoteToast("人数池为空，请设置本班人数"); return; }
     if (iceBusy) {
       clearIceTimer();
       iceBusy = false;
@@ -11361,7 +11422,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function iceIntroStart() {
     const pool = getIcePool();
-    if (!pool.length) { showVoteToast("名册为空，请先添加弟子或签到"); return; }
+    if (!pool.length) { showVoteToast("人数池为空，请设置本班人数"); return; }
     clearIceTimer();
     const person = pool[Math.floor(Math.random() * pool.length)];
     const topic = pickIce(ICE_INTRO_TOPICS, "intro");
@@ -11451,7 +11512,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function iceDuelStart() {
     const pool = getIcePool();
-    if (pool.length < 2) { showVoteToast("至少需要 2 人才能对决"); return; }
+    if (pool.length < 2) { showVoteToast("至少需要 2 人才能对决（可调本班人数）"); return; }
     clearIceTimer();
     const shuffled = pool.slice().sort(() => Math.random() - 0.5);
     const left = shuffled[0].name;
@@ -11537,7 +11598,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function iceDareStart() {
     const pool = getIcePool();
-    if (!pool.length) { showVoteToast("名册为空，请先添加弟子或签到"); return; }
+    if (!pool.length) { showVoteToast("人数池为空，请设置本班人数"); return; }
     const person = pool[Math.floor(Math.random() * pool.length)];
     const kind = Math.random() < 0.5 ? "truth" : "dare";
     const prompt = kind === "truth" ? pickIce(ICE_DARE_TRUTHS, "truth") : pickIce(ICE_DARE_DARES, "dare");
@@ -11575,7 +11636,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
   function iceSpyStart() {
     const pool = getIcePool();
-    if (pool.length < 3) { showVoteToast("谁是卧底至少需要 3 人"); return; }
+    if (pool.length < 3) { showVoteToast("谁是卧底至少需要 3 人（可调本班人数）"); return; }
     const pair = pickIce(ICE_SPY_PAIRS, "spy");
     const names = pool.slice().sort(() => Math.random() - 0.5).map((d) => d.name);
     // 人数多时增加卧底：>=7 人 2 卧底，否则 1
