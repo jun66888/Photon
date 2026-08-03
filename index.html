@@ -2812,11 +2812,24 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   flex: 0 0 auto;
   min-width: 4.5rem;
 }
+#checkin-screen .ci-rate-stars-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .08rem;
+  min-width: 0;
+}
 #checkin-screen .ci-stars {
   display: flex;
   gap: .15rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+#checkin-screen .ci-rate-deg {
+  font-size: .72rem;
+  color: #8b5a2b;
+  min-height: 1em;
+  line-height: 1.2;
 }
 #checkin-screen .ci-star {
   appearance: none;
@@ -5041,7 +5054,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="teacher-rate-panel" id="teacher-rate-panel" aria-label="学生对老师评分">
           <div class="trp-head">
             <h4 class="trp-title">学生对老师评分</h4>
-            <span class="trp-meta" id="teacher-rate-meta">学生选填 · 五维五星</span>
+            <span class="trp-meta" id="teacher-rate-meta">学生选填 · 讲课/难度/幽默/课堂/综合</span>
           </div>
           <div id="teacher-rate-summary"><div class="trp-empty">暂无评分</div></div>
         </div>
@@ -5986,14 +5999,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     };
   }
 
-  /** 学生对老师评分维度（签到页五星） */
+  /** 学生对老师评分维度（签到页五星，每项 1～5） */
   const TEACHER_RATE_DIMS = [
-    { id: "clear", label: "讲解清晰" },
-    { id: "interact", label: "互动氛围" },
-    { id: "pace", label: "节奏把控" },
-    { id: "patience", label: "耐心辅导" },
-    { id: "overall", label: "整体满意" }
+    { id: "quality", label: "讲课质量", degrees: ["较差", "一般", "还行", "不错", "很好"] },
+    { id: "difficulty", label: "课程难度", degrees: ["太易", "偏易", "适中", "偏难", "太难"] },
+    { id: "humor", label: "幽默程度", degrees: ["寡淡", "偶尔", "还行", "有趣", "爆梗"] },
+    { id: "class", label: "课堂表现", degrees: ["较差", "一般", "还行", "不错", "出色"] },
+    { id: "overall", label: "综合评分", degrees: ["较差", "一般", "还行", "不错", "优秀"] }
   ];
+  const TEACHER_RATE_DEGREE_HINT = "每项点 1～5 星；星下有简短程度说明";
 
   /** 默认课堂：仅红蓝对抗，无预设小组/弟子；重置后回到此状态 */
   function buildSeedArena() {
@@ -19395,40 +19409,53 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const found = findTeacherRating(studentId, discipleId);
     return !!(found.rating && TEACHER_RATE_DIMS.every((dim) => Number(found.rating.scores?.[dim.id]) >= 1));
   }
-  function teacherRateEntryBtnHtml(rated) {
-    if (rated) {
-      return `<button type="button" class="ghost" id="ci-rate-open" style="width:100%" disabled>已给老师打分</button>`;
-    }
-    return `<button type="button" class="ghost" id="ci-rate-open" style="width:100%">给老师打分（选填）</button>`;
+  function teacherRateDegreeText(dim, score) {
+    const n = Math.max(0, Math.min(5, Math.round(Number(score) || 0)));
+    if (!n) return "未选";
+    const list = dim.degrees || [];
+    return list[n - 1] || `${n} 星`;
   }
-  function renderTeacherRateFormHtml(existing) {
+  /** 直接嵌在签到页里的五星评分（选填） */
+  function renderTeacherRateFormHtml(existing, opts = {}) {
+    const inline = !!opts.inline;
     const scores = existing && existing.scores ? existing.scores : {};
     const rows = TEACHER_RATE_DIMS.map((dim) => {
       const val = Math.max(0, Math.min(5, Number(scores[dim.id]) || 0));
-      const stars = [1, 2, 3, 4, 5].map((n) =>
-        `<button type="button" class="ci-star ${n <= val ? "on" : ""}" data-dim="${dim.id}" data-n="${n}" aria-label="${esc(dim.label)} ${n} 星" ${existing ? "disabled" : ""}>★</button>`
-      ).join("");
+      const deg = teacherRateDegreeText(dim, val);
+      const stars = [1, 2, 3, 4, 5].map((n) => {
+        const tip = (dim.degrees && dim.degrees[n - 1]) || `${n}星`;
+        return `<button type="button" class="ci-star ${n <= val ? "on" : ""}" data-dim="${dim.id}" data-n="${n}" title="${esc(tip)}" aria-label="${esc(dim.label)} ${n} 星（${esc(tip)}）" ${existing ? "disabled" : ""}>★</button>`;
+      }).join("");
       return `<div class="ci-rate-row">
         <span class="ci-rate-lab">${esc(dim.label)}</span>
-        <div class="ci-stars" data-dim-row="${dim.id}">${stars}</div>
+        <div class="ci-rate-stars-wrap">
+          <div class="ci-stars" data-dim-row="${dim.id}">${stars}</div>
+          <span class="ci-rate-deg" data-deg-for="${dim.id}">${esc(deg)}</span>
+        </div>
       </div>`;
     }).join("");
     if (existing) {
-      return `<div class="ci-rate-box" id="ci-rate-box">
+      return `<div class="ci-rate-box" id="ci-rate-box" data-inline="${inline ? "1" : "0"}">
         <div class="ci-rate-title">已给老师打分</div>
         <p class="ci-rate-note">本时段已提交 · 谢谢反馈</p>
         ${rows}
         <p class="ci-rate-done">提交成功</p>
-        <button type="button" class="ghost" id="ci-rate-back" style="width:100%;margin-top:.45rem">返回</button>
+        ${inline ? "" : `<button type="button" class="ghost" id="ci-rate-back" style="width:100%;margin-top:.45rem">返回</button>`}
       </div>`;
     }
-    return `<div class="ci-rate-box" id="ci-rate-box">
-      <div class="ci-rate-title">给老师打分</div>
-      <p class="ci-rate-note">选填 · 五个维度各 1～5 星 · 本时段一次</p>
+    return `<div class="ci-rate-box" id="ci-rate-box" data-inline="${inline ? "1" : "0"}">
+      <div class="ci-rate-title">给老师打分（选填）</div>
+      <p class="ci-rate-note">${esc(TEACHER_RATE_DEGREE_HINT)} · 本时段一次</p>
       ${rows}
       <button type="button" class="primary ci-big" id="ci-rate-submit" style="margin-top:.55rem">提交评分</button>
-      <button type="button" class="ghost" id="ci-rate-back" style="width:100%;margin-top:.35rem">暂不评分，返回</button>
+      ${inline ? `<p class="ci-rate-note" style="margin-top:.35rem;text-align:center">可不评，直接关掉页面即可</p>` : `<button type="button" class="ghost" id="ci-rate-back" style="width:100%;margin-top:.35rem">暂不评分，返回</button>`}
     </div>`;
+  }
+  function mountTeacherRateInline({ name, studentId, discipleId, onDone }) {
+    const box = document.getElementById("ci-rate-box");
+    if (!box) return;
+    if (hasTeacherRated(studentId, discipleId)) return;
+    wireTeacherRateForm(name, studentId, discipleId, onDone);
   }
   function openTeacherRateView({ name, studentId, discipleId, onBack }) {
     const body = document.getElementById("checkin-body");
@@ -19436,17 +19463,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (hint) hint.textContent = "给老师打分 · 选填，可随时返回";
     const rated = hasTeacherRated(studentId, discipleId);
     const existing = rated ? findTeacherRating(studentId, discipleId).rating : null;
-    body.innerHTML = `<div class="stack">${renderTeacherRateFormHtml(existing)}</div>`;
+    body.innerHTML = `<div class="stack">${renderTeacherRateFormHtml(existing, { inline: false })}</div>`;
     const back = () => { if (typeof onBack === "function") onBack(); else renderCheckin(); };
     const backBtn = document.getElementById("ci-rate-back");
     if (backBtn) backBtn.onclick = back;
     if (rated) return;
     wireTeacherRateForm(name, studentId, discipleId, back);
-  }
-  function wireTeacherRateOpenButton({ name, studentId, discipleId, onBack }) {
-    const btn = document.getElementById("ci-rate-open");
-    if (!btn || btn.disabled) return;
-    btn.onclick = () => openTeacherRateView({ name, studentId, discipleId, onBack });
   }
   function wireTeacherRateForm(name, studentId, discipleId, onDone) {
     const box = document.getElementById("ci-rate-box");
@@ -19461,6 +19483,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           const n = Number(btn.dataset.n) || 0;
           btn.classList.toggle("on", n <= val);
         });
+        const degEl = box.querySelector(`[data-deg-for="${dim.id}"]`);
+        if (degEl) degEl.textContent = teacherRateDegreeText(dim, val);
       });
     };
     box.querySelectorAll(".ci-star").forEach((btn) => {
@@ -19483,15 +19507,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       }
       submit.disabled = true;
       try {
+        const nm = typeof name === "function" ? name() : name;
         await submitTeacherRating({
-          name,
+          name: nm,
           student_id: studentId,
           disciple_id: discipleId,
           scores: { ...picked }
         });
         alert("已提交对老师的评分，谢谢！");
         if (typeof onDone === "function") onDone();
-        else openTeacherRateView({ name, studentId, discipleId, onBack: onDone });
+        else openTeacherRateView({ name: nm, studentId, discipleId, onBack: onDone });
       } catch (e) {
         alert(e?.message || "提交失败，请重试");
         submit.disabled = false;
@@ -19555,7 +19580,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const sum = summarizeTeacherRatings("session");
     if (meta) meta.textContent = `第 ${day} 天 · ${session} · ${sum.count} 人已评`;
     if (!sum.count) {
-      host.innerHTML = '<div class="trp-empty">学生可在签到按钮下方点「给老师打分」（选填）</div>';
+      host.innerHTML = '<div class="trp-empty">学生在签到页直接给五项打星（选填）后，这里会显示均分</div>';
       return;
     }
     host.innerHTML = TEACHER_RATE_DIMS.map((d) => {
@@ -19565,7 +19590,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <span class="trp-stars" title="${avg.toFixed(2)}">${esc(starChars(avg))} ${avg.toFixed(1)}</span>
       </div>`;
     }).join("") + `<div class="trp-row">
-      <span class="trp-lab">综合均分</span>
+      <span class="trp-lab">五项均分</span>
       <span class="trp-stars">${esc(starChars(sum.overall))} ${sum.overall.toFixed(1)}</span>
     </div>`;
   }
@@ -19580,6 +19605,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       ? `<img class="disciple-avatar lg" src="${profile.avatar}" alt="" style="display:block;margin:.2rem auto .35rem" />`
       : "";
     const rated = hasTeacherRated(student_id, discipleId);
+    const existingRate = rated ? findTeacherRating(student_id, discipleId).rating : null;
     body.innerHTML = `
       <div style="text-align:center" class="stack">
         <div class="success-burst">${already ? "✓" : "✅"}</div>
@@ -19589,14 +19615,14 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ${profile.motto ? `<p style="margin:.2rem 0 0;color:#8b5a2b">「${esc(profile.motto)}」</p>` : ""}
         <p style="margin-top:.5rem;font-size:1.1rem">${already ? "本时段已签到" : "签到成功 · 门派 +2 分"}</p>
         <p class="muted">${at ? fmtTime(at) : ""} · 每次扫码只能签到一次</p>
-        ${teacherRateEntryBtnHtml(rated)}
+        ${renderTeacherRateFormHtml(existingRate, { inline: true })}
         ${discipleId ? `<button type="button" class="ghost" id="ci-edit-profile-after" style="width:100%">完善 / 修改个人信息</button>` : ""}
       </div>`;
-    wireTeacherRateOpenButton({
+    mountTeacherRateInline({
       name,
       studentId: student_id,
       discipleId,
-      onBack: () => renderCheckinSuccess(name, student_id, at, already, discipleId)
+      onDone: () => renderCheckinSuccess(name, student_id, at, already, discipleId)
     });
     const editBtn = document.getElementById("ci-edit-profile-after");
     if (editBtn && discipleId) {
@@ -19693,7 +19719,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         </button>
         ${profileFormHtml(profile, { open: checkinProfilePanelOpen, showSave: !!discipleId })}
         <button type="button" class="primary ci-big" id="ci-do" ${selected ? "" : "disabled"}>签到</button>
-        ${teacherRateEntryBtnHtml(hasTeacherRated(showSid, discipleId))}
+        ${renderTeacherRateFormHtml(
+          hasTeacherRated(showSid, discipleId) ? findTeacherRating(showSid, discipleId).rating : null,
+          { inline: true }
+        )}
         <button type="button" class="ghost" id="ci-who" style="width:100%">不是我？换一个名字</button>
       </div>`;
 
@@ -19754,11 +19783,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         checkinSubmitting = false;
       }
     };
-    wireTeacherRateOpenButton({
+    mountTeacherRateInline({
       name: showName,
       studentId: showSid,
       discipleId,
-      onBack: () => renderCheckinIdentityStep(code, getLocalStudent() || local, me)
+      onDone: () => renderCheckinIdentityStep(code, getLocalStudent() || local, me)
     });
     document.getElementById("ci-who").onclick = () => {
       checkinNameSelected = false;
@@ -19782,7 +19811,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <div class="ci-sid" id="ci-sid-preview">学号将自动生成：<b>${esc(sid)}</b></div>
         ${profileFormHtml(draft, { open: checkinProfilePanelOpen, showSave: false })}
         <button type="button" class="primary ci-big seal" id="ci-confirm">签到确认</button>
-        ${teacherRateEntryBtnHtml(false)}
+        ${renderTeacherRateFormHtml(null, { inline: true })}
         <div style="height:1px;background:rgba(139,90,43,.3);margin:.2rem 0"></div>
         <p class="muted" style="text-align:center">换过手机？从名单找回自己</p>
         <button type="button" id="ci-who">点我的名字</button>
@@ -19795,18 +19824,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     nameInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !checkinProfilePanelOpen) doConfirm();
     });
-    const rateBtn = document.getElementById("ci-rate-open");
-    if (rateBtn) {
-      rateBtn.onclick = () => {
-        const nm = (document.getElementById("ci-name")?.value || "").trim();
-        openTeacherRateView({
-          name: nm,
-          studentId: sid,
-          discipleId: "",
-          onBack: () => renderCheckinFirstForm(code)
-        });
-      };
-    }
+    mountTeacherRateInline({
+      name: () => (document.getElementById("ci-name")?.value || "").trim(),
+      studentId: sid,
+      discipleId: "",
+      onDone: () => renderCheckinFirstForm(code)
+    });
     document.getElementById("ci-who").onclick = () => showWhoList(code);
   }
 
