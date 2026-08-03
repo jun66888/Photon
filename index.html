@@ -19157,14 +19157,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
   async function submitTeacherRating({ name, student_id, disciple_id, scores }) {
     const { key, rating: existed } = findTeacherRating(student_id, disciple_id);
-    if (existed) throw new Error("本时段已评过，无需重复提交");
-    try {
-      if (localStorage.getItem(teacherRateLocalMarkKey(key)) === "1") {
-        throw new Error("本时段已评过，无需重复提交");
-      }
-    } catch (e) {
-      if (e && e.message && e.message.includes("已评过")) throw e;
-    }
+    const already = !!(existed && TEACHER_RATE_DIMS.every((d) => Number(existed.scores?.[d.id]) >= 1));
+    if (already) throw new Error("本时段已评过，无需重复提交");
     const clean = {};
     TEACHER_RATE_DIMS.forEach((d) => {
       clean[d.id] = Math.max(1, Math.min(5, Math.round(Number(scores[d.id]) || 0)));
