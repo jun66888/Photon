@@ -2774,6 +2774,96 @@ body.mode-mobile-clean #checkin-screen { padding-top: .6rem; }
   width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
   border: 1px solid rgba(163, 32, 32, .3);
 }
+#checkin-screen .ci-rate-box {
+  margin-top: .35rem;
+  padding: .85rem .75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 90, 43, .35);
+  background: rgba(255, 248, 231, .78);
+  color: #1a1205;
+  text-align: left;
+}
+#checkin-screen .ci-rate-title {
+  font-family: var(--font-brush);
+  font-size: 1.25rem;
+  color: var(--seal);
+  text-align: center;
+  margin: 0 0 .2rem;
+}
+#checkin-screen .ci-rate-note {
+  text-align: center;
+  font-size: .78rem;
+  color: #7a6248;
+  margin: 0 0 .65rem;
+}
+#checkin-screen .ci-rate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .4rem 0;
+  border-top: 1px dashed rgba(139, 90, 43, .22);
+}
+#checkin-screen .ci-rate-row:first-of-type { border-top: 0; }
+#checkin-screen .ci-rate-lab {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #5a4630;
+  flex: 0 0 auto;
+  min-width: 4.5rem;
+}
+#checkin-screen .ci-stars {
+  display: flex;
+  gap: .15rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+#checkin-screen .ci-star {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #c9b89a;
+  font-size: 1.55rem;
+  line-height: 1;
+  padding: .1rem .12rem;
+  cursor: pointer;
+  min-height: auto;
+}
+#checkin-screen .ci-star.on { color: #e0a100; text-shadow: 0 0 8px rgba(240,193,75,.45); }
+#checkin-screen .ci-star:disabled { cursor: default; opacity: .95; }
+#checkin-screen .ci-rate-done {
+  text-align: center;
+  color: #2a6b45;
+  font-weight: 700;
+  margin: .35rem 0 0;
+}
+.teacher-rate-panel {
+  margin: 1rem 0 .85rem;
+  padding: .85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(240, 193, 75, .35);
+  background: linear-gradient(180deg, rgba(106, 84, 20, .22), rgba(8, 12, 22, .45));
+}
+.teacher-rate-panel .trp-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: .4rem; margin-bottom: .55rem;
+}
+.teacher-rate-panel .trp-title {
+  margin: 0; font-size: 1rem; color: #ffe39a; letter-spacing: .04em;
+}
+.teacher-rate-panel .trp-meta { font-size: .78rem; color: var(--ink-soft); }
+.teacher-rate-panel .trp-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .6rem; padding: .35rem 0;
+  border-top: 1px solid rgba(255,255,255,.06);
+  font-size: .9rem;
+}
+.teacher-rate-panel .trp-row:first-of-type { border-top: 0; }
+.teacher-rate-panel .trp-lab { color: var(--ink-soft); }
+.teacher-rate-panel .trp-stars { color: #ffe39a; letter-spacing: .08em; font-family: var(--font-num); }
+.teacher-rate-panel .trp-empty {
+  color: var(--ink-soft); font-size: .85rem; text-align: center; padding: .4rem 0;
+}
 .disciple-avatar {
   width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
   border: 1px solid rgba(240,193,75,.4);
@@ -4908,6 +4998,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <div class="qr-box" id="checkin-qr"></div>
           </div>
         </div>
+        <div class="teacher-rate-panel" id="teacher-rate-panel" aria-label="学生对老师评分">
+          <div class="trp-head">
+            <h4 class="trp-title">学生对老师评分</h4>
+            <span class="trp-meta" id="teacher-rate-meta">签到后可评 · 五维五星</span>
+          </div>
+          <div id="teacher-rate-summary"><div class="trp-empty">暂无评分</div></div>
+        </div>
         <div class="checkin-lists-head">
           <div class="course-section-title" style="margin:0">签到名单</div>
           <button type="button" class="ghost" data-action="refresh-checkin" title="重新渲染已签/未签名单">刷新名单</button>
@@ -5848,6 +5945,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     };
   }
 
+  /** 学生对老师评分维度（签到页五星） */
+  const TEACHER_RATE_DIMS = [
+    { id: "clear", label: "讲解清晰" },
+    { id: "interact", label: "互动氛围" },
+    { id: "pace", label: "节奏把控" },
+    { id: "patience", label: "耐心辅导" },
+    { id: "overall", label: "整体满意" }
+  ];
+
   /** 默认课堂：仅红蓝对抗，无预设小组/弟子；重置后回到此状态 */
   function buildSeedArena() {
     const bonus_presets = {}; BONUS_PRESETS_SEED.forEach((b) => { bonus_presets[b.id] = b; });
@@ -5857,6 +5963,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       peaks: {},
       disciples: {},
       score_logs: {},
+      teacher_ratings: {},
       bonus_presets,
       tasks
     };
@@ -5879,6 +5986,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       peaks,
       disciples,
       score_logs: {},
+      teacher_ratings: {},
       bonus_presets,
       tasks
     };
@@ -17415,6 +17523,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       wireBackupQrToggle();
       refreshBackupCheckinQr();
     });
+    try { renderTeacherRateSummaryPanel(); } catch (e) { console.warn(e); }
   }
 
   function wireBackupQrToggle() {
@@ -18936,15 +19045,205 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return p;
   }
 
+  function ensureTeacherRatingsStore() {
+    if (!state.teacher_ratings || typeof state.teacher_ratings !== "object") {
+      state.teacher_ratings = {};
+    }
+    return state.teacher_ratings;
+  }
+  function teacherRateSlotKey(studentId, discipleId) {
+    const day = state.config?.day || 1;
+    const session = state.config?.checkin_session || "am";
+    const who = String(studentId || discipleId || "anon").trim() || "anon";
+    return `d${day}_${session}_${who}`;
+  }
+  function findTeacherRating(studentId, discipleId) {
+    const store = ensureTeacherRatingsStore();
+    const key = teacherRateSlotKey(studentId, discipleId);
+    if (store[key]) return { key, rating: store[key] };
+    const sid = String(studentId || "").trim();
+    const did = String(discipleId || "").trim();
+    const hit = Object.entries(store).find(([, r]) => {
+      if (!r || typeof r !== "object") return false;
+      if (Number(r.day) !== Number(state.config?.day || 1)) return false;
+      if (String(r.session || "am") !== String(state.config?.checkin_session || "am")) return false;
+      if (sid && String(r.student_id || "") === sid) return true;
+      if (did && String(r.disciple_id || "") === did) return true;
+      return false;
+    });
+    return hit ? { key: hit[0], rating: hit[1] } : { key, rating: null };
+  }
+  function starChars(score, max = 5) {
+    const n = Math.max(0, Math.min(max, Math.round(Number(score) || 0)));
+    return "★".repeat(n) + "☆".repeat(max - n);
+  }
+  function teacherRateLocalMarkKey(slotKey) {
+    return "gy_arena_trate_" + slotKey;
+  }
+  function renderTeacherRateFormHtml(existing) {
+    const scores = existing && existing.scores ? existing.scores : {};
+    const rows = TEACHER_RATE_DIMS.map((dim) => {
+      const val = Math.max(0, Math.min(5, Number(scores[dim.id]) || 0));
+      const stars = [1, 2, 3, 4, 5].map((n) =>
+        `<button type="button" class="ci-star ${n <= val ? "on" : ""}" data-dim="${dim.id}" data-n="${n}" aria-label="${esc(dim.label)} ${n} 星" ${existing ? "disabled" : ""}>★</button>`
+      ).join("");
+      return `<div class="ci-rate-row">
+        <span class="ci-rate-lab">${esc(dim.label)}</span>
+        <div class="ci-stars" data-dim-row="${dim.id}">${stars}</div>
+      </div>`;
+    }).join("");
+    if (existing) {
+      return `<div class="ci-rate-box" id="ci-rate-box">
+        <div class="ci-rate-title">已给老师打分</div>
+        <p class="ci-rate-note">本时段每位同学可评一次 · 谢谢反馈</p>
+        ${rows}
+        <p class="ci-rate-done">提交成功</p>
+      </div>`;
+    }
+    return `<div class="ci-rate-box" id="ci-rate-box">
+      <div class="ci-rate-title">给老师打分</div>
+      <p class="ci-rate-note">五个维度，各点 1～5 颗星 · 本时段一次</p>
+      ${rows}
+      <button type="button" class="primary ci-big" id="ci-rate-submit" style="margin-top:.55rem">提交评分</button>
+    </div>`;
+  }
+  function wireTeacherRateForm(name, studentId, discipleId) {
+    const box = document.getElementById("ci-rate-box");
+    if (!box || box.dataset.wired === "1") return;
+    box.dataset.wired = "1";
+    const picked = {};
+    TEACHER_RATE_DIMS.forEach((d) => { picked[d.id] = 0; });
+    const paint = () => {
+      TEACHER_RATE_DIMS.forEach((dim) => {
+        const val = picked[dim.id] || 0;
+        box.querySelectorAll(`.ci-star[data-dim="${dim.id}"]`).forEach((btn) => {
+          const n = Number(btn.dataset.n) || 0;
+          btn.classList.toggle("on", n <= val);
+        });
+      });
+    };
+    box.querySelectorAll(".ci-star").forEach((btn) => {
+      if (btn.disabled) return;
+      btn.onclick = () => {
+        const dim = btn.dataset.dim;
+        const n = Number(btn.dataset.n) || 0;
+        if (!dim || n < 1) return;
+        picked[dim] = n;
+        paint();
+      };
+    });
+    const submit = document.getElementById("ci-rate-submit");
+    if (!submit) return;
+    submit.onclick = async () => {
+      const missing = TEACHER_RATE_DIMS.filter((d) => !(picked[d.id] >= 1));
+      if (missing.length) {
+        alert("请先为每个维度点亮至少 1 颗星\n未完成：" + missing.map((d) => d.label).join("、"));
+        return;
+      }
+      submit.disabled = true;
+      try {
+        await submitTeacherRating({
+          name,
+          student_id: studentId,
+          disciple_id: discipleId,
+          scores: { ...picked }
+        });
+        renderCheckinSuccess(name, studentId, Date.now(), true, discipleId);
+      } catch (e) {
+        alert(e?.message || "提交失败，请重试");
+        submit.disabled = false;
+      }
+    };
+  }
+  async function submitTeacherRating({ name, student_id, disciple_id, scores }) {
+    const { key, rating: existed } = findTeacherRating(student_id, disciple_id);
+    if (existed) throw new Error("本时段已评过，无需重复提交");
+    try {
+      if (localStorage.getItem(teacherRateLocalMarkKey(key)) === "1") {
+        throw new Error("本时段已评过，无需重复提交");
+      }
+    } catch (e) {
+      if (e && e.message && e.message.includes("已评过")) throw e;
+    }
+    const clean = {};
+    TEACHER_RATE_DIMS.forEach((d) => {
+      clean[d.id] = Math.max(1, Math.min(5, Math.round(Number(scores[d.id]) || 0)));
+    });
+    const entry = {
+      disciple_id: disciple_id || "",
+      student_id: student_id || "",
+      name: name || "",
+      day: state.config?.day || 1,
+      session: state.config?.checkin_session || "am",
+      at: Date.now(),
+      scores: clean
+    };
+    ensureTeacherRatingsStore();
+    await setPath(`teacher_ratings/${key}`, entry, { silent: true });
+    try { localStorage.setItem(teacherRateLocalMarkKey(key), "1"); } catch (e) { /* ignore */ }
+    return entry;
+  }
+  function summarizeTeacherRatings(scope = "session") {
+    const store = ensureTeacherRatingsStore();
+    const day = Number(state.config?.day || 1);
+    const session = String(state.config?.checkin_session || "am");
+    const list = Object.values(store).filter((r) => {
+      if (!r || !r.scores) return false;
+      if (scope === "all") return true;
+      if (Number(r.day) !== day) return false;
+      if (scope === "session" && String(r.session || "am") !== session) return false;
+      return true;
+    });
+    const avgs = {};
+    TEACHER_RATE_DIMS.forEach((d) => {
+      const vals = list.map((r) => Number(r.scores[d.id])).filter((n) => n >= 1 && n <= 5);
+      avgs[d.id] = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+    });
+    const overallVals = list.map((r) => {
+      const nums = TEACHER_RATE_DIMS.map((d) => Number(r.scores[d.id])).filter((n) => n >= 1);
+      if (!nums.length) return 0;
+      return nums.reduce((a, b) => a + b, 0) / nums.length;
+    }).filter((n) => n > 0);
+    const overall = overallVals.length
+      ? overallVals.reduce((a, b) => a + b, 0) / overallVals.length
+      : 0;
+    return { count: list.length, avgs, overall, list };
+  }
+  function renderTeacherRateSummaryPanel() {
+    const host = document.getElementById("teacher-rate-summary");
+    const meta = document.getElementById("teacher-rate-meta");
+    if (!host) return;
+    const session = (state.config?.checkin_session || "am") === "pm" ? "下午" : "上午";
+    const day = state.config?.day || 1;
+    const sum = summarizeTeacherRatings("session");
+    if (meta) meta.textContent = `第 ${day} 天 · ${session} · ${sum.count} 人已评`;
+    if (!sum.count) {
+      host.innerHTML = '<div class="trp-empty">学生签到成功后可在手机上给老师打分</div>';
+      return;
+    }
+    host.innerHTML = TEACHER_RATE_DIMS.map((d) => {
+      const avg = sum.avgs[d.id] || 0;
+      return `<div class="trp-row">
+        <span class="trp-lab">${esc(d.label)}</span>
+        <span class="trp-stars" title="${avg.toFixed(2)}">${esc(starChars(avg))} ${avg.toFixed(1)}</span>
+      </div>`;
+    }).join("") + `<div class="trp-row">
+      <span class="trp-lab">综合均分</span>
+      <span class="trp-stars">${esc(starChars(sum.overall))} ${sum.overall.toFixed(1)}</span>
+    </div>`;
+  }
+
   function renderCheckinSuccess(name, student_id, at, already, discipleId) {
     const body = document.getElementById("checkin-body");
     const hint = document.getElementById("checkin-session-hint");
-    if (hint) hint.textContent = already ? "本时段已签到 · 本次扫码勿重复" : "签到完成 · 本次扫码仅一次";
+    if (hint) hint.textContent = already ? "本时段已签到 · 还可给老师打分" : "签到完成 · 请给老师打个分";
     const d = discipleId && state.disciples ? state.disciples[discipleId] : null;
     const profile = d ? profileFromDisciple(d) : normalizeDiscipleProfile(checkinProfileDraft);
     const avatarHtml = profile.avatar
       ? `<img class="disciple-avatar lg" src="${profile.avatar}" alt="" style="display:block;margin:.2rem auto .35rem" />`
       : "";
+    const found = findTeacherRating(student_id, discipleId);
+    const rated = !!(found.rating && TEACHER_RATE_DIMS.every((dim) => Number(found.rating.scores?.[dim.id]) >= 1));
     body.innerHTML = `
       <div style="text-align:center" class="stack">
         <div class="success-burst">${already ? "✓" : "✅"}</div>
@@ -18954,8 +19253,10 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ${profile.motto ? `<p style="margin:.2rem 0 0;color:#8b5a2b">「${esc(profile.motto)}」</p>` : ""}
         <p style="margin-top:.5rem;font-size:1.1rem">${already ? "本时段已签到" : "签到成功 · 门派 +2 分"}</p>
         <p class="muted">${at ? fmtTime(at) : ""} · 每次扫码只能签到一次</p>
+        ${renderTeacherRateFormHtml(rated ? found.rating : null)}
         ${discipleId ? `<button type="button" class="ghost" id="ci-edit-profile-after" style="width:100%">完善 / 修改个人信息</button>` : ""}
       </div>`;
+    if (!rated) wireTeacherRateForm(name, student_id, discipleId);
     const editBtn = document.getElementById("ci-edit-profile-after");
     if (editBtn && discipleId) {
       editBtn.onclick = () => {
