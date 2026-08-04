@@ -4994,6 +4994,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <button type="button" id="btn-checkin-close" data-action="end-checkin" disabled>关闭签到</button>
           </div>
           <button type="button" class="primary" id="btn-checkin-reload" data-action="refresh-checkin" title="重新拉取名单、进度与二维码">刷新</button>
+          <button type="button" class="seal" id="btn-repair-qr" data-action="repair-checkin-qr" title="公网隧道失效时点这里：重建隧道并刷新二维码">二维码失效？一键修复</button>
           <button type="button" data-action="toggle-session" id="btn-checkin-session">下午签到</button>
         </div>
       </div>
@@ -5003,7 +5004,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <span class="demo-sync-badge" hidden></span>
         </div>
         <div class="progress-line"><div id="checkin-progress"></div></div>
-        <p class="muted" style="margin:.55rem 0 .75rem">推荐只投屏<strong>固定入口码</strong>→ 学生扫后手输上方 6 位签到码。右侧可填教室 Wi‑Fi，方便连局域网扫码。</p>
+        <p class="muted" style="margin:.55rem 0 .75rem">推荐只投屏<strong>固定入口码</strong>→ 学生扫后手输上方 6 位签到码。若提示链接打不开/二维码失效，点上方<strong>「二维码失效？一键修复」</strong>，再让学生扫新码。</p>
         <div class="checkin-top-tips">
           <div class="checkin-code-banner" id="checkin-code-banner">
             <div class="ccb-lab">当日签到码（手输用）</div>
@@ -16972,11 +16973,25 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   /**
    * 自动选用手机可达地址。
    * preferTunnel=true（签到默认）：优先等 https 隧道；未就绪时不把局域网写进覆盖，避免二维码卡在 192.168。
+   * 会对「已缓存的公网地址」做存活探测：失效则丢掉，避免二维码一直锁死旧隧道。
    */
   async function ensurePhoneFriendlyOrigin(opts = {}) {
     const preferTunnel = opts.preferTunnel !== false;
     const waitMs = Number(opts.waitMs || 0);
+    const requireAlive = opts.requireAlive !== false;
     clearBadPublicOriginOverride();
+
+    // 先丢掉已失效的旧公网缓存（重启上课后 trycloudflare 地址常会换）
+    const cached = getPublicOriginOverride();
+    if (cached && isPublicTunnelHost(originHostname(cached)) && requireAlive) {
+      const aliveCached = await verifyPhoneOriginAlive(cached);
+      if (!aliveCached) {
+        setPublicOriginOverride("");
+        _netHintCache = null;
+        try { _fixedQrUrlPainted = ""; } catch (e) { /* ignore */ }
+      }
+    }
+
     const deadline = Date.now() + Math.max(0, waitMs);
     let lastHint = null;
     do {
@@ -16986,15 +17001,28 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       else lastHint = await fetchNetOriginHint();
       const tunnel = pickTunnelOriginFromHint(tun || lastHint) || pickTunnelOriginFromHint(lastHint);
       if (tunnel) {
-        setPublicOriginOverride(tunnel);
-        return tunnel;
+        if (!requireAlive) {
+          setPublicOriginOverride(tunnel);
+          return tunnel;
+        }
+        const alive = await verifyPhoneOriginAlive(tunnel);
+        if (alive) {
+          setPublicOriginOverride(tunnel);
+          return tunnel;
+        }
+        // 服务端仍报旧死链时，继续等新隧道
       }
       if (Date.now() < deadline) await new Promise((r) => setTimeout(r, 1500));
     } while (Date.now() < deadline);
 
     // 隧道仍未就绪
     let existing = getPublicOriginOverride();
-    if (existing && isPublicTunnelHost(originHostname(existing))) return existing;
+    if (existing && isPublicTunnelHost(originHostname(existing))) {
+      if (!requireAlive) return existing;
+      if (await verifyPhoneOriginAlive(existing)) return existing;
+      setPublicOriginOverride("");
+      existing = "";
+    }
     if (preferTunnel) {
       // 清掉旧局域网覆盖，避免二维码继续画 192.168
       if (existing && isLanHttpOrigin(existing)) setPublicOriginOverride("");
@@ -17007,6 +17035,46 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (existing && isPhoneReachableOrigin(existing)) return existing;
     return "";
+  }
+
+  /** 老师一键修复：重建公网隧道 → 清掉失效地址 → 刷新签到二维码 */
+  async function repairCheckinQr(opts = {}) {
+    const silent = !!opts.silent;
+    showVoteToast("正在修复二维码…");
+    try {
+      setQrBindMode("public");
+      setPublicOriginOverride("");
+      _netHintCache = null;
+      _fixedQrUrlPainted = "";
+      try { _bareQrUrlPainted = ""; } catch (e) { /* ignore */ }
+      await fetch("/__gy/tunnel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restart: true })
+      }).catch(() => ({}));
+      const origin = await ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 60000, requireAlive: true });
+      if (!origin) {
+        if (!silent) {
+          alert("公网仍未就绪。请确认桌面「上课」窗口开着且电脑能上网，然后稍后重试；也可改点二维码上方「绑定局域网」。");
+        }
+        renderTeacherCheckin();
+        return false;
+      }
+      // 签到未开则顺带开启，避免学生扫到入口却无 6 位码
+      if (!state.config?.checkin_active) {
+        await generateCheckinCode();
+      } else {
+        await updatePaths({
+          "config/checkin_expires_at": Date.now() + CHECKIN_TTL_MS
+        }, { silent: true });
+        renderTeacherCheckin();
+      }
+      showVoteToast("二维码已修复 · 请投屏新码让学生重扫");
+      return true;
+    } catch (e) {
+      if (!silent) alert("修复失败：" + (e?.message || "请重启桌面「上课」后再试"));
+      return false;
+    }
   }
   function defaultQrSize() {
     const half = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.48);
@@ -17441,8 +17509,26 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             } else {
               softFail += 1;
               setBindStatus(softFail >= 3
-                ? ("连通偏慢，仍请扫当前码；不行再点「绑定公网」：" + origin)
+                ? ("当前公网疑似失效 · 请点「绑定公网」或签到页「一键修复」：" + origin)
                 : ("检测中…请继续扫当前码：" + origin));
+              // 连续失败且服务端已有不同新地址 → 自动换新码
+              if (softFail >= 3 && live && live !== origin.replace(/\/$/, "")) {
+                applyOrigin(live, "已切换到可用公网：");
+                persistOrigin(live);
+                softFail = 0;
+              } else if (softFail >= 5) {
+                // 同地址长期不通：请求服务端重建一次，再等新地址
+                softFail = 0;
+                setBindStatus("正在自动重建失效隧道…请稍候");
+                fetch("/__gy/tunnel", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ restart: true })
+                }).catch(() => {});
+                ensurePhoneFriendlyOrigin({ preferTunnel: true, waitMs: 45000, requireAlive: true }).then((o) => {
+                  if (o && applyOrigin(o, "隧道已修复：")) persistOrigin(o);
+                });
+              }
             }
           }
         }).catch(() => {});
@@ -20336,6 +20422,11 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     if (act === "refresh-checkin-code") { await refreshCheckinCode(); return; }
+    if (act === "repair-checkin-qr") {
+      setTeacherView("checkin");
+      await repairCheckinQr();
+      return;
+    }
     if (act === "end-checkin") { await endCheckinSession(); return; }
     if (act === "toggle-session") {
       const next = (state.config?.checkin_session || "am") === "am" ? "pm" : "am";
