@@ -18950,10 +18950,20 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function isValidRosterName(name) {
     const n = String(name || "").trim();
     if (!n || n.length > 12) return false;
+    if (/^\d+$/.test(n)) return false;
     // 课堂常见：2–4 中文；也允许少量英文/数字名
     if (/^[\u4e00-\u9fa5]{2,8}$/.test(n)) return true;
     if (/^[A-Za-z][A-Za-z .·-]{1,11}$/.test(n)) return true;
     if (/^[\u4e00-\u9fa5A-Za-z0-9·]{2,12}$/.test(n)) return true;
+    return false;
+  }
+  function looksLikeRosterMetadata(token) {
+    const s = String(token || "").trim();
+    if (!s) return false;
+    if (normalizeRosterCamp(s)) return true;
+    if (/^(?:队长|组长|弟子|成员|男|女|保密)$/i.test(s)) return true;
+    if (/(?:小组|分组|班级|班|组)$/.test(s)) return true;
+    if (/^(?=.*\d)[A-Za-z0-9_-]{3,}$/.test(s)) return true;
     return false;
   }
   function cleanLooseRosterName(raw) {
@@ -19006,7 +19016,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     // 只有全部 token 都像姓名时才走宽松模式，避免误吞无表头的“姓名,学号,小组”表格。
     if (!hasHeader) {
       const looseNames = parseLooseRosterNames(raw);
-      if (looseNames.length && looseNames.every(isValidRosterName)) {
+      if (looseNames.length && looseNames.every((name) => isValidRosterName(name) && !looksLikeRosterMetadata(name))) {
         return {
           ok: true,
           error: "",
