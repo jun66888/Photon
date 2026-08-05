@@ -19369,7 +19369,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const bad = parsed.rows.filter((r) => r.error).length;
       const okN = parsed.rows.length - bad;
       const modeText = parsed.mode === "names" ? "已识别为批量人名 · 将进入大厅" : "已识别为表格";
-      metaEl.textContent = `${modeText} · 共 ${parsed.rows.length} 人 · 可导入 ${okN} · 有问题 ${bad}`;
+      const noPlacement = parsed.rows.every((r) => !String(r.peakName || "").trim() && !r.camp);
+      const hallText = noPlacement && parsed.mode !== "names" ? " · 无分组，将进入大厅" : "";
+      metaEl.textContent = `${modeText}${hallText} · 共 ${parsed.rows.length} 人 · 可导入 ${okN} · 有问题 ${bad}`;
       const head = ["行", "姓名", "学号", "小组", "派系", "身份", "状态"];
       const body = parsed.rows.slice(0, 80).map((r) => {
         const existed = !r.error && findExistingDiscipleForImport(r);
