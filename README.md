@@ -1,110 +1,67 @@
+# 光影盟 · 联盟积分体系
 
-<h1 align="center">
-  <br>
-  <a href="https://github.com/s0md3v/Photon"><img src="https://image.ibb.co/h5OZAK/photonsmall.png" alt="Photon"></a>
-  <br>
-  Photon
-  <br>
-</h1>
+**本机课堂**：老师电脑本地运行；**学生可用手机流量扫码签到**（默认经 Cloudflare 临时隧道）。  
+老师端始终收藏 `http://127.0.0.1:3000/?mode=teacher`。同 Wi‑Fi 仍可作备用。
 
-<h4 align="center">Incredibly fast crawler designed for OSINT.</h4>
+- 字体 / 二维码在 `vendor/`，不请求 CDN  
+- 数据经本机 `/__gy/demo-db` 同步（`gy-demo-db.json`）  
+- 启动时 `public-tunnel.sh` 写入 `gy-tunnel-origin.json`（流量扫码）；局域网备用见 `gy-classroom.json`  
+- 只要局域网、不要隧道：`GY_PUBLIC_TUNNEL=0 ./start.sh`
 
-<p align="center">
-  <a href="https://github.com/s0md3v/Photon/releases">
-    <img src="https://img.shields.io/github/release/s0md3v/Photon.svg">
-  </a>
-  <a href="https://pypi.org/project/photon/">
-    <img src="https://img.shields.io/badge/pypi-@photon-red.svg?style=style=flat-square"
-         alt="pypi">
-  </a>
-  <a href="https://github.com/s0md3v/Photon/issues?q=is%3Aissue+is%3Aclosed">
-      <img src="https://img.shields.io/github/issues-closed-raw/s0md3v/Photon.svg">
-  </a>
-  <a href="https://travis-ci.com/s0md3v/Photon">
-    <img src="https://img.shields.io/travis/com/s0md3v/Photon.svg">
-  </a>
-</p>
+**请先读：[课堂稳定使用.md](./课堂稳定使用.md)** · **[固定访问地址.md](./固定访问地址.md)**
 
-Met a CAPTCHA? Try [CapSolver](https://www.capsolver.com/?utm_source=github&utm_medium=repo&utm_campaign=scraping&utm_term=photon) solving solution.
+---
 
-![demo](https://image.ibb.co/kQSUcz/demo.png)
+## 老师请收藏（永远不变）
 
-<p align="center">
-  <a href="https://github.com/s0md3v/Photon/wiki">Photon Wiki</a> •
-  <a href="https://github.com/s0md3v/Photon/wiki/Usage">How To Use</a> •
-  <a href="https://github.com/s0md3v/Photon/wiki/Compatibility-&-Dependencies">Compatibility</a> •
-  <a href="https://github.com/s0md3v/Photon/wiki/Photon-Library">Photon Library</a> •
-  <a href="#contribution--license">Contribution</a> •
-  <a href="https://github.com/s0md3v/Photon/projects/1">Roadmap</a>
-</p>
-
-### Key Features
-
-#### Data Extraction
-Photon can extract the following data while crawling:
-
-- URLs (in-scope & out-of-scope)
-- URLs with parameters (`example.com/gallery.php?id=2`)
-- Intel (emails, social media accounts, amazon buckets etc.)
-- Files (pdf, png, xml etc.)
-- Secret keys (auth/API keys & hashes)
-- JavaScript files & Endpoints present in them
-- Strings matching custom regex pattern
-- Subdomains & DNS related data
-
-The extracted information is saved in an organized manner or can be [exported as json](https://github.com/s0md3v/Photon/wiki/Usage#export-formatted-result).
-
-![save demo](https://image.ibb.co/dS1BqK/carbon_2.png)
-
-#### Flexible
-Control timeout, delay, add seeds, exclude URLs matching a regex pattern and other cool stuff.
-The extensive range of [options](https://github.com/s0md3v/Photon/wiki/Usage) provided by Photon lets you crawl the web exactly the way you want.
-
-#### Genius
-Photon's smart thread management & refined logic gives you top notch performance.
-
-Still, crawling can be resource intensive but Photon has some tricks up it's sleeves. You can fetch URLs archived by [archive.org](https://archive.org/) to be used as seeds by using `--wayback` option.
-
-#### Plugins
-- **[wayback](https://github.com/s0md3v/Photon/wiki/Usage#use-urls-from-archiveorg-as-seeds)**
-- **[dnsdumpster](https://github.com/s0md3v/Photon/wiki/Usage#dumping-dns-data)**
-- **[Exporter](https://github.com/s0md3v/Photon/wiki/Usage#export-formatted-result)**
-
-#### Docker
-
-Photon can be launched using a lightweight Python-Alpine (103 MB) Docker image.
-
-```bash
-$ git clone https://github.com/s0md3v/Photon.git
-$ cd Photon
-$ docker build -t photon .
-$ docker run -it --name photon photon:latest -u google.com
+```
+http://127.0.0.1:3000/?mode=teacher
 ```
 
-To view results, you can either head over to the local docker volume, which you can find by running `docker inspect photon` or by mounting the target loot folder:
+也可双击 `打开老师端.bat` / `打开老师端.url`。
 
-```bash
-$ docker run -it --name photon -v "$PWD:/Photon/google.com" photon:latest -u google.com
-```
+---
 
-#### Frequent & Seamless Updates
-Photon is under heavy development and updates for fixing bugs. optimizing performance & new features are being rolled regularly.
+## 启动
 
-If you would like to see features and issues that are being worked on, you can do that on [Development](https://github.com/s0md3v/Photon/projects/1) project board.
+需要一次（有网时）：[Node.js 18+](https://nodejs.org/)。之后可断网上课。
 
-Updates can be installed & checked for with the `--update` option. Photon has seamless update capabilities which means you can update Photon without losing any of your saved data.
+- **Windows（推荐）**：本机项目文件夹双击 `一键放到桌面.bat` 或 `PUT-ON-DESKTOP.bat`，之后用桌面 `GY-Start` /「光影盟-开始上课」
+- 或直接双击项目里的 `start.bat`（建议先跑一次 `开放防火墙.bat`）
+- 说明：云端 Agent **不会**把图标写到你教室电脑桌面，必须在本机双击上述脚本  
+- **Mac（本机固定目录）**：`/Users/liwei/Photon`  
+  ```bash
+  cd /Users/liwei/Photon && ./更新本地.sh && ./一键放到桌面.sh && ./一键上课.sh
+  ```
+  之后桌面只需双击「光影盟-一键上课」（自动更新+启动+打开启动台）
+  启动台：`http://127.0.0.1:3000/launcher.html`
+- **Linux**：`./一键上课.sh` 或 `./start.sh` / `npm start`
 
-### Contribution & License
-You can contribute in following ways:
+手机扫码地址首次绑定后写入 `gy-classroom.json`，**不会自动更换**。  
+详见 `固定访问地址.txt`（每次启动生成）。
 
-- Report bugs
-- Develop plugins
-- Add more "APIs" for ninja mode
-- Give suggestions to make it better
-- Fix issues & submit a pull request
+---
 
-Please read the [guidelines](https://github.com/s0md3v/Photon/wiki/Guidelines) before submitting a pull request or issue.
+## 文件
 
-Do you want to have a conversation in private? Hit me up on my [twitter](https://twitter.com/s0md3v/), inbox is open :)
+| 文件 | 说明 |
+|------|------|
+| `index.html` | UI + 业务（`LOCAL_OFFLINE = true`） |
+| `server.mjs` | 本机静态服务 + DEMO 同步 + 固定扫码地址 |
+| `vendor/` | 本地字体、二维码库 |
+| `start.bat` / `start.sh` | 一键启动（保活） |
+| `开放防火墙.bat` | Windows 放行 3000 |
+| `课堂稳定使用.md` | 上课操作说明 |
 
-**Photon** is licensed under [GPL v3.0 license](https://www.gnu.org/licenses/gpl-3.0.en.html)
+---
+
+## 核心规则摘要
+
+- **山峰段位**：入门 0–500 → 筑基 → 金丹 → 元婴 → 化神 5000+  
+- **个人等级**：Lv1–10 每级 300exp，11–20 每级 500，21–30 每级 800  
+- **加分同步**：山峰加分时，该峰弟子 `exp += points × 10`，`contributed += points`  
+- **擂台额外经验**：金/银/铜 +300 / +200 / +100  
+- **天数切换**：积分累计不清零；仅重置票数与签到/投票状态；右侧栏有小组/学员累计排行  
+- **段位结算**：设置面板手动触发，阵营内按 `contributed` 排名  
+
+加分日志默认操作员为 `李红星`，可在 `index.html` 里改常量 `OPERATOR`。

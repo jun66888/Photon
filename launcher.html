@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>光影盟 · 启动台</title>
+  <link rel="stylesheet" href="./vendor/fonts.css" />
+  <script src="./vendor/qrcodejs.min.js"></script>
+  <script>window.QRCodeJS = typeof QRCode === "function" ? QRCode : null;</script>
+  <script src="./vendor/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg0: #0b0f18;
+      --bg1: #151c2e;
+      --ink: #e8eef8;
+      --soft: #9aa8c3;
+      --gold: #f0c14b;
+      --gold2: #ffe39a;
+      --ok: #7dffb2;
+      --warn: #ffb0bd;
+      --line: rgba(240, 193, 75, .28);
+      --font-brush: "ZCOOL XiaoWei", "STKaiti", "KaiTi", serif;
+      --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-num: "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(240,193,75,.16), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(80,140,255,.12), transparent 50%),
+        linear-gradient(165deg, var(--bg1), var(--bg0) 55%, #070a12);
+    }
+    .wrap {
+      width: min(920px, 94vw);
+      margin: 0 auto;
+      padding: 2.2rem 0 3rem;
+    }
+    .brand {
+      font-family: var(--font-brush);
+      font-size: clamp(2.6rem, 7vw, 3.8rem);
+      letter-spacing: .18em;
+      color: var(--gold2);
+      text-shadow: 0 0 24px rgba(240,193,75,.28);
+      margin: 0;
+      line-height: 1.1;
+    }
+    .tagline {
+      margin: .55rem 0 1.4rem;
+      color: var(--soft);
+      font-size: 1rem;
+      max-width: 36rem;
+      line-height: 1.5;
+    }
+    .status {
+      display: grid;
+      gap: .55rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(8, 12, 22, .55);
+      margin-bottom: 1.25rem;
+    }
+    .status .row {
+      display: flex; flex-wrap: wrap; gap: .35rem .75rem;
+      align-items: baseline;
+      font-size: .92rem;
+    }
+    .status .k { color: var(--soft); min-width: 4.5rem; }
+    .status .v { font-family: var(--font-num); color: var(--gold2); word-break: break-all; }
+    .status .v.ok { color: var(--ok); }
+    .status .v.bad { color: var(--warn); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .7rem;
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    button, a.btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, #2a3350, #171e30);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 1rem 1.05rem;
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: .28rem;
+      min-height: 5.2rem;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    button:hover, a.btn:hover {
+      border-color: rgba(240,193,75,.55);
+      transform: translateY(-1px);
+    }
+    button.primary, a.btn.primary {
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      border-color: rgba(240,193,75,.65);
+      color: var(--gold2);
+      grid-column: 1 / -1;
+      min-height: 5.6rem;
+      font-size: 1.2rem;
+    }
+    button .sub, a.btn .sub {
+      font-size: .78rem;
+      font-weight: 500;
+      color: var(--soft);
+      letter-spacing: 0;
+    }
+    button.primary .sub, a.btn.primary .sub { color: rgba(255,227,154,.75); }
+    .foot {
+      margin-top: 1.25rem;
+      color: var(--soft);
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+    .toast {
+      position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%);
+      background: rgba(10,14,24,.92); border: 1px solid var(--line);
+      color: var(--gold2); padding: .55rem 1rem; border-radius: 999px;
+      font-size: .85rem; opacity: 0; pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 20;
+    }
+    .toast.on { opacity: 1; }
+    .share-panel {
+      margin-bottom: 1.25rem;
+      padding: 1rem 1.1rem 1.15rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(106, 84, 20, .22), rgba(8, 12, 22, .55));
+    }
+    .share-panel h2 {
+      margin: 0 0 .35rem;
+      font-size: 1.15rem;
+      color: var(--gold2);
+      letter-spacing: .06em;
+    }
+    .share-panel .hint {
+      margin: 0 0 .85rem;
+      color: var(--soft);
+      font-size: .86rem;
+      line-height: 1.45;
+    }
+    .share-panel .path-row {
+      display: flex; flex-wrap: wrap; gap: .45rem;
+      align-items: center;
+      margin-bottom: .55rem;
+    }
+    .share-panel input[type="text"] {
+      flex: 1 1 220px;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.35);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: .55rem .7rem;
+      font-size: .88rem;
+      font-family: var(--font-num);
+    }
+    .share-panel .mini {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, #2a3350, #171e30);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: .5rem .7rem;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: auto;
+      display: inline-flex;
+      align-items: center;
+    }
+    .share-panel .mini.primary {
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      border-color: rgba(240,193,75,.65);
+      color: var(--gold2);
+    }
+    .share-panel .url-box {
+      margin-top: .65rem;
+      padding: .65rem .75rem;
+      border-radius: 8px;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.08);
+      font-family: var(--font-num);
+      font-size: .82rem;
+      color: var(--gold2);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+    .share-panel .url-lab {
+      display: block;
+      color: var(--soft);
+      font-family: var(--font-body);
+      font-size: .75rem;
+      margin-bottom: .25rem;
+    }
+    .share-actions {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: .55rem;
+      margin-top: .75rem;
+    }
+    @media (max-width: 640px) {
+      .share-actions { grid-template-columns: 1fr; }
+    }
+    .share-actions a.btn, .share-actions button {
+      min-height: 4.2rem;
+    }
+    .share-panel .pick-main {
+      width: 100%;
+      margin-bottom: .65rem;
+      min-height: 3.6rem !important;
+      font-size: 1.15rem !important;
+      letter-spacing: .06em;
+      background: linear-gradient(180deg, #8a6a12, #3a2c0a) !important;
+      border-color: rgba(240,193,75,.85) !important;
+      color: var(--gold2) !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: .2rem;
+    }
+    .share-panel .pick-main .sub {
+      font-size: .75rem;
+      font-weight: 500;
+      color: rgba(255,227,154,.75);
+    }
+    .share-easy {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: .75rem;
+      align-items: center;
+      margin: .65rem 0 .55rem;
+      padding: .75rem;
+      border-radius: 12px;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    @media (max-width: 640px) {
+      .share-easy { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    }
+    .share-qr {
+      width: 140px; height: 140px;
+      border-radius: 10px;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .share-qr canvas, .share-qr img { width: 100% !important; height: 100% !important; object-fit: contain; }
+    .share-easy .url-lab { color: var(--soft); font-size: .75rem; margin-bottom: .3rem; display: block; }
+    .share-easy .short-url {
+      font-family: var(--font-num);
+      font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+      color: var(--gold2);
+      word-break: break-all;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+    .share-easy .short-tip {
+      margin-top: .35rem;
+      color: var(--soft);
+      font-size: .78rem;
+      line-height: 1.4;
+    }
+    .share-easy .short-tip b { color: var(--ink); font-weight: 700; }
+    .share-mini-row {
+      display: flex; flex-wrap: wrap; gap: .4rem;
+      margin-top: .35rem;
+    }
+    .share-mini-row button, .share-mini-row a.btn {
+      min-height: auto !important;
+      padding: .45rem .7rem !important;
+      font-size: .8rem !important;
+      display: inline-flex;
+      align-items: center;
+    }
+    .share-adv { margin-top: .55rem; }
+    .share-adv summary {
+      cursor: pointer;
+      color: var(--soft);
+      font-size: .78rem;
+      user-select: none;
+    }
+    .share-adv .path-row { margin-top: .45rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="brand">光影盟</h1>
+    <p class="tagline">上课启动台 · 更新与环境已由桌面「一键上课」自动完成，这里集中常用入口。</p>
+
+    <section class="status" aria-label="环境状态">
+      <div class="row"><span class="k">服务</span><span class="v" id="st-server">检测中…</span></div>
+      <div class="row"><span class="k">版本</span><span class="v" id="st-ver">—</span></div>
+      <div class="row"><span class="k">公网隧道</span><span class="v" id="st-tunnel">检测中…</span></div>
+      <div class="row"><span class="k">扫码地址</span><span class="v" id="st-origin">—</span></div>
+    </section>
+
+    <section class="share-panel" aria-label="课堂资料下载">
+      <h2>课堂资料下载</h2>
+      <p class="hint">老师点按钮选文件夹；学生优先扫码，手输只需短地址末尾 <b>/d</b>。</p>
+      <button type="button" class="pick-main" id="btn-share-pick">
+        选择文件夹
+        <span class="sub">弹出系统窗口 · 选好后自动共享</span>
+      </button>
+      <div class="share-easy">
+        <div class="share-qr" id="share-qr" aria-label="学生下载二维码"></div>
+        <div>
+          <span class="url-lab">学生下载 · 优先扫码</span>
+          <div class="short-url" id="share-student-url">检测中…</div>
+          <div class="short-tip" id="share-short-tip">手输提示：地址末尾只要 <b>/d</b></div>
+          <div class="share-mini-row">
+            <button type="button" class="mini primary" id="btn-share-copy">复制短地址</button>
+            <a class="btn mini" id="btn-share-page" href="/d" target="_blank" rel="noopener">打开下载页</a>
+            <button type="button" class="mini" id="btn-share-open">打开文件夹</button>
+            <button type="button" class="mini" id="btn-share-default">默认文件夹</button>
+          </div>
+          <div class="short-tip" id="share-file-count">尚未读取文件数</div>
+        </div>
+      </div>
+      <details class="share-adv">
+        <summary>高级：手动粘贴文件夹路径（一般不用）</summary>
+        <div class="path-row">
+          <input type="text" id="share-folder-input" placeholder="一般请用上方「选择文件夹」" autocomplete="off" spellcheck="false" />
+          <button type="button" class="mini primary" id="btn-share-save">保存</button>
+        </div>
+      </details>
+    </section>
+
+    <div class="grid">
+      <a class="btn primary" href="/?mode=teacher">
+        进入老师端
+        <span class="sub">课堂主界面 · 签到 / 分组对抗 / 破冰 / 抽人 / 投票</span>
+      </a>
+      <a class="btn" href="/?mode=teacher" id="btn-checkin-jump">
+        打开签到页
+        <span class="sub">老师端签到面板（需在老师端左侧点「签到」）</span>
+      </a>
+      <a class="btn" href="/?mode=checkin&entry=1" target="_blank" rel="noopener">
+        学生固定入口
+        <span class="sub">手输 6 位签到码 · 可投屏给学生看链接</span>
+      </a>
+      <a class="btn" href="/?mode=student" target="_blank" rel="noopener">
+        学生端预览
+        <span class="sub">投票与学员视角</span>
+      </a>
+      <button type="button" id="btn-tunnel">
+        重建公网隧道
+        <span class="sub">学生要用手机流量扫码时点这里</span>
+      </button>
+      <button type="button" id="btn-refresh">
+        刷新状态
+        <span class="sub">重新读取服务 / 隧道 / 版本</span>
+      </button>
+      <a class="btn" href="/固定访问地址.txt" target="_blank" rel="noopener">
+        查看固定访问地址
+        <span class="sub">老师收藏 127.0.0.1 · 扫码链接文本</span>
+      </a>
+      <button type="button" id="btn-hard-reload">
+        强制刷新老师端
+        <span class="sub">打开老师端并提示 Cmd+Shift+R</span>
+      </button>
+    </div>
+
+    <p class="foot">
+      上课：桌面「上课」或「开始上课」。只更新：桌面「更新」或「光影盟-更新」。<br>
+      黑色终端窗口请保持开着；关掉即下课。老师电脑需能上网，公网扫码才会就绪。
+    </p>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const toastEl = document.getElementById("toast");
+    let toastTimer = null;
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("on");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("on"), 2600);
+    }
+
+    async function fetchJson(url) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setText(id, text, cls) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = text;
+      el.classList.remove("ok", "bad");
+      if (cls) el.classList.add(cls);
+    }
+
+    let lastShareUrl = "";
+    let lastShareQrUrl = "";
+
+    function paintShareQr(url) {
+      const host = document.getElementById("share-qr");
+      if (!host || !url) return;
+      if (lastShareQrUrl === url && host.childNodes.length) return;
+      lastShareQrUrl = url;
+      host.innerHTML = "";
+      const qrNpm = (window.QRCode && typeof window.QRCode.toCanvas === "function") ? window.QRCode : null;
+      if (qrNpm) {
+        const canvas = document.createElement("canvas");
+        host.appendChild(canvas);
+        qrNpm.toCanvas(canvas, url, { width: 140, margin: 1, errorCorrectionLevel: "M" }).catch(() => {
+          host.textContent = "二维码失败";
+        });
+        return;
+      }
+      const QRCodeCtor = window.QRCodeJS
+        || ((typeof window.QRCode === "function" && window.QRCode.CorrectLevel) ? window.QRCode : null);
+      if (!QRCodeCtor) {
+        host.textContent = "无二维码库";
+        return;
+      }
+      try {
+        new QRCodeCtor(host, {
+          text: url,
+          width: 140,
+          height: 140,
+          correctLevel: QRCodeCtor.CorrectLevel.M
+        });
+      } catch (e) {
+        host.textContent = "二维码失败";
+      }
+    }
+
+    function shortUrlTip(fullUrl) {
+      try {
+        const u = new URL(fullUrl);
+        return `手输：浏览器打开后，地址末尾改成 <b>/d</b>（当前主机 ${u.host}）`;
+      } catch (e) {
+        return "手输提示：地址末尾只要 <b>/d</b>";
+      }
+    }
+
+    async function refreshShare() {
+      const share = await fetchJson("/__gy/share");
+      const input = document.getElementById("share-folder-input");
+      const urlEl = document.getElementById("share-student-url");
+      const tipEl = document.getElementById("share-short-tip");
+      const countEl = document.getElementById("share-file-count");
+      const pageBtn = document.getElementById("btn-share-page");
+      if (!share) {
+        if (urlEl) urlEl.textContent = "服务未连接";
+        if (countEl) countEl.textContent = "请先启动一键上课";
+        return;
+      }
+      if (input && document.activeElement !== input) {
+        input.value = share.folder || "";
+      }
+      lastShareUrl = share.student_url || share.local_url || "/d";
+      if (urlEl) urlEl.textContent = lastShareUrl;
+      if (tipEl) tipEl.innerHTML = shortUrlTip(lastShareUrl);
+      if (pageBtn) pageBtn.href = share.page_path || "/d";
+      if (countEl) {
+        const n = Number(share.file_count) || 0;
+        countEl.textContent = n ? `已共享 ${n} 个文件 · 扫码即可下` : "选好文件夹后，学生扫左侧码下载";
+      }
+      paintShareQr(lastShareUrl);
+    }
+
+    async function refreshStatus() {
+      const build = await fetchJson("/gy-build.json");
+      if (build && (build.short || build.commit)) {
+        const short = build.short || String(build.commit || "").slice(0, 7);
+        const when = build.synced_at || build.built_at || "";
+        setText("st-ver", when ? `${short} · ${when}` : short, "ok");
+      } else {
+        setText("st-ver", "未知（可再点桌面一键上课更新）", "bad");
+      }
+
+      const net = await fetchJson("/__gy/net.json");
+      const tun = await fetchJson("/__gy/tunnel");
+      if (!net && !tun) {
+        setText("st-server", "未连接 · 请确认桌面「一键上课」窗口开着", "bad");
+        setText("st-tunnel", "—");
+        setText("st-origin", "—");
+        await refreshShare();
+        return;
+      }
+      setText("st-server", "运行中 · 端口 " + ((net && net.port) || 3000), "ok");
+
+      const st = (tun && tun.tunnel_status) || (net && net.tunnel_status) || {};
+      const origin = (tun && tun.tunnel_origin) || (net && (net.tunnel_origin || net.phone_origin)) || "";
+      const state = st.state || (origin ? "ready" : "idle");
+      if (origin) {
+        setText("st-tunnel", "已就绪 · " + (state === "ready" ? "可手机流量扫码" : state), "ok");
+        setText("st-origin", origin, "ok");
+      } else if (state === "starting" || state === "downloading" || state === "restarting") {
+        setText("st-tunnel", "建立中 · " + (st.detail || state), "bad");
+        setText("st-origin", "约 15–45 秒后出现 https 地址", "bad");
+      } else if (state === "error") {
+        setText("st-tunnel", "失败 · " + (st.detail || "请点重建公网隧道"), "bad");
+        setText("st-origin", (net && net.origins && net.origins[0]) || "可临时用局域网", "bad");
+      } else {
+        setText("st-tunnel", "尚未就绪", "bad");
+        setText("st-origin", (net && net.origins && net.origins[0]) || "—", "bad");
+      }
+      await refreshShare();
+    }
+
+    async function postShare(body) {
+      const res = await fetch("/__gy/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {})
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error((data && data.error) || "保存失败");
+      return data;
+    }
+
+    document.getElementById("btn-share-pick").onclick = async () => {
+      const btn = document.getElementById("btn-share-pick");
+      btn.disabled = true;
+      toast("正在打开系统选文件夹窗口…");
+      try {
+        const res = await fetch("/__gy/share/pick", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 403) {
+          toast(data.error || "请用本机 127.0.0.1 打开启动台");
+          return;
+        }
+        if (data.cancelled) {
+          toast("已取消选择");
+          return;
+        }
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "选择失败");
+        await refreshShare();
+        toast("已选择文件夹：" + (data.folder || ""));
+      } catch (e) {
+        toast(String(e.message || e));
+      } finally {
+        btn.disabled = false;
+      }
+    };
+    document.getElementById("btn-share-save").onclick = async () => {
+      const folder = (document.getElementById("share-folder-input").value || "").trim();
+      if (!folder) {
+        toast("请填写本机文件夹绝对路径，或点上方「选择文件夹」");
+        return;
+      }
+      try {
+        await postShare({ folder });
+        await refreshShare();
+        toast("已保存共享文件夹");
+      } catch (e) {
+        toast(String(e.message || e));
+      }
+    };
+    document.getElementById("btn-share-default").onclick = async () => {
+      try {
+        await postShare({ use_default: true });
+        await refreshShare();
+        toast("已改回默认「课堂资料」文件夹");
+      } catch (e) {
+        toast(String(e.message || e));
+      }
+    };
+    document.getElementById("btn-share-open").onclick = async () => {
+      try {
+        const res = await fetch("/__gy/share/open", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "无法打开");
+        toast("已在访达/资源管理器中打开");
+      } catch (e) {
+        toast(String(e.message || e));
+      }
+    };
+    document.getElementById("btn-share-copy").onclick = async () => {
+      const url = lastShareUrl || document.getElementById("share-student-url").textContent || "";
+      if (!url || url === "检测中…" || url === "服务未连接") {
+        toast("下载链接尚未就绪");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        toast("已复制短地址");
+      } catch (e) {
+        prompt("请手动复制短地址：", url);
+      }
+    };
+
+    document.getElementById("btn-refresh").onclick = () => {
+      refreshStatus();
+      toast("已刷新状态");
+    };
+    document.getElementById("btn-tunnel").onclick = async () => {
+      toast("正在重建公网隧道…");
+      try {
+        await fetch("/__gy/tunnel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restart: true })
+        });
+      } catch (e) { /* ignore */ }
+      setTimeout(refreshStatus, 800);
+      const poll = setInterval(refreshStatus, 2000);
+      setTimeout(() => clearInterval(poll), 60000);
+    };
+    document.getElementById("btn-hard-reload").onclick = () => {
+      window.open("/?mode=teacher&_=" + Date.now(), "_blank", "noopener");
+      toast("已打开老师端 · 请按 Cmd+Shift+R 硬刷新");
+    };
+    document.getElementById("btn-checkin-jump").onclick = (e) => {
+      e.preventDefault();
+      // 老师端签到是子视图，带 hash 提示；实际仍进老师端由老师点签到
+      location.href = "/?mode=teacher#checkin";
+    };
+
+    refreshStatus();
+    setInterval(refreshStatus, 4000);
+  </script>
+</body>
+</html>

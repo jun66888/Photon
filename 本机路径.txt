@@ -1,0 +1,17 @@
+光影盟 · 本机唯一固定目录
+
+/Users/liwei/Photon
+/Users/liwei/Photon/index.html
+
+所有脚本、桌面快捷方式、说明文档均指向这里。
+不要用 Downloads / 桌面解压的旧副本。
+
+常用命令：
+
+  cd /Users/liwei/Photon
+  ./更新本地.sh
+  ./start.sh
+  ./一键放到桌面.sh
+
+老师端：
+  http://127.0.0.1:3000/?mode=teacher

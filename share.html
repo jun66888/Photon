@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>光影盟 · 课堂资料下载</title>
+  <link rel="stylesheet" href="./vendor/fonts.css" />
+  <style>
+    :root {
+      --bg0: #0b0f18;
+      --bg1: #151c2e;
+      --ink: #e8eef8;
+      --soft: #9aa8c3;
+      --gold: #f0c14b;
+      --gold2: #ffe39a;
+      --warn: #ffb0bd;
+      --line: rgba(240, 193, 75, .28);
+      --font-brush: "ZCOOL XiaoWei", "STKaiti", "KaiTi", serif;
+      --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-num: "JetBrains Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(1100px 520px at 8% -8%, rgba(240,193,75,.15), transparent 55%),
+        radial-gradient(800px 420px at 100% 0%, rgba(80,140,255,.1), transparent 50%),
+        linear-gradient(165deg, var(--bg1), var(--bg0) 55%, #070a12);
+    }
+    .wrap {
+      width: min(760px, 94vw);
+      margin: 0 auto;
+      padding: 1.8rem 0 3rem;
+    }
+    .brand {
+      font-family: var(--font-brush);
+      font-size: clamp(2.2rem, 6vw, 3.2rem);
+      letter-spacing: .16em;
+      color: var(--gold2);
+      text-shadow: 0 0 24px rgba(240,193,75,.28);
+      margin: 0;
+      line-height: 1.1;
+    }
+    .tagline {
+      margin: .5rem 0 1.1rem;
+      color: var(--soft);
+      font-size: .95rem;
+      line-height: 1.5;
+    }
+    .pick-bar {
+      display: grid;
+      gap: .65rem;
+      margin-bottom: 1rem;
+      padding: 1rem 1.05rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(106, 84, 20, .28), rgba(8, 12, 22, .55));
+    }
+    .pick-bar .lab {
+      font-size: .9rem;
+      color: var(--gold2);
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .pick-bar .cur {
+      font-family: var(--font-num);
+      font-size: .8rem;
+      color: var(--soft);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+    .pick-bar .cur strong { color: var(--ink); font-weight: 600; }
+    .pick-actions {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr;
+      gap: .5rem;
+    }
+    @media (max-width: 640px) {
+      .pick-actions { grid-template-columns: 1fr; }
+    }
+    button, a.btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, #2a3350, #171e30);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: .75rem .9rem;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+    }
+    button.pick-main {
+      background: linear-gradient(180deg, #8a6a12, #3a2c0a);
+      border-color: rgba(240,193,75,.85);
+      color: var(--gold2);
+      font-size: 1.12rem;
+      min-height: 3.4rem;
+      letter-spacing: .06em;
+      box-shadow: 0 0 0 1px rgba(240,193,75,.2), 0 8px 24px rgba(0,0,0,.25);
+    }
+    button.primary, a.btn.primary {
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      border-color: rgba(240,193,75,.65);
+      color: var(--gold2);
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .hint-local {
+      font-size: .78rem;
+      color: var(--soft);
+      line-height: 1.45;
+    }
+    .hint-local.bad { color: var(--warn); }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      margin-bottom: .9rem;
+    }
+    .toolbar button, .toolbar a.btn {
+      padding: .55rem .8rem;
+      font-size: .88rem;
+    }
+    .crumbs {
+      display: flex; flex-wrap: wrap; gap: .35rem;
+      align-items: center;
+      margin-bottom: .75rem;
+      font-size: .86rem;
+    }
+    .crumbs button {
+      padding: .35rem .65rem;
+      font-size: .82rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+    }
+    .crumbs button.on {
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      border-color: rgba(240,193,75,.65);
+      color: var(--gold2);
+    }
+    .crumbs .sep { color: var(--soft); opacity: .7; }
+    .section-title {
+      margin: .35rem 0 .55rem;
+      font-size: .8rem;
+      letter-spacing: .08em;
+      color: var(--soft);
+    }
+    .folders {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .folder {
+      appearance: none;
+      border: 1px solid rgba(94, 200, 255, .35);
+      background: linear-gradient(180deg, rgba(40, 90, 120, .42), rgba(8, 14, 26, .55));
+      color: #cfe8ff;
+      border-radius: 12px;
+      padding: .85rem .8rem;
+      text-align: left;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 3.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+    .folder:hover { border-color: rgba(240,193,75,.55); }
+    .folder .sub {
+      font-size: .72rem;
+      font-weight: 500;
+      color: var(--soft);
+    }
+    .meta {
+      color: var(--soft);
+      font-size: .82rem;
+      margin-bottom: .85rem;
+    }
+    .meta strong { color: var(--gold2); font-weight: 600; }
+    .list { display: grid; gap: .55rem; }
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      padding: .85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(8, 12, 22, .55);
+    }
+    .item .name {
+      font-weight: 700;
+      word-break: break-all;
+      line-height: 1.35;
+    }
+    .item .sub {
+      margin-top: .25rem;
+      color: var(--soft);
+      font-size: .78rem;
+      font-family: var(--font-num);
+    }
+    .item a {
+      flex: 0 0 auto;
+      border: 1px solid rgba(240,193,75,.55);
+      background: linear-gradient(180deg, #6a5414, #2e240c);
+      color: var(--gold2);
+      border-radius: 8px;
+      padding: .55rem .85rem;
+      font-size: .88rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .empty, .err {
+      padding: 1.2rem 1rem;
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: 12px;
+      color: var(--soft);
+      text-align: center;
+      line-height: 1.55;
+    }
+    .err { color: var(--warn); border-color: rgba(255,176,189,.35); }
+    .toast {
+      position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%);
+      background: rgba(10,14,24,.92); border: 1px solid var(--line);
+      color: var(--gold2); padding: .55rem 1rem; border-radius: 999px;
+      font-size: .85rem; opacity: 0; pointer-events: none;
+      transition: opacity .2s ease; z-index: 20;
+      max-width: 90vw; text-align: center;
+    }
+    .toast.on { opacity: 1; }
+    .foot {
+      margin-top: 1.2rem;
+      color: var(--soft);
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="brand">光影盟</h1>
+    <p class="tagline" id="page-tagline">课堂资料 · 点文件即可下载</p>
+
+    <section class="pick-bar" id="pick-bar" hidden aria-label="选择共享文件夹">
+      <div class="lab">老师选文件夹（学生不用管这里）</div>
+      <div class="cur">当前：<strong id="cur-folder">检测中…</strong></div>
+      <div class="pick-actions">
+        <button type="button" class="pick-main" id="btn-pick-folder">选择文件夹</button>
+        <button type="button" id="btn-share-open">打开</button>
+        <button type="button" id="btn-share-default">默认</button>
+      </div>
+      <div class="hint-local" id="pick-hint">本机点「选择文件夹」即可，不用手输路径。</div>
+    </section>
+
+    <div class="toolbar">
+      <button type="button" class="primary" id="btn-refresh">刷新</button>
+      <button type="button" id="btn-up" disabled>上一级</button>
+      <a class="btn" href="/launcher.html" id="btn-back-launcher">启动台</a>
+    </div>
+
+    <nav class="crumbs" id="crumbs" aria-label="当前路径"></nav>
+    <div class="meta" id="meta">正在读取…</div>
+
+    <div class="section-title" id="dirs-title" hidden>子文件夹（点进去查看）</div>
+    <div class="folders" id="dirs"></div>
+
+    <div class="section-title" id="files-title" hidden>文件 · 点击下载</div>
+    <div class="list" id="list"></div>
+
+    <p class="foot" id="page-foot">短地址：本页路径为 <b>/d</b> · 优先扫启动台上的下载码</p>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const listEl = document.getElementById("list");
+    const dirsEl = document.getElementById("dirs");
+    const metaEl = document.getElementById("meta");
+    const crumbsEl = document.getElementById("crumbs");
+    const dirsTitle = document.getElementById("dirs-title");
+    const filesTitle = document.getElementById("files-title");
+    const btnUp = document.getElementById("btn-up");
+    const curFolderEl = document.getElementById("cur-folder");
+    const pickHint = document.getElementById("pick-hint");
+    const btnPick = document.getElementById("btn-pick-folder");
+    const pickBar = document.getElementById("pick-bar");
+    const toastEl = document.getElementById("toast");
+    let currentPath = "";
+    let parentPath = null;
+    let canManage = false;
+    let toastTimer = null;
+
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("on");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("on"), 2800);
+    }
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[c]);
+    }
+
+    function setPath(path) {
+      currentPath = path == null ? "" : String(path);
+      const url = new URL(location.href);
+      if (currentPath) url.searchParams.set("path", currentPath);
+      else url.searchParams.delete("path");
+      history.replaceState(null, "", url.pathname + url.search);
+      loadList();
+    }
+
+    function renderCrumbs(path) {
+      const parts = String(path || "").split("/").filter(Boolean);
+      let html = `<button type="button" data-path="" class="${parts.length ? "" : "on"}">全部</button>`;
+      let acc = "";
+      parts.forEach((p, i) => {
+        acc = acc ? `${acc}/${p}` : p;
+        html += `<span class="sep">/</span><button type="button" data-path="${esc(acc)}" class="${i === parts.length - 1 ? "on" : ""}">${esc(p)}</button>`;
+      });
+      crumbsEl.innerHTML = html;
+      crumbsEl.querySelectorAll("button[data-path]").forEach((btn) => {
+        btn.onclick = () => setPath(btn.getAttribute("data-path") || "");
+      });
+    }
+
+    function syncManageUi() {
+      if (canManage) {
+        pickBar.hidden = false;
+        document.getElementById("page-tagline").textContent = "老师选文件夹 · 学生扫码下载";
+        document.getElementById("page-foot").innerHTML = "老师本机选文件夹；学生扫启动台二维码，手输只需地址末尾 <b>/d</b>";
+        document.getElementById("btn-back-launcher").hidden = false;
+        pickHint.classList.remove("bad");
+        pickHint.textContent = "本机点「选择文件夹」即可，不用手输路径。";
+      } else {
+        pickBar.hidden = true;
+        document.getElementById("page-tagline").textContent = "课堂资料 · 点文件即可下载";
+        document.getElementById("page-foot").textContent = "找不到文件时点刷新；或请老师重新选择共享文件夹";
+        document.getElementById("btn-back-launcher").hidden = true;
+      }
+    }
+
+    async function loadList() {
+      metaEl.textContent = "正在读取…";
+      dirsEl.innerHTML = "";
+      listEl.innerHTML = "";
+      dirsTitle.hidden = true;
+      filesTitle.hidden = true;
+      try {
+        const q = currentPath ? `?path=${encodeURIComponent(currentPath)}` : "";
+        const res = await fetch("/__gy/share/list" + q, { cache: "no-store" });
+        const data = await res.json();
+        canManage = !!data.can_manage;
+        syncManageUi();
+        if (data.folder) curFolderEl.textContent = data.folder;
+
+        if (!data.enabled) {
+          metaEl.textContent = "共享已关闭";
+          listEl.innerHTML = '<div class="err">请先点上方「选择文件夹」开启共享</div>';
+          btnUp.disabled = true;
+          return;
+        }
+        if (data.ok === false) {
+          metaEl.textContent = data.error || "读取失败";
+          listEl.innerHTML = `<div class="err">${esc(data.error || "无法打开该文件夹")}<br>请重新点「选择文件夹」</div>`;
+          parentPath = data.parent;
+          btnUp.disabled = parentPath == null && !currentPath;
+          renderCrumbs(currentPath);
+          return;
+        }
+
+        currentPath = data.path || "";
+        parentPath = data.parent;
+        btnUp.disabled = parentPath == null && !currentPath;
+        renderCrumbs(currentPath);
+
+        const dirs = data.dirs || [];
+        const files = data.files || [];
+        const here = currentPath ? currentPath : "根目录";
+        metaEl.innerHTML = `当前浏览：<strong>${esc(here)}</strong> · 文件夹 <strong>${dirs.length}</strong> · 文件 <strong>${files.length}</strong>`;
+
+        if (dirs.length) {
+          dirsTitle.hidden = false;
+          dirsEl.innerHTML = dirs.map((d) =>
+            `<button type="button" class="folder" data-path="${esc(d.path)}">
+              <span>${esc(d.name)}</span>
+              <span class="sub">进入查看文件</span>
+            </button>`
+          ).join("");
+          dirsEl.querySelectorAll("button.folder").forEach((btn) => {
+            btn.onclick = () => setPath(btn.getAttribute("data-path") || "");
+          });
+        }
+
+        filesTitle.hidden = false;
+        if (!files.length) {
+          listEl.innerHTML = dirs.length
+            ? '<div class="empty">此文件夹下没有直接文件<br>请点上方子文件夹进入，或点「选择文件夹」换一个目录</div>'
+            : '<div class="empty">这里还没有文件<br>请点上方金色按钮「选择文件夹」，或把课件放进当前目录后点刷新</div>';
+        } else {
+          listEl.innerHTML = files.map((f) => {
+            const href = f.url || (`/__gy/share/download?path=${encodeURIComponent(f.path)}`);
+            return `<div class="item">
+              <div>
+                <div class="name">${esc(f.name)}</div>
+                <div class="sub">${esc(f.size_label || "")}</div>
+              </div>
+              <a href="${esc(href)}" download="${esc(f.name)}">下载</a>
+            </div>`;
+          }).join("");
+        }
+      } catch (e) {
+        metaEl.textContent = "无法连接课堂服务";
+        listEl.innerHTML = '<div class="err">请确认老师电脑上「一键上课」窗口仍开着，然后点刷新</div>';
+        btnUp.disabled = true;
+      }
+    }
+
+    async function postShare(body) {
+      const res = await fetch("/__gy/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {})
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error((data && data.error) || "保存失败");
+      return data;
+    }
+
+    btnPick.onclick = async () => {
+      btnPick.disabled = true;
+      btnPick.textContent = "请在弹出窗口里选择…";
+      toast("正在打开系统选文件夹窗口…");
+      try {
+        const res = await fetch("/__gy/share/pick", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 403) {
+          toast(data.error || "请用本机 127.0.0.1 打开本页");
+          return;
+        }
+        if (data.cancelled) {
+          toast("已取消选择");
+          return;
+        }
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "选择失败");
+        currentPath = "";
+        if (data.folder) curFolderEl.textContent = data.folder;
+        await loadList();
+        toast("已选择文件夹，文件列表已更新");
+      } catch (e) {
+        toast(String(e.message || e));
+      } finally {
+        btnPick.disabled = false;
+        btnPick.textContent = "选择文件夹";
+        syncManageUi();
+      }
+    };
+
+    document.getElementById("btn-refresh").onclick = () => loadList();
+    btnUp.onclick = () => {
+      if (parentPath == null && !currentPath) return;
+      setPath(parentPath == null ? "" : parentPath);
+    };
+    document.getElementById("btn-share-default").onclick = async () => {
+      try {
+        await postShare({ use_default: true });
+        currentPath = "";
+        await loadList();
+        toast("已改回默认「课堂资料」");
+      } catch (e) { toast(String(e.message || e)); }
+    };
+    document.getElementById("btn-share-open").onclick = async () => {
+      try {
+        const res = await fetch("/__gy/share/open", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error((data && data.error) || "无法打开");
+        toast("已打开当前文件夹");
+      } catch (e) { toast(String(e.message || e)); }
+    };
+
+    try {
+      currentPath = new URL(location.href).searchParams.get("path") || "";
+    } catch (e) { currentPath = ""; }
+    loadList();
+    setInterval(() => loadList(), 20000);
+  </script>
+</body>
+</html>

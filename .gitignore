@@ -1,2 +1,16 @@
 
 *.pyc
+node_modules/
+gy-public-origin.json
+gy-demo-db.json
+gy-classroom.json
+gy-build.json
+gy-tunnel-origin.json
+gy-tunnel.log
+gy-tunnel.pid
+gy-share-folder.json
+.tools/
+固定访问地址.txt
+课堂资料/**
+!课堂资料/.gitkeep
+!课堂资料/请把课件放这里.txt
