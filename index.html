@@ -10,6 +10,8 @@
   <script src="./vendor/qrcodejs.min.js"></script>
   <script>window.QRCodeJS = typeof QRCode === "function" ? QRCode : null;</script>
   <script src="./vendor/qrcode.min.js"></script>
+  <!-- Word .docx 本地解析：无需联网，不再把二进制文件误读成乱码 -->
+  <script src="./vendor/mammoth.browser.min.js"></script>
   <style>
 :root {
   --bg0: #07090f;
@@ -19126,6 +19128,44 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }).join("\n");
     downloadBlob("光影盟-名册.csv", "\uFEFF" + header + rows + "\n", "text/csv;charset=utf-8");
   }
+  async function extractRosterTextFromDocx(file) {
+    if (!file) throw new Error("未选择 Word 文件");
+    const ext = String(file.name || "").toLowerCase();
+    if (ext.endsWith(".doc") && !ext.endsWith(".docx")) {
+      throw new Error("旧版 .doc 暂不支持，请在 Word 里「另存为 .docx」后再上传");
+    }
+    if (!window.mammoth || typeof window.mammoth.convertToHtml !== "function") {
+      throw new Error("Word 解析组件未加载，请更新本地代码后按 Cmd+Shift+R");
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    let htmlResult = null;
+    try {
+      htmlResult = await window.mammoth.convertToHtml({ arrayBuffer });
+    } catch (e) {
+      throw new Error("无法解析该 Word 文件，请确认它是有效的 .docx 格式");
+    }
+    const html = String(htmlResult?.value || "");
+    if (html) {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const tableRows = Array.from(doc.querySelectorAll("table tr")).map((tr) => {
+        const cells = Array.from(tr.querySelectorAll(":scope > th, :scope > td"))
+          .map((cell) => String(cell.textContent || "").replace(/\s+/g, " ").trim());
+        return cells.filter((cell, i) => cell || i === 0).join("\t");
+      }).filter((row) => row.trim());
+      if (tableRows.length) return tableRows.join("\n");
+    }
+    try {
+      const rawResult = await window.mammoth.extractRawText({ arrayBuffer });
+      const rawText = String(rawResult?.value || "").trim();
+      if (rawText) return rawText;
+    } catch (e) { /* use HTML text fallback */ }
+    if (html) {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const text = String(doc.body?.innerText || doc.body?.textContent || "").trim();
+      if (text) return text;
+    }
+    throw new Error("Word 文件里没有读取到姓名或表格内容");
+  }
   async function ensurePeakByName(peakName, campHint) {
     const name = String(peakName || "").trim();
     if (!name || /^(未分组|大厅|无|—|-)$/.test(name)) return null;
@@ -19289,8 +19329,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <button type="button" id="ri-tpl">下载模板 CSV</button>
           <button type="button" class="ghost" id="ri-export">导出当前名册</button>
           <label class="ghost" style="display:inline-flex;align-items:center;gap:.35rem;cursor:pointer;margin:0">
-            上传 CSV
-            <input type="file" id="ri-file" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden />
+            上传 Word / CSV
+            <input type="file" id="ri-file" accept=".docx,.doc,.csv,.txt,.tsv,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/csv,text/plain" hidden />
           </label>
         </div>
         <label style="margin:0">粘贴批量人名 / 表格内容
@@ -19349,6 +19389,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       e.target.value = "";
       if (!file) return;
       try {
+        const name = String(file.name || "").toLowerCase();
+        if (name.endsWith(".doc") && !name.endsWith(".docx")) {
+          throw new Error("旧版 .doc 暂不支持，请在 Word 里「另存为 .docx」后再上传");
+        }
+        if (name.endsWith(".docx")) {
+          metaEl.textContent = "正在解析 Word .docx…";
+          previewEl.innerHTML = "";
+          goBtn.disabled = true;
+          textEl.value = await extractRosterTextFromDocx(file);
+          refreshPreview();
+          return;
+        }
         const buf = await file.arrayBuffer();
         let text = "";
         try {
