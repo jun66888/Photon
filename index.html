@@ -3971,47 +3971,13 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   background: rgba(240,193,75,.18) !important;
 }
 .roster-search-count { font-size: .7rem; color: var(--ink-soft); white-space: nowrap; }
-.roster-global-search {
-  padding: .55rem;
-  margin-bottom: .7rem;
-  border: 1px solid rgba(240,193,75,.32);
-  border-radius: 10px;
-  background: rgba(240,193,75,.06);
-}
-.roster-global-search .rgs-title {
-  font-size: .82rem;
-  font-weight: 700;
-  color: #ffe39a;
-  margin-bottom: .2rem;
-}
-.roster-search-results {
+.hall-picker-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: .3rem;
-  margin-top: .35rem;
+  flex-direction: column;
+  gap: .35rem;
+  margin: .45rem 0 .5rem;
 }
-.roster-search-results:empty { display: none; }
-.roster-search-result {
-  display: inline-flex;
-  align-items: center;
-  gap: .25rem;
-  padding: .25rem .48rem;
-  border: 1px solid rgba(240,193,75,.3);
-  border-radius: 999px;
-  background: rgba(7,9,15,.55);
-  color: #fff5e8;
-  font-size: .75rem;
-  cursor: pointer;
-}
-.roster-search-result .where { color: var(--ink-soft); font-size: .68rem; }
-.roster-search-result:hover { border-color: #ffe39a; background: rgba(240,193,75,.14); }
-.roster-search-hit {
-  animation: rosterSearchPulse 1.1s ease;
-}
-@keyframes rosterSearchPulse {
-  0%, 100% { box-shadow: none; }
-  35% { box-shadow: 0 0 0 3px rgba(240,193,75,.42), 0 0 18px rgba(240,193,75,.4); }
-}
+.hall-picker .hall-pick-row[hidden] { display: none !important; }
 .settings-tile .roster-group-members {
   display: flex;
   flex-wrap: wrap;
@@ -5426,16 +5392,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <span class="acc-sum" id="acc-sum-roster">展开管理</span>
           </summary>
           <div class="acc-body">
-            <div class="roster-global-search">
-              <div class="rgs-title">全名册检索 · 大厅 / 派别 / 所有小组</div>
-              <div class="roster-search-bar">
-                <input type="search" id="settings-roster-search" placeholder="模糊搜索姓名 / 拼音 / 首字母 / 学号" autocomplete="off" />
-                <button type="button" class="ghost" id="settings-roster-clear">清空</button>
-                <span class="roster-search-count" id="settings-roster-count"></span>
-              </div>
-              <div class="roster-letter-index" id="settings-roster-letters" aria-label="按姓名拼音首字母检索"></div>
-              <div class="roster-search-results" id="settings-roster-results" aria-live="polite"></div>
-            </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
                 <h5>红蓝派系</h5>
@@ -5451,36 +5407,32 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
                   <button type="button" data-action="add-peak-blue">＋声浪</button>
                 </div>
               </div>
-              <p class="roster-drag-tip">可把下方成员直接拖到小组卡片；也可点「随机分组」自动平均分配。</p>
+              <p class="roster-drag-tip">可把大厅成员直接拖到小组卡片；也可点「随机分组」自动平均分配。点小组可导入弟子。</p>
               <div id="settings-peaks" class="settings-tiles"></div>
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5 id="settings-all-members-title">名单操作</h5>
+                <h5 id="settings-hall-title">大厅 · 只显示未分组人员（可拖入小组）</h5>
                 <div class="card-actions">
                   <button type="button" class="primary" data-action="import-roster" title="从 Word / Excel 复制一列姓名，或上传 CSV">批量导入人名</button>
                   <button type="button" data-action="add-camp-member-red">＋光影</button>
                   <button type="button" data-action="add-camp-member-blue">＋声浪</button>
-                  <button type="button" data-action="add-disciple">＋添加</button>
+                  <button type="button" data-action="add-disciple">＋成员</button>
                 </div>
               </div>
-              <p class="muted" style="font-size:.78rem;margin:.15rem 0 .45rem">Word / Excel 里只有一列姓名也能直接复制粘贴；自动批量建学员，并统一进入大厅。</p>
+              <p class="muted" style="font-size:.78rem;margin:.15rem 0 .35rem">人名只在大厅或小组各出现一次。Word / Excel 一列姓名可粘贴导入；大厅支持字母检索，检索结果仍可拖入小组。</p>
               <div class="roster-status-legend">
                 <span class="red"><i></i>光影派 / 红色</span>
                 <span class="blue"><i></i>声浪派 / 蓝色</span>
                 <span class="hall-key"><i></i>虚线 = 大厅未分组</span>
                 <span><i></i>实线 = 已进入小组</span>
               </div>
-              <div class="roster-drag-tip">人员不重复展示：未分组只在大厅，已分组只在所属小组；上方搜索可查全部人。</div>
-              <div id="settings-disciples" class="settings-chips hidden" aria-hidden="true"></div>
-            </div>
-            <div class="settings-subblock">
-              <div class="settings-subhead">
-                <h5 id="settings-hall-title">大厅 · 只显示未分组人员（可拖入小组）</h5>
-                <div class="card-actions">
-                  <button type="button" data-action="add-disciple">＋成员</button>
-                </div>
+              <div class="roster-search-bar">
+                <input type="search" id="settings-roster-search" placeholder="大厅检索：姓名 / 拼音 / 首字母 / 学号" autocomplete="off" />
+                <button type="button" class="ghost" id="settings-roster-clear">清空</button>
+                <span class="roster-search-count" id="settings-roster-count"></span>
               </div>
+              <div class="roster-letter-index" id="settings-roster-letters" aria-label="大厅按姓名拼音首字母检索"></div>
               <div id="settings-hall" class="settings-chips roster-drop-zone" data-roster-drop-hall="1"></div>
             </div>
           </div>
@@ -11272,16 +11224,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     const hall = getHallDisciples();
     const others = getDisciplesArray().filter((d) => !isInHall(d) && d.peak !== peakId);
+    const membersAlpha = sortDisciplesByPinyin(members);
     const memberPane = `
-      <div class="hall-banner">大厅未入峰 ${hall.length} 人${hall.length ? "：" + hall.slice(0, 8).map((d) => d.name).join("、") + (hall.length > 8 ? "…" : "") : " · 签到后进入大厅，再从此处入峰"}</div>
+      <div class="hall-banner">大厅未入峰 ${hall.length} 人${hall.length ? "：" + sortDisciplesByPinyin(hall).slice(0, 8).map((d) => d.name).join("、") + (hall.length > 8 ? "…" : "") : " · 签到后进入大厅，再从此处入峰"}</div>
       <div class="row" style="margin-bottom:.5rem;flex-wrap:wrap">
-        <button type="button" class="primary" id="m-from-hall">从大厅入峰</button>
-        <button type="button" id="m-from-all">从名册选择</button>
+        <button type="button" class="primary" id="m-from-hall">导入弟子名录 · 大厅</button>
+        <button type="button" id="m-from-all">导入弟子名录 · 全部</button>
         <button type="button" id="m-add">＋新建弟子</button>
-        <span class="muted">本组 ${members.length} 人</span>
+        <span class="muted">本组 ${members.length} 人 · 字母序</span>
       </div>
       <div>
-        ${members.map((d) => {
+        ${membersAlpha.map((d) => {
           const ok = discipleCheckedIn(d);
           return `
           <div class="disciple-row">
@@ -11521,18 +11474,35 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   function openEnterPeakPicker(peakId, mode) {
     const peak = findPeak(peakId);
     if (!peak) return;
-    const list = (mode === "hall" ? getHallDisciples() : getDisciplesArray().filter((d) => d.peak !== peakId))
-      .slice()
-      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "zh-CN"));
+    const list = sortDisciplesByPinyin(
+      mode === "hall" ? getHallDisciples() : getDisciplesArray().filter((d) => d.peak !== peakId)
+    );
+    let pickQuery = "";
+    let pickLetter = "";
+    const available = new Set(list.map((d) => rosterSearchInfo(d).letter));
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
     openModal(`
-      <h3>${mode === "hall" ? "大厅入峰" : "从名册入峰"} · ${esc(peak.name)}</h3>
-      <input id="hall-search" type="search" placeholder="搜索姓名 / 学号" style="margin:.5rem 0" />
+      <h3>${mode === "hall" ? "大厅入峰" : "导入弟子名录"} · ${esc(peak.name)}</h3>
+      <p class="muted" style="font-size:.78rem;margin:.2rem 0 0">按拼音字母排序 · 支持首字母检索 · 点「入峰」或双击导入</p>
+      <div class="hall-picker-toolbar">
+        <div class="roster-search-bar">
+          <input id="hall-search" type="search" placeholder="检索姓名 / 拼音 / 首字母 / 学号" autocomplete="off" />
+          <button type="button" class="ghost" id="hall-search-clear">清空</button>
+          <span class="roster-search-count" id="hall-picker-count"></span>
+        </div>
+        <div class="roster-letter-index" id="hall-picker-letters" aria-label="按姓名拼音首字母检索">
+          <button type="button" data-hall-letter-pick="" class="on">全部</button>
+          ${alphabet.map((letter) => `<button type="button" data-hall-letter-pick="${letter}" ${available.has(letter) ? "" : "disabled"}>${letter}</button>`).join("")}
+          <button type="button" data-hall-letter-pick="#" ${available.has("#") ? "" : "disabled"}>#</button>
+        </div>
+      </div>
       <div class="hall-picker" id="hall-picker-list">
         ${list.map((d) => {
           const other = !isInHall(d);
           const pk = findPeak(d.peak);
-          return `<div class="hall-pick-row ${other ? "other" : ""}" draggable="true" data-enter="${d.id}">
-            <span><b>${esc(d.name)}</b> <span class="muted">${esc(d.student_id || "无学号")}${other ? " · 现属 " + esc(pk ? pk.name : "他组") : " · 大厅"}</span></span>
+          const info = rosterSearchInfo(d);
+          return `<div class="hall-pick-row ${other ? "other" : ""}" draggable="true" data-enter="${d.id}" data-roster-search="${esc(info.search)}" data-roster-letter="${esc(info.letter)}">
+            <span><b>${esc(d.name)}</b> <span class="muted">${esc(info.letter)} · ${esc(d.student_id || "无学号")}${other ? " · 现属 " + esc(pk ? pk.name : "他组") : " · 大厅"}</span></span>
             <button type="button" class="primary" data-enter-btn="${d.id}">入峰</button>
           </div>`;
         }).join("") || '<p class="muted">暂无可选弟子</p>'}
@@ -11541,15 +11511,41 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         <button type="button" class="ghost" id="modal-cancel">返回</button>
       </div>`);
     document.getElementById("modal-cancel").onclick = () => openSectModal(peakId, "members");
-    document.getElementById("hall-search").oninput = () => {
-      const q = (document.getElementById("hall-search").value || "").trim();
+    const applyPickFilter = () => {
+      const q = pickQuery.trim();
+      let visible = 0;
       document.querySelectorAll("#hall-picker-list .hall-pick-row").forEach((row) => {
-        const id = row.dataset.enter;
-        const d = state.disciples[id];
-        const hit = !q || (d.name || "").includes(q) || String(d.student_id || "").includes(q);
-        row.style.display = hit ? "" : "none";
+        const hitQuery = rosterFuzzyMatch(row.dataset.rosterSearch || "", q);
+        const hitLetter = !pickLetter || String(row.dataset.rosterLetter || "#") === pickLetter;
+        const hit = hitQuery && hitLetter;
+        row.hidden = !hit;
+        if (hit) visible += 1;
       });
+      document.querySelectorAll("#hall-picker-letters [data-hall-letter-pick]").forEach((btn) => {
+        btn.classList.toggle("on", String(btn.dataset.hallLetterPick || "") === pickLetter);
+      });
+      const count = document.getElementById("hall-picker-count");
+      if (count) count.textContent = (q || pickLetter) ? `找到 ${visible} / ${list.length}` : `共 ${list.length} 人 · 字母序`;
     };
+    document.getElementById("hall-search").oninput = (e) => {
+      pickQuery = e.target.value || "";
+      applyPickFilter();
+    };
+    document.getElementById("hall-search-clear").onclick = () => {
+      pickQuery = "";
+      pickLetter = "";
+      const input = document.getElementById("hall-search");
+      if (input) input.value = "";
+      applyPickFilter();
+      input?.focus();
+    };
+    document.querySelectorAll("#hall-picker-letters [data-hall-letter-pick]").forEach((btn) => {
+      btn.onclick = () => {
+        pickLetter = String(btn.dataset.hallLetterPick || "");
+        applyPickFilter();
+      };
+    });
+    applyPickFilter();
     const doEnter = async (id) => {
       const ok = await assignDiscipleToPeak(id, peakId);
       if (ok) openSectModal(peakId, "members");
@@ -18922,38 +18918,6 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       });
     }
 
-    const discHost = document.getElementById("settings-disciples");
-    if (discHost) {
-      const list = sortDisciplesByPinyin(getDisciplesArray());
-      const allTitle = document.getElementById("settings-all-members-title");
-      if (allTitle) allTitle.textContent = `名单操作 · 共 ${list.length} 人（已分组 ${list.length - hall.length} / 大厅 ${hall.length}）`;
-      discHost.innerHTML = list.length
-        ? list.map((d) => {
-            const peak = findPeak(d.peak);
-            const place = peak ? peak.name : "大厅";
-            const camp = discipleCampOf(d);
-            const grouped = !!peak && !isInHall(d);
-            const status = grouped ? `已分组 · ${place}` : "大厅 · 未分组";
-            return `<button type="button" class="settings-chip ${camp} ${grouped ? "grouped" : "ungrouped"}" draggable="true" data-roster-disciple="${d.id}" data-ed="${d.id}" ${rosterSearchAttrs(d)} title="${esc(status)} · 拖到小组或大厅；点击编辑成员属性">
-              ${esc(d.name)}${d.role === "队长" ? "·队" : ""}
-              <span class="chip-sub">${esc(status)} · Lv${d.level || 1}</span>
-              <span class="chip-x" data-dd="${d.id}" title="删除">×</span>
-            </button>`;
-          }).join("")
-        : '<span class="settings-empty">暂无弟子</span>';
-      discHost.querySelectorAll("[data-ed]").forEach((b) => {
-        b.onclick = (e) => {
-          if (e.target.closest("[data-dd]")) return;
-          editDiscipleModal(b.dataset.ed);
-        };
-      });
-      discHost.querySelectorAll("[data-dd]").forEach((b) => {
-        b.onclick = async (e) => {
-          e.stopPropagation();
-          if (confirm("删除该弟子？")) await setPath("disciples/" + b.dataset.dd, null);
-        };
-      });
-    }
     bindSettingsRosterDnD();
     bindSettingsRosterSearch();
 
@@ -19918,80 +19882,27 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     });
   }
   function applySettingsRosterSearch() {
-    const root = document.getElementById("teacher-settings");
-    if (!root) return;
+    const hallHost = document.getElementById("settings-hall");
+    const letters = document.getElementById("settings-roster-letters");
+    if (!hallHost) return;
     const query = rosterSearchQuery.trim();
     const letter = rosterSearchLetter;
-    const active = !!(query || letter);
-    root.querySelectorAll("[data-roster-search]").forEach((el) => {
+    let visible = 0;
+    hallHost.querySelectorAll("[data-roster-disciple]").forEach((el) => {
       const hitQuery = rosterFuzzyMatch(el.dataset.rosterSearch || "", query);
       const hitLetter = !letter || String(el.dataset.rosterLetter || "#") === letter;
-      el.hidden = !(hitQuery && hitLetter);
+      const hit = hitQuery && hitLetter;
+      el.hidden = !hit;
+      if (hit) visible += 1;
     });
-    root.querySelectorAll("[data-roster-drop-peak]").forEach((tile) => {
-      const hasVisibleMember = Array.from(tile.querySelectorAll(".roster-group-members [data-roster-disciple]"))
-        .some((el) => !el.hidden);
-      tile.hidden = active && !hasVisibleMember;
-    });
-    root.querySelectorAll("#settings-roster-letters [data-roster-letter-pick]").forEach((btn) => {
+    letters?.querySelectorAll("[data-roster-letter-pick]").forEach((btn) => {
       btn.classList.toggle("on", String(btn.dataset.rosterLetterPick || "") === letter);
     });
-    const allHost = document.getElementById("settings-disciples");
-    const visibleIds = new Set();
-    allHost?.querySelectorAll("[data-roster-disciple]").forEach((el) => {
-      if (!el.hidden) visibleIds.add(el.dataset.rosterDisciple);
-    });
     const count = document.getElementById("settings-roster-count");
+    const total = hallHost.querySelectorAll("[data-roster-disciple]").length;
     if (count) {
-      const total = getDisciplesArray().length;
-      count.textContent = (query || letter) ? `找到 ${visibleIds.size} / ${total}` : `共 ${total} 人`;
+      count.textContent = (query || letter) ? `找到 ${visible} / ${total}` : `大厅 ${total} 人 · 字母序`;
     }
-    ["red", "blue"].forEach((camp) => {
-      const badge = root.querySelector(`[data-camp-search-count="${camp}"]`);
-      if (!badge) return;
-      const n = getDisciplesArray().filter((d) => visibleIds.has(d.id) && discipleCampOf(d) === camp).length;
-      badge.hidden = !active;
-      badge.textContent = `当前检索命中 ${n} 人`;
-      badge.style.color = camp === "blue" ? "#7ef0ff" : "#ff8aa0";
-    });
-    const resultHost = document.getElementById("settings-roster-results");
-    if (resultHost) {
-      if (!active) {
-        resultHost.innerHTML = "";
-      } else {
-        const matches = sortDisciplesByPinyin(getDisciplesArray().filter((d) => visibleIds.has(d.id)));
-        resultHost.innerHTML = matches.length
-          ? matches.map((d) => `<button type="button" class="roster-search-result" data-roster-result="${d.id}">
-              <strong>${esc(d.name)}</strong>
-              <span class="where">${esc(rosterLocationLabel(d))}</span>
-            </button>`).join("")
-          : '<span class="settings-empty">没有找到匹配人名</span>';
-        resultHost.querySelectorAll("[data-roster-result]").forEach((btn) => {
-          btn.onclick = () => focusRosterSearchResult(btn.dataset.rosterResult);
-        });
-      }
-    }
-  }
-  function rosterLocationLabel(d) {
-    const campName = discipleCampOf(d) === "blue"
-      ? (state.config?.alliance_blue_name || "声浪派")
-      : (state.config?.alliance_red_name || "光影派");
-    const peak = isInHall(d) ? null : findPeak(d.peak);
-    return peak ? `${campName} · ${peak.name}` : `大厅 · ${campName}`;
-  }
-  function focusRosterSearchResult(discipleId) {
-    const selectors = [
-      `#settings-peaks [data-roster-disciple="${CSS.escape(String(discipleId))}"]`,
-      `#settings-hall [data-roster-disciple="${CSS.escape(String(discipleId))}"]`,
-      `#settings-disciples [data-roster-disciple="${CSS.escape(String(discipleId))}"]`
-    ];
-    const target = selectors.map((s) => document.querySelector(s)).find((el) => el && !el.hidden);
-    if (!target) return;
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-    target.classList.remove("roster-search-hit");
-    void target.offsetWidth;
-    target.classList.add("roster-search-hit");
-    setTimeout(() => target.classList.remove("roster-search-hit"), 1200);
   }
   function bindSettingsRosterSearch() {
     const input = document.getElementById("settings-roster-search");
@@ -19999,7 +19910,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const letters = document.getElementById("settings-roster-letters");
     if (!input || !letters) return;
     input.value = rosterSearchQuery;
-    const available = new Set(getDisciplesArray().map((d) => rosterSearchInfo(d).letter));
+    const available = new Set(getHallDisciples().map((d) => rosterSearchInfo(d).letter));
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
     letters.innerHTML = [
       `<button type="button" data-roster-letter-pick="" class="${rosterSearchLetter ? "" : "on"}">全部</button>`,
