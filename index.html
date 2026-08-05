@@ -3901,6 +3901,9 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   border-color: rgba(240,193,75,.55); transform: translateY(-1px);
   background: rgba(240,193,75,.1);
 }
+.settings-chip[draggable="true"] { cursor: grab; }
+.settings-chip[draggable="true"]:active { cursor: grabbing; }
+.settings-chip.roster-dragging { opacity: .45; transform: scale(.96); }
 .settings-chip.red { border-color: rgba(255,59,92,.4); }
 .settings-chip.blue { border-color: rgba(46,230,255,.4); }
 .settings-chip.hall { border-color: rgba(255,176,189,.45); color: #ffb0bd; }
@@ -3927,6 +3930,23 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 }
 .settings-tile.red { border-color: rgba(255,59,92,.35); }
 .settings-tile.blue { border-color: rgba(46,230,255,.35); }
+.settings-tile.roster-drop-over,
+.settings-chips.roster-drop-over {
+  border-color: #ffe39a !important;
+  background: rgba(240,193,75,.16) !important;
+  box-shadow: inset 0 0 0 1px rgba(240,193,75,.45), 0 0 12px rgba(240,193,75,.2);
+}
+.settings-chips.roster-drop-zone {
+  min-height: 2.6rem;
+  padding: .35rem;
+  border: 1px dashed rgba(240,193,75,.28);
+  border-radius: 8px;
+}
+.roster-drag-tip {
+  font-size: .72rem;
+  color: var(--ink-soft);
+  margin: .1rem 0 .4rem;
+}
 .settings-tile .tile-title {
   font-family: var(--font-brush); font-size: .98rem; letter-spacing: .04em; line-height: 1.1;
 }
@@ -5295,10 +5315,12 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
               <div class="settings-subhead">
                 <h5>小组（需要时再创建）</h5>
                 <div class="card-actions">
+                  <button type="button" class="primary" data-action="random-grouping">随机分组</button>
                   <button type="button" data-action="add-peak-red">＋光影</button>
                   <button type="button" data-action="add-peak-blue">＋声浪</button>
                 </div>
               </div>
+              <p class="roster-drag-tip">可把下方成员直接拖到小组卡片；也可点「随机分组」自动平均分配。</p>
               <div id="settings-peaks" class="settings-tiles"></div>
             </div>
             <div class="settings-subblock">
@@ -5311,17 +5333,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
                   <button type="button" data-action="add-disciple">＋添加</button>
                 </div>
               </div>
-              <p class="muted" style="font-size:.78rem;margin:.15rem 0 .45rem">可用 Excel 复制粘贴，或上传 CSV（含：姓名、学号、小组、派系）</p>
+              <p class="muted" style="font-size:.78rem;margin:.15rem 0 .45rem">可用 Excel 复制粘贴，或上传 CSV；只有姓名也能自动建学员，无明确小组时统一进入大厅。</p>
               <div id="settings-disciples" class="settings-chips"></div>
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5>未入小组</h5>
+                <h5>大厅 · 未入小组（可拖入小组）</h5>
                 <div class="card-actions">
                   <button type="button" data-action="add-disciple">＋成员</button>
                 </div>
               </div>
-              <div id="settings-hall" class="settings-chips"></div>
+              <div id="settings-hall" class="settings-chips roster-drop-zone" data-roster-drop-hall="1"></div>
             </div>
           </div>
         </details>
@@ -18594,8 +18616,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const hallHost = document.getElementById("settings-hall");
     if (hallHost) {
       hallHost.innerHTML = hall.length
-        ? hall.map((d) => `<button type="button" class="settings-chip hall" data-ed="${d.id}" title="点击编辑弟子属性">${esc(d.name)}<span class="chip-sub">${esc(d.student_id || "无学号")}</span></button>`).join("")
-        : '<span class="settings-empty">暂无未入组人员 · 派系成员可直接在两派视图中管理</span>';
+        ? hall.map((d) => `<button type="button" class="settings-chip hall" draggable="true" data-roster-disciple="${d.id}" data-ed="${d.id}" title="拖到小组卡片；点击可编辑">${esc(d.name)}<span class="chip-sub">${esc(d.student_id || "无学号")}</span></button>`).join("")
+        : '<span class="settings-empty">大厅为空 · 可把任意成员拖到这里移出小组</span>';
       hallHost.querySelectorAll("[data-ed]").forEach((b) => b.onclick = () => editDiscipleModal(b.dataset.ed));
     }
 
@@ -18606,9 +18628,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         ? peaks.map((p) => {
             const pack = (KOF_SFX_PACKS.find((k) => k.id === p.sfx_pack) || {}).name || "默认";
             const n = disciplesOfPeak(p.id).length;
-            return `<div class="settings-tile ${p.camp === "blue" ? "blue" : "red"}" data-sp="${p.id}" title="点击编辑小组属性">
+            return `<div class="settings-tile ${p.camp === "blue" ? "blue" : "red"}" data-sp="${p.id}" data-roster-drop-peak="${p.id}" title="可把成员拖到这里；点击编辑小组属性">
               <div class="tile-title">${esc(p.icon || "")} ${esc(p.name)}</div>
-              <div class="tile-meta">${p.camp === "blue" ? "声浪" : "光影"} · ${esc(p.element || "—")} · ${n}人 · ${p.score || 0}分</div>
+              <div class="tile-meta">${p.camp === "blue" ? "声浪" : "光影"} · ${esc(p.element || "—")} · ${n}人 · ${p.score || 0}分 · 可拖入</div>
               <div class="tile-meta">${esc(p.slogan || p.intro || pack)}</div>
               <button type="button" class="danger tile-del" data-dp="${p.id}">删</button>
             </div>`;
@@ -18631,9 +18653,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       discHost.innerHTML = list.length
         ? list.map((d) => {
             const peak = findPeak(d.peak);
-            const place = peak ? peak.name : (discipleCampOf(d) === "blue" ? "声浪" : "光影");
+            const place = peak ? peak.name : "大厅";
             const camp = discipleCampOf(d);
-            return `<button type="button" class="settings-chip ${camp}" data-ed="${d.id}" title="点击编辑成员属性">
+            return `<button type="button" class="settings-chip ${camp}" draggable="true" data-roster-disciple="${d.id}" data-ed="${d.id}" title="拖到小组或大厅；点击编辑成员属性">
               ${esc(d.name)}${d.role === "队长" ? "·队" : ""}
               <span class="chip-sub">${esc(place)} · Lv${d.level || 1}</span>
               <span class="chip-x" data-dd="${d.id}" title="删除">×</span>
@@ -18653,6 +18675,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
         };
       });
     }
+    bindSettingsRosterDnD();
 
     const presetsHost = document.getElementById("settings-presets");
     if (presetsHost) {
@@ -19294,6 +19317,226 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       }
     };
   }
+
+  function shuffledRoster(list) {
+    const next = list.slice();
+    for (let i = next.length - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * (i + 1));
+      try {
+        if (window.crypto && window.crypto.getRandomValues) {
+          const buf = new Uint32Array(1);
+          window.crypto.getRandomValues(buf);
+          j = buf[0] % (i + 1);
+        }
+      } catch (e) { /* fallback Math.random */ }
+      [next[i], next[j]] = [next[j], next[i]];
+    }
+    return next;
+  }
+
+  async function createAutoGroupingPeak(index) {
+    const camp = index % 2 === 0 ? "red" : "blue";
+    const campNo = Math.floor(index / 2) + 1;
+    const baseName = camp === "red" ? `光影${campNo}组` : `声浪${campNo}组`;
+    const usedNames = new Set(getPeaksArray().map((p) => String(p.name || "").trim()));
+    let name = baseName;
+    let suffix = 2;
+    while (usedNames.has(name)) name = baseName + "-" + suffix++;
+    const ids = getPeaksArray().map((p) => Number(p.id)).filter((n) => !isNaN(n));
+    const id = ids.length ? Math.max(...ids) + 1 : 0;
+    const order = getPeaksArray().filter((p) => p.camp === camp).length;
+    const peak = makePeak({
+      id,
+      name,
+      icon: camp === "blue" ? "🌊" : "🐉",
+      color: camp === "blue" ? "#2ee6ff" : "#ff3b5c",
+      camp,
+      slogan: SLOGAN_PRESETS[0] || "冲！",
+      work_title: name + "参赛作品",
+      element: camp === "blue" ? "水" : "光",
+      intro: "随机分组自动创建",
+      sfx_pack: "kyo",
+      captain_name: "",
+      sort_order: order
+    });
+    await setPath("peaks/" + peakKey(id), peak, { silent: true });
+    return { id, ...peak };
+  }
+
+  async function applyRandomGrouping({ count, scope, autoCaptain }) {
+    const all = getDisciplesArray();
+    const pool = scope === "hall" ? all.filter(isInHall) : all;
+    if (!pool.length) throw new Error(scope === "hall" ? "大厅里没有待分组学员" : "名册为空，请先导入名单");
+    const groupCount = Math.max(1, Math.min(Number(count) || 1, pool.length, 20));
+    const peaks = sortPeaks(getPeaksArray()).slice(0, groupCount);
+    while (peaks.length < groupCount) {
+      peaks.push(await createAutoGroupingPeak(peaks.length));
+    }
+
+    pushHistorySnapshot("随机分组");
+    const shuffled = shuffledRoster(pool);
+    const buckets = peaks.map(() => []);
+    shuffled.forEach((d, i) => buckets[i % peaks.length].push(d));
+    const updates = { "config/ui_display_mode": "peak" };
+
+    if (scope === "all") {
+      peaks.forEach((p) => {
+        updates[`peaks/${peakKey(p.id)}/captain_name`] = "";
+        updates[`peaks/${peakKey(p.id)}/captain_id`] = "";
+      });
+    }
+    buckets.forEach((members, groupIndex) => {
+      const peak = peaks[groupIndex];
+      members.forEach((d, memberIndex) => {
+        updates[`disciples/${d.id}/peak`] = Number(peak.id);
+        updates[`disciples/${d.id}/camp`] = peak.camp === "blue" ? "blue" : "red";
+        if (scope === "all") {
+          updates[`disciples/${d.id}/role`] = autoCaptain && memberIndex === 0 ? "队长" : "弟子";
+        }
+      });
+      if (autoCaptain && members.length && scope === "all") {
+        updates[`peaks/${peakKey(peak.id)}/captain_name`] = members[0].name;
+        updates[`peaks/${peakKey(peak.id)}/captain_id`] = members[0].id;
+      }
+    });
+    await updatePaths(updates, { silent: true });
+    renderAll();
+    return {
+      people: shuffled.length,
+      groups: peaks.length,
+      sizes: buckets.map((b) => b.length)
+    };
+  }
+
+  function openRandomGroupingModal() {
+    const allCount = getDisciplesArray().length;
+    const hallCount = getHallDisciples().length;
+    const existingGroups = getPeaksArray().length;
+    const defaultCount = Math.max(1, Math.min(20, existingGroups || Math.ceil(Math.max(allCount, 1) / 5)));
+    openModal(`
+      <h3>随机分组</h3>
+      <div class="stack">
+        <p class="muted" style="margin:0;line-height:1.5">
+          当前名册 ${allCount} 人 · 大厅待分组 ${hallCount} 人 · 已有小组 ${existingGroups} 个<br>
+          人数会尽量平均；小组不足时自动创建，已有小组优先使用。
+        </p>
+        <label>分成几组
+          <input type="number" id="rg-count" min="1" max="20" value="${defaultCount}" />
+        </label>
+        <label>分组范围
+          <select id="rg-scope">
+            <option value="hall" ${hallCount ? "selected" : ""}>只分配大厅学员（保留现有分组）</option>
+            <option value="all" ${hallCount ? "" : "selected"}>全体名册重新随机分组</option>
+          </select>
+        </label>
+        <label style="display:flex;align-items:center;gap:.4rem">
+          <input type="checkbox" id="rg-captain" checked />
+          全体重分时，每组第一人自动设为队长
+        </label>
+        <p class="muted" style="font-size:.75rem;margin:0">操作前会自动保存快照，可在设置的数据回滚里恢复。</p>
+        <div class="row" style="justify-content:flex-end">
+          <button type="button" class="ghost" id="modal-cancel">取消</button>
+          <button type="button" class="primary" id="rg-go">开始随机分组</button>
+        </div>
+      </div>`);
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("rg-go").onclick = async () => {
+      const count = Math.max(1, Math.min(20, Number(document.getElementById("rg-count").value) || 1));
+      const scope = document.getElementById("rg-scope").value === "all" ? "all" : "hall";
+      const autoCaptain = !!document.getElementById("rg-captain").checked;
+      const targetCount = scope === "hall" ? hallCount : allCount;
+      if (!targetCount) {
+        alert(scope === "hall" ? "大厅没有待分组学员，可改选「全体名册」" : "名册为空，请先表格导入");
+        return;
+      }
+      if (!confirm(`${scope === "hall" ? "大厅" : "全体"} ${targetCount} 人随机分成 ${Math.min(count, targetCount)} 组，确认？`)) return;
+      const btn = document.getElementById("rg-go");
+      btn.disabled = true;
+      btn.textContent = "分组中…";
+      try {
+        const res = await applyRandomGrouping({ count, scope, autoCaptain });
+        closeModal();
+        showVoteToast(`随机分组完成 · ${res.people} 人 / ${res.groups} 组 · 每组 ${res.sizes.join("/")}`);
+        setTeacherView("settings");
+      } catch (e) {
+        alert(e?.message || "随机分组失败");
+        btn.disabled = false;
+        btn.textContent = "开始随机分组";
+      }
+    };
+  }
+
+  async function moveRosterDisciple(discipleId, targetPeakId) {
+    const d = state.disciples?.[discipleId];
+    if (!d) return;
+    const oldPeak = isInHall(d) ? null : findPeak(d.peak);
+    const targetPeak = targetPeakId == null || Number(targetPeakId) < 0 ? null : findPeak(Number(targetPeakId));
+    if (targetPeak && Number(d.peak) === Number(targetPeak.id)) return;
+    if (!targetPeak && isInHall(d)) return;
+
+    const updates = {
+      [`disciples/${discipleId}/peak`]: targetPeak ? Number(targetPeak.id) : -1,
+      [`disciples/${discipleId}/camp`]: targetPeak
+        ? (targetPeak.camp === "blue" ? "blue" : "red")
+        : discipleCampOf(d),
+      [`disciples/${discipleId}/role`]: "弟子"
+    };
+    if (oldPeak && (oldPeak.captain_id === discipleId || d.role === "队长")) {
+      updates[`peaks/${peakKey(oldPeak.id)}/captain_name`] = "";
+      updates[`peaks/${peakKey(oldPeak.id)}/captain_id`] = "";
+    }
+    await updatePaths(updates, { silent: true });
+    renderSettings();
+    const dest = targetPeak ? targetPeak.name : "大厅";
+    showVoteToast(`${d.name} → ${dest}`);
+  }
+
+  function bindSettingsRosterDnD() {
+    const root = document.getElementById("teacher-settings");
+    if (!root) return;
+    let draggingId = "";
+    root.querySelectorAll("[data-roster-disciple]").forEach((chip) => {
+      chip.ondragstart = (e) => {
+        draggingId = chip.dataset.rosterDisciple || "";
+        chip.classList.add("roster-dragging");
+        e.dataTransfer.setData("application/x-gy-disciple", draggingId);
+        e.dataTransfer.setData("text/plain", draggingId);
+        e.dataTransfer.effectAllowed = "move";
+      };
+      chip.ondragend = () => {
+        chip.classList.remove("roster-dragging");
+        draggingId = "";
+        root.querySelectorAll(".roster-drop-over").forEach((el) => el.classList.remove("roster-drop-over"));
+      };
+    });
+    const bindDrop = (zone, targetPeakId) => {
+      if (!zone) return;
+      zone.ondragover = (e) => {
+        const types = Array.from(e.dataTransfer?.types || []);
+        if (!draggingId && !types.includes("application/x-gy-disciple")) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        zone.classList.add("roster-drop-over");
+      };
+      zone.ondragleave = (e) => {
+        if (!zone.contains(e.relatedTarget)) zone.classList.remove("roster-drop-over");
+      };
+      zone.ondrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.remove("roster-drop-over");
+        const id = e.dataTransfer.getData("application/x-gy-disciple")
+          || e.dataTransfer.getData("text/plain")
+          || draggingId;
+        if (id) await moveRosterDisciple(id, targetPeakId);
+      };
+    };
+    root.querySelectorAll("[data-roster-drop-peak]").forEach((zone) => {
+      bindDrop(zone, Number(zone.dataset.rosterDropPeak));
+    });
+    bindDrop(root.querySelector("[data-roster-drop-hall]"), -1);
+  }
+
   let dayChanging = false;
   let railDayEditing = false;
 
@@ -20942,6 +21185,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     }
     if (act === "add-disciple") editDiscipleModal("disciple_" + Date.now());
     if (act === "import-roster") { openImportRosterModal(); return; }
+    if (act === "random-grouping") { openRandomGroupingModal(); return; }
     if (act === "add-preset") editPresetModal("bp_" + Date.now());
     if (act === "settle-ranks") {
       if (!guardPlayFeature("advanced", "段位结算")) return;
