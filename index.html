@@ -3908,9 +3908,38 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 .settings-chip[draggable="true"] { cursor: grab; }
 .settings-chip[draggable="true"]:active { cursor: grabbing; }
 .settings-chip.roster-dragging { opacity: .45; transform: scale(.96); }
-.settings-chip.red { border-color: rgba(255,59,92,.4); }
-.settings-chip.blue { border-color: rgba(46,230,255,.4); }
-.settings-chip.hall { border-color: rgba(255,176,189,.45); color: #ffb0bd; }
+.settings-chip.red {
+  border-color: rgba(255,59,92,.55);
+  color: #ffb0bd;
+  background: rgba(255,59,92,.09);
+}
+.settings-chip.blue {
+  border-color: rgba(46,230,255,.55);
+  color: #8df3ff;
+  background: rgba(46,230,255,.08);
+}
+.settings-chip.hall,
+.settings-chip.ungrouped { border-style: dashed; }
+.settings-chip.grouped { border-style: solid; }
+.roster-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .7rem;
+  margin: .2rem 0 .45rem;
+  font-size: .7rem;
+  color: var(--ink-soft);
+}
+.roster-status-legend span { display: inline-flex; align-items: center; gap: .22rem; }
+.roster-status-legend i {
+  width: .85rem;
+  height: .55rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  display: inline-block;
+}
+.roster-status-legend .red { color: #ff8aa0; }
+.roster-status-legend .blue { color: #7ef0ff; }
+.roster-status-legend .hall-key i { border-style: dashed; }
 .settings-chip .chip-sub { opacity: .72; font-size: .68rem; }
 .settings-chip .chip-x {
   margin-left: .1rem; opacity: .55; border: 0; background: transparent;
@@ -5422,7 +5451,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5>成员</h5>
+                <h5 id="settings-all-members-title">全部成员索引 · 已分组与大厅有明确标记</h5>
                 <div class="card-actions">
                   <button type="button" class="primary" data-action="import-roster" title="从 Word / Excel 复制一列姓名，或上传 CSV">批量导入人名</button>
                   <button type="button" data-action="add-camp-member-red">＋光影</button>
@@ -5431,12 +5460,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
                 </div>
               </div>
               <p class="muted" style="font-size:.78rem;margin:.15rem 0 .45rem">Word / Excel 里只有一列姓名也能直接复制粘贴；自动批量建学员，并统一进入大厅。</p>
+              <div class="roster-status-legend">
+                <span class="red"><i></i>光影派 / 红色</span>
+                <span class="blue"><i></i>声浪派 / 蓝色</span>
+                <span class="hall-key"><i></i>虚线 = 大厅未分组</span>
+                <span><i></i>实线 = 已进入小组</span>
+              </div>
               <div class="roster-drag-tip">下方是全部成员；上方搜索会同时筛选大厅、派别与各小组。</div>
               <div id="settings-disciples" class="settings-chips"></div>
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5>大厅 · 未入小组（可拖入小组）</h5>
+                <h5 id="settings-hall-title">大厅 · 只显示未分组人员（可拖入小组）</h5>
                 <div class="card-actions">
                   <button type="button" data-action="add-disciple">＋成员</button>
                 </div>
@@ -7140,7 +7175,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return (state.peaks || {})[peakKey(id)] || Object.values(state.peaks || {}).find((p) => p && p.id === id);
   }
   function disciplesOfPeak(peakId) {
-    return getDisciplesArray().filter((d) => d.peak === peakId);
+    return getDisciplesArray().filter((d) => !isInHall(d) && Number(d.peak) === Number(peakId));
   }
   function isInHall(d) {
     return !d || d.peak == null || Number(d.peak) < 0;
@@ -18759,9 +18794,15 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
 
     const hall = sortDisciplesByPinyin(getHallDisciples());
     const hallHost = document.getElementById("settings-hall");
+    const hallTitle = document.getElementById("settings-hall-title");
+    if (hallTitle) hallTitle.textContent = `大厅 · 只显示未分组人员 ${hall.length} 人（可拖入小组）`;
     if (hallHost) {
       hallHost.innerHTML = hall.length
-        ? hall.map((d) => `<button type="button" class="settings-chip hall" draggable="true" data-roster-disciple="${d.id}" data-ed="${d.id}" ${rosterSearchAttrs(d)} title="拖到小组卡片；点击可编辑">${esc(d.name)}<span class="chip-sub">${esc(d.student_id || "无学号")}</span></button>`).join("")
+        ? hall.map((d) => {
+            const camp = discipleCampOf(d);
+            const campLabel = camp === "blue" ? "声浪蓝" : "光影红";
+            return `<button type="button" class="settings-chip hall ungrouped ${camp}" draggable="true" data-roster-disciple="${d.id}" data-ed="${d.id}" ${rosterSearchAttrs(d)} title="大厅未分组 · 拖到小组卡片；点击可编辑">${esc(d.name)}<span class="chip-sub">${esc(campLabel)} · 未分组 · ${esc(d.student_id || "无学号")}</span></button>`;
+          }).join("")
         : '<span class="settings-empty">大厅为空 · 可把任意成员拖到这里移出小组</span>';
       hallHost.querySelectorAll("[data-ed]").forEach((b) => b.onclick = () => editDiscipleModal(b.dataset.ed));
     }
@@ -18775,7 +18816,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             const members = sortDisciplesByPinyin(disciplesOfPeak(p.id));
             const n = members.length;
             const memberHtml = members.length
-              ? members.map((d) => `<button type="button" class="settings-chip ${p.camp === "blue" ? "blue" : "red"}" draggable="true" data-roster-disciple="${d.id}" data-group-member="${d.id}" ${rosterSearchAttrs(d)} title="拖到其它小组或大厅；点击编辑">${esc(d.name)}${d.role === "队长" ? "★" : ""}</button>`).join("")
+              ? members.map((d) => `<button type="button" class="settings-chip grouped ${p.camp === "blue" ? "blue" : "red"}" draggable="true" data-roster-disciple="${d.id}" data-group-member="${d.id}" ${rosterSearchAttrs(d)} title="已分组：${esc(p.name)} · 可拖到其它小组或大厅；点击编辑">${esc(d.name)}${d.role === "队长" ? "★" : ""}</button>`).join("")
               : '<span class="roster-group-empty">暂无成员 · 从大厅拖到这里</span>';
             return `<div class="settings-tile ${p.camp === "blue" ? "blue" : "red"}" data-sp="${p.id}" data-roster-drop-peak="${p.id}" title="可把成员拖到这里；点击编辑小组属性">
               <div class="tile-title">${esc(p.icon || "")} ${esc(p.name)}</div>
@@ -18806,14 +18847,18 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     const discHost = document.getElementById("settings-disciples");
     if (discHost) {
       const list = sortDisciplesByPinyin(getDisciplesArray());
+      const allTitle = document.getElementById("settings-all-members-title");
+      if (allTitle) allTitle.textContent = `全部成员索引 ${list.length} 人 · 已分组 ${list.length - hall.length} / 大厅 ${hall.length}`;
       discHost.innerHTML = list.length
         ? list.map((d) => {
             const peak = findPeak(d.peak);
             const place = peak ? peak.name : "大厅";
             const camp = discipleCampOf(d);
-            return `<button type="button" class="settings-chip ${camp}" draggable="true" data-roster-disciple="${d.id}" data-ed="${d.id}" ${rosterSearchAttrs(d)} title="拖到小组或大厅；点击编辑成员属性">
+            const grouped = !!peak && !isInHall(d);
+            const status = grouped ? `已分组 · ${place}` : "大厅 · 未分组";
+            return `<button type="button" class="settings-chip ${camp} ${grouped ? "grouped" : "ungrouped"}" draggable="true" data-roster-disciple="${d.id}" data-ed="${d.id}" ${rosterSearchAttrs(d)} title="${esc(status)} · 拖到小组或大厅；点击编辑成员属性">
               ${esc(d.name)}${d.role === "队长" ? "·队" : ""}
-              <span class="chip-sub">${esc(place)} · Lv${d.level || 1}</span>
+              <span class="chip-sub">${esc(status)} · Lv${d.level || 1}</span>
               <span class="chip-x" data-dd="${d.id}" title="删除">×</span>
             </button>`;
           }).join("")
