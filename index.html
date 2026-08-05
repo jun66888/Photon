@@ -5456,7 +5456,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
-                <h5 id="settings-all-members-title">全部成员索引 · 已分组与大厅有明确标记</h5>
+                <h5 id="settings-all-members-title">名单操作</h5>
                 <div class="card-actions">
                   <button type="button" class="primary" data-action="import-roster" title="从 Word / Excel 复制一列姓名，或上传 CSV">批量导入人名</button>
                   <button type="button" data-action="add-camp-member-red">＋光影</button>
@@ -5471,8 +5471,8 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
                 <span class="hall-key"><i></i>虚线 = 大厅未分组</span>
                 <span><i></i>实线 = 已进入小组</span>
               </div>
-              <div class="roster-drag-tip">下方是全部成员；上方搜索会同时筛选大厅、派别与各小组。</div>
-              <div id="settings-disciples" class="settings-chips"></div>
+              <div class="roster-drag-tip">人员不重复展示：未分组只在大厅，已分组只在所属小组；上方搜索可查全部人。</div>
+              <div id="settings-disciples" class="settings-chips hidden" aria-hidden="true"></div>
             </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
@@ -7184,7 +7184,9 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     return getDisciplesArray().filter((d) => !isInHall(d) && Number(d.peak) === Number(peakId));
   }
   function isInHall(d) {
-    return !d || d.peak == null || Number(d.peak) < 0;
+    if (!d || d.peak == null || Number(d.peak) < 0) return true;
+    // 历史数据若指向已删除/不存在的小组，也回到大厅，避免姓名无处显示。
+    return !findPeak(Number(d.peak));
   }
   function getHallDisciples() {
     return sortDisciples(getDisciplesArray().filter(isInHall), "name");
@@ -18924,7 +18926,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (discHost) {
       const list = sortDisciplesByPinyin(getDisciplesArray());
       const allTitle = document.getElementById("settings-all-members-title");
-      if (allTitle) allTitle.textContent = `全部成员索引 ${list.length} 人 · 已分组 ${list.length - hall.length} / 大厅 ${hall.length}`;
+      if (allTitle) allTitle.textContent = `名单操作 · 共 ${list.length} 人（已分组 ${list.length - hall.length} / 大厅 ${hall.length}）`;
       discHost.innerHTML = list.length
         ? list.map((d) => {
             const peak = findPeak(d.peak);
