@@ -19734,14 +19734,17 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
   }
 
   function rosterFuzzyMatch(haystack, needle) {
-    const hay = String(haystack || "").toLowerCase().replace(/\s+/g, "");
     const q = String(needle || "").toLowerCase().replace(/\s+/g, "");
-    if (!q || hay.includes(q)) return true;
-    let qi = 0;
-    for (let i = 0; i < hay.length && qi < q.length; i++) {
-      if (hay[i] === q[qi]) qi += 1;
-    }
-    return qi === q.length;
+    if (!q) return true;
+    const fields = String(haystack || "").toLowerCase().split(/\s+/).filter(Boolean);
+    return fields.some((field) => {
+      if (field.includes(q)) return true;
+      let qi = 0;
+      for (let i = 0; i < field.length && qi < q.length; i++) {
+        if (field[i] === q[qi]) qi += 1;
+      }
+      return qi === q.length;
+    });
   }
   function applySettingsRosterSearch() {
     const root = document.getElementById("teacher-settings");
