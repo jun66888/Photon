@@ -3942,6 +3942,47 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
   background: rgba(240,193,75,.18) !important;
 }
 .roster-search-count { font-size: .7rem; color: var(--ink-soft); white-space: nowrap; }
+.roster-global-search {
+  padding: .55rem;
+  margin-bottom: .7rem;
+  border: 1px solid rgba(240,193,75,.32);
+  border-radius: 10px;
+  background: rgba(240,193,75,.06);
+}
+.roster-global-search .rgs-title {
+  font-size: .82rem;
+  font-weight: 700;
+  color: #ffe39a;
+  margin-bottom: .2rem;
+}
+.roster-search-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+  margin-top: .35rem;
+}
+.roster-search-results:empty { display: none; }
+.roster-search-result {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .25rem .48rem;
+  border: 1px solid rgba(240,193,75,.3);
+  border-radius: 999px;
+  background: rgba(7,9,15,.55);
+  color: #fff5e8;
+  font-size: .75rem;
+  cursor: pointer;
+}
+.roster-search-result .where { color: var(--ink-soft); font-size: .68rem; }
+.roster-search-result:hover { border-color: #ffe39a; background: rgba(240,193,75,.14); }
+.roster-search-hit {
+  animation: rosterSearchPulse 1.1s ease;
+}
+@keyframes rosterSearchPulse {
+  0%, 100% { box-shadow: none; }
+  35% { box-shadow: 0 0 0 3px rgba(240,193,75,.42), 0 0 18px rgba(240,193,75,.4); }
+}
 .settings-tile .roster-group-members {
   display: flex;
   flex-wrap: wrap;
@@ -5351,6 +5392,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
             <span class="acc-sum" id="acc-sum-roster">展开管理</span>
           </summary>
           <div class="acc-body">
+            <div class="roster-global-search">
+              <div class="rgs-title">全名册检索 · 大厅 / 派别 / 所有小组</div>
+              <div class="roster-search-bar">
+                <input type="search" id="settings-roster-search" placeholder="模糊搜索姓名 / 拼音 / 首字母 / 学号" autocomplete="off" />
+                <button type="button" class="ghost" id="settings-roster-clear">清空</button>
+                <span class="roster-search-count" id="settings-roster-count"></span>
+              </div>
+              <div class="roster-letter-index" id="settings-roster-letters" aria-label="按姓名拼音首字母检索"></div>
+              <div class="roster-search-results" id="settings-roster-results" aria-live="polite"></div>
+            </div>
             <div class="settings-subblock">
               <div class="settings-subhead">
                 <h5>红蓝派系</h5>
@@ -5380,12 +5431,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
                 </div>
               </div>
               <p class="muted" style="font-size:.78rem;margin:.15rem 0 .45rem">Word / Excel 里只有一列姓名也能直接复制粘贴；自动批量建学员，并统一进入大厅。</p>
-              <div class="roster-search-bar">
-                <input type="search" id="settings-roster-search" placeholder="模糊搜索姓名 / 拼音 / 首字母 / 学号" autocomplete="off" />
-                <button type="button" class="ghost" id="settings-roster-clear">清空</button>
-                <span class="roster-search-count" id="settings-roster-count"></span>
-              </div>
-              <div class="roster-letter-index" id="settings-roster-letters" aria-label="按姓名拼音首字母检索"></div>
+              <div class="roster-drag-tip">下方是全部成员；上方搜索会同时筛选大厅、派别与各小组。</div>
               <div id="settings-disciples" class="settings-chips"></div>
             </div>
             <div class="settings-subblock">
@@ -18686,11 +18732,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
           <strong>${esc(state.config?.alliance_red_name || "光影联盟")}</strong>
           <span>真气 ${redLive.score} · 小组 ${redLive.peakCount} · 弟子 ${redLive.memberCount}</span>
           <span>侧重 ${esc(m.red_focus || "—")} · 属性 ${esc(m.red_element || "光")}</span>
+          <span data-camp-search-count="red" hidden></span>
         </button>
         <button type="button" class="settings-faction-btn blue" data-camp-attr="blue">
           <strong>${esc(state.config?.alliance_blue_name || "声浪联盟")}</strong>
           <span>真气 ${blueLive.score} · 小组 ${blueLive.peakCount} · 弟子 ${blueLive.memberCount}</span>
           <span>侧重 ${esc(m.blue_focus || "—")} · 属性 ${esc(m.blue_element || "水")}</span>
+          <span data-camp-search-count="blue" hidden></span>
         </button>`;
       factions.querySelectorAll("[data-camp-attr]").forEach((b) => {
         b.onclick = () => openCampAttrsModal(b.dataset.campAttr);
@@ -19751,10 +19799,16 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     if (!root) return;
     const query = rosterSearchQuery.trim();
     const letter = rosterSearchLetter;
+    const active = !!(query || letter);
     root.querySelectorAll("[data-roster-search]").forEach((el) => {
       const hitQuery = rosterFuzzyMatch(el.dataset.rosterSearch || "", query);
       const hitLetter = !letter || String(el.dataset.rosterLetter || "#") === letter;
       el.hidden = !(hitQuery && hitLetter);
+    });
+    root.querySelectorAll("[data-roster-drop-peak]").forEach((tile) => {
+      const hasVisibleMember = Array.from(tile.querySelectorAll(".roster-group-members [data-roster-disciple]"))
+        .some((el) => !el.hidden);
+      tile.hidden = active && !hasVisibleMember;
     });
     root.querySelectorAll("#settings-roster-letters [data-roster-letter-pick]").forEach((btn) => {
       btn.classList.toggle("on", String(btn.dataset.rosterLetterPick || "") === letter);
@@ -19769,6 +19823,52 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       const total = getDisciplesArray().length;
       count.textContent = (query || letter) ? `找到 ${visibleIds.size} / ${total}` : `共 ${total} 人`;
     }
+    ["red", "blue"].forEach((camp) => {
+      const badge = root.querySelector(`[data-camp-search-count="${camp}"]`);
+      if (!badge) return;
+      const n = getDisciplesArray().filter((d) => visibleIds.has(d.id) && discipleCampOf(d) === camp).length;
+      badge.hidden = !active;
+      badge.textContent = `当前检索命中 ${n} 人`;
+      badge.style.color = camp === "blue" ? "#7ef0ff" : "#ff8aa0";
+    });
+    const resultHost = document.getElementById("settings-roster-results");
+    if (resultHost) {
+      if (!active) {
+        resultHost.innerHTML = "";
+      } else {
+        const matches = sortDisciplesByPinyin(getDisciplesArray().filter((d) => visibleIds.has(d.id)));
+        resultHost.innerHTML = matches.length
+          ? matches.map((d) => `<button type="button" class="roster-search-result" data-roster-result="${d.id}">
+              <strong>${esc(d.name)}</strong>
+              <span class="where">${esc(rosterLocationLabel(d))}</span>
+            </button>`).join("")
+          : '<span class="settings-empty">没有找到匹配人名</span>';
+        resultHost.querySelectorAll("[data-roster-result]").forEach((btn) => {
+          btn.onclick = () => focusRosterSearchResult(btn.dataset.rosterResult);
+        });
+      }
+    }
+  }
+  function rosterLocationLabel(d) {
+    const campName = discipleCampOf(d) === "blue"
+      ? (state.config?.alliance_blue_name || "声浪派")
+      : (state.config?.alliance_red_name || "光影派");
+    const peak = isInHall(d) ? null : findPeak(d.peak);
+    return peak ? `${campName} · ${peak.name}` : `大厅 · ${campName}`;
+  }
+  function focusRosterSearchResult(discipleId) {
+    const selectors = [
+      `#settings-peaks [data-roster-disciple="${CSS.escape(String(discipleId))}"]`,
+      `#settings-hall [data-roster-disciple="${CSS.escape(String(discipleId))}"]`,
+      `#settings-disciples [data-roster-disciple="${CSS.escape(String(discipleId))}"]`
+    ];
+    const target = selectors.map((s) => document.querySelector(s)).find((el) => el && !el.hidden);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.remove("roster-search-hit");
+    void target.offsetWidth;
+    target.classList.add("roster-search-hit");
+    setTimeout(() => target.classList.remove("roster-search-hit"), 1200);
   }
   function bindSettingsRosterSearch() {
     const input = document.getElementById("settings-roster-search");
