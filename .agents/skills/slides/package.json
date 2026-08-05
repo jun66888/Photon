@@ -1,0 +1,17 @@
+{
+  "name": "slides",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Runtime dependencies for the OpenAI Slides skill",
+  "scripts": {
+    "check": "node -e \"require('pptxgenjs'); require('skia-canvas'); require('fontkit'); require('linebreak'); require('prismjs'); require('./assets/pptxgenjs_helpers/latex').latexToSvgDataUri('x^2'); console.log('Slides JavaScript dependencies are available')\""
+  },
+  "dependencies": {
+    "fontkit": "^2.0.4",
+    "linebreak": "^1.1.0",
+    "mathjax-full": "^3.2.1",
+    "pptxgenjs": "^4.0.1",
+    "prismjs": "^1.30.0",
+    "skia-canvas": "^3.0.8"
+  }
+}
