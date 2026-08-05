@@ -3969,6 +3969,29 @@ body.teacher-shell:not(.mode-mobile-clean) { --brand-nav-offset: 0; }
 }
 .settings-mission-btn .sm-desc { font-size: .75rem; color: var(--ink-soft); line-height: 1.3; }
 .settings-empty { font-size: .78rem; color: var(--ink-soft); padding: .2rem 0; }
+.roster-import-preview {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid rgba(240, 193, 75, .28);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .22);
+}
+.roster-import-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .78rem;
+}
+.roster-import-preview th,
+.roster-import-preview td {
+  padding: .28rem .4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  text-align: left;
+  white-space: nowrap;
+}
+.roster-import-preview th { color: #ffe39a; position: sticky; top: 0; background: #1a2234; }
+.roster-import-preview tr.bad td { color: #ff8f8f; }
+.roster-import-preview tr.dup td { color: #ffd76a; }
+.roster-import-meta { font-size: .78rem; color: var(--ink-soft); margin: .35rem 0; }
 .data-tools-bar {
   display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-bottom: .55rem;
 }
@@ -5282,11 +5305,13 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
               <div class="settings-subhead">
                 <h5>成员</h5>
                 <div class="card-actions">
+                  <button type="button" class="primary" data-action="import-roster" title="从 Excel / CSV 表格导入名单">表格导入</button>
                   <button type="button" data-action="add-camp-member-red">＋光影</button>
                   <button type="button" data-action="add-camp-member-blue">＋声浪</button>
                   <button type="button" data-action="add-disciple">＋添加</button>
                 </div>
               </div>
+              <p class="muted" style="font-size:.78rem;margin:.15rem 0 .45rem">可用 Excel 复制粘贴，或上传 CSV（含：姓名、学号、小组、派系）</p>
               <div id="settings-disciples" class="settings-chips"></div>
             </div>
             <div class="settings-subblock">
@@ -18836,6 +18861,439 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
     a.href = URL.createObjectURL(new Blob([content], { type }));
     a.download = filename; a.click(); URL.revokeObjectURL(a.href);
   }
+
+  /** —— 表格导入名册（Excel 粘贴 / CSV） —— */
+  const ROSTER_IMPORT_HEADERS = {
+    name: ["姓名", "名字", "名称", "学员", "学生", "name", "学员姓名"],
+    student_id: ["学号", "编号", "工号", "sid", "student_id", "id", "学籍号"],
+    peak: ["小组", "组名", "组别", "小组名", "peak", "group", "队名", "所属小组"],
+    camp: ["派系", "阵营", "联盟", "camp", "大派", "红蓝"],
+    role: ["身份", "角色", "职务", "role", "队长"],
+    gender: ["性别", "gender"],
+    contact: ["联系方式", "手机", "电话", "微信", "contact", "联系电话"],
+    motto: ["口号", "个人口号", "motto"],
+    trait: ["特质", "个人特质", "备注", "trait", "说明"]
+  };
+  function normalizeRosterHeader(raw) {
+    const h = String(raw || "").trim().toLowerCase().replace(/\s+/g, "");
+    if (!h) return "";
+    for (const [key, aliases] of Object.entries(ROSTER_IMPORT_HEADERS)) {
+      if (aliases.some((a) => a.toLowerCase().replace(/\s+/g, "") === h)) return key;
+    }
+    return "";
+  }
+  function parseCsvLine(line, delim) {
+    const out = [];
+    let cur = "";
+    let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQ) {
+        if (ch === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else inQ = false;
+        } else cur += ch;
+      } else if (ch === '"') inQ = true;
+      else if (ch === delim) { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out.map((s) => String(s || "").trim());
+  }
+  function detectRosterDelimiter(text) {
+    const sample = String(text || "").split(/\r?\n/).slice(0, 8).join("\n");
+    const tabs = (sample.match(/\t/g) || []).length;
+    const commas = (sample.match(/,/g) || []).length;
+    const semis = (sample.match(/;/g) || []).length;
+    if (tabs >= commas && tabs >= semis && tabs > 0) return "\t";
+    if (semis > commas) return ";";
+    return ",";
+  }
+  function normalizeRosterCamp(raw) {
+    const s = String(raw || "").trim().toLowerCase();
+    if (!s) return "";
+    if (["blue", "蓝", "蓝色", "声浪", "声浪联盟", "音浪", "b"].includes(s)
+      || s.includes("声浪") || s.includes("蓝")) return "blue";
+    if (["red", "红", "红色", "光影", "光影联盟", "r"].includes(s)
+      || s.includes("光影") || s.includes("红")) return "red";
+    return "";
+  }
+  function normalizeRosterRole(raw) {
+    const s = String(raw || "").trim();
+    if (!s) return "弟子";
+    if (/队长|组长|captain|leader/i.test(s)) return "队长";
+    return "弟子";
+  }
+  function isValidRosterName(name) {
+    const n = String(name || "").trim();
+    if (!n || n.length > 12) return false;
+    // 课堂常见：2–4 中文；也允许少量英文/数字名
+    if (/^[\u4e00-\u9fa5]{2,8}$/.test(n)) return true;
+    if (/^[A-Za-z][A-Za-z .·-]{1,11}$/.test(n)) return true;
+    if (/^[\u4e00-\u9fa5A-Za-z0-9·]{2,12}$/.test(n)) return true;
+    return false;
+  }
+  function parseRosterTableText(text) {
+    const raw = String(text || "").replace(/^\uFEFF/, "").trim();
+    if (!raw) return { ok: false, error: "内容为空", rows: [], map: {} };
+    const delim = detectRosterDelimiter(raw);
+    const lines = raw.split(/\r?\n/).map((l) => l.trimEnd()).filter((l) => l.trim() !== "");
+    if (!lines.length) return { ok: false, error: "没有有效行", rows: [], map: {} };
+
+    let map = {};
+    let start = 0;
+    const firstCells = parseCsvLine(lines[0], delim);
+    const mappedFirst = firstCells.map(normalizeRosterHeader);
+    const hasHeader = mappedFirst.includes("name") || mappedFirst.filter(Boolean).length >= 2;
+    if (hasHeader) {
+      firstCells.forEach((cell, i) => {
+        const key = normalizeRosterHeader(cell);
+        if (key && map[key] == null) map[key] = i;
+      });
+      start = 1;
+    } else if (firstCells.length === 1) {
+      map = { name: 0 };
+    } else {
+      // 无表头：按 姓名,学号,小组,派系 猜测
+      map = { name: 0 };
+      if (firstCells.length > 1) map.student_id = 1;
+      if (firstCells.length > 2) map.peak = 2;
+      if (firstCells.length > 3) map.camp = 3;
+    }
+    if (map.name == null) {
+      return { ok: false, error: "找不到「姓名」列。请在首行写表头，或只贴一列姓名。", rows: [], map };
+    }
+
+    const rows = [];
+    for (let li = start; li < lines.length; li++) {
+      const cells = parseCsvLine(lines[li], delim);
+      if (!cells.some((c) => String(c || "").trim())) continue;
+      const get = (key) => {
+        const idx = map[key];
+        return idx == null ? "" : String(cells[idx] ?? "").trim();
+      };
+      const name = get("name");
+      const student_id = get("student_id");
+      const peakName = get("peak");
+      const camp = normalizeRosterCamp(get("camp"));
+      const role = normalizeRosterRole(get("role"));
+      const gender = get("gender");
+      const contact = get("contact");
+      const motto = get("motto");
+      const trait = get("trait");
+      const row = {
+        line: li + 1,
+        name,
+        student_id,
+        peakName,
+        camp,
+        role,
+        gender: ["男", "女", "保密"].includes(gender) ? gender : "",
+        contact: contact.slice(0, 40),
+        motto: motto.slice(0, 36),
+        trait: trait.slice(0, 24)
+      };
+      if (!name) {
+        row.error = "姓名为空";
+      } else if (!isValidRosterName(name)) {
+        row.error = "姓名格式不支持（建议 2–8 个中文）";
+      }
+      rows.push(row);
+    }
+    if (!rows.length) return { ok: false, error: "没有解析到成员行", rows: [], map };
+    return { ok: true, error: "", rows, map, delim };
+  }
+  function downloadRosterTemplate() {
+    const header = "姓名,学号,小组,派系,身份,性别,联系方式\n";
+    const sample = [
+      "张三,2026001,光影一组,光影,队长,男,",
+      "李四,2026002,光影一组,光影,弟子,女,",
+      "王五,2026003,声浪一组,声浪,弟子,,",
+      "赵六,,未分组,光影,弟子,,"
+    ].join("\n");
+    downloadBlob("光影盟-名册导入模板.csv", "\uFEFF" + header + sample + "\n", "text/csv;charset=utf-8");
+  }
+  function exportRosterCSV() {
+    const header = "姓名,学号,小组,派系,身份,性别,联系方式,口号,特质\n";
+    const rows = sortDisciples(getDisciplesArray(), "name").map((d) => {
+      const pk = isInHall(d) ? null : findPeak(d.peak);
+      const camp = discipleCampOf(d) === "blue" ? "声浪" : "光影";
+      return [
+        csvEsc(d.name || ""),
+        csvEsc(d.student_id || ""),
+        csvEsc(pk ? pk.name : ""),
+        csvEsc(camp),
+        csvEsc(d.role || "弟子"),
+        csvEsc(d.gender || ""),
+        csvEsc(d.contact || ""),
+        csvEsc(d.motto || ""),
+        csvEsc(d.trait || "")
+      ].join(",");
+    }).join("\n");
+    downloadBlob("光影盟-名册.csv", "\uFEFF" + header + rows + "\n", "text/csv;charset=utf-8");
+  }
+  async function ensurePeakByName(peakName, campHint) {
+    const name = String(peakName || "").trim();
+    if (!name || /^(未分组|大厅|无|—|-)$/.test(name)) return null;
+    const hit = getPeaksArray().find((p) => String(p.name || "").trim() === name);
+    if (hit) return hit;
+    const camp = campHint === "blue" ? "blue" : "red";
+    const ids = getPeaksArray().map((p) => Number(p.id)).filter((n) => !isNaN(n));
+    const id = ids.length ? Math.max(...ids) + 1 : 0;
+    const order = getPeaksArray().filter((p) => p.camp === camp).length;
+    const peak = makePeak({
+      id,
+      name,
+      icon: camp === "blue" ? "🌊" : "🐉",
+      color: camp === "blue" ? "#2ee6ff" : "#ff3b5c",
+      camp,
+      slogan: SLOGAN_PRESETS[0] || "冲！",
+      work_title: name + "参赛作品",
+      element: camp === "blue" ? "水" : "光",
+      intro: "表格导入自动创建",
+      sfx_pack: "kyo",
+      captain_name: "",
+      sort_order: order
+    });
+    await setPath("peaks/" + peakKey(id), peak, { silent: true });
+    return { id, ...peak };
+  }
+  function findExistingDiscipleForImport(row) {
+    const sid = String(row.student_id || "").trim();
+    if (sid) {
+      const bySid = getDisciplesArray().find((d) => d.student_id && String(d.student_id) === sid);
+      if (bySid) return bySid;
+    }
+    const name = String(row.name || "").trim();
+    if (!name) return null;
+    const same = getDisciplesArray().filter((d) => d.name === name);
+    if (same.length === 1) return same[0];
+    return null;
+  }
+  async function applyRosterImport(rows, opts = {}) {
+    const mode = opts.mode === "skip" ? "skip" : "upsert"; // upsert=有则更新
+    const createPeaks = opts.createPeaks !== false;
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+    const errors = [];
+    const stamp = Date.now();
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.error || !isValidRosterName(row.name)) {
+        failed += 1;
+        errors.push(`第 ${row.line} 行：${row.error || "姓名无效"}`);
+        continue;
+      }
+      const existed = findExistingDiscipleForImport(row);
+      if (existed && mode === "skip") {
+        skipped += 1;
+        continue;
+      }
+
+      let camp = row.camp || "";
+      let peakId = -1;
+      if (row.peakName && createPeaks) {
+        const peak = await ensurePeakByName(row.peakName, camp || (existed && discipleCampOf(existed)) || "red");
+        if (peak) {
+          peakId = Number(peak.id);
+          camp = peak.camp === "blue" ? "blue" : "red";
+        }
+      } else if (row.peakName) {
+        const peak = getPeaksArray().find((p) => String(p.name || "").trim() === String(row.peakName).trim());
+        if (peak) {
+          peakId = Number(peak.id);
+          camp = peak.camp === "blue" ? "blue" : "red";
+        }
+      }
+      if (!camp) camp = (existed && discipleCampOf(existed)) || "red";
+      if (peakId >= 0) {
+        const pk = findPeak(peakId);
+        if (pk) camp = pk.camp === "blue" ? "blue" : "red";
+      }
+
+      const role = peakId < 0 ? "弟子" : (row.role || "弟子");
+      const lv = calcPersonalLevel(existed?.exp || 0);
+      if (existed) {
+        const updates = {
+          [`disciples/${existed.id}/name`]: row.name,
+          [`disciples/${existed.id}/student_id`]: row.student_id || existed.student_id || "",
+          [`disciples/${existed.id}/peak`]: peakId,
+          [`disciples/${existed.id}/camp`]: camp,
+          [`disciples/${existed.id}/role`]: role
+        };
+        if (row.gender) updates[`disciples/${existed.id}/gender`] = row.gender;
+        if (row.contact) updates[`disciples/${existed.id}/contact`] = row.contact;
+        if (row.motto) updates[`disciples/${existed.id}/motto`] = row.motto;
+        if (row.trait) updates[`disciples/${existed.id}/trait`] = row.trait;
+        if (role === "队长" && peakId >= 0) {
+          updates[`peaks/${peakKey(peakId)}/captain_name`] = row.name;
+          updates[`peaks/${peakKey(peakId)}/captain_id`] = existed.id;
+        }
+        await updatePaths(updates, { silent: true });
+        updated += 1;
+      } else {
+        const id = "disciple_imp_" + stamp + "_" + i;
+        await setPath("disciples/" + id, {
+          name: row.name,
+          student_id: row.student_id || "",
+          peak: peakId,
+          camp,
+          exp: 0,
+          level: lv.level,
+          title: lv.title,
+          rank: "青铜",
+          role,
+          voted: false,
+          contributed: 0,
+          checked_in_am: false,
+          checked_in_pm: false,
+          first_seen: new Date().toISOString(),
+          voted_for: "",
+          weapon: "笔",
+          gender: row.gender || "",
+          contact: row.contact || "",
+          motto: row.motto || "",
+          avatar: "",
+          trait: row.trait || "表格导入"
+        }, { silent: true });
+        if (role === "队长" && peakId >= 0) {
+          await updatePaths({
+            [`peaks/${peakKey(peakId)}/captain_name`]: row.name,
+            [`peaks/${peakKey(peakId)}/captain_id`]: id
+          }, { silent: true });
+        }
+        added += 1;
+      }
+    }
+
+    // 导入后切到有小组时显示小组模式
+    if (getPeaksArray().length > 0 && getUiDisplayMode() === "camp") {
+      await updatePaths({ "config/ui_display_mode": "peak" }, { silent: true });
+    }
+    renderAll();
+    return { added, updated, skipped, failed, errors };
+  }
+  function openImportRosterModal() {
+    let parsed = { ok: false, rows: [], error: "" };
+    openModal(`
+      <h3>表格导入名单</h3>
+      <p class="muted" style="margin:0 0 .55rem;line-height:1.45">支持：Excel 复制粘贴 · CSV/TSV 文件上传。必填「姓名」，可选学号 / 小组 / 派系 / 身份。</p>
+      <div class="stack">
+        <div class="row" style="flex-wrap:wrap;gap:.4rem">
+          <button type="button" id="ri-tpl">下载模板 CSV</button>
+          <button type="button" class="ghost" id="ri-export">导出当前名册</button>
+          <label class="ghost" style="display:inline-flex;align-items:center;gap:.35rem;cursor:pointer;margin:0">
+            上传 CSV
+            <input type="file" id="ri-file" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden />
+          </label>
+        </div>
+        <label style="margin:0">粘贴表格内容
+          <textarea id="ri-text" rows="7" placeholder="可从 Excel 直接复制粘贴，例如：&#10;姓名&#9;学号&#9;小组&#9;派系&#10;张三&#9;2026001&#9;光影一组&#9;光影&#10;李四&#9;2026002&#9;声浪一组&#9;声浪"></textarea>
+        </label>
+        <div class="row" style="flex-wrap:wrap;gap:.75rem;align-items:center">
+          <label style="margin:0;display:flex;align-items:center;gap:.35rem">
+            <input type="radio" name="ri-mode" value="upsert" checked /> 同名/同学号则更新
+          </label>
+          <label style="margin:0;display:flex;align-items:center;gap:.35rem">
+            <input type="radio" name="ri-mode" value="skip" /> 跳过已有
+          </label>
+          <label style="margin:0;display:flex;align-items:center;gap:.35rem">
+            <input type="checkbox" id="ri-create-peak" checked /> 自动创建不存在的小组
+          </label>
+        </div>
+        <div class="roster-import-meta" id="ri-meta">粘贴或上传后显示预览</div>
+        <div class="roster-import-preview" id="ri-preview"></div>
+        <div class="row" style="justify-content:flex-end;margin-top:.35rem">
+          <button type="button" class="ghost" id="modal-cancel">取消</button>
+          <button type="button" class="primary" id="ri-go" disabled>确认导入</button>
+        </div>
+      </div>`);
+    const textEl = document.getElementById("ri-text");
+    const metaEl = document.getElementById("ri-meta");
+    const previewEl = document.getElementById("ri-preview");
+    const goBtn = document.getElementById("ri-go");
+    const refreshPreview = () => {
+      parsed = parseRosterTableText(textEl?.value || "");
+      if (!parsed.ok) {
+        metaEl.textContent = parsed.error || "无法解析";
+        previewEl.innerHTML = "";
+        goBtn.disabled = true;
+        return;
+      }
+      const bad = parsed.rows.filter((r) => r.error).length;
+      const okN = parsed.rows.length - bad;
+      metaEl.textContent = `共 ${parsed.rows.length} 行 · 可导入 ${okN} · 有问题 ${bad}`;
+      const head = ["行", "姓名", "学号", "小组", "派系", "身份", "状态"];
+      const body = parsed.rows.slice(0, 80).map((r) => {
+        const existed = !r.error && findExistingDiscipleForImport(r);
+        const cls = r.error ? "bad" : (existed ? "dup" : "");
+        const st = r.error ? r.error : (existed ? "将更新" : "新增");
+        const campLabel = r.camp === "blue" ? "声浪" : (r.camp === "red" ? "光影" : "—");
+        return `<tr class="${cls}"><td>${r.line}</td><td>${esc(r.name)}</td><td>${esc(r.student_id || "—")}</td><td>${esc(r.peakName || "—")}</td><td>${esc(campLabel)}</td><td>${esc(r.role || "弟子")}</td><td>${esc(st)}</td></tr>`;
+      }).join("");
+      previewEl.innerHTML = `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`;
+      goBtn.disabled = okN <= 0;
+    };
+    document.getElementById("modal-cancel").onclick = closeModal;
+    document.getElementById("ri-tpl").onclick = () => downloadRosterTemplate();
+    document.getElementById("ri-export").onclick = () => exportRosterCSV();
+    document.getElementById("ri-file").onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      try {
+        const buf = await file.arrayBuffer();
+        let text = "";
+        try {
+          text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+        } catch (err) {
+          text = await file.text();
+        }
+        // 粗检：若大量替换符，再试 GBK（部分浏览器支持）
+        if (text.includes("\uFFFD") && typeof TextDecoder !== "undefined") {
+          try {
+            const gbk = new TextDecoder("gbk", { fatal: false }).decode(buf);
+            if (gbk && !gbk.includes("\uFFFD")) text = gbk;
+          } catch (err2) { /* ignore */ }
+        }
+        textEl.value = text;
+        refreshPreview();
+      } catch (err) {
+        alert("读取文件失败：" + (err?.message || "未知错误"));
+      }
+    };
+    textEl?.addEventListener("input", refreshPreview);
+    textEl?.addEventListener("paste", () => setTimeout(refreshPreview, 0));
+    goBtn.onclick = async () => {
+      refreshPreview();
+      if (!parsed.ok) { alert(parsed.error || "请先粘贴表格"); return; }
+      const usable = parsed.rows.filter((r) => !r.error);
+      if (!usable.length) { alert("没有可导入的有效行"); return; }
+      const mode = document.querySelector('input[name="ri-mode"]:checked')?.value || "upsert";
+      const createPeaks = !!document.getElementById("ri-create-peak")?.checked;
+      if (!confirm(`确认导入 ${usable.length} 人？\n模式：${mode === "skip" ? "跳过已有" : "有则更新"}`)) return;
+      goBtn.disabled = true;
+      goBtn.textContent = "导入中…";
+      try {
+        const res = await applyRosterImport(usable, { mode, createPeaks });
+        closeModal();
+        const tip = `导入完成：新增 ${res.added} · 更新 ${res.updated} · 跳过 ${res.skipped}`
+          + (res.failed ? ` · 失败 ${res.failed}` : "");
+        showVoteToast(tip);
+        if (res.errors.length) {
+          alert(tip + "\n\n部分行未导入：\n" + res.errors.slice(0, 12).join("\n") + (res.errors.length > 12 ? "\n…" : ""));
+        }
+        if (teacherView === "settings") renderSettings();
+      } catch (err) {
+        alert("导入失败：" + (err?.message || "请重试"));
+        goBtn.disabled = false;
+        goBtn.textContent = "确认导入";
+      }
+    };
+  }
   let dayChanging = false;
   let railDayEditing = false;
 
@@ -20483,6 +20941,7 @@ body.mode-mobile-clean #edit-box-layer { display: none !important; }
       return;
     }
     if (act === "add-disciple") editDiscipleModal("disciple_" + Date.now());
+    if (act === "import-roster") { openImportRosterModal(); return; }
     if (act === "add-preset") editPresetModal("bp_" + Date.now());
     if (act === "settle-ranks") {
       if (!guardPlayFeature("advanced", "段位结算")) return;
